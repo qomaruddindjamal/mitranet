@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  mitranet-dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: mitranet-dev-env
+    stdin_open: true
+    tty: true
+    volumes:
+      - ..:/workspace
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+      - "9000:9000"
+      - "10808:10808"
+      - "10809:10809"
+    privileged: true
+    environment:
+      - TERM=xterm-256color
+    working_dir: /workspace

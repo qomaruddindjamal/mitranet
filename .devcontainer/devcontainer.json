@@ -1,0 +1,46 @@
+{
+  "name": "MitraNet OS Development & Reverse Engineering",
+  "build": {
+    "dockerfile": "../docker/Dockerfile",
+    "context": ".."
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "editor.formatOnSave": true
+      },
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "ms-python.python",
+        "golang.go",
+        "timonwong.shellcheck",
+        "redhat.vscode-yaml"
+      ]
+    }
+  },
+  "forwardPorts": [80, 443, 8080, 9000, 10808, 10809],
+  "portsAttributes": {
+    "443": {
+      "label": "MitraNet Web Installer & GUI",
+      "onAutoForward": "notify"
+    },
+    "8080": {
+      "label": "MitraNet V2Ray/Xray API",
+      "onAutoForward": "notify"
+    },
+    "10808": {
+      "label": "Xray SOCKS5 Proxy",
+      "onAutoForward": "silent"
+    },
+    "10809": {
+      "label": "Xray HTTP Proxy",
+      "onAutoForward": "silent"
+    }
+  },
+  "postCreateCommand": "bash bulid/setup_dev_env.sh",
+  "remoteUser": "root"
+}

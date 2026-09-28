@@ -1,0 +1,74 @@
+#!/bin/sh
+#
+# PROVIDE: xray
+# REQUIRE: NETWORKING SERVERS
+# BEFORE: DAEMON
+# KEYWORD: shutdown
+#
+# Add the following lines to /etc/rc.conf to enable xray:
+# xray_enable="YES"
+# xray_config="/usr/local/etc/xray/config.json"
+#
+
+. /etc/rc.subr
+
+name="xray"
+rcvar="xray_enable"
+
+load_rc_config $name
+
+: ${xray_enable:="NO"}
+: ${xray_config:="/usr/local/etc/xray/config.json"}
+: ${xray_user:="root"}
+: ${xray_group:="wheel"}
+
+pidfile="/var/run/${name}.pid"
+command="/usr/local/bin/xray"
+command_args="run -c ${xray_config} > /var/log/xray/xray.log 2>&1 &"
+
+start_precmd="xray_prestart"
+stop_postcmd="xray_poststop"
+restart_precmd="xray_checkconfig"
+status_cmd="xray_status"
+
+xray_prestart() {
+    # Ensure log and config directories exist
+    /bin/mkdir -p /var/log/xray
+    /bin/mkdir -p /usr/local/etc/xray
+    
+    if [ ! -f "${xray_config}" ]; then
+        echo "Xray configuration file ${xray_config} not found!"
+        return 1
+    fi
+
+    # Validate config syntax before launching
+    ${command} test -c "${xray_config}" > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        echo "Xray configuration syntax test failed!"
+        ${command} test -c "${xray_config}"
+        return 1
+    fi
+    return 0
+}
+
+xray_checkconfig() {
+    echo "Checking Xray configuration syntax..."
+    ${command} test -c "${xray_config}"
+}
+
+xray_poststop() {
+    /bin/rm -f ${pidfile}
+}
+
+xray_status() {
+    if /usr/bin/pgrep -f "${command} run -c" > /dev/null; then
+        _pid=$(/usr/bin/pgrep -f "${command} run -c")
+        echo "${name} is running as pid ${_pid}."
+        return 0
+    else
+        echo "${name} is not running."
+        return 1
+    fi
+}
+
+run_rc_command "$1"

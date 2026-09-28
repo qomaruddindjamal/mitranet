@@ -1,0 +1,33 @@
+# MitraNet .gitignore
+
+# ISO & Large Binary Images (prevent uploading large >100MB files to GitHub)
+sources/*.iso
+sources/*.img
+ISO/*.iso
+ISO/*.img
+*.iso
+*.img
+
+# Build outputs & extraction workspaces
+bulid/workspace/
+bulid/extracted/
+bulid/rootfs/
+bulid/iso_root/
+bulid/output/
+_temp*/
+
+# Logs & temp files
+*.log
+*.tmp
+*.sqlite
+!var/db/pkg/local.sqlite
+__pycache__/
+*.pyc
+
+# OS and Editor artifacts
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
