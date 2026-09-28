@@ -12,10 +12,16 @@ images/*.vhdx
 images/*.tar.gz
 images/*.zip
 images/releases/
+vm/*.vhdx
+vm/*.vhd
+vm/*.avhdx
 *.iso
 *.img
 *.qcow2
 *.vmdk
+*.vhdx
+*.vhd
+*.avhdx
 
 # Build outputs & extraction workspaces
 bulid/workspace/

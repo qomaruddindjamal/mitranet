@@ -75,6 +75,29 @@ Semua lalu lintas dari VM klien di jaringan internal (LAN) akan otomatis melewat
    - Adapter 2: `Internal Network` (nama jaringan: `mitranet-lan`).
 5. Jalankan VM.
 
+### D. Microsoft Hyper-V (Windows Host)
+1. **Virtual Disk:** File `vm/mitranet.vhdx` (Dynamic VHDX, kapasitas hingga 16GB, format GPT/UEFI).
+2. **Manajemen Otomatis via PowerShell:**
+   Gunakan skrip `vm/create_hyperv_vm.ps1` untuk mengontrol VM:
+   ```powershell
+   # Memeriksa status VM dan virtual disk:
+   powershell -ExecutionPolicy Bypass -File vm\create_hyperv_vm.ps1 -Action status
+
+   # Memulai VM MitraNet:
+   powershell -ExecutionPolicy Bypass -File vm\create_hyperv_vm.ps1 -Action start
+
+   # Mematikan VM:
+   powershell -ExecutionPolicy Bypass -File vm\create_hyperv_vm.ps1 -Action stop
+
+   # Membangun ulang VM:
+   powershell -ExecutionPolicy Bypass -File vm\create_hyperv_vm.ps1 -Action recreate
+   ```
+3. **Konfigurasi Khusus FreeBSD/Netgate di Hyper-V:**
+   - **Generation:** `Generation 2` (UEFI).
+   - **Secure Boot:** Wajib disetel ke **`Off`** (`Set-VMFirmware -EnableSecureBoot Off`).
+   - **Dynamic Memory:** Minimum 512 MB, Startup 1024 MB, Maximum 2048 MB.
+   - **Virtual Switch:** Terhubung ke `Default Switch` (NAT otomatis dari host Windows).
+
 ---
 
 ## 4. Verifikasi Konektivitas Pasca-Instalasi
