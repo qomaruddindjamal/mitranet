@@ -78,7 +78,25 @@ MitraNet/
 
 ## 🚀 Panduan Memulai Cepat (Quickstart)
 
-### Cara 1: Menggunakan GitHub Codespaces (Sangat Direkomendasikan)
+### Cara 1: Mengubah VPS Linux ke MitraNet OS (1-Line Command Seperti MikroTik CHR)
+Jika Anda baru saja menyewa VPS Linux (**Ubuntu, Debian, CentOS, AlmaLinux, Rocky**) dan ingin langsung mengubahnya menjadi **MitraNet OS / Netgate Router**:
+
+1. Login ke SSH VPS Anda sebagai `root`.
+2. Jalankan satu baris perintah berikut:
+   ```bash
+   curl -sSL https://raw.githubusercontent.com/qomaruddindjamal/mitranet/main/install.sh | bash
+   ```
+   *(Atau tanpa prompt konfirmasi: `curl -sSL https://raw.githubusercontent.com/qomaruddindjamal/mitranet/main/install.sh | bash -s -- -y`)*
+3. Skrip akan secara otomatis:
+   - Mendeteksi IP publik, Gateway, DNS, dan interface VPS.
+   - Mengunduh dan menulis image disk MitraNet OS ke hard drive utama (`/dev/vda` / `/dev/sda`).
+   - Menginjeksi konfigurasi IP dan gateway agar koneksi internet tetap aktif pasca-reboot.
+   - Melakukan reboot otomatis ke MitraNet OS.
+4. Akses WebGUI melalui browser: **`https://<IP-VPS-ANDA>`** (User: `admin`, Pass: `MitraNet@2026!`).
+
+---
+
+### Cara 2: Menggunakan GitHub Codespaces (Sangat Direkomendasikan untuk Development)
 1. Buka repositori: [https://github.com/qomaruddindjamal/mitranet](https://github.com/qomaruddindjamal/mitranet)
 2. Klik tombol **`Code`** -> tab **`Codespaces`** -> **`Create codespace on main`**.
 3. Di terminal Codespace, jalankan:
@@ -92,7 +110,7 @@ MitraNet/
 
 ---
 
-### Cara 2: Menjalankan di Komputer Lokal (Linux / WSL2 / Docker)
+### Cara 3: Menjalankan di Komputer Lokal (Linux / WSL2 / Docker)
 ```bash
 # 1. Masuk ke lingkungan container
 docker compose -f docker/docker-compose.yml up -d
