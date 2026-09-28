@@ -1,0 +1,13 @@
+{
+  "arch": "ppc",
+  "name": "PowerPC 32/64-bit (ppc / ppc64 / ppc64le)",
+  "description": "Freescale PowerPC network processors, MikroTik RB1000/RB1100/RB1200 series",
+  "go_os": ["linux"],
+  "go_arch": "ppc64le",
+  "go_arm": "",
+  "go_mips": "",
+  "target_format": "tarball_rootfs",
+  "memory_profile": "medium",
+  "boot_mode": "uboot_network_boot",
+  "features": ["altivec", "hardware_packet_processing"]
+}

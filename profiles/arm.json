@@ -1,0 +1,13 @@
+{
+  "arch": "arm",
+  "name": "ARM 32-bit (armv7 / armhf / armv6 / armel)",
+  "description": "32-bit ARM Single Board Computers (Raspberry Pi 2/Zero) & ARM Routers",
+  "go_os": ["linux", "freebsd"],
+  "go_arch": "arm",
+  "go_arm": "7",
+  "go_mips": "",
+  "target_format": "img_sdcard_and_tarball",
+  "memory_profile": "medium",
+  "boot_mode": "uboot",
+  "features": ["vfpv3", "neon"]
+}

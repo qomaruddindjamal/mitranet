@@ -104,5 +104,31 @@ class TestMitraNetXray(unittest.TestCase):
         self.assertEqual(full_cfg["outbounds"][1]["tag"], "direct")
         print("[OK] Full Config generation verified successfully.")
 
+    def test_cpu_architecture_detection(self):
+        """Test CPU architecture detection function"""
+        info = mitranet_cli.detect_cpu_architecture()
+        self.assertIn("arch_code", info)
+        self.assertIn("category", info)
+        self.assertIn("endian", info)
+        self.assertIn("is_low_memory", info)
+        self.assertIsInstance(info["is_low_memory"], bool)
+        print(f"[OK] CPU Architecture detection verified: {info['arch_code']} ({info['category']})")
+
+    def test_multiarch_profiles_validity(self):
+        """Validate all hardware and architecture profile JSON files"""
+        profiles_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../profiles"))
+        self.assertTrue(os.path.exists(profiles_dir), "profiles/ directory must exist")
+        
+        expected_arches = ["x86_64", "arm64", "arm", "mipsbe", "mmips", "smips", "mipsle", "ppc", "sbc_all", "silicon", "vm_all"]
+        for arch in expected_arches:
+            prof_file = os.path.join(profiles_dir, f"{arch}.json")
+            self.assertTrue(os.path.exists(prof_file), f"Profile {arch}.json missing in profiles/")
+            with open(prof_file, "r", encoding="utf-8") as fp:
+                data = json.load(fp)
+            self.assertIn("arch", data)
+            self.assertIn("name", data)
+            self.assertIn("features", data)
+        print(f"[OK] All {len(expected_arches)} Multi-Architecture Profiles verified successfully.")
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,18 @@
+{
+  "arch": "x86_64",
+  "name": "x86_64 / amd64",
+  "description": "Standard 64-bit PC, High-end Routers, Servers, and Virtual Machines",
+  "go_os": ["linux", "freebsd"],
+  "go_arch": "amd64",
+  "go_arm": "",
+  "go_mips": "",
+  "target_format": "iso_hybrid",
+  "memory_profile": "high",
+  "boot_mode": "hybrid_uefi_bios",
+  "default_ports": {
+    "socks5": 10808,
+    "http": 10809,
+    "tproxy": 12345
+  },
+  "features": ["aes_ni", "hardware_checksum", "multicore_mux"]
+}

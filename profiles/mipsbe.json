@@ -1,0 +1,13 @@
+{
+  "arch": "mipsbe",
+  "name": "MIPS Big Endian (mipsbe)",
+  "description": "Atheros AR71xx/AR9344/QCA9531 and MikroTik RouterBOARD MIPS-BE series",
+  "go_os": ["linux"],
+  "go_arch": "mips",
+  "go_arm": "",
+  "go_mips": "softfloat",
+  "target_format": "tarball_rootfs",
+  "memory_profile": "low",
+  "boot_mode": "routerboot_uboot",
+  "features": ["softfloat", "low_memory_footprint", "stripped_binary"]
+}

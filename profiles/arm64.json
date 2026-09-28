@@ -1,0 +1,13 @@
+{
+  "arch": "arm64",
+  "name": "ARM64 / AArch64",
+  "description": "64-bit ARM SBCs (Raspberry Pi 3/4/5, RK3588, Orange Pi 5), Ampere Altra, Cloud VMs",
+  "go_os": ["linux", "freebsd"],
+  "go_arch": "arm64",
+  "go_arm": "",
+  "go_mips": "",
+  "target_format": "img_raw_and_uefi_iso",
+  "memory_profile": "high",
+  "boot_mode": "uefi_and_uboot",
+  "features": ["arm_crypto", "neon", "multicore_mux"]
+}

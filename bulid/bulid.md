@@ -20,8 +20,8 @@ Pipeline build MitraNet dirancang modular dan dapat dieksekusi secara otomatis b
                    v (3. build_iso.sh / .ps1)
        Repackaging dengan xorriso (Hybrid UEFI / BIOS)
                    |
-                   v
-     [ ISO/MitraNet-OS-amd64.iso ]
+                    v
+     [ images/MitraNet-OS-amd64.iso ]
 ```
 
 ---
@@ -52,7 +52,7 @@ Pipeline build MitraNet dirancang modular dan dapat dieksekusi secara otomatis b
    - Menyusun ulang struktur ISO dengan `xorriso`.
    - Menetapkan Volume ID `MITRANET`.
    - Mengonfigurasi boot loader hybrid (BIOS `-b boot/cdboot` dan UEFI `-e boot/efiboot.img`).
-   - Menghasilkan file output `ISO/MitraNet-OS-amd64.iso` beserta file checksum SHA256 (`.sha256`).
+   - Menghasilkan file output `images/MitraNet-OS-amd64.iso` beserta file checksum SHA256 (`.sha256`).
 
 5. **`Makefile`:**
    - Menyediakan target eksekusi terpadu: `make all`, `make unpack`, `make inject`, `make build`, `make test`, `make clean`.

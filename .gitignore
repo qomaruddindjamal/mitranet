@@ -1,18 +1,28 @@
 # MitraNet .gitignore
 
-# ISO & Large Binary Images (prevent uploading large >100MB files to GitHub)
+# ISO, Images & Large Binary Files (prevent uploading large >100MB files to GitHub)
 sources/*.iso
 sources/*.img
-ISO/*.iso
-ISO/*.img
+images/*.iso
+images/*.img
+images/*.img.gz
+images/*.qcow2
+images/*.vmdk
+images/*.vhdx
+images/*.tar.gz
+images/*.zip
+images/releases/
 *.iso
 *.img
+*.qcow2
+*.vmdk
 
 # Build outputs & extraction workspaces
 bulid/workspace/
 bulid/extracted/
 bulid/rootfs/
 bulid/iso_root/
+bulid/boot/
 bulid/output/
 _temp*/
 

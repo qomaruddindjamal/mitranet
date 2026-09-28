@@ -12,6 +12,7 @@ import urllib.parse
 import subprocess
 import shutil
 import time
+import platform
 
 CONFIG_DIR = os.environ.get("MITRANET_CONFIG_DIR", "/usr/local/etc/xray")
 NODES_DIR = os.path.join(CONFIG_DIR, "nodes")
@@ -19,6 +20,46 @@ ACTIVE_CONFIG = os.path.join(CONFIG_DIR, "config.json")
 LOG_FILE = "/var/log/xray/xray.log"
 XRAY_BIN = shutil.which("xray") or "/usr/local/bin/xray"
 PF_CONF_XRAY = "/usr/local/etc/xray/pf_xray.conf"
+
+def detect_cpu_architecture() -> dict:
+    """Detect host CPU architecture, endianness, and target profile"""
+    machine = platform.machine().lower()
+    system = platform.system().lower()
+    
+    if machine in ("x86_64", "amd64"):
+        arch_code = "x86_64"
+        category = "Desktop / Server / VM (x86_64Bit)"
+    elif machine in ("aarch64", "arm64"):
+        arch_code = "arm64"
+        category = "ARM64 SBC / Apple Silicon / Cloud VM"
+    elif machine.startswith("arm"):
+        arch_code = "arm"
+        category = "32-bit ARM SBC / Router"
+    elif "mips" in machine:
+        if sys.byteorder == "little":
+            arch_code = "mipsle"
+            category = "MIPS Little Endian (MT7621 / mmips)"
+        else:
+            arch_code = "mipsbe"
+            category = "MIPS Big Endian (Atheros / MikroTik RB / smips)"
+    elif "ppc" in machine or "powerpc" in machine:
+        arch_code = "ppc"
+        category = "PowerPC Network Gear (RB1100 / Freescale)"
+    elif "riscv" in machine:
+        arch_code = "riscv64"
+        category = "RISC-V 64-bit SBC"
+    else:
+        arch_code = machine
+        category = "Generic Architecture"
+
+    return {
+        "machine": machine,
+        "system": system,
+        "arch_code": arch_code,
+        "category": category,
+        "endian": sys.byteorder,
+        "is_low_memory": arch_code in ("mipsbe", "mipsle", "smips", "arm")
+    }
 
 def run_cmd(cmd):
     try:
@@ -158,7 +199,7 @@ def build_full_config(outbound: dict) -> dict:
     """Combine outbound proxy with standard MitraNet routing and inbounds"""
     return {
         "log": {
-            "loglevel": "warning",
+            "loglevel": "error" if detect_cpu_architecture()["is_low_memory"] else "warning",
             "access": "/var/log/xray/access.log",
             "error": "/var/log/xray/error.log"
         },
@@ -210,12 +251,28 @@ def build_full_config(outbound: dict) -> dict:
         }
     }
 
+def cmd_arch():
+    info = detect_cpu_architecture()
+    print("=" * 60)
+    print(" MITRANET OS - HARDWARE & CPU ARCHITECTURE")
+    print("=" * 60)
+    print(f"[*] Target Architecture : {info['arch_code'].upper()}")
+    print(f"[*] Platform Device     : {info['category']}")
+    print(f"[*] Machine Identifier  : {info['machine']}")
+    print(f"[*] Operating System    : {info['system']}")
+    print(f"[*] Byte Endianness     : {info['endian'].upper()}-ENDIAN")
+    print(f"[*] Resource Profile    : {'Low-Memory (<128MB Optimized)' if info['is_low_memory'] else 'High-Performance'}")
+    print(f"[*] Active Xray Binary  : {XRAY_BIN}")
+    print("=" * 60)
+
 def cmd_status():
     code, out, _ = run_cmd("pgrep -f 'xray run' || pgrep -x xray")
     pids = out.split()
+    cpu_info = detect_cpu_architecture()
     print("=" * 60)
     print(" MITRANET OS - V2RAY / XRAY STATUS")
     print("=" * 60)
+    print(f"[*] Architecture: {cpu_info['arch_code'].upper()} ({cpu_info['category']})")
     if pids:
         print(f"[*] Status     : RUNNING (PID: {', '.join(pids)})")
     else:
@@ -370,6 +427,7 @@ Usage: mitranet-cli <command> [options]
 
 Commands:
   status               Show current Xray daemon status & node info
+  arch                 Show detected CPU architecture & hardware profile
   start                Start Xray background service
   stop                 Stop Xray service
   restart              Restart Xray service
@@ -385,6 +443,8 @@ Commands:
     cmd = sys.argv[1].lower()
     if cmd == "status":
         return cmd_status()
+    elif cmd == "arch":
+        return cmd_arch()
     elif cmd == "start":
         return cmd_start()
     elif cmd == "stop":

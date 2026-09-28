@@ -1,6 +1,6 @@
 # MitraNet - PowerShell QEMU VM Test Runner
 param(
-    [string]$IsoFile = "ISO\MitraNet-OS-amd64.iso",
+    [string]$IsoFile = "images\MitraNet-OS-amd64.iso",
     [int]$RamMB = 2048,
     [int]$Cpus = 2
 )

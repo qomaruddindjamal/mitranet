@@ -1,0 +1,13 @@
+{
+  "arch": "smips",
+  "name": "Small MIPS (smips)",
+  "description": "Ultra-compact MIPS devices with 16MB Flash / 32MB RAM (MikroTik hAP lite series)",
+  "go_os": ["linux"],
+  "go_arch": "mips",
+  "go_arm": "",
+  "go_mips": "softfloat",
+  "target_format": "micro_tarball",
+  "memory_profile": "ultra_low",
+  "boot_mode": "routerboot_netinstall",
+  "features": ["softfloat", "ultra_compact", "minimal_buffers", "max_ram_optimization"]
+}

@@ -1,0 +1,9 @@
+{
+  "arch": "sbc_all",
+  "name": "All Single Board Computers (SBC Matrix)",
+  "description": "Comprehensive SBC support (Raspberry Pi 1/2/3/4/5, Orange Pi, NanoPi, Banana Pi, Rock Pi, Odroid)",
+  "supported_architectures": ["arm64", "arm", "riscv64"],
+  "boot_systems": ["u-boot", "extlinux", "grub_efi_arm64", "broadcom_bootloader"],
+  "target_format": "raw_sdcard_img",
+  "features": ["gpio_control", "device_tree_overlays", "low_power_idle"]
+}

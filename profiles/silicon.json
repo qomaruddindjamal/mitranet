@@ -1,0 +1,13 @@
+{
+  "arch": "silicon",
+  "name": "Apple Silicon (M1/M2/M3/M4) & High-Performance ARM Silicon",
+  "description": "Apple Silicon Mac virtualization (UTM, Parallels, Docker) and bare-metal ARM platforms",
+  "go_os": ["darwin", "linux", "freebsd"],
+  "go_arch": "arm64",
+  "go_arm": "",
+  "go_mips": "",
+  "target_format": "qcow2_and_vmdk",
+  "memory_profile": "high",
+  "boot_mode": "uefi_arm64",
+  "features": ["arm_crypto", "neon", "multithreaded_crypto", "hypervisor_framework"]
+}

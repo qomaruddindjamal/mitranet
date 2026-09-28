@@ -48,10 +48,13 @@ MitraNet/
 │   ├── docker-compose.yml       # Docker compose untuk dev lokal
 │   ├── codespace.md             # Panduan GitHub Codespaces
 │   └── docker.md                # Panduan Docker lokal
-├── ISO/                         # Output image ISO kustom
+├── images/                      # Output seluruh image OS hasil reverse engineering & build
 │   ├── .gitkeep
-│   ├── iso.md                   # Spesifikasi teknis ISO, flashing USB, dan checksum
-│   └── MitraNet-OS-amd64.iso    # (Dihasilkan saat build selesai)
+│   ├── images.md                # Spesifikasi seluruh jenis image (ISO, IMG, QCOW2, Tarball)
+│   ├── MitraNet-OS-amd64.iso    # (Dihasilkan saat build x86_64)
+│   └── releases/                # Direktori rilis image multi-arsitektur
+├── profiles/                    # Konfigurasi profil target arsitektur CPU & Perangkat
+│   ├── x86_64.json, arm64.json, arm.json, mipsbe.json, mmips.json, smips.json ...
 ├── programs/                    # Fitur peningkatan OSNetwork & V2Ray/Xray
 │   ├── program.md               # Dokumentasi protokol, arsitektur, dan API
 │   └── xray/
@@ -80,10 +83,10 @@ MitraNet/
 2. Klik tombol **`Code`** -> tab **`Codespaces`** -> **`Create codespace on main`**.
 3. Di terminal Codespace, jalankan:
    ```bash
-   # Jalankan pengujian
+   # Jalankan pengujian unit
    make test
 
-   # Lakukan build ISO lengkap
+   # Lakukan build ISO lengkap (hasil di folder images/)
    make all
    ```
 
@@ -101,12 +104,32 @@ bash bulid/unpack_iso.sh
 # 3. Injeksi fitur Xray, CLI, dan Web API
 bash bulid/inject_features.sh
 
-# 4. Bangun ISO baru
+# 4. Bangun ISO baru ke folder images/
 bash bulid/build_iso.sh
 
 # 5. Output ISO MitraNet:
-ls -lh ISO/MitraNet-OS-amd64.iso
+ls -lh images/MitraNet-OS-amd64.iso
 ```
+
+---
+
+## 🌐 Dukungan Multi-Arsitektur (Multi-Arch Matrix)
+
+MitraNet OS dirancang untuk mendukung berbagai macam arsitektur CPU dan perangkat keras jaringan:
+
+| Target Arsitektur | Kategori Perangkat | Perintah Build | Format Output di `images/` |
+| :--- | :--- | :--- | :--- |
+| **`x86_64Bit`** | PC Desktop, Server, VM KVM/Proxmox | `make arch-x86_64` | `images/MitraNet-OS-x86_64.iso` |
+| **`arm64`** | Raspberry Pi 3/4/5, RK3588, Orange Pi 5 | `make arch-arm64` | `images/releases/MitraNet-arm64-sbc-sdcard.img.gz` |
+| **`arm`** | 32-bit ARM SBC, Router ARMv7 (RB3011) | `make arch-arm` | `images/releases/MitraNet-arm-rootfs.tar.gz` |
+| **`mipsbe`** | MikroTik RB MIPS-BE, Atheros AR9344 | `make arch-mipsbe` | `images/releases/MitraNet-mipsbe-firmware-pack.tar.gz` |
+| **`mmips` / `mipsle`** | MediaTek MT7621A, MikroTik hEX (RB750Gr3) | `make arch-mmips` | `images/releases/MitraNet-mmips-firmware-pack.tar.gz` |
+| **`smips`** | MikroTik hAP lite (16MB Flash, 32MB RAM) | `make arch-smips` | `images/releases/MitraNet-smips-firmware-pack.tar.gz` |
+| **`ppc`** | PowerPC Network Gear, MikroTik RB1100 | `make arch-ppc` | `images/releases/MitraNet-ppc-firmware-pack.tar.gz` |
+| **`all singleboard`** | Unified SBC Matrix (U-Boot + DTB) | `make arch-sbc` | `images/releases/MitraNet-sbc_all-sbc-sdcard.img.gz` |
+| **`silicon`** | Apple Silicon (M1/M2/M3/M4 UTM/Parallels) | `make arch-silicon` | `images/releases/MitraNet-silicon-vm.qcow2` |
+| **`vm`** | Proxmox VE, VMware ESXi, VirtualBox | `make arch-vm` | `images/releases/MitraNet-vm_all-bundle.tar.gz` |
+| **`all`** | Seluruh Arsitektur Sekaligus | `make all-arches` | Semua format di `images/releases/` |
 
 ---
 

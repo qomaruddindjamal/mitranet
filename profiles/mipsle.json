@@ -1,0 +1,13 @@
+{
+  "arch": "mipsle",
+  "name": "MIPS Little Endian (mipsle / mmips)",
+  "description": "MediaTek MT7621A, MT7628, MT7620 router SoC, MikroTik hEX series (RB750Gr3)",
+  "go_os": ["linux"],
+  "go_arch": "mipsle",
+  "go_arm": "",
+  "go_mips": "softfloat",
+  "target_format": "tarball_rootfs",
+  "memory_profile": "low_to_medium",
+  "boot_mode": "uboot_sysupgrade",
+  "features": ["softfloat", "dual_core_mt7621", "stripped_binary"]
+}

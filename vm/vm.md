@@ -47,7 +47,7 @@ Semua lalu lintas dari VM klien di jaringan internal (LAN) akan otomatis melewat
 ## 3. Panduan Setup per Hypervisor
 
 ### A. Proxmox VE (PVE)
-1. **Upload ISO:** Unggah `ISO/MitraNet-OS-amd64.iso` ke storage `local (iso)`.
+1. **Upload ISO:** Unggah `images/MitraNet-OS-amd64.iso` ke storage `local (iso)`.
 2. **Create VM:**
    - **OS:** Type: `Other`, pilih ISO MitraNet.
    - **System:** BIOS: `OVMF (UEFI)` atau `Default (SeaBIOS)`, Machine: `q35`.
@@ -62,7 +62,7 @@ Semua lalu lintas dari VM klien di jaringan internal (LAN) akan otomatis melewat
 ### B. VMware ESXi / Workstation
 1. Buat VM baru dengan OS Type: `FreeBSD 13 or later (64-bit)`.
 2. Tentukan RAM 2048 MB, 2 vCPU.
-3. Hubungkan CD/DVD drive ke `ISO/MitraNet-OS-amd64.iso` dan centang `Connect at power on`.
+3. Hubungkan CD/DVD drive ke `images/MitraNet-OS-amd64.iso` dan centang `Connect at power on`.
 4. Tambahkan Network Adapter kedua (Adapter 1: Bridged/WAN, Adapter 2: Custom Host-Only/LAN).
 5. Booting VM dan selesaikan konfigurasi interface.
 

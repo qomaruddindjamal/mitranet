@@ -1,0 +1,13 @@
+{
+  "arch": "mmips",
+  "name": "MediaTek MIPS (mmips)",
+  "description": "MediaTek MT7621A dual-core 4-thread MIPS1004Kc (MikroTik hEX, EdgeRouter X)",
+  "go_os": ["linux"],
+  "go_arch": "mipsle",
+  "go_arm": "",
+  "go_mips": "hardfloat",
+  "target_format": "tarball_rootfs",
+  "memory_profile": "medium",
+  "boot_mode": "uboot_sysupgrade",
+  "features": ["multithread_mips", "hardware_flow_offload"]
+}

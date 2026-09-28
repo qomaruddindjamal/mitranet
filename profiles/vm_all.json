@@ -1,0 +1,9 @@
+{
+  "arch": "vm_all",
+  "name": "Virtual Machine Multiformat (x86_64, arm64, Apple Silicon)",
+  "description": "Virtualization target covering Proxmox VE, VMware ESXi, VirtualBox, KVM/QEMU, Hyper-V, and bhyve",
+  "supported_architectures": ["x86_64", "arm64"],
+  "hypervisor_drivers": ["virtio-net", "virtio-blk", "vmxnet3", "e1000", "hyper-v-vmbus"],
+  "target_formats": ["iso", "qcow2", "vmdk", "vhdx", "raw"],
+  "features": ["cloud_init", "ballooning", "serial_console", "guest_agent"]
+}

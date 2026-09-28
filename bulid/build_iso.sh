@@ -3,7 +3,7 @@
 set -e
 
 SOURCE_DIR="${1:-bulid/iso_root}"
-OUTPUT_ISO="${2:-ISO/MitraNet-OS-amd64.iso}"
+OUTPUT_ISO="${2:-images/MitraNet-OS-amd64.iso}"
 VOLUME_LABEL="MITRANET"
 BOOT_DIR="bulid/boot"
 

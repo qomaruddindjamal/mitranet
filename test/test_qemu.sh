@@ -2,7 +2,7 @@
 # MitraNet - QEMU Virtual Machine Test Runner
 set -e
 
-ISO_FILE="${1:-ISO/MitraNet-OS-amd64.iso}"
+ISO_FILE="${1:-images/MitraNet-OS-amd64.iso}"
 if [ ! -f "${ISO_FILE}" ]; then
     # Fallback to source ISO if custom ISO hasn't been built yet
     ISO_FILE="sources/netgate-installer-amd64.iso"

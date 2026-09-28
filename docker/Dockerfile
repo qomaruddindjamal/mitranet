@@ -28,6 +28,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     dosfstools \
     fdisk \
     qemu-system-x86 \
+    qemu-system-arm \
+    qemu-system-mips \
+    qemu-user-static \
+    binfmt-support \
     qemu-utils \
     ovmf \
     net-tools \

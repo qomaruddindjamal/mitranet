@@ -48,7 +48,7 @@ bash bulid/inject_features.sh
 bash bulid/build_iso.sh
 
 # 5. Output ISO akan berada di:
-ls -lh ISO/MitraNet-OS-amd64.iso
+ls -lh images/MitraNet-OS-amd64.iso
 ```
 
 ---

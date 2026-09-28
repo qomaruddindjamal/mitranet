@@ -1,7 +1,7 @@
 # MitraNet - PowerShell ISO Builder
 param(
     [string]$SourceDir = "bulid\iso_root",
-    [string]$OutputIso = "ISO\MitraNet-OS-amd64.iso"
+    [string]$OutputIso = "images\MitraNet-OS-amd64.iso"
 )
 
 $ErrorActionPreference = "Stop"
