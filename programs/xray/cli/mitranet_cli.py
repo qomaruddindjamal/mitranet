@@ -312,7 +312,7 @@ def cmd_start():
         print("    Use 'mitranet-cli import-link <url>' or 'mitranet-cli use-node <name>' first.")
         return 1
     
-    code, out, err = run_cmd(f"{XRAY_BIN} test -c {ACTIVE_CONFIG}")
+    code, out, err = run_cmd(f"{XRAY_BIN} run -test -c {ACTIVE_CONFIG}")
     if code != 0:
         print(f"[-] Config validation failed:\n{err or out}")
         return 1

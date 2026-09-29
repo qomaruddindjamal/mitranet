@@ -19,6 +19,7 @@ help:
 	@echo "  make setup        - Install build tools and environment dependencies"
 	@echo "  make unpack       - Extract base OSNetwork ISO into bulid/iso_root"
 	@echo "  make inject       - Inject Xray/V2Ray, configs, CLI, and Web API"
+	@echo "  make bundle-pkgs  - Bundle offline .pkg repository into installer image"
 	@echo "  make build        - Repackage modified files into images/MitraNet-OS-amd64.iso"
 	@echo "  make build-raw    - Generate raw disk image for 1-line VPS auto-installer"
 	@echo "  make test         - Run automated unit test suite"
@@ -46,6 +47,9 @@ unpack:
 
 inject:
 	@bash bulid/inject_features.sh $(ISO_ROOT)
+
+bundle-pkgs:
+	@bash bulid/bundle_offline_pkgs.sh $(ISO_ROOT) bulid/packages_cache
 
 build:
 	@bash bulid/build_iso.sh $(ISO_ROOT) $(OUTPUT_ISO)

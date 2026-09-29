@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-MitraNet OS - Lightweight Web API Daemon for V2Ray/Xray Management
-Runs on port 8080 or proxied via Nginx at /api/mitranet
+MitraNet OS - Lightweight Web API & Dashboard Daemon for V2Ray/Xray Management
+Serves Web Dashboard on Port 80 / 8080 and REST API at /api/mitranet/*
 """
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -13,7 +13,9 @@ import shutil
 CONFIG_DIR = os.environ.get("MITRANET_CONFIG_DIR", "/usr/local/etc/xray")
 NODES_DIR = os.path.join(CONFIG_DIR, "nodes")
 ACTIVE_CONFIG = os.path.join(CONFIG_DIR, "config.json")
-PORT = int(os.environ.get("MITRANET_API_PORT", 8080))
+PORT = int(os.environ.get("MITRANET_API_PORT", 80))
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DASHBOARD_HTML = os.path.join(SCRIPT_DIR, "dashboard.html")
 
 def run_cmd(cmd):
     try:
@@ -32,13 +34,34 @@ class MitraNetAPIHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps(data, indent=2).encode("utf-8"))
 
+    def _send_html(self, status_code, html_content):
+        self.send_response(status_code)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        self.wfile.write(html_content.encode("utf-8"))
+
     def do_OPTIONS(self):
         self._send_json(200, {"status": "ok"})
+
+    def do_HEAD(self):
+        self.do_GET()
 
     def do_GET(self):
         path = self.path.split("?")[0].rstrip("/")
         
-        if path in ("", "/", "/api/mitranet", "/api/mitranet/status"):
+        # Serve Web Dashboard for root or /index.html
+        if path in ("", "/", "/index.html", "/dashboard"):
+            if os.path.exists(DASHBOARD_HTML):
+                with open(DASHBOARD_HTML, "r", encoding="utf-8") as f:
+                    self._send_html(200, f.read())
+                    return
+            else:
+                self._send_html(200, "<h1>MitraNet OS Dashboard</h1><p>Dashboard HTML not found.</p>")
+                return
+
+        # REST API Endpoints
+        if path in ("/api/mitranet", "/api/mitranet/status"):
             code, out, _ = run_cmd("pgrep -f 'xray run' || pgrep -x xray")
             is_running = bool(out)
             active_node = "None"
@@ -104,7 +127,7 @@ class MitraNetAPIHandler(BaseHTTPRequestHandler):
             if not node:
                 self._send_json(400, {"error": "Missing 'node' in request body"})
                 return
-            code, out, err = run_cmd(f"mitranet-cli use-node {node}")
+            code, out, err = run_cmd(f"mitranet-cli use-node '{node}'")
             self._send_json(200 if code == 0 else 500, {
                 "success": code == 0,
                 "output": out or err
@@ -128,7 +151,7 @@ class MitraNetAPIHandler(BaseHTTPRequestHandler):
 def run_server():
     server_address = ("0.0.0.0", PORT)
     httpd = HTTPServer(server_address, MitraNetAPIHandler)
-    print(f"[*] MitraNet API Daemon listening on 0.0.0.0:{PORT}...")
+    print(f"[*] MitraNet Web Dashboard & API listening on 0.0.0.0:{PORT}...")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

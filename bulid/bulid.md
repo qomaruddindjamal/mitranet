@@ -48,14 +48,19 @@ Pipeline build MitraNet dirancang modular dan dapat dieksekusi secara otomatis b
    - Memasang Web API daemon `/usr/local/bin/mitranet-web`.
    - Menambahkan auto-start ke `/etc/rc.local` dan menambahkan lokasi `/api/mitranet` ke Nginx.
 
-4. **`build_iso.sh` & `build_iso.ps1`:**
+4. **`bundle_offline_pkgs.sh` & `bundle_offline_pkgs.ps1`:**
+   - Mem-bundel seluruh cache file paket offline (`.pkg`) hasil instalasi VM ke staging `packages/All/`.
+   - Mengonfigurasi `MitraNet-offline.conf` di `/usr/local/etc/pkg/repos/` agar installer mengutamakan paket lokal tanpa internet.
+   - Mengindeks katalog repositori offline lokal (`pkg repo`).
+
+5. **`build_iso.sh` & `build_iso.ps1`:**
    - Menyusun ulang struktur ISO dengan `xorriso`.
    - Menetapkan Volume ID `MITRANET`.
    - Mengonfigurasi boot loader hybrid (BIOS `-b boot/cdboot` dan UEFI `-e boot/efiboot.img`).
    - Menghasilkan file output `images/MitraNet-OS-amd64.iso` beserta file checksum SHA256 (`.sha256`).
 
-5. **`Makefile`:**
-   - Menyediakan target eksekusi terpadu: `make all`, `make unpack`, `make inject`, `make build`, `make test`, `make clean`.
+6. **`Makefile`:**
+   - Menyediakan target eksekusi terpadu: `make all`, `make unpack`, `make inject`, `make bundle-pkgs`, `make build`, `make test`, `make clean`.
 
 ---
 
