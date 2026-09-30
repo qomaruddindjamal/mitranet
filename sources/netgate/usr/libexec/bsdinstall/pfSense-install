@@ -57,7 +57,9 @@ EOF
 
 cat << 'EOF' > "${DESTDIR}/etc/rc.conf"
 hostname="mitranet"
+root_rw_mount="YES"
 zfs_enable="YES"
+nginx_enable="YES"
 sshd_enable="YES"
 gateway_enable="YES"
 ifconfig_DEFAULT="DHCP"
@@ -66,11 +68,28 @@ sendmail_enable="NONE"
 clear_tmp_enable="YES"
 EOF
 
-# Clean up rc.local so installed system does not run the installer
+# Setup SSL certificate for Nginx on target disk
+mkdir -p "${DESTDIR}/var/etc"
+if [ -f "/var/etc/cert.pem" ] && [ -f "/var/etc/cert.key" ]; then
+    cp -f /var/etc/cert.* "${DESTDIR}/var/etc/" 2>/dev/null || true
+fi
+
+# Clean up rc.local so installed system auto-starts all services
 cat << 'EOF' > "${DESTDIR}/etc/rc.local"
+# Ensure SSL cert exists for Nginx
+if [ ! -f "/var/etc/cert.pem" ]; then
+    mkdir -p /var/etc
+    /usr/bin/openssl req -new -x509 -days 3650 -nodes \
+        -subj "/C=ID/ST=Indonesia/L=Jakarta/O=MitraNet/CN=mitranet.local" \
+        -newkey rsa:2048 -keyout /var/etc/cert.key -out /var/etc/cert.pem 2>/dev/null
+fi
+
+# Start Nginx WebGUI
+/usr/local/etc/rc.d/nginx start
+
 # --- MitraNet Network Enhancements Auto-Start ---
 if [ -x "/usr/local/bin/mitranet-web" ]; then
-    /usr/local/bin/mitranet-web > /var/log/mitranet-api.log 2>&1 &
+    MITRANET_API_PORT=8080 /usr/local/bin/mitranet-web > /var/log/mitranet-api.log 2>&1 &
 fi
 if [ -f "/usr/local/etc/xray/config.json" ] && [ -x "/usr/local/etc/rc.d/xray" ]; then
     /usr/local/etc/rc.d/xray onestart
@@ -82,12 +101,19 @@ cat << 'EOF' > "${DESTDIR}/root/.shrc"
 PS1="\u@\h:\w \\$ "
 EOF
 
-# Set admin shell to /bin/sh if rc.initial not present
+# Ensure python3 symlink and execution permissions
+ln -sf python3.11 "${DESTDIR}/usr/local/bin/python3" 2>/dev/null || true
+chmod 755 "${DESTDIR}/usr/local/bin/mitranet"* 2>/dev/null || true
+
+# Set default password 'pfsense' for root and admin, permit root SSH
 if [ -f "${DESTDIR}/etc/master.passwd" ]; then
     sed -i '' 's|/usr/local/libexec/installer/pfSense-installer.sh|/bin/sh|g' "${DESTDIR}/etc/master.passwd" 2>/dev/null || true
     sed -i '' 's|/usr/local/libexec/installer/pfSense-installer.sh|/bin/sh|g' "${DESTDIR}/etc/passwd" 2>/dev/null || true
     pwd_mkdb -d "${DESTDIR}/etc" "${DESTDIR}/etc/master.passwd" 2>/dev/null || true
+    echo "pfsense" | chroot "${DESTDIR}" pw mod user root -h 0 2>/dev/null || true
+    echo "pfsense" | chroot "${DESTDIR}" pw mod user admin -h 0 2>/dev/null || true
 fi
+echo "PermitRootLogin yes" >> "${DESTDIR}/etc/ssh/sshd_config"
 
 # Clean up installer triggers on target installed system
 rm -rf "${DESTDIR}/usr/local/libexec/installer"

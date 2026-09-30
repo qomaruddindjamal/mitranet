@@ -13,7 +13,7 @@ import shutil
 CONFIG_DIR = os.environ.get("MITRANET_CONFIG_DIR", "/usr/local/etc/xray")
 NODES_DIR = os.path.join(CONFIG_DIR, "nodes")
 ACTIVE_CONFIG = os.path.join(CONFIG_DIR, "config.json")
-PORT = int(os.environ.get("MITRANET_API_PORT", 80))
+PORT = int(os.environ.get("MITRANET_API_PORT", 8080))
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DASHBOARD_HTML = os.path.join(SCRIPT_DIR, "dashboard.html")
 
