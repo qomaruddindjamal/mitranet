@@ -119,6 +119,7 @@ Capture-Direct
 
 # Monitor installation progress
 Log-Msg "[*] Monitoring installation progress for up to 10 minutes..."
+$zeroCount = 0
 for ($m = 1; $m -le 60; $m++) {
     Start-Sleep -Seconds 10
     Capture-Direct
@@ -135,48 +136,51 @@ for ($m = 1; $m -le 60; $m++) {
     Log-Msg "Progress [$m/60] | CPU: $($vm.CPUUsage)% | Target Disk: $vhdSizeMB MB"
     
     # If written data indicates finish and CPU is idle
-    if ($vhdSizeMB -ge 1000 -and $vm.CPUUsage -eq 0) {
-        Log-Msg "[+] Installation complete! Powering down installer for clean UEFI hard drive boot..."
-        Stop-VM -Name $VMName -TurnOff -Force -ErrorAction SilentlyContinue
-        Start-Sleep -Seconds 3
+    if ($vhdSizeMB -ge 5200 -and $vm.CPUUsage -le 2) {
+        $zeroCount++
+        if ($zeroCount -ge 2) {
+            Log-Msg "[+] Installation complete ($vhdSizeMB MB)! Powering down installer for clean UEFI hard drive boot..."
+            Stop-VM -Name $VMName -TurnOff -Force -ErrorAction SilentlyContinue
+            Start-Sleep -Seconds 3
 
-        # Disable checkpoints to prevent snapshot fragmentation
-        Set-VM -Name $VMName -CheckpointType Disabled -ErrorAction SilentlyContinue
-        Get-VMSnapshot -VMName $VMName -ErrorAction SilentlyContinue | Remove-VMSnapshot -ErrorAction SilentlyContinue
+            # Disable checkpoints to prevent snapshot fragmentation
+            Set-VM -Name $VMName -CheckpointType Disabled -ErrorAction SilentlyContinue
+            Get-VMSnapshot -VMName $VMName -ErrorAction SilentlyContinue | Remove-VMSnapshot -ErrorAction SilentlyContinue
 
-        # Eject DVD
-        $dvd = Get-VMDvdDrive -VMName $VMName
-        if ($dvd) {
-            Set-VMDvdDrive -VMName $VMName -ControllerNumber $dvd.ControllerNumber -ControllerLocation $dvd.ControllerLocation -Path $null -ErrorAction SilentlyContinue
-        }
-
-        # Set Hard Disk as First Boot Device
-        $hdd = Get-VMHardDiskDrive -VMName $VMName
-        if ($hdd) {
-            Set-VMFirmware -VMName $VMName -FirstBootDevice $hdd -ErrorAction SilentlyContinue
-        }
-
-        Log-Msg "[*] Booting VM from installed virtual disk (VHDX)..."
-        Start-VM -Name $VMName -ErrorAction SilentlyContinue
-        Start-Sleep -Seconds 25
-        Capture-Direct
-        
-        # Monitor booted OS
-        for ($b = 1; $b -le 20; $b++) {
-            Start-Sleep -Seconds 10
-            Capture-Direct
-            $ips = (Get-VM -Name $VMName).NetworkAdapters.IPAddresses | Where-Object { $_ -match '^\d+\.\d+\.\d+\.\d+' }
-            if ($ips) {
-                Log-Msg "=========================================================="
-                Log-Msg "SUCCESS! MitraNet OS booted from virtual disk!"
-                Log-Msg "Assigned IP Address: $ips"
-                Log-Msg "WebGUI available at: https://$ips"
-                Log-Msg "=========================================================="
-                Capture-Direct
-                break
+            # Eject DVD
+            $dvd = Get-VMDvdDrive -VMName $VMName
+            if ($dvd) {
+                Set-VMDvdDrive -VMName $VMName -ControllerNumber $dvd.ControllerNumber -ControllerLocation $dvd.ControllerLocation -Path $null -ErrorAction SilentlyContinue
             }
+
+            # Set Hard Disk as First Boot Device
+            $hdd = Get-VMHardDiskDrive -VMName $VMName
+            if ($hdd) {
+                Set-VMFirmware -VMName $VMName -FirstBootDevice $hdd -ErrorAction SilentlyContinue
+            }
+
+            Log-Msg "[*] Booting VM from installed virtual disk (VHDX)..."
+            Start-VM -Name $VMName -ErrorAction SilentlyContinue
+            Start-Sleep -Seconds 25
+            Capture-Direct
+            
+            # Monitor booted OS
+            for ($b = 1; $b -le 20; $b++) {
+                Start-Sleep -Seconds 10
+                Capture-Direct
+                $ips = (Get-VM -Name $VMName).NetworkAdapters.IPAddresses | Where-Object { $_ -match '^\d+\.\d+\.\d+\.\d+' }
+                if ($ips) {
+                    Log-Msg "=========================================================="
+                    Log-Msg "SUCCESS! MitraNet OS booted from virtual disk!"
+                    Log-Msg "Assigned IP Address: $ips"
+                    Log-Msg "WebGUI available at: https://$ips"
+                    Log-Msg "=========================================================="
+                    Capture-Direct
+                    break
+                }
+            }
+            break
         }
-        break
     }
 }
 
