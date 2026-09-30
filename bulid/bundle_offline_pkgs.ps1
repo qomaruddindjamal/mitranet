@@ -26,11 +26,15 @@ New-Item -ItemType Directory -Force -Path $PkgSourceDir | Out-Null
 
 Write-Host "[*] Checking for cached packages in: $PkgSourceDir" -ForegroundColor Yellow
 
-$pkgs = Get-ChildItem -Path $PkgSourceDir -Filter "*.pkg" -ErrorAction SilentlyContinue
+$pkgs = Get-ChildItem -Path $PkgSourceDir, $pkgDest -Filter "*.pkg" -ErrorAction SilentlyContinue
 
 if ($pkgs.Count -gt 0) {
-    Write-Host "[*] Copying $($pkgs.Count) offline packages to ISO staging: $pkgDest..." -ForegroundColor Yellow
-    Copy-Item "$PkgSourceDir\*.pkg" $pkgDest -Force
+    Write-Host "[*] Found $($pkgs.Count) offline packages. Ensuring in $pkgDest..." -ForegroundColor Yellow
+    foreach ($p in $pkgs) {
+        if ($p.DirectoryName -ne (Get-Item $pkgDest).FullName) {
+            Copy-Item $p.FullName $pkgDest -Force
+        }
+    }
 } else {
     Write-Host "[!] No .pkg files found in $PkgSourceDir." -ForegroundColor DarkYellow
     Write-Host "    To extract packages from VM, run inside the VM terminal:" -ForegroundColor Cyan

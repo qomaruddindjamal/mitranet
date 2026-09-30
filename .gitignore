@@ -33,6 +33,14 @@ bulid/boot/
 bulid/output/
 _temp*/
 
+# Recreated rescue hardlinks (generated on demand by restore_links before ISO build)
+sources/netgate/rescue/*
+!sources/netgate/rescue/rescue
+!sources/netgate/rescue/dhclient-script
+!sources/netgate/rescue/links.txt
+!sources/netgate/rescue/restore_links.sh
+!sources/netgate/rescue/restore_links.ps1
+
 # Logs & temp files
 *.log
 *.tmp

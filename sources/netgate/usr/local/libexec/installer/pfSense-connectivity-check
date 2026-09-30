@@ -22,32 +22,12 @@ INSTALL_INC_PATH="/usr/local/libexec/installer"
 . "${INSTALL_INC_PATH}/pfSense-common"
 
 network_check() {
-	local _error
-
-	/usr/bin/timeout -k 50 40 "${REPOC}" -eIq
-	_error="${?}"
-	if [ "${_error}" = "0" ] || [ "${_error}" = "99" ]; then
-		return 0
-	fi
-	return 1
-
+	# MitraNet 100% Offline Installation Mode
 	return 0
 }
 
 ntp_bootstrap() {
-	local _tmpfile
-
-	_tmpfile="$(${MKTEMP})"
-	echo > "${_tmpfile}"
-	if ! /usr/bin/timeout -k 50 40 /usr/local/sbin/ntpd -g -q \
-	    -c "${_tmpfile}" ${NTP_SERVERS}; then
-		"${RM}" -f "${_tmpfile}" 2> /dev/null
-		echo "Cannot connect to the time servers."
-		return 1
-	fi
-
-	"${RM}" -f "${_tmpfile}" 2> /dev/null
-
+	# MitraNet 100% Offline Installation Mode
 	return 0
 }
 

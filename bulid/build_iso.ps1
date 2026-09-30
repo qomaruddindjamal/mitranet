@@ -28,8 +28,21 @@ if (Test-Path "$SourceDir\rescue\restore_links.ps1") {
 $hasXorriso = Get-Command xorriso -ErrorAction SilentlyContinue
 
 if ($hasXorriso) {
-    Write-Host "[*] Using xorriso..." -ForegroundColor Yellow
-    & xorriso -as mkisofs -V "MITRANET" -J -R -iso-level 3 -b "boot/cdboot" -no-emul-boot -boot-load-size 4 -o "$OutputIso" "$SourceDir"
+    Write-Host "[*] Building Hybrid UEFI/BIOS ISO using xorriso..." -ForegroundColor Yellow
+    $xorrisoArgs = @(
+        "-as", "mkisofs",
+        "-V", "MITRANET",
+        "-J", "-R",
+        "-iso-level", "3"
+    )
+    if (Test-Path "$SourceDir\boot\cdboot") {
+        $xorrisoArgs += @("-b", "boot/cdboot", "-no-emul-boot", "-boot-load-size", "4")
+    }
+    if (Test-Path "$SourceDir\boot\efiboot.img") {
+        $xorrisoArgs += @("-eltorito-alt-boot", "-e", "boot/efiboot.img", "-no-emul-boot", "-isohybrid-gpt-basdat")
+    }
+    $xorrisoArgs += @("-o", "$OutputIso", "$SourceDir")
+    & xorriso @xorrisoArgs
 } else {
     Write-Host "[!] Note: 'xorriso' is not installed in Windows host." -ForegroundColor Yellow
     Write-Host "[*] To build the hybrid UEFI/BIOS ISO, run inside Docker or GitHub Codespaces:" -ForegroundColor Yellow
