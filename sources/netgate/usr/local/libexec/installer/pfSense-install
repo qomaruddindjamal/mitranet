@@ -110,7 +110,7 @@ pfSense_install() {
 	echo
 	echo "Installing MitraNet OS base system (Offline Installation)..."
 	echo
-	for dir in bin boot etc lib libexec root sbin usr var; do
+	for dir in bin boot etc lib libexec root sbin usr var conf.default cf conf; do
 		if [ -d "/${dir}" ]; then
 			echo "Extracting /${dir}..."
 			/bin/mkdir -p "${_destdir}/${dir}"
@@ -126,6 +126,7 @@ pfSense_install() {
 		/bin/mkdir -p "${_destdir}/${dir}"
 	done
 	/bin/chmod 1777 "${_destdir}/tmp"
+	ln -sf /cf/conf "${_destdir}/conf" 2>/dev/null || true
 	return 0
 }
 

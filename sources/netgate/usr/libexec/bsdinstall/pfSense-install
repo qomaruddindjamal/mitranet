@@ -24,7 +24,7 @@ BSDINSTALL_INC_PATH="/usr/libexec/bsdinstall"
 
 DESTDIR="${BSDINSTALL_CHROOT:-/mnt}"
 echo "=== Installing MitraNet OS Offline ==="
-for dir in bin boot etc lib libexec root sbin usr var; do
+for dir in bin boot etc lib libexec root sbin usr var conf.default cf conf; do
 	if [ -d "/${dir}" ]; then
 		echo "Extracting /${dir} to ${DESTDIR}/${dir}..."
 		mkdir -p "${DESTDIR}/${dir}"
@@ -40,6 +40,7 @@ for dir in dev media mnt proc tmp cf/conf; do
 	mkdir -p "${DESTDIR}/${dir}"
 done
 chmod 1777 "${DESTDIR}/tmp"
+ln -sf /cf/conf "${DESTDIR}/conf" 2>/dev/null || true
 
 # Detect root filesystem type and device
 ROOT_DEV=""
@@ -176,6 +177,12 @@ if [ -f "/var/etc/cert.pem" ] && [ -f "/var/etc/cert.key" ]; then
     cp -f /var/etc/cert.* "${DESTDIR}/var/etc/" 2>/dev/null || true
 fi
 
+# Ensure config.xml exists
+mkdir -p "${DESTDIR}/cf/conf"
+if [ ! -f "${DESTDIR}/cf/conf/config.xml" ] && [ -f "${DESTDIR}/conf.default/config.xml" ]; then
+    cp -f "${DESTDIR}/conf.default/config.xml" "${DESTDIR}/cf/conf/config.xml"
+fi
+
 # Clean up rc.local so installed system auto-starts all services
 cat << 'EOF' > "${DESTDIR}/etc/rc.local"
 # Ensure SSL cert exists for Nginx
@@ -186,15 +193,23 @@ if [ ! -f "/var/etc/cert.pem" ]; then
         -newkey rsa:2048 -keyout /var/etc/cert.key -out /var/etc/cert.pem 2>/dev/null
 fi
 
+# Setup PHP configuration and start php-fpm for pfSense WebGUI
+/etc/rc.php_ini_setup 2>/dev/null || true
+if [ -x "/etc/rc.php-fpm_restart" ]; then
+    /etc/rc.php-fpm_restart 2>/dev/null || true
+elif [ -x "/usr/local/sbin/php-fpm" ]; then
+    /usr/local/sbin/php-fpm -c /usr/local/etc/php.ini 2>/dev/null || true
+fi
+
 # Start Nginx WebGUI
-/usr/local/etc/rc.d/nginx start
+/usr/local/etc/rc.d/nginx start 2>/dev/null || /usr/local/sbin/nginx 2>/dev/null || true
 
 # --- MitraNet Network Enhancements Auto-Start ---
 if [ -x "/usr/local/bin/mitranet-web" ]; then
     MITRANET_API_PORT=8080 /usr/local/bin/mitranet-web > /var/log/mitranet-api.log 2>&1 &
 fi
 if [ -f "/usr/local/etc/xray/config.json" ] && [ -x "/usr/local/etc/rc.d/xray" ]; then
-    /usr/local/etc/rc.d/xray onestart
+    /usr/local/etc/rc.d/xray onestart 2>/dev/null || true
 fi
 EOF
 
