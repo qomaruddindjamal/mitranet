@@ -59,6 +59,23 @@ cat << 'EOF' >> "${DESTDIR}/etc/rc.conf"
 zfs_enable="YES"
 EOF
 
+# Clean up rc.local so installed system does not run the installer
+cat << 'EOF' > "${DESTDIR}/etc/rc.local"
+# --- MitraNet Network Enhancements Auto-Start ---
+if [ -x "/usr/local/bin/mitranet-web" ]; then
+    /usr/local/bin/mitranet-web > /var/log/mitranet-api.log 2>&1 &
+fi
+if [ -f "/usr/local/etc/xray/config.json" ] && [ -x "/usr/local/etc/rc.d/xray" ]; then
+    /usr/local/etc/rc.d/xray onestart
+fi
+EOF
+
+# Auto-launch console menu on login
+if [ -f "${DESTDIR}/etc/rc.initial" ] && [ -f "${DESTDIR}/root/.profile" ]; then
+    echo '[ -f /etc/rc.initial ] && /etc/rc.initial' >> "${DESTDIR}/root/.profile"
+fi
+
+
 # Setup UEFI ESP bootloader
 for part in /dev/da0p1 /dev/ada0p1 /dev/vtbd0p1 /dev/nvd0p1; do
 	if [ -e "${part}" ]; then
