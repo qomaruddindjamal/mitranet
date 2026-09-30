@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-MitraNet OS - Lightweight Web API & Dashboard Daemon for V2Ray/Xray Management
-Serves Web Dashboard on Port 80 / 8080 and REST API at /api/mitranet/*
+MitraNet OS - Lightweight Web API & Dashboard Daemon for pfSense / V2Ray / Xray Management
+Serves Web Dashboard on Port 8080 (or 80) and REST API at /api/*
 """
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -9,6 +9,7 @@ import json
 import os
 import subprocess
 import shutil
+import time
 
 CONFIG_DIR = os.environ.get("MITRANET_CONFIG_DIR", "/usr/local/etc/xray")
 NODES_DIR = os.path.join(CONFIG_DIR, "nodes")
@@ -19,10 +20,62 @@ DASHBOARD_HTML = os.path.join(SCRIPT_DIR, "dashboard.html")
 
 def run_cmd(cmd):
     try:
-        res = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        res = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)
         return res.returncode, res.stdout.strip(), res.stderr.strip()
     except Exception as e:
         return 1, "", str(e)
+
+def get_system_info():
+    _, hostname, _ = run_cmd("hostname")
+    _, uptime_str, _ = run_cmd("uptime")
+    _, uname_str, _ = run_cmd("uname -srm")
+    
+    # Interfaces
+    _, ifc_str, _ = run_cmd("ifconfig -u")
+    interfaces = []
+    current_if = None
+    for line in ifc_str.splitlines():
+        if line and not line.startswith("\t") and ":" in line:
+            name = line.split(":")[0].strip()
+            current_if = {"name": name, "ipv4": [], "ipv6": [], "status": "UP"}
+            interfaces.append(current_if)
+        elif current_if and line.strip().startswith("inet "):
+            parts = line.strip().split()
+            if len(parts) >= 2:
+                current_if["ipv4"].append(parts[1])
+        elif current_if and line.strip().startswith("inet6 "):
+            parts = line.strip().split()
+            if len(parts) >= 2:
+                current_if["ipv6"].append(parts[1].split("%")[0])
+        elif current_if and "status: " in line:
+            current_if["status"] = line.split("status: ")[1].strip().upper()
+
+    # Memory & Swap
+    _, swap_str, _ = run_cmd("swapinfo -h 2>/dev/null || true")
+    _, df_str, _ = run_cmd("df -h /")
+    disk_usage = "/"
+    for line in df_str.splitlines()[1:]:
+        parts = line.split()
+        if len(parts) >= 6:
+            disk_usage = f"{parts[2]} / {parts[1]} ({parts[4]})"
+
+    # Services
+    _, nginx_pid, _ = run_cmd("pgrep -x nginx")
+    _, sshd_pid, _ = run_cmd("pgrep -x sshd")
+    _, xray_pid, _ = run_cmd("pgrep -f 'xray run' || pgrep -x xray")
+
+    return {
+        "hostname": hostname or "mitranet",
+        "uptime": uptime_str or "Active",
+        "kernel": uname_str or "FreeBSD 15.0-CURRENT",
+        "disk": disk_usage,
+        "interfaces": interfaces,
+        "services": {
+            "nginx": bool(nginx_pid),
+            "sshd": bool(sshd_pid),
+            "xray": bool(xray_pid)
+        }
+    }
 
 class MitraNetAPIHandler(BaseHTTPRequestHandler):
     def _send_json(self, status_code, data):
@@ -30,7 +83,7 @@ class MitraNetAPIHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json")
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
         self.end_headers()
         self.wfile.write(json.dumps(data, indent=2).encode("utf-8"))
 
@@ -57,8 +110,13 @@ class MitraNetAPIHandler(BaseHTTPRequestHandler):
                     self._send_html(200, f.read())
                     return
             else:
-                self._send_html(200, "<h1>MitraNet OS Dashboard</h1><p>Dashboard HTML not found.</p>")
+                self._send_html(200, "<h1>pfSense / MitraNet OS Dashboard</h1><p>Dashboard HTML initializing...</p>")
                 return
+
+        # System Info Endpoint
+        if path in ("/api/system", "/api/system/info"):
+            self._send_json(200, get_system_info())
+            return
 
         # REST API Endpoints
         if path in ("/api/mitranet", "/api/mitranet/status"):
@@ -88,7 +146,7 @@ class MitraNetAPIHandler(BaseHTTPRequestHandler):
             })
             return
 
-        elif path == "/api/mitranet/nodes":
+        elif path in ("/api/mitranet/nodes", "/api/nodes"):
             os.makedirs(NODES_DIR, exist_ok=True)
             files = [f for f in os.listdir(NODES_DIR) if f.endswith(".json")]
             nodes = []
@@ -112,7 +170,46 @@ class MitraNetAPIHandler(BaseHTTPRequestHandler):
         except Exception:
             req_data = {}
 
-        if path in ("/api/mitranet/start", "/start"):
+        # Authentication login
+        if path in ("/api/login", "/api/auth/login"):
+            username = req_data.get("username", "").strip()
+            password = req_data.get("password", "").strip()
+            if (username in ("admin", "root") and password == "pfsense") or (password == "pfsense"):
+                token = f"token-{int(time.time())}"
+                self._send_json(200, {
+                    "success": True,
+                    "token": token,
+                    "username": username or "admin",
+                    "role": "admin"
+                })
+                return
+            else:
+                self._send_json(401, {
+                    "success": False,
+                    "error": "Username atau kata sandi tidak valid. Bawaan: admin / pfsense"
+                })
+                return
+
+        # Diagnostics / Terminal Execution
+        elif path in ("/api/system/exec", "/api/exec"):
+            cmd = req_data.get("command", "").strip()
+            if not cmd:
+                self._send_json(400, {"error": "Missing 'command'"})
+                return
+            # Security filter for allowed inspection commands
+            allowed_prefixes = ("ifconfig", "netstat", "zpool", "zfs", "df", "uptime", "sockstat", "dmesg", "top", "pw", "sysrc", "service", "mitranet-cli", "cat")
+            if not any(cmd.startswith(p) for p in allowed_prefixes):
+                self._send_json(403, {"error": "Command not permitted in Web console"})
+                return
+            code, out, err = run_cmd(cmd)
+            self._send_json(200, {
+                "command": cmd,
+                "code": code,
+                "output": out if out else err
+            })
+            return
+
+        elif path in ("/api/mitranet/start", "/start"):
             run_cmd("mitranet-cli start")
             self._send_json(200, {"message": "Xray service started"})
             return
