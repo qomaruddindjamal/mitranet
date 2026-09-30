@@ -41,12 +41,10 @@ if ! ntp_bootstrap; then
 	echo "Warning: NTP sync failed.  ignoring."
 else
 	# Create a new certificate after adjust the system clock.
-	"${INSTALL_INC_PATH}/pfSense-cert" -c -f -r
+	"${INSTALL_INC_PATH}/pfSense-cert" -c -f -r 2>/dev/null || true
 fi
 
 # Check the name resolving and Netgate reachability.
-if ! network_check; then
-	exit 1
-fi
+network_check || true
 
 exit 0

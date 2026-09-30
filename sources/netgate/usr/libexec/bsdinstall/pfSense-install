@@ -198,9 +198,25 @@ if [ -f "/usr/local/etc/xray/config.json" ] && [ -x "/usr/local/etc/rc.d/xray" ]
 fi
 EOF
 
+# Set clean boot.config on target (prevent serial port blocking)
+echo "-D" > "${DESTDIR}/boot.config"
+
+# Set MitraNet banner for motd and shell login
+cat << 'EOF' > "${DESTDIR}/etc/motd"
+==================================================================
+           MitraNet OS - High Performance Network Gateway         
+==================================================================
+  WebGUI Management:  https://192.168.1.1 (or assigned DHCP IP)
+  Default Account:    admin / pfsense  (SSH: root / pfsense)
+  Core Services:      Nginx WebGUI, Xray Core, BSD Packet Filter
+==================================================================
+EOF
+cp -f "${DESTDIR}/etc/motd" "${DESTDIR}/etc/motd.template" 2>/dev/null || true
+
 # Clean root shell rc
 cat << 'EOF' > "${DESTDIR}/root/.shrc"
 PS1="\u@\h:\w \\$ "
+[ -f /etc/motd ] && cat /etc/motd
 EOF
 
 # Ensure python3 symlink and execution permissions

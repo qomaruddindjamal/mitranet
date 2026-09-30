@@ -87,7 +87,7 @@ EOF
 	elif [ "${_type}" = "serial-only" ]; then
 		echo "-S115200 -h" >> "${_destdir}${BOOT_CONFIG}"
 	else
-		echo "-S115200 -D" >> "${_destdir}${BOOT_CONFIG}"
+		echo "-D" >> "${_destdir}${BOOT_CONFIG}"
 	fi
 
 	# Force the serial console in pfSense.
@@ -440,16 +440,32 @@ pfSense_post_install() {
 
 	# /etc/rc.conf
 	/usr/bin/touch "${_destdir}/etc/rc.conf"
+	if [ "${_fstype}" = "UFS" ]; then
+		echo 'zfs_enable="NO"' >> "${_destdir}/etc/rc.conf"
+	else
+		echo 'zfs_enable="YES"' >> "${_destdir}/etc/rc.conf"
+	fi
+	echo 'hostname="mitranet"' >> "${_destdir}/etc/rc.conf"
+	echo 'nginx_enable="YES"' >> "${_destdir}/etc/rc.conf"
+	echo 'sshd_enable="YES"' >> "${_destdir}/etc/rc.conf"
+	echo 'gateway_enable="YES"' >> "${_destdir}/etc/rc.conf"
+	echo 'ifconfig_DEFAULT="DHCP"' >> "${_destdir}/etc/rc.conf"
 
 	# Create the /mnt on target disk (if not present).
 	[ ! -d "${_destdir}/mnt" ] && \
 	   /bin/mkdir "${_destdir}/mnt" 2> /dev/null
 
-	# Add the loader.conf settings.
-	/bin/cat << EOF > "${_destdir}${LOADER_CONF}"
+	# Add the loader.conf settings depending on filesystem type.
+	if [ "${_fstype}" = "UFS" ]; then
+		local _ufs_root_dev
+		_ufs_root_dev="$(ufs_get_dev "${_scheme}" "${_disk1}")"
+		[ -z "${_ufs_root_dev}" ] && _ufs_root_dev="ada0p4"
+		/bin/cat << EOF > "${_destdir}${LOADER_CONF}"
 autoboot_delay="3"
-opensolaris_load="YES"
-zfs_load="YES"
+vfs.root.mountfrom="ufs:/dev/${_ufs_root_dev}"
+vfs.mountroot.timeout="30"
+kern.cam.boot_delay="10000"
+kern.cam.scsi_delay="10000"
 hw.hn.use_if_start="1"
 hw.hn.vf_transparent="0"
 kern.geom.label.disk_ident.enable="0"
@@ -459,6 +475,28 @@ kern.ipc.nmbjumbo9="524288"
 kern.ipc.nmbjumbop="524288"
 hw.e6000sw.default_disabled=1
 EOF
+	else
+		/bin/cat << EOF > "${_destdir}${LOADER_CONF}"
+autoboot_delay="3"
+opensolaris_load="YES"
+zfs_load="YES"
+zpool_cache_load="YES"
+zpool_cache_type="/boot/zfs/zpool.cache"
+zpool_cache_name="/boot/zfs/zpool.cache"
+vfs.root.mountfrom="zfs:pfSense/ROOT/default"
+vfs.mountroot.timeout="30"
+kern.cam.boot_delay="10000"
+kern.cam.scsi_delay="10000"
+hw.hn.use_if_start="1"
+hw.hn.vf_transparent="0"
+kern.geom.label.disk_ident.enable="0"
+kern.geom.label.gptid.enable="0"
+kern.ipc.nmbclusters="1000000"
+kern.ipc.nmbjumbo9="524288"
+kern.ipc.nmbjumbop="524288"
+hw.e6000sw.default_disabled=1
+EOF
+	fi
 	if [ -f "${_destdir}/boot/loader.conf.lua" ]; then
 		/bin/cat << EOF >> "${_destdir}${LOADER_CONF}"
 loader_conf_files="/boot/loader.conf.lua"
@@ -466,7 +504,7 @@ EOF
 	fi
 
 	# Setup the legacy serial console if necessary.
-	[ -n "${SERIAL_CONSOLE}" ] && \
+	[ -n "${SERIAL_CONSOLE}" ] && [ "${SERIAL_CONSOLE}" != "none" ] && \
 	    serial_setup -d "${_destdir}" -t "${SERIAL_CONSOLE}"
 
 	# Update the u-boot on the 1100.
