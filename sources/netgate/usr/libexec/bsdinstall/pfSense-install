@@ -55,8 +55,15 @@ vfs.root.mountfrom="zfs:pfSense/ROOT/default"
 autoboot_delay="3"
 EOF
 
-cat << 'EOF' >> "${DESTDIR}/etc/rc.conf"
+cat << 'EOF' > "${DESTDIR}/etc/rc.conf"
+hostname="mitranet"
 zfs_enable="YES"
+sshd_enable="YES"
+gateway_enable="YES"
+ifconfig_DEFAULT="DHCP"
+ifconfig_hn0="DHCP"
+sendmail_enable="NONE"
+clear_tmp_enable="YES"
 EOF
 
 # Clean up rc.local so installed system does not run the installer
@@ -70,23 +77,22 @@ if [ -f "/usr/local/etc/xray/config.json" ] && [ -x "/usr/local/etc/rc.d/xray" ]
 fi
 EOF
 
-# Auto-launch console menu on login
-if [ -f "${DESTDIR}/etc/rc.initial" ] && [ -f "${DESTDIR}/root/.profile" ]; then
-    echo '[ -f /etc/rc.initial ] && /etc/rc.initial' >> "${DESTDIR}/root/.profile"
-fi
+# Clean root shell rc
+cat << 'EOF' > "${DESTDIR}/root/.shrc"
+PS1="\u@\h:\w \\$ "
+EOF
 
-# Set admin shell to /etc/rc.initial on installed system
+# Set admin shell to /bin/sh if rc.initial not present
 if [ -f "${DESTDIR}/etc/master.passwd" ]; then
-    sed -i '' 's|/usr/local/libexec/installer/pfSense-installer.sh|/etc/rc.initial|g' "${DESTDIR}/etc/master.passwd" 2>/dev/null || true
-    sed -i '' 's|/usr/local/libexec/installer/pfSense-installer.sh|/etc/rc.initial|g' "${DESTDIR}/etc/passwd" 2>/dev/null || true
+    sed -i '' 's|/usr/local/libexec/installer/pfSense-installer.sh|/bin/sh|g' "${DESTDIR}/etc/master.passwd" 2>/dev/null || true
+    sed -i '' 's|/usr/local/libexec/installer/pfSense-installer.sh|/bin/sh|g' "${DESTDIR}/etc/passwd" 2>/dev/null || true
     pwd_mkdb -d "${DESTDIR}/etc" "${DESTDIR}/etc/master.passwd" 2>/dev/null || true
 fi
 
 # Clean up installer triggers on target installed system
 rm -rf "${DESTDIR}/usr/local/libexec/installer"
 rm -f "${DESTDIR}/etc/is_installer_media"
-sed -i '' '/PFSENSE_INSTALLER/d' "${DESTDIR}/root/.shrc" 2>/dev/null || true
-sed -i '' '/pfSense-installer/d' "${DESTDIR}/root/.shrc" 2>/dev/null || true
+
 
 
 
