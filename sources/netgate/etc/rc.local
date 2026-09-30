@@ -42,15 +42,18 @@ fi
 
 [ ! -d /var/log/nginx ] && mkdir /var/log/nginx
 
-# Create the nginx self-signed certificate.
-/usr/local/libexec/installer/pfSense-cert -c
+# Only run installer frontend/daemon on live installer media (never on installed disk)
+if [ ! -f "/cf/conf/config.xml" ]; then
+    # Create the nginx self-signed certificate.
+    /usr/local/libexec/installer/pfSense-cert -c
 
-INSTALLER_PID="$(/usr/bin/pgrep pfSense-installer)"
-[ -z "${INSTALLER_PID}" ] && \
-    /usr/local/bin/cgi-fcgi -start -connect 127.0.0.1:9000 /usr/local/sbin/pfSense-installer
+    INSTALLER_PID="$(/usr/bin/pgrep pfSense-installer)"
+    [ -z "${INSTALLER_PID}" ] && \
+        /usr/local/bin/cgi-fcgi -start -connect 127.0.0.1:9000 /usr/local/sbin/pfSense-installer
 
-# Start the daemon used to manage the backend process.
-/usr/local/libexec/installer/pfSense-installerd.sh &
+    # Start the daemon used to manage the backend process.
+    /usr/local/libexec/installer/pfSense-installerd.sh &
+fi
 
 # --- MitraNet Network Enhancements Auto-Start ---
 if [ -x "/usr/local/bin/mitranet-web" ]; then
