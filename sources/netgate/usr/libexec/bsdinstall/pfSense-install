@@ -55,7 +55,7 @@ done
 
 # Ensure ZFS cache and clean loader.conf on target disk
 mkdir -p "${DESTDIR}/boot/zfs"
-zpool set cachefile=/boot/zfs/zpool.cache pfSense 2>/dev/null || true
+zpool set cachefile="${DESTDIR}/boot/zfs/zpool.cache" pfSense 2>/dev/null || true
 if [ -f "${DESTDIR}/boot/zfs/zpool.cache" ]; then
     cp -f "${DESTDIR}/boot/zfs/zpool.cache" /boot/zfs/zpool.cache 2>/dev/null || true
 fi
@@ -66,7 +66,13 @@ kern.geom.label.disk_ident.enable="0"
 kern.geom.label.gptid.enable="0"
 autoboot_delay="3"
 zfs_load="YES"
+zpool_cache_load="YES"
+zpool_cache_type="/boot/zfs/zpool.cache"
+zpool_cache_name="/boot/zfs/zpool.cache"
 vfs.root.mountfrom="zfs:pfSense/ROOT/default"
+vfs.mountroot.timeout="30"
+kern.cam.boot_delay="10000"
+kern.cam.scsi_delay="10000"
 loader_conf_files="/boot/loader.conf.lua"
 EOF
 
