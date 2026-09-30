@@ -80,23 +80,102 @@ MitraNet/
 
 ## 🚀 Panduan Memulai Cepat (Quickstart)
 
-### Cara 1: Mengubah VPS Linux ke MitraNet OS (1-Line Command Seperti MikroTik CHR)
-Jika Anda baru saja menyewa VPS Linux (**Ubuntu, Debian, CentOS, AlmaLinux, Rocky**) dan ingin langsung mengubahnya menjadi **MitraNet OS / Netgate Router**:
+### Cara 1: Mengubah VPS Linux Menjadi Router MitraNet OS (1-Line Command Ala MikroTik CHR)
 
-1. Login ke SSH VPS Anda sebagai `root`.
-2. Jalankan satu baris perintah berikut:
-   ```bash
-   curl -sSL https://raw.githubusercontent.com/qomaruddindjamal/mitranet/main/install.sh | bash
-   ```
-   *(Atau tanpa prompt konfirmasi: `curl -sSL https://raw.githubusercontent.com/qomaruddindjamal/mitranet/main/install.sh | bash -s -- -y`)*
-3. Skrip akan secara otomatis:
-   - Mendeteksi IP publik, Gateway, DNS, dan interface VPS.
-   - Mengunduh dan menulis image disk MitraNet OS ke hard drive utama (`/dev/vda` / `/dev/sda`).
-   - Menginjeksi konfigurasi IP dan gateway agar koneksi internet tetap aktif pasca-reboot.
-   - Melakukan reboot otomatis ke MitraNet OS.
-4. Akses WebGUI melalui browser: **`https://<IP-VPS-ANDA>`** (User: `admin`, Pass: `MitraNet@2026!`).
+Sama seperti metode flashing **MikroTik Cloud Hosted Router (CHR)** yang populer di kalangan network engineer, MitraNet OS menyediakan skrip reinstaller otomatis 1-baris. Anda dapat mengubah sembarang Cloud VPS Linux (**Ubuntu, Debian, CentOS, AlmaLinux, Rocky Linux**) menjadi router enterprise **MitraNet OS / pfSense** tanpa perlu memasang ISO secara manual melalui panel VNC/IPMI penyedia VPS.
+
+#### A. Perintah Cepat 1-Baris (One-Liner Execution)
+
+Login ke SSH VPS Anda sebagai pengguna `root`, lalu jalankan:
+
+```bash
+# 1. Mode Interaktif (Menampilkan ringkasan deteksi IP/Disk & meminta konfirmasi)
+curl -sSL https://raw.githubusercontent.com/qomaruddindjamal/mitranet/main/install.sh | bash
+
+# 2. Mode Otomatis Tanpa Prompt (Unattended - Langsung Flashing & Reboot)
+curl -sSL https://raw.githubusercontent.com/qomaruddindjamal/mitranet/main/install.sh | bash -s -- -y
+
+# 3. Mode Kustom Kata Sandi WebGUI & Disk Tertentu
+curl -sSL https://raw.githubusercontent.com/qomaruddindjamal/mitranet/main/install.sh | bash -s -- -y --disk /dev/vda --password "SandiRahasiaKu2026!"
+```
 
 ---
+
+#### B. Parameter Baris Perintah (*Command-Line Options*)
+
+Skrip [`deploy/install.sh`](deploy/install.sh) mendukung opsi konfigurasi fleksibel berikut:
+
+| Parameter | Alias | Deskripsi | Nilai Default |
+| :--- | :--- | :--- | :--- |
+| `-y` | `--yes`, `--force` | Lewati konfirmasi keamanan dan langsung mulai proses instalasi. | `false` |
+| `--password <pass>` | `-p` | Tentukan kata sandi administrator WebGUI kustom pasca-reboot. | `MitraNet@2026!` |
+| `--disk <dev>` | `-d` | Tentukan target hard drive tujuan secara manual (contoh: `/dev/vda`, `/dev/sda`, `/dev/nvme0n1`). | Auto-detect |
+| `--image <url>` | `-i` | Gunakan URL kustom untuk mengunduh berkas disk image `MitraNet-OS-amd64.raw.gz`. | GitHub Official Release |
+| `-h` | `--help` | Menampilkan panduan bantuan sintaks dan daftar opsi. | - |
+
+---
+
+#### C. Diagram Alur Kerja Otomatis di Balik Layar (*How It Works Under the Hood*)
+
+```
++-----------------------------------------------------------------------------------+
+| 1. DETEKSI OTOMATIS TOPOLOGI VPS                                                  |
+|    - Membaca IP Publik, Subnet Mask (CIDR), Default Gateway, dan DNS Resolv       |
+|    - Mendeteksi hypervisor (KVM -> vtnet0, VMware -> vmx0, Hyper-V/Azure -> hn0)  |
+|    - Mengidentifikasi storage drive utama (/dev/vda, /dev/sda, atau /dev/nvme0n1) |
++-----------------------------------------------------------------------------------+
+                                         │
+                                         ▼
++-----------------------------------------------------------------------------------+
+| 2. ALOKASI MEMORI RAM DISK (TMPFS)                                                |
+|    - Memasang filesystem tmpfs 2GB di RAM (/run/mitranet_install)                    |
+|    - Menghentikan proses yang mengunci disk root dan mematikan swap Linux         |
++-----------------------------------------------------------------------------------+
+                                         │
+                                         ▼
++-----------------------------------------------------------------------------------+
+| 3. STREAMING & FLASHING DISK IMAGE ON-THE-FLY                                     |
+|    - Mengalirkan MitraNet-OS-amd64.raw.gz langsung ke disk fisik target:          |
+|      curl -sSL <IMAGE_URL> | gzip -dc | dd of=<TARGET_DISK> bs=4M status=progress  |
++-----------------------------------------------------------------------------------+
+                                         │
+                                         ▼
++-----------------------------------------------------------------------------------+
+| 4. INJEKSI KONFIGURASI JARINGAN KE FILESYSTEM UFS FREEBSD                         |
+|    - Me-mount partisi sistem operasi FreeBSD / pfSense                            |
+|    - Menuliskan ifconfig_<nic>, defaultrouter, dan hostname ke /etc/rc.conf       |
+|    - Mengaktifkan layanan SSH, Xray Proxy, dan Web Dashboard otomatis            |
++-----------------------------------------------------------------------------------+
+                                         │
+                                         ▼
++-----------------------------------------------------------------------------------+
+| 5. REBOOT INSTAN VIA SYSRQ KERNEL TRIGGER                                         |
+|    - Melakukan sync buffer dan trigger reboot paksa langsung ke BIOS/UEFI         |
+|    - VPS hidup kembali dalam beberapa detik sebagai Router MitraNet OS aktif!     |
++-----------------------------------------------------------------------------------+
+```
+
+---
+
+#### D. Kompatibilitas Penyedia Cloud (*Cloud Provider Compatibility*)
+
+Skrip ini telah diuji dan kompatibel dengan berbagai penyedia cloud VPS global maupun lokal:
+
+- **Global Cloud**: DigitalOcean (Droplets), Linode / Akamai, Vultr, Hetzner Cloud, Contabo, AWS (EC2 Nitro/Xen), Google Cloud Platform (Compute Engine), OVHcloud.
+- **Local Cloud (Indonesia)**: IDCloudHost, Domainesia, Biznet Gio, CloudKilat, RumahWeb, Niagahoster VPS, Jogjahost.
+- **Platform Virtualisasi**: KVM/QEMU, VMware ESXi / vSphere, Proxmox VE, OpenStack, Microsoft Hyper-V / Azure.
+
+---
+
+#### E. Akses Router Pasca-Reboot (*Post-Reboot Access*)
+
+Setelah reboot selesai (biasanya 30–60 detik tergantung kecepatan hosting), buka peramban web Anda:
+
+* 🌐 **pfSense WebGUI (HTTPS)** : `https://<IP-VPS-ANDA>` (Port 443)
+* 💻 **Terminal SSH** : `ssh admin@<IP-VPS-ANDA>` (Port 22)
+* 📊 **MitraNet REST API** : `http://<IP-VPS-ANDA>:8080/api/mitranet/status`
+* 🔑 **Kredensial Default** : Pengguna: `admin` | Kata Sandi: `MitraNet@2026!` *(atau kata sandi yang Anda tentukan di parameter `--password`)*
+
 
 ### Cara 2: Menggunakan GitHub Codespaces (Sangat Direkomendasikan untuk Development)
 1. Buka repositori: [https://github.com/qomaruddindjamal/mitranet](https://github.com/qomaruddindjamal/mitranet)
