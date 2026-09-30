@@ -41,26 +41,100 @@ for dir in dev media mnt proc tmp cf/conf; do
 done
 chmod 1777 "${DESTDIR}/tmp"
 
+# Detect root filesystem type and device
+ROOT_DEV=""
+ROOT_FSTYPE="zfs"
+
+# Check what is currently mounted on ${DESTDIR}
+mount_info=$(mount | grep "on ${DESTDIR} " | head -n 1)
+if [ -n "${mount_info}" ]; then
+    ROOT_DEV=$(echo "${mount_info}" | awk '{print $1}')
+    case "${mount_info}" in
+        *"(ufs"*|*"ufs,"*)
+            ROOT_FSTYPE="ufs"
+            ;;
+        *"(zfs"*|*"zfs,"*)
+            ROOT_FSTYPE="zfs"
+            ;;
+    esac
+fi
+
+# Fallback: check if ROOT_DEV starts with /dev/
+if echo "${ROOT_DEV}" | grep -q "^/dev/"; then
+    ROOT_FSTYPE="ufs"
+elif [ -z "${ROOT_DEV}" ]; then
+    if zpool status pfSense 2>/dev/null | grep -q "pool: pfSense"; then
+        ROOT_FSTYPE="zfs"
+    else
+        for d in da0 ada0 vtbd0 nvd0 nda0; do
+            p=$(gpart show -p "${d}" 2>/dev/null | awk '/freebsd-ufs/ { print $3 }' | head -n 1)
+            if [ -n "${p}" ]; then
+                ROOT_DEV="/dev/${p}"
+                ROOT_FSTYPE="ufs"
+                break
+            fi
+        done
+    fi
+fi
+
+echo "Detected root filesystem: ${ROOT_FSTYPE} on ${ROOT_DEV:-default}"
+
 # Clean /etc/fstab for installed system - do NOT keep ISO cd9660 mount!
 cat << 'EOF' > "${DESTDIR}/etc/fstab"
 # Device	Mountpoint	FStype	Options	Dump	Pass#
 EOF
+
+# If UFS, determine root device and write to fstab
+if [ "${ROOT_FSTYPE}" = "ufs" ]; then
+    ufs_dev="${ROOT_DEV}"
+    if [ -z "${ufs_dev}" ]; then
+        for d in da0 ada0 vtbd0 nvd0 nda0; do
+            p=$(gpart show -p "${d}" 2>/dev/null | awk '/freebsd-ufs/ { print $3 }' | head -n 1)
+            if [ -n "${p}" ]; then
+                ufs_dev="/dev/${p}"
+                break
+            fi
+        done
+    fi
+    [ -z "${ufs_dev}" ] && ufs_dev="/dev/ada0p4"
+    case "${ufs_dev}" in
+        /dev/*) ;;
+        *) ufs_dev="/dev/${ufs_dev}" ;;
+    esac
+    echo "${ufs_dev}	/	ufs	rw	1	1" >> "${DESTDIR}/etc/fstab"
+fi
+
+# Auto-detect and add swap if present
 for d in da0 ada0 vtbd0 nvd0 nda0; do
     swap_part=$(gpart show -p "${d}" 2>/dev/null | awk '/freebsd-swap/ { print $3 }' | head -n 1)
     if [ -n "${swap_part}" ] && [ -e "/dev/${swap_part}" ]; then
-        echo "/dev/${swap_part} none swap sw 0 0" >> "${DESTDIR}/etc/fstab"
+        echo "/dev/${swap_part}	none	swap	sw	0	0" >> "${DESTDIR}/etc/fstab"
         break
     fi
 done
 
-# Ensure ZFS cache and clean loader.conf on target disk
-mkdir -p "${DESTDIR}/boot/zfs"
-zpool set cachefile="${DESTDIR}/boot/zfs/zpool.cache" pfSense 2>/dev/null || true
-if [ -f "${DESTDIR}/boot/zfs/zpool.cache" ]; then
-    cp -f "${DESTDIR}/boot/zfs/zpool.cache" /boot/zfs/zpool.cache 2>/dev/null || true
-fi
+# Configure loader.conf and ZFS/UFS services
+if [ "${ROOT_FSTYPE}" = "ufs" ]; then
+    cat << EOF > "${DESTDIR}/boot/loader.conf"
+kern.shutdown.secure_halt="1"
+kern.geom.label.disk_ident.enable="0"
+kern.geom.label.gptid.enable="0"
+autoboot_delay="3"
+vfs.root.mountfrom="ufs:${ufs_dev}"
+vfs.mountroot.timeout="30"
+kern.cam.boot_delay="10000"
+kern.cam.scsi_delay="10000"
+loader_conf_files="/boot/loader.conf.lua"
+EOF
+    ZFS_ENABLE="NO"
+else
+    mkdir -p "${DESTDIR}/boot/zfs"
+    zpool set cachefile="${DESTDIR}/boot/zfs/zpool.cache" pfSense 2>/dev/null || true
+    if [ -f "${DESTDIR}/boot/zfs/zpool.cache" ]; then
+        cp -f "${DESTDIR}/boot/zfs/zpool.cache" /boot/zfs/zpool.cache 2>/dev/null || true
+    fi
 
-cat << 'EOF' > "${DESTDIR}/boot/loader.conf"
+    cat << 'EOF' > "${DESTDIR}/boot/loader.conf"
 kern.shutdown.secure_halt="1"
 kern.geom.label.disk_ident.enable="0"
 kern.geom.label.gptid.enable="0"
@@ -75,11 +149,13 @@ kern.cam.boot_delay="10000"
 kern.cam.scsi_delay="10000"
 loader_conf_files="/boot/loader.conf.lua"
 EOF
+    ZFS_ENABLE="YES"
+fi
 
-cat << 'EOF' > "${DESTDIR}/etc/rc.conf"
+cat << EOF > "${DESTDIR}/etc/rc.conf"
 hostname="mitranet"
 root_rw_mount="YES"
-zfs_enable="YES"
+zfs_enable="${ZFS_ENABLE}"
 nginx_enable="YES"
 sshd_enable="YES"
 gateway_enable="YES"
@@ -189,11 +265,19 @@ NSH_EOF
 	if [ "${part_scheme}" = "GPT" ]; then
 		boot_part_idx=$(gpart show -p "${disk}" 2>/dev/null | awk '/freebsd-boot/ { print $3 }' | head -n 1 | sed -e 's/.*p//' -e 's/.*s//')
 		if [ -n "${boot_part_idx}" ]; then
-			echo "Installing GPT BIOS bootcode on /dev/${disk} (partition ${boot_part_idx})..."
-			if [ -f "/boot/pmbr" ] && [ -f "/boot/gptzfsboot" ]; then
-				gpart bootcode -b /boot/pmbr -p /boot/gptzfsboot -i "${boot_part_idx}" "${disk}" 2>/dev/null || true
-			elif [ -f "/boot/pmbr" ] && [ -f "/boot/gptboot" ]; then
-				gpart bootcode -b /boot/pmbr -p /boot/gptboot -i "${boot_part_idx}" "${disk}" 2>/dev/null || true
+			echo "Installing GPT BIOS bootcode on /dev/${disk} (partition ${boot_part_idx}, filesystem: ${ROOT_FSTYPE})..."
+			if [ "${ROOT_FSTYPE}" = "ufs" ]; then
+				if [ -f "/boot/pmbr" ] && [ -f "/boot/gptboot" ]; then
+					gpart bootcode -b /boot/pmbr -p /boot/gptboot -i "${boot_part_idx}" "${disk}" 2>/dev/null || true
+				elif [ -f "/boot/pmbr" ] && [ -f "/boot/gptzfsboot" ]; then
+					gpart bootcode -b /boot/pmbr -p /boot/gptzfsboot -i "${boot_part_idx}" "${disk}" 2>/dev/null || true
+				fi
+			else
+				if [ -f "/boot/pmbr" ] && [ -f "/boot/gptzfsboot" ]; then
+					gpart bootcode -b /boot/pmbr -p /boot/gptzfsboot -i "${boot_part_idx}" "${disk}" 2>/dev/null || true
+				elif [ -f "/boot/pmbr" ] && [ -f "/boot/gptboot" ]; then
+					gpart bootcode -b /boot/pmbr -p /boot/gptboot -i "${boot_part_idx}" "${disk}" 2>/dev/null || true
+				fi
 			fi
 			# CRITICAL FOR VIRTUALBOX BIOS: active flag on PMBR prevents 'FATAL: No bootable medium found'
 			gpart set -a active "${disk}" 2>/dev/null || true
