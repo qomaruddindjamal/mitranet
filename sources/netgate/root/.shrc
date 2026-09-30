@@ -55,6 +55,7 @@ PS1="\u@\h:\w \\$ "
 
 PFSENSE_INSTALLER="/usr/local/libexec/installer/pfSense-installer.sh"
 
-if [ -z "${NO_INSTALLER}" ] && [ -x "${PFSENSE_INSTALLER}" ]; then
+if [ -f "/etc/is_installer_media" ] && [ -z "${NO_INSTALLER}" ] && [ -x "${PFSENSE_INSTALLER}" ]; then
 	"${PFSENSE_INSTALLER}"
 fi
+

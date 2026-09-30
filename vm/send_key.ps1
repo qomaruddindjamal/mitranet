@@ -21,6 +21,9 @@ switch ($Key.ToLower()) {
     "tab" {
         $kbd | Invoke-CimMethod -MethodName TypeKey -Arguments @{ KeyCode = [uint32]9 } | Out-Null
     }
+    "esc" {
+        $kbd | Invoke-CimMethod -MethodName TypeKey -Arguments @{ KeyCode = [uint32]27 } | Out-Null
+    }
     "left" {
         $kbd | Invoke-CimMethod -MethodName TypeKey -Arguments @{ KeyCode = [uint32]37 } | Out-Null
     }

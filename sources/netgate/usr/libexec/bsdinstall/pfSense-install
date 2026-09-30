@@ -82,6 +82,13 @@ if [ -f "${DESTDIR}/etc/master.passwd" ]; then
     pwd_mkdb -d "${DESTDIR}/etc" "${DESTDIR}/etc/master.passwd" 2>/dev/null || true
 fi
 
+# Clean up installer triggers on target installed system
+rm -rf "${DESTDIR}/usr/local/libexec/installer"
+rm -f "${DESTDIR}/etc/is_installer_media"
+sed -i '' '/PFSENSE_INSTALLER/d' "${DESTDIR}/root/.shrc" 2>/dev/null || true
+sed -i '' '/pfSense-installer/d' "${DESTDIR}/root/.shrc" 2>/dev/null || true
+
+
 
 
 # Setup UEFI ESP bootloader

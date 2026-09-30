@@ -136,7 +136,7 @@ for ($m = 1; $m -le 60; $m++) {
     Log-Msg "Progress [$m/60] | CPU: $($vm.CPUUsage)% | Target Disk: $vhdSizeMB MB"
     
     # If written data indicates finish and CPU is idle
-    if ($vhdSizeMB -ge 5200 -and $vm.CPUUsage -le 2) {
+    if ($vhdSizeMB -ge 2800 -and $vm.CPUUsage -le 2) {
         $zeroCount++
         if ($zeroCount -ge 2) {
             Log-Msg "[+] Installation complete ($vhdSizeMB MB)! Powering down installer for clean UEFI hard drive boot..."
