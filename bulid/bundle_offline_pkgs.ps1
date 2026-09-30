@@ -80,8 +80,8 @@ $bundleArchive = "$TargetDir\packages\packages_bundle.tar.xz"
 if ($pkgs.Count -gt 0) {
     Write-Host "[*] Compressing offline packages with LZMA2 Extreme (Maximum Compression)..." -ForegroundColor Yellow
     $tarTemp = "$TargetDir\packages\packages_temp.tar"
-    & 7z a -ttar "$tarTemp" "$pkgDest\*.pkg" | Out-Null
-    & 7z a -txz -mx=9 -md=64m -mfb=273 "$bundleArchive" "$tarTemp" | Out-Null
+    & 7z a -ttar "$tarTemp" "$pkgDest\*" -r0 | Out-Null
+    & 7z a -txz -mx=7 "$bundleArchive" "$tarTemp" | Out-Null
     Remove-Item -Force "$tarTemp" -ErrorAction SilentlyContinue
     if (Test-Path $bundleArchive) {
         $arcMB = [math]::Round((Get-Item $bundleArchive).Length / 1MB, 2)

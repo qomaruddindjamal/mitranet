@@ -24,6 +24,8 @@ vm/*.raw
 *.vhd
 *.avhdx
 **/*.pkg
+*.tar.xz
+**/*.tar.xz
 
 # Build outputs & extraction workspaces
 bulid/workspace/
