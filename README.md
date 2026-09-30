@@ -588,9 +588,16 @@ kldstat
 sysctl net.inet.tcp.blackhole=2
 ```
 
-#### I. Kontrol Otomatisasi VM Hyper-V (`create_hyperv_vm.ps1`)
+#### I. Kontrol Otomatisasi VM Hyper-V & Autopilot (`run_autopilot.ps1` & `vm\create_hyperv_vm.ps1`)
 Di sisi host Windows PowerShell:
 ```powershell
+# Menjalankan Otomatisasi Lengkap (Autopilot) dari Instalasi hingga Booting Mandiri & Monitoring
+# - 100% aman (hanya memanipulasi disk virtual VHDX, partisi EFI & disk fisik host terlindungi)
+# - Memantau ekstraksi ZFS secara berkelanjutan hingga tuntas (~2.9 GB)
+# - Auto-eject media ISO instalasi & beralih ke UEFI Hard Disk Boot
+# - Monitoring IP DHCP dan ketersediaan layanan
+powershell -ExecutionPolicy Bypass -File .\run_autopilot.ps1 -VMName "LiveTest"
+
 # Cek status VM MitraNet dan virtual disk VHDX
 powershell -ExecutionPolicy Bypass -File vm\create_hyperv_vm.ps1 -Action status
 
@@ -602,6 +609,9 @@ powershell -ExecutionPolicy Bypass -File vm\create_hyperv_vm.ps1 -Action stop
 
 # Membangun ulang VM router dari awal
 powershell -ExecutionPolicy Bypass -File vm\create_hyperv_vm.ps1 -Action recreate
+
+# Tangkap screenshot konsol layar VM secara instan
+powershell -ExecutionPolicy Bypass -File vm\capture_screen.ps1 -VMName "LiveTest" -OutputPath "livetest_screen.png"
 ```
 
 #### J. Manajemen Pengguna, Hak Akses & Password (`pw` & `passwd`)
@@ -815,10 +825,13 @@ MitraNet OS (Open Source Architecture)
 ├── 🚀 deploy/                   # SKRIP DEPLOYMENT OTOMATIS
 │   └── install.sh                 # 1-Line VPS Auto-Reinstaller (MikroTik CHR Style)
 │
+├── 🤖 run_autopilot.ps1           # Pipeline Autopilot Penuh: Instalasi -> Booting -> Monitoring
+│
 └── 🧪 vm/                       # TESTBED OTOMASI VM HYPER-V
     ├── auto_installer_monitor.ps1 # Daemon pengawas instalasi otomatis
     ├── send_key.ps1               # Pengirim keystroke interaktif ke VM
-    └── capture_screen.ps1         # Screenshot framebuffer video VM
+    ├── capture_screen.ps1         # Screenshot framebuffer video VM
+    └── create_hyperv_vm.ps1       # Utilitas siklus hidup VM Hyper-V
 ```
 
 ---
