@@ -1,0 +1,99 @@
+name: MitraNet OS - Open Source CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  validate-code:
+    name: Lint & Validate Source Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate Python CLI Syntax
+        run: |
+          python -m py_compile programs/xray/cli/mitranet_cli.py
+          python -m py_compile programs/xray/web/mitranet_api.py
+          echo "Python source code syntax is clean and valid."
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+
+      - name: Validate WebGUI PHP Syntax
+        run: |
+          php -l programs/xray/web/mitranet_xray.php
+          echo "pfSense WebGUI PHP syntax is clean and valid."
+
+      - name: Validate JSON Configurations
+        run: |
+          for f in programs/xray/config/*.json; do
+            jq empty "$f" && echo "Valid JSON: $f"
+          done
+
+      - name: Validate Shell Scripts
+        run: |
+          bash -n deploy/install.sh
+          bash -n install.sh
+          bash -n bulid/build_iso.sh
+          echo "Shell scripts syntax is clean and valid."
+
+  build-vps-installer:
+    name: Package VPS 1-Click Installer
+    needs: validate-code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Test VPS Installer Script Integrity
+        run: |
+          bash -n deploy/install.sh
+          sha256sum deploy/install.sh > deploy/install.sh.sha256
+          cat deploy/install.sh.sha256
+
+      - name: Upload Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vps-installer
+          path: |
+            deploy/install.sh
+            deploy/install.sh.sha256
+            install.sh
+
+  release:
+    name: Publish Release Artifacts
+    needs: [validate-code, build-vps-installer]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download VPS Installer Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: vps-installer
+          path: dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*
+            install.sh
+            deploy/install.sh
+          generate_release_notes: true

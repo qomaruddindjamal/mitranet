@@ -1,10 +1,10 @@
-# MitraNet Hyper-V Installation Automated Monitor Daemon
-# Runs every 30 seconds until installation is complete and VM is rebooted and online.
-
-$VMName = "MitraNet"
-$LogFile = "c:\MitraNet\vm\install_monitor.log"
-$ArtifactImg = "C:\Users\Administrator\.gemini\antigravity-ide\brain\dd47282a-02c8-4557-a793-288e91f18097\vm_current_screen.png"
-$RawThumb = "c:\MitraNet\vm\scratch_thumb.raw"
+param(
+    [string]$VMName = "LiveTest",
+    [string]$LogFile = "c:\MitraNet\vm\livetest_install.log",
+    [string]$ArtifactImg = "C:\Users\Administrator\.gemini\antigravity-ide\brain\ed3bbe78-4d4d-47d4-917e-c020dfdf08bb\livetest_screen.png",
+    [string]$RawThumb = "c:\MitraNet\vm\scratch_thumb.raw",
+    [int]$MaxIterations = 200
+)
 
 function Log-Msg($msg) {
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
@@ -85,10 +85,10 @@ for ($i = 1; $i -le $maxIterations; $i++) {
         $diskMB = $meter.AggregatedDiskDataWritten
     }
 
-    $avhdx = Get-Item "c:\MitraNet\vm\mitranet_*.avhdx" -ErrorAction SilentlyContinue
+    $vhdItems = Get-Item "c:\MitraNet\vm\$($VMName.ToLower())*.vhdx", "c:\MitraNet\vm\$($VMName.ToLower())*.avhdx" -ErrorAction SilentlyContinue
     $vhdSizeMB = 0
-    if ($avhdx) {
-        $vhdSizeMB = [math]::Round($avhdx.Length / 1MB)
+    if ($vhdItems) {
+        $vhdSizeMB = [math]::Round(($vhdItems | Measure-Object -Property Length -Sum).Sum / 1MB)
     }
 
     Log-Msg "Check #$i | CPU: $cpu% | DiskWritten: $diskMB MB | VHDSize: $vhdSizeMB MB"

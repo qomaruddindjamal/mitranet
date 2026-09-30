@@ -1,10 +1,17 @@
-# MitraNet - Offline Package Bundler & Repository Generator
 param(
-    [string]$TargetDir = "bulid\iso_root",
+    [string]$TargetDir = "",
     [string]$PkgSourceDir = "bulid\packages_cache"
 )
 
 $ErrorActionPreference = "Stop"
+
+if (-not $TargetDir) {
+    if (Test-Path "sources\netgate\etc") {
+        $TargetDir = "sources\netgate"
+    } else {
+        $TargetDir = "bulid\iso_root"
+    }
+}
 
 Write-Host "==========================================================" -ForegroundColor Cyan
 Write-Host " [MitraNet] Offline Package Bundler (PowerShell)" -ForegroundColor Cyan
@@ -50,6 +57,20 @@ pfSense: {
 "@
 
 $offlineConf | Out-File -FilePath "$repoConfDir\MitraNet-offline.conf" -Encoding ascii -Force
+
+# Optional High Compression Archive for Packages
+$bundleArchive = "$TargetDir\packages\packages_bundle.tar.xz"
+if ($pkgs.Count -gt 0) {
+    Write-Host "[*] Compressing offline packages with LZMA2 Extreme (Maximum Compression)..." -ForegroundColor Yellow
+    $tarTemp = "$TargetDir\packages\packages_temp.tar"
+    & 7z a -ttar "$tarTemp" "$pkgDest\*.pkg" | Out-Null
+    & 7z a -txz -mx=9 -md=64m -mfb=273 "$bundleArchive" "$tarTemp" | Out-Null
+    Remove-Item -Force "$tarTemp" -ErrorAction SilentlyContinue
+    if (Test-Path $bundleArchive) {
+        $arcMB = [math]::Round((Get-Item $bundleArchive).Length / 1MB, 2)
+        Write-Host "[+] Maximum compressed bundle created: $bundleArchive ($arcMB MB)" -ForegroundColor Green
+    }
+}
 
 Write-Host "[+] Offline repository configuration generated at:" -ForegroundColor Green
 Write-Host "    $repoConfDir\MitraNet-offline.conf" -ForegroundColor Green

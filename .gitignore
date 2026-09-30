@@ -15,6 +15,7 @@ images/releases/
 vm/*.vhdx
 vm/*.vhd
 vm/*.avhdx
+vm/*.raw
 *.iso
 *.img
 *.qcow2
@@ -35,6 +36,8 @@ _temp*/
 # Logs & temp files
 *.log
 *.tmp
+*.debug
+*.core
 *.sqlite
 !var/db/pkg/local.sqlite
 __pycache__/

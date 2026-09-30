@@ -701,8 +701,55 @@ mitranet-cli tproxy enable
 
 ---
 
+---
+
+## 🌐 Arsitektur Proyek Kode Sumber Terbuka (*Open Source*)
+
+MitraNet OS adalah perangkat lunak sumber terbuka (*Free and Open Source Software / FOSS*) yang dirancang modular agar setiap pengembang, network engineer, dan komunitas dapat memodifikasi, mengompilasi, dan menambahkan modul baru secara independen.
+
+```
+MitraNet OS (Open Source Architecture)
+├── 📦 programs/                 # KODE SUMBER UTAMA MITRANET
+│   └── xray/
+│       ├── web/mitranet_xray.php   # Antarmuka Asli pfSense WebGUI (PHP + Bootstrap)
+│       ├── web/mitranet_xray.xml   # Menu Package Manifest pfSense
+│       ├── web/mitranet_api.py    # REST API & Web Daemon Service
+│       ├── cli/mitranet_cli.py    # Mesin CLI Manajemen Jaringan & Proxy
+│       ├── config/                # Template Konfigurasi VLESS / VMESS / Reality
+│       └── service/               # Daemon Init FreeBSD rc.d & Aturan Packet Filter
+│
+├── 📂 sources/                  # POHON SUMBER DASAR SISTEM OPERASI
+│   ├── netgate/                   # Ekstraksi berkas installer OS terbuka
+│   │   ├── packages/All/          # Tempat paket offline (.pkg) terkompresi
+│   │   ├── usr/local/etc/pkg/     # Konfigurasi repositori lokal offline
+│   │   └── etc/rc.local           # Hook startup otomatis saat booting
+│   └── sources.md                 # Laporan lengkap rekayasa balik arsitektur
+│
+├── ⚙️ bulid/                    # PIPELINE KOMPILASI & PACKAGING OTOMATIS
+│   ├── build_iso.ps1              # Rebuilder ISO UEFI/BIOS Hybrid (Windows PowerShell)
+│   ├── build_iso.sh               # Rebuilder ISO via xorriso (Linux / Docker / CI)
+│   ├── build_raw_image.ps1        # Generator Image VPS CHR-Style (.raw.gz)
+│   ├── bundle_offline_pkgs.ps1    # Kompresor paket offline (LZMA2 Ultra)
+│   ├── inject_features.ps1        # Penginjeksi fitur ke berkas rootfs
+│   └── build_multiarch.ps1        # Builder paket rilis untuk 11 arsitektur perangkat keras
+│
+├── 🚀 deploy/                   # SKRIP DEPLOYMENT OTOMATIS
+│   └── install.sh                 # 1-Line VPS Auto-Reinstaller (MikroTik CHR Style)
+│
+└── 🧪 vm/                       # TESTBED OTOMASI VM HYPER-V
+    ├── auto_installer_monitor.ps1 # Daemon pengawas instalasi otomatis
+    ├── send_key.ps1               # Pengirim keystroke interaktif ke VM
+    └── capture_screen.ps1         # Screenshot framebuffer video VM
+```
+
+---
+
 ## 📄 Lisensi & Kontribusi
-Proyek ini dilisensikan di bawah lisensi BSD 2-Clause. Kontribusi dan saran penambahan fitur jaringan dipersilakan melalui *Pull Request* dan *Issues*.
+
+* **Lisensi Kode**: MitraNet dirilis di bawah lisensi terbuka [Apache License 2.0](LICENSE), dengan tetap menghormati lisensi upstream FreeBSD dan pfSense.
+* **Panduan Kontributor**: Silakan pelajari panduan lengkap pengembangan, penambahan paket, dan pembuatan pull request di [CONTRIBUTING.md](CONTRIBUTING.md).
+* **Automasi CI/CD**: Setiap kontribusi kode diuji secara otomatis melalui [GitHub Actions Workflow](.github/workflows/ci.yml).
+
 
 
 

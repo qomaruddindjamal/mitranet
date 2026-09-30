@@ -1,9 +1,17 @@
 # MitraNet - PowerShell Feature Injector
 param(
-    [string]$TargetDir = "bulid\iso_root"
+    [string]$TargetDir = ""
 )
 
 $ErrorActionPreference = "Stop"
+
+if (-not $TargetDir) {
+    if (Test-Path "sources\netgate\etc") {
+        $TargetDir = "sources\netgate"
+    } else {
+        $TargetDir = "bulid\iso_root"
+    }
+}
 
 Write-Host "=== [MitraNet] Injecting Features (PowerShell) ===" -ForegroundColor Cyan
 Write-Host "[*] Target: $TargetDir"
