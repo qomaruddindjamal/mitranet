@@ -1,10 +1,18 @@
 # MitraNet - PowerShell ISO Builder
 param(
-    [string]$SourceDir = "bulid\iso_root",
+    [string]$SourceDir = "",
     [string]$OutputIso = "images\MitraNet-OS-amd64.iso"
 )
 
 $ErrorActionPreference = "Stop"
+
+if (-not $SourceDir) {
+    if (Test-Path "sources\netgate") {
+        $SourceDir = "sources\netgate"
+    } else {
+        $SourceDir = "bulid\iso_root"
+    }
+}
 
 Write-Host "=== [MitraNet] Building Custom ISO (PowerShell) ===" -ForegroundColor Cyan
 Write-Host "[*] Source: $SourceDir"
@@ -31,8 +39,12 @@ if ($hasXorriso) {
     Write-Host "[*] Building Hybrid UEFI/BIOS ISO using xorriso..." -ForegroundColor Yellow
     $xorrisoArgs = @(
         "-as", "mkisofs",
-        "-V", "MITRANET",
-        "-J", "-R",
+        "-V", "PFSENSE",
+        "-J", "-r",
+        "-f",
+        "--hardlinks",
+        "-file-mode", "0755",
+        "-dir-mode", "0755",
         "-iso-level", "3"
     )
     if (Test-Path "$SourceDir\boot\cdboot") {

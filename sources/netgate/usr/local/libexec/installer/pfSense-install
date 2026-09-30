@@ -107,46 +107,25 @@ pfSense_install() {
 	# Keep a pkg.conf backup.
 	# Some of the operations bellow will overwrite it.
 	#
-	/bin/cp "${_destdir}/usr/local/etc/pkg.conf" "${_destdir}/usr/local/etc/pkg.conf.bkp"
-
-	while read PKG MSG; do
-		[ -z "${PKG}" ] || [ -z "${MSG}" ] && \
-		    continue;
-		echo
-		echo "Installing ${MSG}"
-		echo
-		if ! /usr/bin/env ASSUME_ALWAYS_YES=YES \
-		    /usr/local/sbin/pkg-static -c "${_destdir}" \
-		    install -f "${PKG}"; then
-			exit 1
+	echo
+	echo "Installing MitraNet OS base system (Offline Installation)..."
+	echo
+	for dir in bin boot etc lib libexec root sbin usr var; do
+		if [ -d "/${dir}" ]; then
+			echo "Extracting /${dir}..."
+			/bin/mkdir -p "${_destdir}/${dir}"
+			/usr/bin/tar -cf - -C "/${dir}" . | /usr/bin/tar -xf - -C "${_destdir}/${dir}"
 		fi
-		/bin/cp "${_destdir}/usr/local/etc/pkg.conf.bkp" \
-		    "${_destdir}/usr/local/etc/pkg.conf"
-	done <<EOF
-	pkg				pkg
-	pfSense-base			pfSense base
-	pfSense-kernel-pfSense		pfSense kernel
-	${CONFIG_PKG}			pfSense Default configuration
-	pfSense				pfSense packages
-EOF
-
-	if [ -n "${ADDITIONAL_PACKAGES}" ]; then
-		echo
-		echo "Installing the additional pfSense packages"
-		echo
-		for _ADD_PKG in ${ADDITIONAL_PACKAGES}; do
-			if ! /usr/local/sbin/pkg-static -c "${_destdir}" \
-			    rquery "%n" "${_ADD_PKG}" > /dev/null; then
-				continue
-			fi
-			if ! /usr/bin/env ASSUME_ALWAYS_YES=YES \
-			    /usr/local/sbin/pkg-static -c "${_destdir}" \
-			    install -f "${_ADD_PKG}"; then
-				exit 1
-			fi
-		done
+	done
+	if [ -d "/rescue" ]; then
+		echo "Extracting /rescue..."
+		/bin/mkdir -p "${_destdir}/rescue"
+		/usr/bin/tar -cf - -C "/rescue" . | /usr/bin/tar -xf - -C "${_destdir}/rescue"
 	fi
-	/bin/rm "${_destdir}/usr/local/etc/pkg.conf.bkp"
+	for dir in dev media mnt proc tmp cf/conf; do
+		/bin/mkdir -p "${_destdir}/${dir}"
+	done
+	/bin/chmod 1777 "${_destdir}/tmp"
 	return 0
 }
 

@@ -22,25 +22,7 @@
 BSDINSTALL_INC_PATH="/usr/libexec/bsdinstall"
 . "${BSDINSTALL_INC_PATH}/pfSense-common"
 
-REPO_COUNT="$(repo_count)"
-
-if [ "${REPO_COUNT}" -lt "1" ]; then
-	"${BSDDIALOG}" --backtitle "$(get_title)" \
-	    --title ' pfSense Repository Error ' \
-	    --msgbox '\nInvalid repository count.\n' 0 0
-	exit 1
-fi
-
-if [ "${REPO_COUNT}" -eq "1" ]; then
-	REPO_DEF="$(repo_get_first)"
-	if ! repo_setup "${REPO_DEF}"; then
-		"${BSDDIALOG}" --backtitle "$(get_title)" \
-		    --title ' pfSense Repository Error ' \
-		    --msgbox '\nFailed to setup the pfSense repository.\n' 0 0
-		exit 1
-	fi
-	exit 0
-fi
+exit 0
 
 _size=$(( ${REPO_COUNT} + 9 ))
 if [ "${_size}" -gt 25 ]; then

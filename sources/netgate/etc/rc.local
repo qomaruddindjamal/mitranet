@@ -53,7 +53,10 @@ INSTALLER_PID="$(/usr/bin/pgrep pfSense-installer)"
 /usr/local/libexec/installer/pfSense-installerd.sh &
 
 # --- MitraNet Network Enhancements Auto-Start ---
-/usr/local/bin/mitranet-web > /var/log/mitranet-api.log 2>&1 &
-if [ -f "/usr/local/etc/xray/config.json" ]; then
+if [ -x "/usr/local/bin/mitranet-web" ]; then
+    /usr/local/bin/mitranet-web > /var/log/mitranet-api.log 2>&1 &
+fi
+if [ -f "/usr/local/etc/xray/config.json" ] && [ -x "/usr/local/etc/rc.d/xray" ]; then
     /usr/local/etc/rc.d/xray onestart
 fi
+

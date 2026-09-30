@@ -5,8 +5,8 @@ if ((Test-Path "$dir\links.txt") -and (Test-Path "$dir\rescue")) {
     $links = Get-Content "$dir\links.txt"
     foreach ($link in $links) {
         $link = $link.Trim()
-        if ($link -and -not (Test-Path "$dir\$link")) {
-            New-Item -ItemType HardLink -Path "$dir\$link" -Value "$dir\rescue" -Force | Out-Null
+        if ($link -and -not (Test-Path -LiteralPath "$dir\$link")) {
+            New-Item -ItemType HardLink -LiteralPath "$dir\$link" -Value "$dir\rescue" -Force | Out-Null
         }
     }
     Write-Host "[+] Rescue NTFS hardlinks restored successfully." -ForegroundColor Green

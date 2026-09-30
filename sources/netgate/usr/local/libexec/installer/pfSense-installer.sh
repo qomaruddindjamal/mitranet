@@ -369,17 +369,10 @@ installer_main() {
 			bsdinstall
 		case "${?}" in
 		0)
-			if ! state_set "INSTALL-DONE"; then
-                                "${BSDDIALOG}" --colors --backtitle "$(get_title)" \
-                                    --title " Netgate Installer Error " \
-                                    --msgbox "\nThe installation has failed!\n\n\
-The system is NOT installed.\n\nPlease check the installation log in ${INSTALL_LOG}.\n" \
-                                    0 0
-				return 2
-			fi
+			# Offline installation extraction succeeded
 			"${BSDDIALOG}" --backtitle "$(get_title)" \
 			    --title " Complete " --yes-label "Reboot" --no-label "Shell" \
-			    --yesno "\nInstallation of pfSense complete! Would you like to reboot into the installed system now?\n" \
+			    --yesno "\nInstallation of MitraNet OS complete! Would you like to reboot into the installed system now?\n" \
 			    0 0 && installer_reboot
 			clear
 			echo "When finished, type 'exit' to reboot."

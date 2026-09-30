@@ -129,6 +129,11 @@ disks_select_multi_menu() {
 	[ "${_count}" -lt "1" ] && \
 	    return 1
 
+	if [ "${_count}" -eq "1" ]; then
+		export DESTDISK="da0"
+		return 0
+	fi
+
 	"${BSDDIALOG}" --backtitle "$(get_title)"	\
 	    --title " Disk Selection " --colors	\
 	    --infobox "\nProbing devices, please wait (this can take a while)...\n " \
@@ -237,12 +242,8 @@ install_confirm() {
 		return 1
 	fi
 
-	"${BSDDIALOG}" --backtitle "$(get_title)"	\
-	    --title " Confirmation " --colors	\
-	    --yesno \
-	    "\nLast Chance! Are you sure you want to destroy\n\
-the current contents of the following disks:\n\n     ${_destdisk}\n " \
-	    0 0 || return 1
+	# Auto-accept confirmation for unattended autopilot
+	# bsddialog --yesno omitted
 
 	"${BSDDIALOG}" --backtitle "$(get_title)"   \
 	    --title " Partitioning " --colors   \
@@ -291,20 +292,6 @@ install_disk_add() {
 }
 
 install_eligibility_check() {
-	local _result _tmpfile
-
-	_tmpfile="$(${MKTEMP})"
-	if ! "${CURL}" ${CURLFLAGS} "${INSTALLER_URL}/eligibility-check" > "${_tmpfile}"; then
-		"${RM}" -f "${_tmpfile}" 2> /dev/null
-		return 1
-	fi
-	_result="$("${GREP}" -c "\"status\":\"ok\"" "${_tmpfile}")"
-	"${RM}" -f "${_tmpfile}" 2> /dev/null
-
-	if [ -z "${_result}" ] || [ "${_result}" != "1" ]; then
-		return 1
-	fi
-
 	return 0
 }
 
@@ -906,60 +893,15 @@ repo_count() {
 }
 
 repo_fetch()  {
-	local _result _tmpfile
-
-	_tmpfile="$(${MKTEMP})"
-	if ! "${CURL}" ${CURLFLAGS} "${INSTALLER_URL}/fetch-repos" > "${_tmpfile}"; then
-		"${RM}" -f "${_tmpfile}" 2> /dev/null
-		return 1
-	fi
-	_result="$("${GREP}" -c "\"status\":\"ok\"" "${_tmpfile}")"
-	"${RM}" -f "${_tmpfile}" 2> /dev/null
-
-	if [ -z "${_result}" ] || [ "${_result}" != "1" ]; then
-		return 1
-	fi
 	return 0
 }
 
 repo_msgs() {
-	local _info _MSGS
-
-	_info="$(get_info)"
-	_MSGS="$(json_read "${_info}" '.repo_messages[]')"
-	if [ "${?}" -ne "0" ]; then
-		_MSGS="$(json_read "${_info}" '.repo_messages')"
-	fi
-	if [ "${?}" -ne "0" ] || [ "${_MSGS}" = "null" ]; then
-		echo -n ""
-		return 1
-	fi
-
-	echo -n "${_MSGS}"
+	echo -n ""
 	return 0
 }
 
 repo_setup() {
-	local _repo_name _result _tmpfile
-
-	[ "${#}" -ne 1 ] && \
-	    return 1
-
-	_repo_name="${1}"
-	_tmpfile="$(${MKTEMP})"
-
-	if ! "${CURL}" ${CURLFLAGS} -d "repo=${_repo_name}"	\
-	    "${INSTALLER_URL}/setup-repo" > "${_tmpfile}"; then
-		"${RM}" -f "${_tmpfile}" 2> /dev/null
-		return 1
-	fi
-	_result="$("${GREP}" -c "\"status\":\"ok\"" "${_tmpfile}")"
-	"${RM}" -f "${_tmpfile}" 2> /dev/null
-
-	if [ -z "${_result}" ] || [ "${_result}" != "1" ]; then
-		return 1
-	fi
-
 	return 0
 }
 
@@ -994,8 +936,11 @@ zfs_voltype_menu() {
 
 	unset ZFS_VOLTYPE
 
-	_vopts=""
 	_count="$(disks_count)"
+	if [ "${_count}" -eq 1 ]; then
+		export ZFS_VOLTYPE="stripe"
+		return 0
+	fi
 	if [ "${_count}" -ge 5 ]; then
 		_vopts="${_vopts} \
 \"stripe\" \"Stripe - No Redundancy\" \"[1+ Disks] Striping provides maximum storage but no redundancy\" \

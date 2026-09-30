@@ -2,9 +2,17 @@
 # MitraNet - Bootable Hybrid UEFI/BIOS ISO Rebuilder
 set -e
 
-SOURCE_DIR="${1:-bulid/iso_root}"
+if [ -z "$1" ]; then
+    if [ -d "sources/netgate" ]; then
+        SOURCE_DIR="sources/netgate"
+    else
+        SOURCE_DIR="bulid/iso_root"
+    fi
+else
+    SOURCE_DIR="$1"
+fi
 OUTPUT_ISO="${2:-images/MitraNet-OS-amd64.iso}"
-VOLUME_LABEL="MITRANET"
+VOLUME_LABEL="PFSENSE"
 BOOT_DIR="bulid/boot"
 
 echo "=== [MitraNet] Building Custom Bootable ISO ==="
@@ -41,7 +49,11 @@ echo "[*] Running xorriso to generate Hybrid UEFI/BIOS ISO..."
 XORRISO_ARGS=(
     -as mkisofs
     -V "${VOLUME_LABEL}"
-    -J -R
+    -J -r
+    -f
+    --hardlinks
+    -file-mode 0755
+    -dir-mode 0755
     -iso-level 3
 )
 
