@@ -43,24 +43,37 @@ if ($pkgs.Count -gt 0) {
 }
 
 # Generate Offline Repository Configuration
-Write-Host "[*] Writing offline pkg repository configuration..." -ForegroundColor Yellow
+Write-Host "[*] Writing pkg repository configurations (Offline + pfSense 2.9.0 Base Repo)..." -ForegroundColor Yellow
 $offlineConf = @"
 MitraNet-Offline: {
   url: "file:///packages",
   mirror_type: "NONE",
   enabled: yes
 }
+"@
 
-FreeBSD: {
-  enabled: no
+$pfSenseConf = @"
+FreeBSD: { enabled: no }
+
+pfSense-core: {
+    url: "pkg+https://pkg.pfsense.org/pfSense_v2_9_0_amd64-core",
+    mirror_type: "srv",
+    signature_type: "fingerprints",
+    fingerprints: "/usr/local/share/pfSense/keys/pkg",
+    enabled: yes
 }
 
 pfSense: {
-  enabled: no
+    url: "pkg+https://pkg.pfsense.org/pfSense_v2_9_0_amd64-pfSense_v2_9_0",
+    mirror_type: "srv",
+    signature_type: "fingerprints",
+    fingerprints: "/usr/local/share/pfSense/keys/pkg",
+    enabled: yes
 }
 "@
 
 $offlineConf | Out-File -FilePath "$repoConfDir\MitraNet-offline.conf" -Encoding ascii -Force
+$pfSenseConf | Out-File -FilePath "$repoConfDir\pfSense.conf" -Encoding ascii -Force
 
 # Optional High Compression Archive for Packages
 $bundleArchive = "$TargetDir\packages\packages_bundle.tar.xz"

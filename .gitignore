@@ -23,6 +23,7 @@ vm/*.raw
 *.vhdx
 *.vhd
 *.avhdx
+**/*.pkg
 
 # Build outputs & extraction workspaces
 bulid/workspace/
