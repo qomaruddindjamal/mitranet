@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE packagegui SYSTEM "../schema/packages.dtd">
+<?xml-stylesheet type="text/xsl" href="../xsl/package.xsl"?>
+<packagegui>
+	<copyright>
+	<![CDATA[
+/*
+ * mitranet_xray.xml
+ * MitraNet OS - Xray (V2Ray / VLESS / VMESS) Package Definition
+ */
+	]]>
+	</copyright>
+	<name>mitranet_xray</name>
+	<version>1.0.0</version>
+	<title>VPN / MitraNet Xray</title>
+	<donotsave>true</donotsave>
+	<menu>
+		<name>MitraNet Xray (V2Ray)</name>
+		<section>VPN</section>
+		<url>/mitranet_xray.php</url>
+	</menu>
+	<menu>
+		<name>MitraNet Xray Status</name>
+		<section>Status</section>
+		<url>/mitranet_xray.php</url>
+	</menu>
+	<service>
+		<name>xray</name>
+		<rcfile>xray</rcfile>
+		<executable>xray</executable>
+		<description>MitraNet Xray Core Proxy Engine</description>
+	</service>
+</packagegui>

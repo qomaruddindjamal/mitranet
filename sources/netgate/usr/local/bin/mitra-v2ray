@@ -1,0 +1,3 @@
+#!/bin/sh
+# MitraNet V2Ray/Xray CLI Shell Shortcut
+exec python3 /usr/local/bin/mitranet-cli "$@"

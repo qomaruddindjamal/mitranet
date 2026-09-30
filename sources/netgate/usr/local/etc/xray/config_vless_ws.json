@@ -1,0 +1,94 @@
+{
+  "log": {
+    "loglevel": "warning",
+    "access": "/var/log/xray/access.log",
+    "error": "/var/log/xray/error.log"
+  },
+  "inbounds": [
+    {
+      "tag": "socks-in",
+      "port": 10808,
+      "listen": "127.0.0.1",
+      "protocol": "socks",
+      "settings": {
+        "auth": "noauth",
+        "udp": true
+      }
+    },
+    {
+      "tag": "http-in",
+      "port": 10809,
+      "listen": "127.0.0.1",
+      "protocol": "http"
+    },
+    {
+      "tag": "transparent-in",
+      "port": 12345,
+      "listen": "127.0.0.1",
+      "protocol": "dokodemo-door",
+      "settings": {
+        "network": "tcp,udp",
+        "followRedirect": true
+      },
+      "streamSettings": {
+        "sockopt": {
+          "tproxy": "redirect"
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "proxy-vless-ws",
+      "protocol": "vless",
+      "settings": {
+        "vnext": [
+          {
+            "address": "cdn-node.mitranet.org",
+            "port": 443,
+            "users": [
+              {
+                "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                "encryption": "none",
+                "level": 0
+              }
+            ]
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "ws",
+        "security": "tls",
+        "tlsSettings": {
+          "serverName": "cdn-node.mitranet.org",
+          "allowInsecure": false
+        },
+        "wsSettings": {
+          "path": "/vless-ws-tunnel",
+          "headers": {
+            "Host": "cdn-node.mitranet.org"
+          }
+        }
+      }
+    },
+    {
+      "tag": "direct",
+      "protocol": "freedom"
+    }
+  ],
+  "routing": {
+    "domainStrategy": "IPIfNonMatch",
+    "rules": [
+      {
+        "type": "field",
+        "ip": ["geoip:private"],
+        "outboundTag": "direct"
+      },
+      {
+        "type": "field",
+        "network": "tcp,udp",
+        "outboundTag": "proxy-vless-ws"
+      }
+    ]
+  }
+}

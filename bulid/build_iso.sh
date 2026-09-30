@@ -18,6 +18,11 @@ fi
 
 mkdir -p "$(dirname "${OUTPUT_ISO}")" "${BOOT_DIR}"
 
+# 0. Restore rescue crunchgen links if present
+if [ -f "${SOURCE_DIR}/rescue/restore_links.sh" ]; then
+    sh "${SOURCE_DIR}/rescue/restore_links.sh"
+fi
+
 # 1. Prepare EFI boot image if missing
 EFI_IMG="${BOOT_DIR}/efiboot.img"
 if [ ! -f "${EFI_IMG}" ]; then

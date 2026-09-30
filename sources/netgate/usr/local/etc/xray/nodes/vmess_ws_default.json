@@ -1,0 +1,95 @@
+{
+  "log": {
+    "loglevel": "warning",
+    "access": "/var/log/xray/access.log",
+    "error": "/var/log/xray/error.log"
+  },
+  "inbounds": [
+    {
+      "tag": "socks-in",
+      "port": 10808,
+      "listen": "127.0.0.1",
+      "protocol": "socks",
+      "settings": {
+        "auth": "noauth",
+        "udp": true
+      }
+    },
+    {
+      "tag": "http-in",
+      "port": 10809,
+      "listen": "127.0.0.1",
+      "protocol": "http"
+    },
+    {
+      "tag": "transparent-in",
+      "port": 12345,
+      "listen": "127.0.0.1",
+      "protocol": "dokodemo-door",
+      "settings": {
+        "network": "tcp,udp",
+        "followRedirect": true
+      },
+      "streamSettings": {
+        "sockopt": {
+          "tproxy": "redirect"
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "proxy-vmess-ws",
+      "protocol": "vmess",
+      "settings": {
+        "vnext": [
+          {
+            "address": "vmess-node.mitranet.org",
+            "port": 443,
+            "users": [
+              {
+                "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+                "alterId": 0,
+                "security": "auto",
+                "level": 0
+              }
+            ]
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "ws",
+        "security": "tls",
+        "tlsSettings": {
+          "serverName": "vmess-node.mitranet.org",
+          "allowInsecure": false
+        },
+        "wsSettings": {
+          "path": "/vmess-path",
+          "headers": {
+            "Host": "vmess-node.mitranet.org"
+          }
+        }
+      }
+    },
+    {
+      "tag": "direct",
+      "protocol": "freedom"
+    }
+  ],
+  "routing": {
+    "domainStrategy": "IPIfNonMatch",
+    "rules": [
+      {
+        "type": "field",
+        "ip": ["geoip:private"],
+        "outboundTag": "direct"
+      },
+      {
+        "type": "field",
+        "network": "tcp,udp",
+        "outboundTag": "proxy-vmess-ws"
+      }
+    ]
+  }
+}

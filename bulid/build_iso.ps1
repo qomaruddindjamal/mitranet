@@ -20,6 +20,11 @@ if ($outputFolder -and -not (Test-Path $outputFolder)) {
     New-Item -ItemType Directory -Force -Path $outputFolder | Out-Null
 }
 
+# 0. Restore rescue crunchgen links if present
+if (Test-Path "$SourceDir\rescue\restore_links.ps1") {
+    & "$SourceDir\rescue\restore_links.ps1"
+}
+
 $hasXorriso = Get-Command xorriso -ErrorAction SilentlyContinue
 
 if ($hasXorriso) {
