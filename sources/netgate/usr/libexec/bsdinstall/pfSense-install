@@ -75,6 +75,14 @@ if [ -f "${DESTDIR}/etc/rc.initial" ] && [ -f "${DESTDIR}/root/.profile" ]; then
     echo '[ -f /etc/rc.initial ] && /etc/rc.initial' >> "${DESTDIR}/root/.profile"
 fi
 
+# Set admin shell to /etc/rc.initial on installed system
+if [ -f "${DESTDIR}/etc/master.passwd" ]; then
+    sed -i '' 's|/usr/local/libexec/installer/pfSense-installer.sh|/etc/rc.initial|g' "${DESTDIR}/etc/master.passwd" 2>/dev/null || true
+    sed -i '' 's|/usr/local/libexec/installer/pfSense-installer.sh|/etc/rc.initial|g' "${DESTDIR}/etc/passwd" 2>/dev/null || true
+    pwd_mkdb -d "${DESTDIR}/etc" "${DESTDIR}/etc/master.passwd" 2>/dev/null || true
+fi
+
+
 
 # Setup UEFI ESP bootloader
 for part in /dev/da0p1 /dev/ada0p1 /dev/vtbd0p1 /dev/nvd0p1; do
