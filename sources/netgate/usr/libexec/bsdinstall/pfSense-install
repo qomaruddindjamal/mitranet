@@ -40,19 +40,34 @@ for dir in dev media mnt proc tmp cf/conf; do
 	mkdir -p "${DESTDIR}/${dir}"
 done
 chmod 1777 "${DESTDIR}/tmp"
-touch "${DESTDIR}/etc/fstab"
 
-if [ -f "/boot/loader.conf" ]; then
-	cp -f "/boot/loader.conf" "${DESTDIR}/boot/loader.conf"
+# Clean /etc/fstab for installed system - do NOT keep ISO cd9660 mount!
+cat << 'EOF' > "${DESTDIR}/etc/fstab"
+# Device	Mountpoint	FStype	Options	Dump	Pass#
+EOF
+for d in da0 ada0 vtbd0 nvd0 nda0; do
+    swap_part=$(gpart show -p "${d}" 2>/dev/null | awk '/freebsd-swap/ { print $3 }' | head -n 1)
+    if [ -n "${swap_part}" ] && [ -e "/dev/${swap_part}" ]; then
+        echo "/dev/${swap_part} none swap sw 0 0" >> "${DESTDIR}/etc/fstab"
+        break
+    fi
+done
+
+# Ensure ZFS cache and clean loader.conf on target disk
+mkdir -p "${DESTDIR}/boot/zfs"
+zpool set cachefile=/boot/zfs/zpool.cache pfSense 2>/dev/null || true
+if [ -f "${DESTDIR}/boot/zfs/zpool.cache" ]; then
+    cp -f "${DESTDIR}/boot/zfs/zpool.cache" /boot/zfs/zpool.cache 2>/dev/null || true
 fi
 
-mkdir -p "${DESTDIR}/boot/zfs"
-zpool set cachefile="${DESTDIR}/boot/zfs/zpool.cache" pfSense 2>/dev/null || true
-
-cat << 'EOF' >> "${DESTDIR}/boot/loader.conf"
+cat << 'EOF' > "${DESTDIR}/boot/loader.conf"
+kern.shutdown.secure_halt="1"
+kern.geom.label.disk_ident.enable="0"
+kern.geom.label.gptid.enable="0"
+autoboot_delay="3"
 zfs_load="YES"
 vfs.root.mountfrom="zfs:pfSense/ROOT/default"
-autoboot_delay="3"
+loader_conf_files="/boot/loader.conf.lua"
 EOF
 
 cat << 'EOF' > "${DESTDIR}/etc/rc.conf"
@@ -63,7 +78,12 @@ nginx_enable="YES"
 sshd_enable="YES"
 gateway_enable="YES"
 ifconfig_DEFAULT="DHCP"
+ifconfig_em0="DHCP"
+ifconfig_vtnet0="DHCP"
 ifconfig_hn0="DHCP"
+ifconfig_re0="DHCP"
+ifconfig_igb0="DHCP"
+ifconfig_le0="DHCP"
 sendmail_enable="NONE"
 clear_tmp_enable="YES"
 EOF
@@ -119,36 +139,75 @@ echo "PermitRootLogin yes" >> "${DESTDIR}/etc/ssh/sshd_config"
 rm -rf "${DESTDIR}/usr/local/libexec/installer"
 rm -f "${DESTDIR}/etc/is_installer_media"
 
+# --- Universal Dual Bootloader (UEFI ESP + BIOS PMBR/GPT) for all disks ---
+for disk in da0 ada0 vtbd0 nvd0 nda0; do
+	if [ ! -e "/dev/${disk}" ]; then
+		continue
+	fi
 
+	part_scheme=$(gpart show "${disk}" 2>/dev/null | head -n 1 | awk '{print $4}')
+	[ -z "${part_scheme}" ] && continue
 
+	echo "Configuring bootloader on /dev/${disk} (${part_scheme})..."
 
-
-# Setup UEFI ESP bootloader
-for part in /dev/da0p1 /dev/ada0p1 /dev/vtbd0p1 /dev/nvd0p1; do
-	if [ -e "${part}" ]; then
-		echo "Configuring UEFI ESP Bootloader on ${part}..."
-		newfs_msdos -F 32 -c 1 "${part}" 2>/dev/null || true
+	# A. UEFI ESP Setup
+	efi_part=$(gpart show -p "${disk}" 2>/dev/null | awk '/efi/ { print $3 }' | head -n 1)
+	if [ -n "${efi_part}" ] && [ -e "/dev/${efi_part}" ]; then
+		echo "Installing UEFI bootloader on /dev/${efi_part}..."
 		mkdir -p /tmp/esp
-		mount -t msdosfs "${part}" /tmp/esp 2>/dev/null || true
-		mkdir -p /tmp/esp/EFI/BOOT /tmp/esp/EFI/freebsd
-		if [ -f "/boot/loader.efi" ]; then
-			cp -f "/boot/loader.efi" /tmp/esp/EFI/BOOT/BOOTX64.EFI
-			cp -f "/boot/loader.efi" /tmp/esp/EFI/freebsd/loader.efi
+		if ! mount -t msdosfs "/dev/${efi_part}" /tmp/esp 2>/dev/null; then
+			newfs_msdos "/dev/${efi_part}" 2>/dev/null || true
+			mount -t msdosfs "/dev/${efi_part}" /tmp/esp 2>/dev/null || true
 		fi
-		umount /tmp/esp 2>/dev/null || true
-		break
+
+		if mount | grep -q "/tmp/esp"; then
+			mkdir -p /tmp/esp/EFI/BOOT /tmp/esp/EFI/freebsd
+			if [ -f "/boot/loader.efi" ]; then
+				cp -f "/boot/loader.efi" /tmp/esp/EFI/BOOT/BOOTX64.EFI
+				cp -f "/boot/loader.efi" /tmp/esp/EFI/BOOT/bootx64.efi
+				cp -f "/boot/loader.efi" /tmp/esp/EFI/freebsd/loader.efi
+			fi
+			cat << 'NSH_EOF' > /tmp/esp/startup.nsh
+fs0:
+\EFI\BOOT\BOOTX64.EFI
+fs1:
+\EFI\BOOT\BOOTX64.EFI
+NSH_EOF
+			sync
+			umount /tmp/esp 2>/dev/null || true
+			echo "UEFI ESP bootloader installed successfully on /dev/${efi_part}."
+		fi
+	fi
+
+	# B. Legacy BIOS Boot Setup
+	if [ "${part_scheme}" = "GPT" ]; then
+		boot_part_idx=$(gpart show -p "${disk}" 2>/dev/null | awk '/freebsd-boot/ { print $3 }' | head -n 1 | sed -e 's/.*p//' -e 's/.*s//')
+		if [ -n "${boot_part_idx}" ]; then
+			echo "Installing GPT BIOS bootcode on /dev/${disk} (partition ${boot_part_idx})..."
+			if [ -f "/boot/pmbr" ] && [ -f "/boot/gptzfsboot" ]; then
+				gpart bootcode -b /boot/pmbr -p /boot/gptzfsboot -i "${boot_part_idx}" "${disk}" 2>/dev/null || true
+			elif [ -f "/boot/pmbr" ] && [ -f "/boot/gptboot" ]; then
+				gpart bootcode -b /boot/pmbr -p /boot/gptboot -i "${boot_part_idx}" "${disk}" 2>/dev/null || true
+			fi
+			# CRITICAL FOR VIRTUALBOX BIOS: active flag on PMBR prevents 'FATAL: No bootable medium found'
+			gpart set -a active "${disk}" 2>/dev/null || true
+			gpart set -a bootme -i "${boot_part_idx}" "${disk}" 2>/dev/null || true
+			gpart set -a lenovofix "${disk}" 2>/dev/null || true
+			echo "GPT BIOS bootcode and active flags configured on /dev/${disk}."
+		fi
+	elif [ "${part_scheme}" = "MBR" ]; then
+		echo "Installing MBR BIOS bootcode on /dev/${disk}..."
+		if [ -f "/boot/boot0" ]; then
+			gpart bootcode -b /boot/boot0 "${disk}" 2>/dev/null || true
+		fi
+		if [ -f "/boot/boot" ] && [ -e "/dev/${disk}s1" ]; then
+			gpart bootcode -b /boot/boot "${disk}s1" 2>/dev/null || true
+		fi
+		gpart set -a active -i 1 "${disk}" 2>/dev/null || true
 	fi
 done
 
-# Setup BIOS bootcode if pmbr/gptzfsboot exists
-for disk in da0 ada0 vtbd0 nvd0; do
-	if [ -e "/dev/${disk}" ]; then
-		if [ -f "/boot/pmbr" ] && [ -f "/boot/gptzfsboot" ]; then
-			gpart bootcode -b /boot/pmbr -p /boot/gptzfsboot -i 2 "${disk}" 2>/dev/null || true
-		fi
-		break
-	fi
-done
+sync; sync; sync
 
 echo "=== MitraNet OS Installation Complete ==="
 exit 0

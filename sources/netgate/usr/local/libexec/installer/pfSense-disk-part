@@ -326,6 +326,11 @@ create_boot_part() {
 		;;
 	esac
 
+	# Set active flag on PMBR and bootme flag for VirtualBox BIOS compatibility
+	/sbin/gpart set -a active "${_dev}" 2>/dev/null || true
+	/sbin/gpart set -a bootme -i "${_idx}" "${_dev}" 2>/dev/null || true
+	/sbin/gpart set -a lenovofix "${_dev}" 2>/dev/null || true
+
 	return 0
 }
 
