@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1d4ed8" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="chipGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#2563eb" />
+    </linearGradient>
+  </defs>
+  <!-- Background Rounded Squircle -->
+  <rect x="8" y="8" width="176" height="176" rx="42" fill="url(#bgGrad)" />
+  <rect x="8" y="8" width="176" height="176" rx="42" fill="none" stroke="#38bdf8" stroke-width="2" stroke-opacity="0.3" />
+
+  <!-- Router Chassis Top Slot -->
+  <rect x="36" y="52" width="120" height="38" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="3" />
+  <circle cx="56" cy="71" r="5" fill="#10b981" />
+  <circle cx="74" cy="71" r="5" fill="#38bdf8" />
+  <circle cx="92" cy="71" r="5" fill="#6366f1" />
+  <rect x="114" y="65" width="26" height="12" rx="3" fill="#334155" />
+
+  <!-- Router Chassis Bottom Slot -->
+  <rect x="36" y="102" width="120" height="38" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="3" />
+  <circle cx="56" cy="121" r="5" fill="#10b981" />
+  <circle cx="74" cy="121" r="5" fill="#10b981" />
+  <line x1="92" y1="121" x2="104" y2="121" stroke="#94a3b8" stroke-width="3" stroke-linecap="round" />
+  <rect x="114" y="115" width="26" height="12" rx="3" fill="#334155" />
+
+  <!-- Center Interconnect Lightning / Link Signal -->
+  <path d="M96 32 L96 46 M96 146 L96 160" stroke="#38bdf8" stroke-width="4" stroke-linecap="round" />
+</svg>

@@ -1,0 +1,12 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Local environments / Temporary
+*.tmp
+
+# Release ISO artifact (Large binary, not tracked in git)
+MitraOS-Apollo-amd64.iso
+*.iso
