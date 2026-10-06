@@ -1,0 +1,23 @@
+<pfsense>
+  <version>24.5</version>
+  <system>
+    <hostname>mitranet-edge</hostname>
+    <domain>corp.local</domain>
+    <timeservers>time.cloudflare.com</timeservers>
+  </system>
+  <interfaces>
+    <wan>
+      <enable>1</enable>
+      <if>em0</if>
+      <ipaddr>dhcp</ipaddr>
+      <descr>WAN_UPLINK</descr>
+    </wan>
+    <lan>
+      <enable>1</enable>
+      <if>em1</if>
+      <ipaddr>192.168.10.1</ipaddr>
+      <subnet>24</subnet>
+      <descr>LAN_PRIMARY</descr>
+    </lan>
+  </interfaces>
+</pfsense>

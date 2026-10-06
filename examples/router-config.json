@@ -1,0 +1,147 @@
+{
+  "schema_version": "1.0",
+  "config_version": 1,
+  "system": {
+    "hostname": "mitranet-router",
+    "domain": "corp.lan",
+    "timezone": "UTC",
+    "timeservers": [
+      "pool.ntp.org"
+    ],
+    "dns_servers": [
+      "1.1.1.1",
+      "8.8.8.8"
+    ]
+  },
+  "interfaces": {
+    "wan1": {
+      "device": "eth0",
+      "description": "Primary Fiber ISP",
+      "enabled": true,
+      "role": "wan",
+      "type": "ethernet",
+      "mtu": 1500,
+      "mac": null,
+      "ipv4": {
+        "mode": "static",
+        "address": "203.0.113.2",
+        "prefix": 30,
+        "gateway": "203.0.113.1"
+      },
+      "ipv6": { "mode": "disabled", "address": null, "prefix": null, "gateway": null }
+    },
+    "wan2": {
+      "device": "eth1",
+      "description": "Backup Wireless ISP",
+      "enabled": true,
+      "role": "wan",
+      "type": "ethernet",
+      "mtu": 1500,
+      "mac": null,
+      "ipv4": {
+        "mode": "dhcp",
+        "address": null,
+        "prefix": null,
+        "gateway": null
+      },
+      "ipv6": { "mode": "disabled", "address": null, "prefix": null, "gateway": null }
+    },
+    "lan": {
+      "device": "eth2",
+      "description": "Core LAN Trunk",
+      "enabled": true,
+      "role": "lan",
+      "type": "ethernet",
+      "mtu": 1500,
+      "mac": null,
+      "ipv4": {
+        "mode": "static",
+        "address": "10.0.0.1",
+        "prefix": 24,
+        "gateway": null
+      },
+      "ipv6": { "mode": "disabled", "address": null, "prefix": null, "gateway": null }
+    }
+  },
+  "vlans": {
+    "vlan20": {
+      "id": 20,
+      "parent": "lan",
+      "description": "Guest WiFi VLAN"
+    }
+  },
+  "bridges": {},
+  "bonds": {},
+  "vrfs": {},
+  "routing": {
+    "static_routes": [
+      {
+        "destination": "192.168.100.0/24",
+        "gateway": "10.0.0.254",
+        "interface": "lan",
+        "metric": 10,
+        "description": "Branch Office Route"
+      }
+    ],
+    "gateways": {
+      "gw_wan1": {
+        "address": "203.0.113.1",
+        "interface": "wan1",
+        "monitor": true,
+        "weight": 1
+      }
+    }
+  },
+  "firewall": {
+    "aliases": {},
+    "rules": []
+  },
+  "nat": {
+    "outbound": [
+      {
+        "interface": "wan1",
+        "source": "10.0.0.0/24",
+        "mode": "masquerade",
+        "target_ip": null,
+        "description": "Default WAN Masquerade"
+      }
+    ],
+    "port_forward": []
+  },
+  "dhcp": {
+    "lan": {
+      "interface": "lan",
+      "enabled": true,
+      "subnet": "10.0.0.0/24",
+      "range_start": "10.0.0.100",
+      "range_end": "10.0.0.200",
+      "gateway": "10.0.0.1",
+      "dns_servers": [
+        "10.0.0.1"
+      ],
+      "lease_time": 7200,
+      "static_mappings": {}
+    }
+  },
+  "dns": {
+    "enabled": true,
+    "dnssec": true,
+    "host_overrides": {
+      "router.corp.lan": "10.0.0.1"
+    },
+    "upstream_forwarders": [
+      "1.1.1.1",
+      "8.8.8.8"
+    ]
+  },
+  "vpn": {
+    "wireguard": {},
+    "ipsec": {},
+    "openvpn": {}
+  },
+  "qos": {},
+  "ha": {},
+  "services": {},
+  "users": {},
+  "certificates": {}
+}

@@ -1,0 +1,37 @@
+<pfsense>
+  <version>24.5</version>
+  <interfaces>
+    <wan><if>em0</if><enable>1</enable></wan>
+    <lan><if>em1</if><enable>1</enable></lan>
+  </interfaces>
+  <aliases>
+    <alias>
+      <name>admin_workstations</name>
+      <type>host</type>
+      <address>192.168.1.10 192.168.1.11</address>
+      <descr>IT Admin PCs</descr>
+    </alias>
+    <alias>
+      <name>web_ports</name>
+      <type>port</type>
+      <address>80 443 8080</address>
+      <descr>Standard Web Ports</descr>
+    </alias>
+  </aliases>
+  <filter>
+    <rule>
+      <type>pass</type>
+      <interface>lan</interface>
+      <protocol>tcp</protocol>
+      <destination><network>any</network></destination>
+      <descr>Allow LAN TCP to Any</descr>
+    </rule>
+    <rule>
+      <type>block</type>
+      <interface>wan</interface>
+      <protocol>any</protocol>
+      <destination><network>any</network></destination>
+      <descr>Block Inbound WAN</descr>
+    </rule>
+  </filter>
+</pfsense>

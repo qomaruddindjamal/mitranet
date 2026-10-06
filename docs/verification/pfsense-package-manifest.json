@@ -1,0 +1,1097 @@
+﻿[
+    {
+        "Filename":  "abseil-20250127.1_2.pkg",
+        "Size":  1155918,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "aom-3.15.1.pkg",
+        "Size":  3660237,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "beep-1.0_2.pkg",
+        "Size":  5902,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "bind-tools-9.20.29.pkg",
+        "Size":  1616194,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "boost-libs-1.91.0.pkg",
+        "Size":  16696356,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "brotli-1.2.0,1.pkg",
+        "Size":  397543,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "bsnmp-regex-0.6_4.pkg",
+        "Size":  21422,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "bsnmp-ucd-0.4.5_1.pkg",
+        "Size":  18934,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "bwi-firmware-kmod-3.130.20.1600018.pkg",
+        "Size":  41484,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "ca_root_nss-3.130.pkg",
+        "Size":  249869,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "check_reload_status-0.0.17.pkg",
+        "Size":  42052,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "choparp-20150613_1.pkg",
+        "Size":  8038,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "cpdup-1.22_1.pkg",
+        "Size":  30342,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "cpu-microcode-1.0_1.pkg",
+        "Size":  1213,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "cpu-microcode-amd-20251202.pkg",
+        "Size":  247171,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "cpu-microcode-intel-20260812.pkg",
+        "Size":  25626038,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "cpu-microcode-rc-1.0_2.pkg",
+        "Size":  2878,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "cpustats-0.1_1.pkg",
+        "Size":  3561,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "curl-8.22.0.pkg",
+        "Size":  1948767,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "cyrus-sasl-2.1.28_6.pkg",
+        "Size":  1064985,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "dav1d-1.5.4.pkg",
+        "Size":  672963,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "dbus-1.16.2_4,1.pkg",
+        "Size":  324579,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "dhcp6-20080615.2_4.pkg",
+        "Size":  119294,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "dhcpcd-10.5.2.pkg",
+        "Size":  189335,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "dhcpleases-0.5_2.pkg",
+        "Size":  11835,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "dhcpleases6-0.1_4.pkg",
+        "Size":  10435,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "dmidecode-3.7.pkg",
+        "Size":  86139,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "dnsmasq-2.93,1.pkg",
+        "Size":  432601,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "dpinger-3.6.pkg",
+        "Size":  10986,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "duktape-lib-2.7.0_1.pkg",
+        "Size":  257177,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "easy-rsa-3.2.6,1.pkg",
+        "Size":  83494,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "expat-2.8.4.pkg",
+        "Size":  135281,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "expiretable-0.6_3.pkg",
+        "Size":  8016,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "filterdns-2.3.pkg",
+        "Size":  22039,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "filterlog-0.1_11.pkg",
+        "Size":  11115,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "fontconfig-2.17.1,1.pkg",
+        "Size":  524739,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "freetype2-2.14.3.pkg",
+        "Size":  1248641,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "fstrm-0.6.1_1.pkg",
+        "Size":  99946,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "gdk-pixbuf2-2.44.1.pkg",
+        "Size":  1794621,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "gettext-runtime-1.0_1.pkg",
+        "Size":  307494,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "giflib-6.1.3.pkg",
+        "Size":  244411,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "glib-2.88.3,2.pkg",
+        "Size":  11233609,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "glib-bootstrap-2.88.3,2.pkg",
+        "Size":  2995020,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "gmp-6.3.0.pkg",
+        "Size":  515895,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "graphite2-1.3.15.pkg",
+        "Size":  109302,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "hostapd-2.12_2.pkg",
+        "Size":  520045,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "icu-76.1,1.pkg",
+        "Size":  13622562,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "if_pppoe-kmod-2.9.0.1600018_1.pkg",
+        "Size":  49952,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "iftop-1.0.p4_1.pkg",
+        "Size":  40512,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "igmpproxy-0.4_3,1.pkg",
+        "Size":  25574,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "indexinfo-0.3.1_1.pkg",
+        "Size":  6091,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "ipmitool-1.8.19_3.pkg",
+        "Size":  2101046,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "isc-dhcp44-client-4.4.3P1_2.pkg",
+        "Size":  1105616,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "isc-dhcp44-relay-4.4.3P1_4.pkg",
+        "Size":  1238043,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "isc-dhcp44-server-4.4.3P1_5.pkg",
+        "Size":  3029688,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "jbigkit-2.1_3.pkg",
+        "Size":  81008,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "jpeg-turbo-3.1.4.1.pkg",
+        "Size":  472164,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "jq-1.8.2.pkg",
+        "Size":  347226,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "jsoncpp-1.9.8.pkg",
+        "Size":  138681,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "kea-3.2.0_1.pkg",
+        "Size":  6139561,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "kvm.pkg",
+        "Size":  55844691,
+        "Date":  "2026-10-04"
+    },
+    {
+        "Filename":  "ldns-1.9.2.pkg",
+        "Size":  608877,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "lerc-4.2.0.pkg",
+        "Size":  173633,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libICE-1.1.2,1.pkg",
+        "Size":  101130,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libSM-1.2.6,1.pkg",
+        "Size":  26975,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libX11-1.8.13_1,1.pkg",
+        "Size":  1768864,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libXau-1.0.12.pkg",
+        "Size":  12996,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libXdmcp-1.1.5.pkg",
+        "Size":  17053,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libavif-1.4.2.pkg",
+        "Size":  282814,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libccid-1.8.2.pkg",
+        "Size":  74729,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libdeflate-1.26.pkg",
+        "Size":  88219,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libedit-3.1.20260512,1.pkg",
+        "Size":  158202,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libevent-2.1.13.pkg",
+        "Size":  359200,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libffi-3.8.0.pkg",
+        "Size":  57416,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libfontenc-1.1.9.pkg",
+        "Size":  22346,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libgcrypt-1.12.2.pkg",
+        "Size":  2450056,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libgpg-error-1.61.pkg",
+        "Size":  399381,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libiconv-1.18_1.pkg",
+        "Size":  756860,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libidn2-2.3.8.pkg",
+        "Size":  164733,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libltdl-2.6.2.pkg",
+        "Size":  41974,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "liblz4-1.10.0_2,1.pkg",
+        "Size":  182723,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libmcrypt-2.5.8_4.pkg",
+        "Size":  135585,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libnghttp2-1.70.0.pkg",
+        "Size":  140420,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libpfctl-0.17.pkg",
+        "Size":  35369,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libpsl-0.23.3.pkg",
+        "Size":  69054,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libsodium-1.0.22.pkg",
+        "Size":  313959,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libssh2-1.11.1_1,3.pkg",
+        "Size":  256320,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libucl-0.9.4.pkg",
+        "Size":  141915,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libunistring-1.4.2.pkg",
+        "Size":  766094,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "liburcu-0.15.7.pkg",
+        "Size":  184611,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libuv-1.52.1.pkg",
+        "Size":  145861,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libxcb-1.17.0.pkg",
+        "Size":  1188492,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libxml2-2.15.4.pkg",
+        "Size":  930358,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libxslt-1.1.45.pkg",
+        "Size":  299643,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "libyuv-0.0.1903.pkg",
+        "Size":  388166,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "links-2.30_1,1.pkg",
+        "Size":  2988782,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "log4cplus-2.2.0.1.pkg",
+        "Size":  360135,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "lua54-5.4.8.pkg",
+        "Size":  354618,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "lzo2-2.10_2.pkg",
+        "Size":  129573,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "minicron-0.0.2.pkg",
+        "Size":  3504,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "miniupnpd-2.3.9_1,1.pkg",
+        "Size":  75876,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "mobile-broadband-provider-info-20251101.pkg",
+        "Size":  63463,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "mpd5-5.9_19.pkg",
+        "Size":  436880,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "mpdecimal-4.0.1.pkg",
+        "Size":  160309,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "nettle-3.10.2.pkg",
+        "Size":  1745570,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "nginx-1.30.5,3.pkg",
+        "Size":  600527,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "nss_ldap-1.265_15.pkg",
+        "Size":  59583,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "ntp-4.2.8p18_6.pkg",
+        "Size":  1844537,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "oniguruma-6.9.10.pkg",
+        "Size":  259292,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "openldap26-client-2.6.15_1.pkg",
+        "Size":  1124679,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "opensc-0.27.0.pkg",
+        "Size":  1835269,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "openvpn-2.7.7.pkg",
+        "Size":  676919,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "openvpn-auth-script-1.0.0.3.pkg",
+        "Size":  8073,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "pam_ldap-186_2.pkg",
+        "Size":  41015,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "pam_mkhomedir-0.2_1.pkg",
+        "Size":  6790,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "pcre2-10.48.pkg",
+        "Size":  1518618,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "pcsc-lite-2.5.2,2.pkg",
+        "Size":  119600,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "perl5-5.42.3.pkg",
+        "Size":  16744272,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "pfSense-2.9.0.pkg",
+        "Size":  4857,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "pfSense-Status_Monitoring-php85-1.9.pkg",
+        "Size":  20458,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "pfSense-base-2.9.0.pkg.partaa",
+        "Size":  57952342,
+        "Date":  "2026-10-01"
+    },
+    {
+        "Filename":  "pfSense-base-2.9.0.pkg.partab",
+        "Size":  57952340,
+        "Date":  "2026-10-01"
+    },
+    {
+        "Filename":  "pfSense-boot-2.9.0.pkg",
+        "Size":  3658415,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "pfSense-composer-deps-0.5_1.pkg",
+        "Size":  600320,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "pfSense-default-config-2.9.0.pkg",
+        "Size":  6433,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "pfSense-gnid-0.21.pkg",
+        "Size":  10422,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "pfSense-kernel-pfSense-2.9.0.pkg",
+        "Size":  26663713,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "pfSense-pkg-WireGuard-0.2.13_4.pkg",
+        "Size":  46559,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "pfSense-repoc-20260919.051732.pkg",
+        "Size":  12769342,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "pfSense-system-2.9.0.pkg",
+        "Size":  26044522,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "pfSense-upgrade-1.3.40.pkg",
+        "Size":  32875,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "pftop-0.13.pkg",
+        "Size":  63838,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-8.5.10.pkg",
+        "Size":  13293185,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-bcmath-8.5.10.pkg",
+        "Size":  47654,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-bz2-8.5.10.pkg",
+        "Size":  13714,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-ctype-8.5.10.pkg",
+        "Size":  8003,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-curl-8.5.10.pkg",
+        "Size":  53116,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-dom-8.5.10.pkg",
+        "Size":  163296,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-filter-8.5.10.pkg",
+        "Size":  28529,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-gettext-8.5.10.pkg",
+        "Size":  9659,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-gmp-8.5.10.pkg",
+        "Size":  25256,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-intl-8.5.10.pkg",
+        "Size":  173419,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-ldap-8.5.10.pkg",
+        "Size":  39505,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-mbstring-8.5.10.pkg",
+        "Size":  942639,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-openssl_x509_crl-1.3_3.pkg",
+        "Size":  17160,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-pcntl-8.5.10.pkg",
+        "Size":  24574,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-pdo-8.5.10.pkg",
+        "Size":  59886,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-pdo_sqlite-8.5.10.pkg",
+        "Size":  22825,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-pear-1.10.18.pkg",
+        "Size":  264776,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-pear-Auth_RADIUS-1.1.0_5.pkg",
+        "Size":  11453,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-pear-Cache_Lite-1.8.3,1.pkg",
+        "Size":  35565,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-pear-Crypt_CHAP-1.5.0_2.pkg",
+        "Size":  6934,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-pear-HTTP_Request2-2.7.0,1.pkg",
+        "Size":  119087,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-pear-Mail-2.0.0,1.pkg",
+        "Size":  23112,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-pear-Net_IPv6-1.3.0.b4_2.pkg",
+        "Size":  13020,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-pear-Net_URL2-2.2.3.pkg",
+        "Size":  20067,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-pear-XML_RPC2-1.1.5.pkg",
+        "Size":  65419,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-pecl-mcrypt-1.0.9.pkg",
+        "Size":  18794,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-pecl-radius-1.4.0b1_6.pkg",
+        "Size":  36186,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-pecl-rrd-2.0.4.pkg",
+        "Size":  15746,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-pfSense-module-2.9.0.pkg",
+        "Size":  44943,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-phpseclib-2.0.17.pkg",
+        "Size":  243465,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-posix-8.5.10.pkg",
+        "Size":  17897,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-readline-8.5.10.pkg",
+        "Size":  15944,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-session-8.5.10.pkg",
+        "Size":  44526,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-shmop-8.5.10.pkg",
+        "Size":  9728,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-simplexml-8.5.10.pkg",
+        "Size":  26370,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-sockets-8.5.10.pkg",
+        "Size":  51669,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-sqlite3-8.5.10.pkg",
+        "Size":  30284,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-sysvmsg-8.5.10.pkg",
+        "Size":  11231,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-sysvsem-8.5.10.pkg",
+        "Size":  8856,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-sysvshm-8.5.10.pkg",
+        "Size":  10247,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-tokenizer-8.5.10.pkg",
+        "Size":  15932,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-xml-8.5.10.pkg",
+        "Size":  28721,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-xmlreader-8.5.10.pkg",
+        "Size":  20239,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-xmlwriter-8.5.10.pkg",
+        "Size":  18391,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "php85-zlib-8.5.10.pkg",
+        "Size":  23234,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "pkcs11-helper-1.31.0.pkg",
+        "Size":  106877,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "pkg-2.8.4.pkg",
+        "Size":  13913547,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "png-1.6.58.pkg",
+        "Size":  314698,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "polkit-127.pkg",
+        "Size":  227213,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "protobuf-29.6,1.pkg",
+        "Size":  3753765,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "protobuf-c-1.5.1_4.pkg",
+        "Size":  119029,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "py312-packaging-26.3.pkg",
+        "Size":  245238,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "python3-3_4.pkg",
+        "Size":  1547,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "python311-3.11.16.pkg",
+        "Size":  30156711,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "python312-3.12.14_1.pkg",
+        "Size":  40673016,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "qstats-0.2.pkg",
+        "Size":  6944,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "radvd-2.20.pkg",
+        "Size":  77032,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "rate-0.9_4.pkg",
+        "Size":  48054,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "readline-8.3.6.pkg",
+        "Size":  489146,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "rrdtool-1.9.0_1.pkg",
+        "Size":  418469,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "scponly-4.8.20110526_8.pkg",
+        "Size":  24431,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "shared-mime-info-2.4_2.pkg",
+        "Size":  632771,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "smartmontools-7.5_2.pkg",
+        "Size":  605429,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "speedtest.pkg",
+        "Size":  843502,
+        "Date":  "2026-10-04"
+    },
+    {
+        "Filename":  "sqlite3-3.53.4,1.pkg",
+        "Size":  1397834,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "ssh_tunnel_shell-0.2_2.pkg",
+        "Size":  321169,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "sshguard-2.5.1_2,1.pkg",
+        "Size":  404282,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "strongswan-6.1.0_1.pkg",
+        "Size":  1251239,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "tcl86-8.6.18_1.pkg",
+        "Size":  2693833,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "tiff-4.7.2.pkg",
+        "Size":  1260753,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "uclcmd-0.2.20211204.pkg",
+        "Size":  18026,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "unbound-1.26.1.pkg",
+        "Size":  2754999,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "unzip-6.0_8.pkg",
+        "Size":  144137,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "vmaf-3.2.1.pkg",
+        "Size":  522110,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "voucher-0.1_3.pkg",
+        "Size":  5241,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "vstr-1.0.15_2.pkg",
+        "Size":  323106,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "webp-1.6.0.pkg",
+        "Size":  1157982,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "whois-5.5.7_1.pkg",
+        "Size":  72196,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "wifi.pkg",
+        "Size":  17999,
+        "Date":  "2026-10-04"
+    },
+    {
+        "Filename":  "wireguard-pfsense.pkg",
+        "Size":  2904,
+        "Date":  "2026-10-04"
+    },
+    {
+        "Filename":  "wol-0.7.1_5.pkg",
+        "Size":  33176,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "wpa_supplicant-2.12_1.pkg",
+        "Size":  737264,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "wrapalixresetbutton-0.0.16.pkg",
+        "Size":  5466,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "xinetd-2.3.15_3.pkg",
+        "Size":  90709,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "xorgproto-2025.1.pkg",
+        "Size":  248006,
+        "Date":  "2026-09-30"
+    },
+    {
+        "Filename":  "xray-pfsense.pkg",
+        "Size":  13622171,
+        "Date":  "2026-10-04"
+    },
+    {
+        "Filename":  "zstd-1.5.7_2.pkg",
+        "Size":  525668,
+        "Date":  "2026-09-30"
+    }
+]

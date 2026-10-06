@@ -1,0 +1,145 @@
+{
+  "schema_version": "1.0",
+  "config_version": 1,
+  "system": {
+    "hostname": "pfSense",
+    "domain": "home.arpa",
+    "timezone": "UTC",
+    "timeservers": [
+      "2.pfsense.pool.ntp.org"
+    ],
+    "dns_servers": [
+      "1.1.1.1",
+      "8.8.8.8"
+    ]
+  },
+  "interfaces": {
+    "wan": {
+      "device": "eth0",
+      "description": "WAN",
+      "enabled": true,
+      "role": "wan",
+      "type": "ethernet",
+      "mtu": 1500,
+      "mac": null,
+      "ipv4": {
+        "mode": "dhcp",
+        "address": null,
+        "prefix": null,
+        "gateway": null
+      },
+      "ipv6": {
+        "mode": "dhcp6",
+        "address": null,
+        "prefix": null,
+        "gateway": null
+      }
+    },
+    "lan": {
+      "device": "eth1",
+      "description": "LAN",
+      "enabled": true,
+      "role": "lan",
+      "type": "ethernet",
+      "mtu": 1500,
+      "mac": null,
+      "ipv4": {
+        "mode": "static",
+        "address": "192.168.1.1",
+        "prefix": 24,
+        "gateway": null
+      },
+      "ipv6": {
+        "mode": "slaac",
+        "address": null,
+        "prefix": null,
+        "gateway": null
+      }
+    }
+  },
+  "vlans": {},
+  "bridges": {},
+  "bonds": {},
+  "vrfs": {},
+  "routing": {
+    "static_routes": [],
+    "gateways": {}
+  },
+  "firewall": {
+    "aliases": {},
+    "rules": [
+      {
+        "id": "0100000101",
+        "enabled": true,
+        "action": "accept",
+        "direction": "in",
+        "interface": "lan",
+        "protocol": "any",
+        "source": "any",
+        "source_port": null,
+        "destination": "any",
+        "destination_port": null,
+        "log": false,
+        "description": "Default allow LAN to any rule"
+      },
+      {
+        "id": "0100000102",
+        "enabled": true,
+        "action": "accept",
+        "direction": "in",
+        "interface": "lan",
+        "protocol": "any",
+        "source": "any",
+        "source_port": null,
+        "destination": "any",
+        "destination_port": null,
+        "log": false,
+        "description": "Default allow LAN IPv6 to any rule"
+      }
+    ]
+  },
+  "nat": {
+    "outbound": [
+      {
+        "interface": "wan",
+        "source": "10.0.0.0/8",
+        "mode": "masquerade",
+        "target_ip": null,
+        "description": "Auto-migrated LAN Outbound NAT"
+      }
+    ],
+    "port_forward": []
+  },
+  "dhcp": {
+    "lan": {
+      "interface": "lan",
+      "enabled": true,
+      "subnet": "192.168.1.0/24",
+      "range_start": "192.168.1.100",
+      "range_end": "192.168.1.199",
+      "gateway": "192.168.1.1",
+      "dns_servers": [],
+      "lease_time": 7200,
+      "static_mappings": {}
+    }
+  },
+  "dns": {
+    "enabled": true,
+    "dnssec": true,
+    "host_overrides": {},
+    "upstream_forwarders": [
+      "1.1.1.1",
+      "8.8.8.8"
+    ]
+  },
+  "vpn": {
+    "wireguard": {},
+    "ipsec": {},
+    "openvpn": {}
+  },
+  "qos": {},
+  "ha": {},
+  "services": {},
+  "users": {},
+  "certificates": {}
+}

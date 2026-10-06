@@ -1,0 +1,94 @@
+{
+  "source_platform": "pfSense",
+  "source_format": "config.xml",
+  "source_version": "24.5",
+  "target_platform": "MitraNet",
+  "target_format": "JSON",
+  "target_schema_version": "1.0",
+  "summary": {
+    "migrated": 8,
+    "unsupported": 1
+  },
+  "items": [
+    {
+      "category": "System",
+      "feature": "General Settings",
+      "status": "MIGRATED",
+      "source_detail": "",
+      "target_detail": "Hostname pfSense.home.arpa",
+      "reason": null
+    },
+    {
+      "category": "System",
+      "feature": "FreeBSD powerd CPU governor",
+      "status": "UNSUPPORTED",
+      "source_detail": "",
+      "target_detail": "",
+      "reason": "FreeBSD powerd is specific to BSD; Linux CPU governors (cpufreq) are managed via kernel."
+    },
+    {
+      "category": "Interfaces",
+      "feature": "Interface wan (em0)",
+      "status": "MIGRATED",
+      "source_detail": "",
+      "target_detail": "Mapped to Linux device 'eth0'",
+      "reason": null
+    },
+    {
+      "category": "Interfaces",
+      "feature": "Interface lan (em1)",
+      "status": "MIGRATED",
+      "source_detail": "",
+      "target_detail": "Mapped to Linux device 'eth1'",
+      "reason": null
+    },
+    {
+      "category": "Firewall",
+      "feature": "Rule 0100000101",
+      "status": "MIGRATED",
+      "source_detail": "",
+      "target_detail": "ACCEPT on lan",
+      "reason": null
+    },
+    {
+      "category": "Firewall",
+      "feature": "Rule 0100000102",
+      "status": "MIGRATED",
+      "source_detail": "",
+      "target_detail": "ACCEPT on lan",
+      "reason": null
+    },
+    {
+      "category": "NAT",
+      "feature": "Outbound NAT",
+      "status": "MIGRATED",
+      "source_detail": "",
+      "target_detail": "Configured nftables postrouting masquerade",
+      "reason": null
+    },
+    {
+      "category": "DHCP",
+      "feature": "DHCPv4 Pool on lan",
+      "status": "MIGRATED",
+      "source_detail": "",
+      "target_detail": "192.168.1.100 - 192.168.1.199",
+      "reason": null
+    },
+    {
+      "category": "DNS",
+      "feature": "Unbound DNS Resolver",
+      "status": "MIGRATED",
+      "source_detail": "",
+      "target_detail": "DNSSEC=enabled",
+      "reason": null
+    }
+  ],
+  "warnings": [],
+  "errors": [],
+  "unsupported_features": [
+    {
+      "feature": "FreeBSD powerd CPU governor",
+      "reason": "FreeBSD powerd is specific to BSD; Linux CPU governors (cpufreq) are managed via kernel."
+    }
+  ]
+}

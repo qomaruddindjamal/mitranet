@@ -1,0 +1,178 @@
+{
+  "schema_version": "1.0",
+  "config_version": 1,
+  "system": {
+    "hostname": "mitranet-firewall",
+    "domain": "security.local",
+    "timezone": "UTC",
+    "timeservers": [
+      "pool.ntp.org"
+    ],
+    "dns_servers": [
+      "1.1.1.1"
+    ]
+  },
+  "interfaces": {
+    "wan": {
+      "device": "eth0",
+      "description": "Internet Uplink",
+      "enabled": true,
+      "role": "wan",
+      "type": "ethernet",
+      "mtu": 1500,
+      "mac": null,
+      "ipv4": {
+        "mode": "static",
+        "address": "198.51.100.2",
+        "prefix": 24,
+        "gateway": "198.51.100.1"
+      },
+      "ipv6": { "mode": "disabled", "address": null, "prefix": null, "gateway": null }
+    },
+    "lan": {
+      "device": "eth1",
+      "description": "Protected Corporate LAN",
+      "enabled": true,
+      "role": "lan",
+      "type": "ethernet",
+      "mtu": 1500,
+      "mac": null,
+      "ipv4": {
+        "mode": "static",
+        "address": "192.168.1.1",
+        "prefix": 24,
+        "gateway": null
+      },
+      "ipv6": { "mode": "disabled", "address": null, "prefix": null, "gateway": null }
+    },
+    "dmz": {
+      "device": "eth2",
+      "description": "Demilitarized Zone",
+      "enabled": true,
+      "role": "opt",
+      "type": "ethernet",
+      "mtu": 1500,
+      "mac": null,
+      "ipv4": {
+        "mode": "static",
+        "address": "192.168.2.1",
+        "prefix": 24,
+        "gateway": null
+      },
+      "ipv6": { "mode": "disabled", "address": null, "prefix": null, "gateway": null }
+    }
+  },
+  "vlans": {},
+  "bridges": {},
+  "bonds": {},
+  "vrfs": {},
+  "routing": {
+    "static_routes": [],
+    "gateways": {}
+  },
+  "firewall": {
+    "aliases": {
+      "admin_subnets": {
+        "type": "network",
+        "entries": [
+          "192.168.1.0/28"
+        ],
+        "description": "Network Management Range"
+      },
+      "dmz_web_servers": {
+        "type": "host",
+        "entries": [
+          "192.168.2.10",
+          "192.168.2.11"
+        ],
+        "description": "Public Web Cluster"
+      }
+    },
+    "rules": [
+      {
+        "id": "allow_admin_ssh",
+        "enabled": true,
+        "action": "accept",
+        "direction": "in",
+        "interface": "lan",
+        "protocol": "tcp",
+        "source": "@admin_subnets",
+        "source_port": null,
+        "destination": "any",
+        "destination_port": "22",
+        "log": true,
+        "description": "Allow SSH from Admin subnet"
+      },
+      {
+        "id": "allow_http_dmz",
+        "enabled": true,
+        "action": "accept",
+        "direction": "in",
+        "interface": "wan",
+        "protocol": "tcp",
+        "source": "any",
+        "source_port": null,
+        "destination": "@dmz_web_servers",
+        "destination_port": "443",
+        "log": false,
+        "description": "Allow Inbound HTTPS to DMZ"
+      },
+      {
+        "id": "block_all_other_wan",
+        "enabled": true,
+        "action": "drop",
+        "direction": "in",
+        "interface": "wan",
+        "protocol": "any",
+        "source": "any",
+        "source_port": null,
+        "destination": "any",
+        "destination_port": null,
+        "log": true,
+        "description": "Default WAN Ingress Drop"
+      }
+    ]
+  },
+  "nat": {
+    "outbound": [
+      {
+        "interface": "wan",
+        "source": "192.168.1.0/24",
+        "mode": "masquerade",
+        "target_ip": null,
+        "description": "Corporate LAN SNAT"
+      }
+    ],
+    "port_forward": [
+      {
+        "id": "pf_https",
+        "interface": "wan",
+        "protocol": "tcp",
+        "external_port": 443,
+        "internal_ip": "192.168.2.10",
+        "internal_port": 443,
+        "enabled": true,
+        "description": "Inbound HTTPS Port Forward"
+      }
+    ]
+  },
+  "dhcp": {},
+  "dns": {
+    "enabled": true,
+    "dnssec": true,
+    "host_overrides": {},
+    "upstream_forwarders": [
+      "1.1.1.1"
+    ]
+  },
+  "vpn": {
+    "wireguard": {},
+    "ipsec": {},
+    "openvpn": {}
+  },
+  "qos": {},
+  "ha": {},
+  "services": {},
+  "users": {},
+  "certificates": {}
+}

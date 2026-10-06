@@ -1,0 +1,22 @@
+<pfsense>
+  <version>24.5</version>
+  <interfaces>
+    <wan><if>em0</if><enable>1</enable></wan>
+    <lan><if>em1</if><enable>1</enable></lan>
+  </interfaces>
+  <nat>
+    <outbound>
+      <mode>automatic</mode>
+    </outbound>
+    <rule>
+      <interface>wan</interface>
+      <protocol>tcp</protocol>
+      <destination>
+        <port>8080</port>
+      </destination>
+      <target>192.168.1.150</target>
+      <local-port>80</local-port>
+      <descr>Web Server Inbound Port Forward</descr>
+    </rule>
+  </nat>
+</pfsense>

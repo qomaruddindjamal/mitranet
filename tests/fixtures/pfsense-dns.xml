@@ -1,0 +1,8 @@
+<pfsense>
+  <version>24.5</version>
+  <unbound>
+    <enable>1</enable>
+    <dnssec>1</dnssec>
+    <custom_options></custom_options>
+  </unbound>
+</pfsense>

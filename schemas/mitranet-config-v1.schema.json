@@ -1,0 +1,299 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MitraNet Canonical Configuration Schema",
+  "description": "Defines the canonical, single-source-of-truth persistent JSON configuration model for MitraNet Network Operating System.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "config_version",
+    "system",
+    "interfaces"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$"
+    },
+    "config_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "system": {
+      "type": "object",
+      "required": ["hostname", "domain"],
+      "properties": {
+        "hostname": { "type": "string", "minLength": 1, "maxLength": 63 },
+        "domain": { "type": "string", "minLength": 1 },
+        "timezone": { "type": "string" },
+        "timeservers": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "dns_servers": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "interfaces": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["device", "enabled"],
+        "properties": {
+          "device": { "type": "string" },
+          "description": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "role": { "type": "string", "enum": ["wan", "lan", "opt", "management"] },
+          "type": { "type": "string", "enum": ["ethernet", "vlan", "bridge", "bond", "loopback", "wireguard", "vrf"] },
+          "mtu": { "type": "integer", "minimum": 68, "maximum": 9216 },
+          "mac": { "type": ["string", "null"] },
+          "ipv4": {
+            "type": ["object", "null"],
+            "properties": {
+              "mode": { "type": "string", "enum": ["static", "dhcp", "disabled"] },
+              "address": { "type": ["string", "null"] },
+              "prefix": { "type": ["integer", "null"], "minimum": 0, "maximum": 32 },
+              "gateway": { "type": ["string", "null"] }
+            }
+          },
+          "ipv6": {
+            "type": ["object", "null"],
+            "properties": {
+              "mode": { "type": "string", "enum": ["static", "slaac", "dhcp6", "disabled"] },
+              "address": { "type": ["string", "null"] },
+              "prefix": { "type": ["integer", "null"], "minimum": 0, "maximum": 128 },
+              "gateway": { "type": ["string", "null"] }
+            }
+          }
+        }
+      }
+    },
+    "vlans": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["id", "parent"],
+        "properties": {
+          "id": { "type": "integer", "minimum": 1, "maximum": 4094 },
+          "parent": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "bridges": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["members"],
+        "properties": {
+          "members": { "type": "array", "items": { "type": "string" } },
+          "stp": { "type": "boolean" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "bonds": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["slaves", "mode"],
+        "properties": {
+          "slaves": { "type": "array", "items": { "type": "string" } },
+          "mode": { "type": "string", "enum": ["802.3ad", "active-backup", "balance-rr"] },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "vrfs": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["table_id"],
+        "properties": {
+          "table_id": { "type": "integer", "minimum": 1, "maximum": 65535 },
+          "interfaces": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "routing": {
+      "type": "object",
+      "properties": {
+        "static_routes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["destination", "gateway"],
+            "properties": {
+              "destination": { "type": "string" },
+              "gateway": { "type": "string" },
+              "interface": { "type": "string" },
+              "metric": { "type": "integer", "minimum": 1 },
+              "description": { "type": "string" }
+            }
+          }
+        },
+        "gateways": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["address", "interface"],
+            "properties": {
+              "address": { "type": "string" },
+              "interface": { "type": "string" },
+              "monitor": { "type": "boolean" },
+              "weight": { "type": "integer", "minimum": 1 }
+            }
+          }
+        }
+      }
+    },
+    "firewall": {
+      "type": "object",
+      "properties": {
+        "aliases": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["type", "entries"],
+            "properties": {
+              "type": { "type": "string", "enum": ["host", "network", "port"] },
+              "entries": { "type": "array", "items": { "type": "string" } },
+              "description": { "type": "string" }
+            }
+          }
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "action", "interface"],
+            "properties": {
+              "id": { "type": "string" },
+              "enabled": { "type": "boolean" },
+              "action": { "type": "string", "enum": ["accept", "drop", "reject"] },
+              "direction": { "type": "string", "enum": ["in", "out"] },
+              "interface": { "type": "string" },
+              "protocol": { "type": "string", "enum": ["any", "tcp", "udp", "icmp", "tcp_udp"] },
+              "source": { "type": "string" },
+              "source_port": { "type": "string" },
+              "destination": { "type": "string" },
+              "destination_port": { "type": "string" },
+              "log": { "type": "boolean" },
+              "description": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "nat": {
+      "type": "object",
+      "properties": {
+        "outbound": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["interface", "source", "mode"],
+            "properties": {
+              "interface": { "type": "string" },
+              "source": { "type": "string" },
+              "mode": { "type": "string", "enum": ["masquerade", "snat"] },
+              "target_ip": { "type": "string" },
+              "description": { "type": "string" }
+            }
+          }
+        },
+        "port_forward": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "interface", "protocol", "external_port", "internal_ip", "internal_port"],
+            "properties": {
+              "id": { "type": "string" },
+              "interface": { "type": "string" },
+              "protocol": { "type": "string", "enum": ["tcp", "udp", "tcp_udp"] },
+              "external_port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+              "internal_ip": { "type": "string" },
+              "internal_port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+              "enabled": { "type": "boolean" },
+              "description": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "dhcp": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["interface", "subnet", "range_start", "range_end"],
+        "properties": {
+          "interface": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "subnet": { "type": "string" },
+          "range_start": { "type": "string" },
+          "range_end": { "type": "string" },
+          "gateway": { "type": "string" },
+          "dns_servers": { "type": "array", "items": { "type": "string" } },
+          "lease_time": { "type": "integer", "minimum": 60 },
+          "static_mappings": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      }
+    },
+    "dns": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "dnssec": { "type": "boolean" },
+        "host_overrides": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "upstream_forwarders": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "vpn": {
+      "type": "object",
+      "properties": {
+        "wireguard": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["private_key", "listen_port", "address"],
+            "properties": {
+              "enabled": { "type": "boolean" },
+              "private_key": { "type": "string" },
+              "listen_port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+              "address": { "type": "string" },
+              "peers": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["public_key"],
+                  "properties": {
+                    "public_key": { "type": "string" },
+                    "allowed_ips": { "type": "array", "items": { "type": "string" } },
+                    "endpoint": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "ipsec": { "type": "object" },
+        "openvpn": { "type": "object" }
+      }
+    },
+    "qos": { "type": "object" },
+    "ha": { "type": "object" },
+    "services": { "type": "object" },
+    "users": { "type": "object" },
+    "certificates": { "type": "object" }
+  }
+}

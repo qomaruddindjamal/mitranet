@@ -1,0 +1,20 @@
+<pfsense>
+  <version>24.5</version>
+  <interfaces>
+    <lan>
+      <enable>1</enable>
+      <if>em1</if>
+      <ipaddr>192.168.1.1</ipaddr>
+      <subnet>24</subnet>
+    </lan>
+  </interfaces>
+  <dhcpd>
+    <lan>
+      <enable>1</enable>
+      <range>
+        <from>192.168.1.100</from>
+        <to>192.168.1.200</to>
+      </range>
+    </lan>
+  </dhcpd>
+</pfsense>
