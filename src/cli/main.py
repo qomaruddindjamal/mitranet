@@ -7,19 +7,27 @@ and dynamic Linux kernel network interface discovery & state (Phase 1A).
 import sys
 import os
 import json
-from mitranet.core.version import MITRANET_VERSION
+from mitranet.core.version import MITRANET_VERSION, CODENAME, PRETTY_NAME
 from mitranet.core.config.loader import ConfigLoader, ConfigWriter
 from mitranet.core.config.validator import ConfigValidator
 from mitranet.core.config.transaction import ConfigTransactionManager
 from mitranet.core.migration.exporter import MigrationExporter
 from mitranet.core.network.discovery import InterfaceDiscoveryService
-from mitranet.core.network.exceptions import InterfaceNotFoundError, BackendExecutionError
+from mitranet.core.network.config_service import InterfaceConfigurationService
+from mitranet.core.network.exceptions import (
+    InterfaceNotFoundError,
+    BackendExecutionError,
+    NetworkValidationError,
+    NetworkSecurityError,
+    SafetyConstraintViolationError,
+    VerificationFailureError,
+)
 
 
 def print_banner():
     print("=" * 65)
-    print(f"       MITRANET NETWORK OPERATING SYSTEM v{MITRANET_VERSION} (Debian Core)")
-    print("       Carrier-Grade Firewall, Routing & Hardware NOS")
+    print(f"       {PRETTY_NAME.upper()} (Debian Core)")
+    print(f"       Carrier-Grade Firewall, Routing & Hardware NOS")
     print("=" * 65)
 
 
@@ -177,24 +185,120 @@ def cmd_interface_show(args, service: InterfaceDiscoveryService = None):
     print(f"    TX Bytes: {iface.statistics.tx_bytes:<12} Packets: {iface.statistics.tx_packets:<8} Errors: {iface.statistics.tx_errors:<4} Dropped: {iface.statistics.tx_dropped}")
 
 
+def cmd_interface_up(args, service: InterfaceConfigurationService = None):
+    service = service or InterfaceConfigurationService()
+    if not args:
+        print("Usage: mitranet interface up <interface>")
+        sys.exit(1)
+    ifname = args[0]
+    try:
+        iface = service.set_interface_up(ifname)
+        print(f"[SUCCESS] Interface '{ifname}' administrative state is now UP (oper_state={iface.oper_state}).")
+    except (NetworkValidationError, NetworkSecurityError, SafetyConstraintViolationError) as e:
+        print(f"[VALIDATION ERROR] {e}")
+        sys.exit(1)
+    except (InterfaceNotFoundError, VerificationFailureError, BackendExecutionError) as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+
+
+def cmd_interface_down(args, service: InterfaceConfigurationService = None):
+    service = service or InterfaceConfigurationService()
+    if not args:
+        print("Usage: mitranet interface down <interface>")
+        sys.exit(1)
+    ifname = args[0]
+    try:
+        iface = service.set_interface_down(ifname)
+        print(f"[SUCCESS] Interface '{ifname}' administrative state is now DOWN (oper_state={iface.oper_state}).")
+    except (NetworkValidationError, NetworkSecurityError, SafetyConstraintViolationError) as e:
+        print(f"[VALIDATION ERROR] {e}")
+        sys.exit(1)
+    except (InterfaceNotFoundError, VerificationFailureError, BackendExecutionError) as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+
+
+def cmd_interface_set(args, service: InterfaceConfigurationService = None):
+    service = service or InterfaceConfigurationService()
+    if len(args) < 3:
+        print("Usage: mitranet interface set <interface> mtu <value>")
+        print("       mitranet interface set <interface> mac <address>")
+        sys.exit(1)
+    ifname = args[0]
+    prop = args[1].lower()
+    val = args[2]
+
+    try:
+        if prop == "mtu":
+            iface = service.set_mtu(ifname, val)
+            print(f"[SUCCESS] Interface '{ifname}' MTU set to {iface.mtu}.")
+        elif prop in ("mac", "address"):
+            iface = service.set_mac(ifname, val)
+            print(f"[SUCCESS] Interface '{ifname}' MAC address set to {iface.mac_address}.")
+        else:
+            print(f"Unknown property '{prop}'. Supported: mtu, mac")
+            sys.exit(1)
+    except (NetworkValidationError, NetworkSecurityError, SafetyConstraintViolationError) as e:
+        print(f"[VALIDATION ERROR] {e}")
+        sys.exit(1)
+    except (InterfaceNotFoundError, VerificationFailureError, BackendExecutionError) as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+
+
+def cmd_interface_address(args, service: InterfaceConfigurationService = None):
+    service = service or InterfaceConfigurationService()
+    if len(args) < 3:
+        print("Usage: mitranet interface address add <interface> <CIDR>")
+        print("       mitranet interface address remove <interface> <CIDR>")
+        sys.exit(1)
+    action = args[0].lower()
+    ifname = args[1]
+    cidr = args[2]
+
+    try:
+        if action == "add":
+            iface = service.add_address(ifname, cidr)
+            print(f"[SUCCESS] Address {cidr} added to interface '{ifname}'.")
+        elif action in ("remove", "del", "delete"):
+            iface = service.remove_address(ifname, cidr)
+            print(f"[SUCCESS] Address {cidr} removed from interface '{ifname}'.")
+        else:
+            print(f"Unknown address action '{action}'. Supported: add, remove")
+            sys.exit(1)
+    except (NetworkValidationError, NetworkSecurityError, SafetyConstraintViolationError) as e:
+        print(f"[VALIDATION ERROR] {e}")
+        sys.exit(1)
+    except (InterfaceNotFoundError, VerificationFailureError, BackendExecutionError) as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+
+
 def main():
     if len(sys.argv) < 2:
         print_banner()
         print("\nUsage: mitranet <command> <subcommand> [options]")
         print("\nCommands:")
-        print("  interface list [--json]         List discovered network interfaces")
-        print("  interface show <name> [--json]  Show operational details of an interface")
-        print("  config validate <config.json>   Validate configuration file")
-        print("  config import-pfsense <xml>     Migrate pfSense config.xml to MitraNet JSON")
-        print("  config show                     Display current running configuration")
-        print("  config commit [note]            Commit candidate configuration to running")
-        print("  config rollback [snapshot_id]   Rollback to previous snapshot")
+        print("  interface list [--json]                   List discovered network interfaces")
+        print("  interface show <name> [--json]            Show operational details of an interface")
+        print("  interface up <name>                       Set interface administrative state UP")
+        print("  interface down <name>                     Set interface administrative state DOWN")
+        print("  interface set <name> mtu <value>          Set interface MTU")
+        print("  interface set <name> mac <mac_address>    Set interface MAC address")
+        print("  interface address add <name> <CIDR>       Add IPv4/IPv6 address to interface")
+        print("  interface address remove <name> <CIDR>    Remove IPv4/IPv6 address from interface")
+        print("  config validate <config.json>             Validate configuration file")
+        print("  config import-pfsense <xml>               Migrate pfSense config.xml to MitraNet JSON")
+        print("  config show                               Display current running configuration")
+        print("  config commit [note]                      Commit candidate configuration to running")
+        print("  config rollback [snapshot_id]             Rollback to previous snapshot")
         sys.exit(0)
 
     category = sys.argv[1].lower()
     if category == "interface":
         if len(sys.argv) < 3:
-            print("Specify an interface subcommand: 'list' or 'show'")
+            print("Specify an interface subcommand: 'list', 'show', 'up', 'down', 'set', 'address'")
             sys.exit(1)
         subcmd = sys.argv[2].lower()
         subargs = sys.argv[3:]
@@ -202,6 +306,14 @@ def main():
             cmd_interface_list(subargs)
         elif subcmd == "show":
             cmd_interface_show(subargs)
+        elif subcmd == "up":
+            cmd_interface_up(subargs)
+        elif subcmd == "down":
+            cmd_interface_down(subargs)
+        elif subcmd == "set":
+            cmd_interface_set(subargs)
+        elif subcmd == "address":
+            cmd_interface_address(subargs)
         else:
             print(f"Unknown interface subcommand: {subcmd}")
             sys.exit(1)
@@ -232,3 +344,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

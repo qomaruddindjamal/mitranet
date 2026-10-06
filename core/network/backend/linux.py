@@ -28,6 +28,24 @@ class NetworkBackend:
     def get_sys_statistics(self, iface_name: str) -> Optional[Dict[str, int]]:
         raise NotImplementedError
 
+    def set_interface_up(self, iface_name: str) -> bool:
+        raise NotImplementedError
+
+    def set_interface_down(self, iface_name: str) -> bool:
+        raise NotImplementedError
+
+    def set_mtu(self, iface_name: str, mtu: int) -> bool:
+        raise NotImplementedError
+
+    def set_mac_address(self, iface_name: str, mac: str) -> bool:
+        raise NotImplementedError
+
+    def add_address(self, iface_name: str, cidr: str) -> bool:
+        raise NotImplementedError
+
+    def remove_address(self, iface_name: str, cidr: str) -> bool:
+        raise NotImplementedError
+
 
 class LinuxNetworkBackend(NetworkBackend):
     """Production Linux Network Backend querying iproute2 and /sys/class/net."""
@@ -49,6 +67,31 @@ class LinuxNetworkBackend(NetworkBackend):
         except json.JSONDecodeError as e:
             logger.error("Malformed JSON received from %s: %s", " ".join(cmd), e)
             raise BackendExecutionError(f"Malformed JSON output from 'ip': {e}")
+
+    def _exec_ip_cmd(self, command_args: List[str], timeout_sec: int = 5) -> bool:
+        """Executes iproute2 write command with shell=False, timeout, and structured error handling."""
+        cmd = ["ip"] + command_args
+        try:
+            res = subprocess.run(
+                cmd,
+                shell=False,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=timeout_sec,
+                check=True
+            )
+            return True
+        except FileNotFoundError:
+            logger.error("ip utility (iproute2) not found in system PATH.")
+            raise BackendExecutionError("Required Linux networking tool 'ip' (iproute2) is not installed.")
+        except subprocess.TimeoutExpired:
+            logger.error("Command timed out: %s", " ".join(cmd))
+            raise BackendExecutionError(f"Linux networking command timed out: {' '.join(cmd)}")
+        except subprocess.CalledProcessError as e:
+            err_msg = e.stderr.strip() or f"exit code {e.returncode}"
+            logger.error("Error executing %s: %s", " ".join(cmd), err_msg)
+            raise BackendExecutionError(f"Linux kernel operation failed: {err_msg}")
 
     def get_link_info(self) -> List[Dict[str, Any]]:
         return self._run_ip_json(["link", "show"])
@@ -92,3 +135,21 @@ class LinuxNetworkBackend(NetworkBackend):
             else:
                 stats[field] = 0
         return stats
+
+    def set_interface_up(self, iface_name: str) -> bool:
+        return self._exec_ip_cmd(["link", "set", "dev", iface_name, "up"])
+
+    def set_interface_down(self, iface_name: str) -> bool:
+        return self._exec_ip_cmd(["link", "set", "dev", iface_name, "down"])
+
+    def set_mtu(self, iface_name: str, mtu: int) -> bool:
+        return self._exec_ip_cmd(["link", "set", "dev", iface_name, "mtu", str(mtu)])
+
+    def set_mac_address(self, iface_name: str, mac: str) -> bool:
+        return self._exec_ip_cmd(["link", "set", "dev", iface_name, "address", mac])
+
+    def add_address(self, iface_name: str, cidr: str) -> bool:
+        return self._exec_ip_cmd(["address", "add", cidr, "dev", iface_name])
+
+    def remove_address(self, iface_name: str, cidr: str) -> bool:
+        return self._exec_ip_cmd(["address", "del", cidr, "dev", iface_name])
