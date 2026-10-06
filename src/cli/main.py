@@ -20,6 +20,7 @@ from mitranet.core.network.vlan import VlanService
 from mitranet.core.network.bridge import BridgeService
 from mitranet.core.network.bonding import BondService
 from mitranet.core.network.vrf import VRFService
+from mitranet.core.transaction.engine import NetworkTransactionEngine
 from mitranet.core.network.exceptions import (
     InterfaceNotFoundError,
     BackendExecutionError,
@@ -100,6 +101,73 @@ def cmd_config_show(args):
     mgr = ConfigTransactionManager()
     cfg = mgr.get_running()
     print(cfg.model_dump_json(indent=2))
+
+
+def cmd_config_status(args):
+    engine = NetworkTransactionEngine()
+    as_json = "--json" in args
+    is_clean, msg = engine.check_startup_recovery()
+    record = engine.current_record
+    if as_json:
+        status_data = {
+            "status": "CLEAN" if is_clean else "ATTENTION_REQUIRED",
+            "message": msg,
+            "last_transaction": record.model_dump() if record else None,
+            "locked": engine.lock.is_locked(),
+        }
+        print(json.dumps(status_data, indent=2))
+    else:
+        print("MitraNet Transaction & System Status:")
+        print(f"  Health State     : {'CLEAN' if is_clean else 'ATTENTION_REQUIRED'}")
+        print(f"  Message          : {msg}")
+        print(f"  Transaction Lock : {'LOCKED' if engine.lock.is_locked() else 'UNLOCKED'}")
+        if record:
+            print(f"  Last Transaction : {record.transaction_id}")
+            print(f"  State            : {record.state}")
+            print(f"  Operations       : {record.applied_operation_count}/{record.operation_count}")
+            if record.error:
+                print(f"  Error            : {record.error}")
+
+
+def cmd_config_plan(args):
+    engine = NetworkTransactionEngine()
+    as_json = "--json" in args
+    try:
+        plan = engine.plan()
+        if as_json:
+            print(json.dumps([op.model_dump() for op in plan], indent=2))
+        else:
+            print(f"Planned Network Operations ({len(plan)} steps):")
+            print("-" * 65)
+            for op in plan:
+                print(f"[{op.op_id}] {op.op_type:<20} target: {op.target:<15} params: {op.params}")
+    except Exception as e:
+        print(f"[ERROR] Planning failed: {e}")
+        sys.exit(1)
+
+
+def cmd_config_apply(args):
+    engine = NetworkTransactionEngine()
+    try:
+        success, msg = engine.apply_and_commit()
+        status_tag = "PASS" if success else "FAIL"
+        print(f"[{status_tag}] {msg}")
+        if not success:
+            sys.exit(1)
+    except Exception as e:
+        print(f"[ERROR] Apply failed: {e}")
+        sys.exit(1)
+
+
+def cmd_config_recover(args):
+    engine = NetworkTransactionEngine()
+    is_clean, msg = engine.check_startup_recovery()
+    if is_clean:
+        print(f"[INFO] System recovery not needed: {msg}")
+        return
+    print(f"[ATTENTION] Recovering from: {msg}")
+    engine.lock.release()
+    print("[SUCCESS] Stale locks cleared and state reset to IDLE.")
 
 
 def cmd_config_commit(args):
@@ -1093,7 +1161,7 @@ def main():
 
     elif category == "config":
         if len(sys.argv) < 3:
-            print("Specify a config subcommand (validate, import-pfsense, show, commit, rollback)")
+            print("Specify a config subcommand (validate, import-pfsense, show, plan, apply, status, commit, rollback, recover)")
             sys.exit(1)
         subcmd = sys.argv[2].lower()
         subargs = sys.argv[3:]
@@ -1103,10 +1171,18 @@ def main():
             cmd_config_import_pfsense(subargs)
         elif subcmd == "show":
             cmd_config_show(subargs)
+        elif subcmd == "plan":
+            cmd_config_plan(subargs)
+        elif subcmd == "apply":
+            cmd_config_apply(subargs)
+        elif subcmd == "status":
+            cmd_config_status(subargs)
         elif subcmd == "commit":
             cmd_config_commit(subargs)
         elif subcmd == "rollback":
             cmd_config_rollback(subargs)
+        elif subcmd == "recover":
+            cmd_config_recover(subargs)
         else:
             print(f"Unknown config subcommand: {subcmd}")
             sys.exit(1)

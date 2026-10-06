@@ -23,11 +23,19 @@ class InterfaceIPv4(BaseModel):
     gateway: Optional[str] = Field(default=None)
 
 
+# Backward-compatible alias
+IPv4Config = InterfaceIPv4
+
+
 class InterfaceIPv6(BaseModel):
     mode: Literal["static", "slaac", "dhcp6", "disabled"] = Field(default="disabled")
     address: Optional[str] = Field(default=None)
     prefix: Optional[int] = Field(default=None, ge=0, le=128)
     gateway: Optional[str] = Field(default=None)
+
+
+# Backward-compatible alias
+IPv6Config = InterfaceIPv6
 
 
 class InterfaceConfig(BaseModel):
@@ -65,12 +73,20 @@ class VrfConfig(BaseModel):
     interfaces: List[str] = Field(default_factory=list)
 
 
+# Backward-compatible alias
+VRFConfig = VrfConfig
+
+
 class StaticRoute(BaseModel):
     destination: str = Field(..., description="Destination CIDR (e.g. 10.0.0.0/8)")
     gateway: str = Field(..., description="Next-hop IP")
     interface: Optional[str] = Field(default=None)
     metric: int = Field(default=1, ge=1)
     description: str = Field(default="")
+
+
+# Backward-compatible alias
+StaticRouteConfig = StaticRoute
 
 
 class GatewayConfig(BaseModel):

@@ -46,9 +46,24 @@ class InterfaceConfigurationService:
         """Sets administrative link state to UP or DOWN and verifies kernel state."""
         valid_name = InterfaceConfigValidator.validate_interface_name(iface_name)
 
-        # Loopback safety protection
-        if valid_name == "lo" and not state_up:
-            raise SafetyConstraintViolationError("Safety violation: Disabling loopback interface 'lo' is forbidden.")
+        # Loopback and Management interface safety protection
+        if not state_up:
+            if valid_name == "lo":
+                raise SafetyConstraintViolationError("Safety violation: Disabling loopback interface 'lo' is forbidden.")
+            # Check if active management interface
+            try:
+                routes = self.backend.get_routes(family="inet")
+                for r in routes:
+                    if r.get("dst") == "default" and r.get("dev") == valid_name:
+                        raise SafetyConstraintViolationError(
+                            f"Safety violation: Disabling active management interface '{valid_name}' is forbidden."
+                        )
+            except NotImplementedError:
+                pass
+            except SafetyConstraintViolationError:
+                raise
+            except Exception:
+                pass
 
         # Ensure interface exists
         current = self.discovery.get_interface(valid_name)
