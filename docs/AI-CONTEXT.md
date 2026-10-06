@@ -29,14 +29,15 @@
 | **Phase 2B** | Native Debian Package System & Repository | **PASS / LOCKED** |
 | **Phase 2C** | Native Package Migration & Reimplementation | **PASS / LOCKED** |
 | **Phase 3A** | Security Hardening & Firewall Core | **PASS / LOCKED** |
+| **WebUI v1** | Management Layer & REST API v1 | **PASS / LOCKED** |
 | **Phase 3B** | NAT & Connection Tracking | **NEXT (UNFINISHED)** |
 
 ---
 
 ## 3. Latest Verified Git Checkpoint
 
-- **Phase 2C Baseline:** `cb0f232fda2ae0dd30420e5084818d7702edafe5`
-- **Phase 3A Milestone:** Completed & verified with real Linux kernel nftables & packet filtering
+- **Phase 3A Baseline:** `ef2558d535add049dea9e06a2d69ca52460eadd9`
+- **WebUI v1 Milestone:** Implemented, verified on live Debian VM (`systemd`, port `8443`, full REST API, auth/CSRF, test suite PASS).
 - **Branch:** `main`
 - **Remote:** `origin` (`https://github.com/qomaruddindjamal/mitranet.git`)
 - **Working Tree:** Clean
@@ -136,12 +137,16 @@ When a new AI/Antigravity conversation starts:
   `A7EF94AC2FB9A7FEC454552ABD629B7CC9D5155C886165A45649F5CE6167E355` (Read-only, verified)
 - **pfSense Source ISO (`pfsense-offline-installer.iso`):**
   `16EBD1682C7F18D0B40300EC486611979F0D0C090300EFE2BFFD7C209A624291` (Read-only, verified)
-- **Verified MitraNet ISO Baseline:**
-  `build/MitraNet-Rinjani-1.0.2-amd64.iso` — SHA256: `1864DBECDF01F558F89FCB4D53BC4F979CE683117D8E21C1CDF7CB7BBDD5AA67` (Verified)
+- **Verified MitraNet ISO Baseline (with WebUI Management Layer v1):**
+  `build/MitraNet-Rinjani-1.0.2-amd64.iso` — SHA256: `336B47E93C401A22B2C8F68C97335C4B7FAC0AFE278586440277341EE67C4536` (Verified)
 
 ---
 
-## 8. WebUI Freeze Status
+## 8. WebUI Management Status
 
-The WebUI frontend (`React`, `Vite`, `web-src`, `www`, `frontend`) is **STRICTLY FROZEN**.
-No modifications permitted.
+MitraNet WebUI Management Layer v1 is **PASS / LOCKED** and fully operational:
+- Runtime: Native Python `http.server` backend + Vanilla HTML/CSS/JS frontend SPA.
+- Service: `mitranet-webui.service` (systemd, port 8443).
+- Security: PBKDF2 authentication, HttpOnly SameSite=Strict cookies, CSRF protection.
+- Fully offline capable, zero external CDN dependencies.
+

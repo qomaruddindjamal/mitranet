@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MitraNet Rinjani — Network Operating System</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <!-- Login Modal -->
+  <div id="login-modal">
+    <div class="login-box">
+      <div class="brand-logo" style="margin: 0 auto 16px auto; width: 44px; height: 44px; font-size: 20px;">M</div>
+      <h2>MitraNet Login</h2>
+      <p>Appliance Management Layer</p>
+      <div class="login-field">
+        <label>Username</label>
+        <input type="text" id="login-user" value="admin" autocomplete="off">
+      </div>
+      <div class="login-field">
+        <label>Password</label>
+        <input type="password" id="login-pass" value="mitranet" autocomplete="off">
+      </div>
+      <button class="btn btn-cyan login-btn" onclick="app.login()">Sign In</button>
+      <div id="login-err" class="error-msg"></div>
+    </div>
+  </div>
+
+  <!-- Sidebar Navigation -->
+  <nav id="sidebar">
+    <div class="brand-header">
+      <div class="brand-logo">M</div>
+      <div class="brand-text">
+        <h1>MitraNet</h1>
+        <p>Rinjani 1.0.2</p>
+      </div>
+    </div>
+
+    <ul class="nav-links">
+      <li class="nav-item active" onclick="app.navigate('dashboard')">
+        <span class="icon">📊</span> Dashboard
+      </li>
+      <li class="nav-item" onclick="app.navigate('interfaces')">
+        <span class="icon">🔌</span> Interfaces
+      </li>
+      <li class="nav-item" onclick="app.navigate('routing')">
+        <span class="icon">🛣️</span> Routing
+      </li>
+      <li class="nav-item" onclick="app.navigate('vlans')">
+        <span class="icon">🏷️</span> 802.1Q VLAN
+      </li>
+      <li class="nav-item" onclick="app.navigate('bridges')">
+        <span class="icon">🌉</span> Bridges
+      </li>
+      <li class="nav-item" onclick="app.navigate('bonds')">
+        <span class="icon">🔗</span> Bond / LACP
+      </li>
+      <li class="nav-item" onclick="app.navigate('vrfs')">
+        <span class="icon">🌐</span> VRF
+      </li>
+      <li class="nav-item" onclick="app.navigate('firewall')">
+        <span class="icon">🛡️</span> Firewall (nftables)
+      </li>
+      <li class="nav-item" onclick="app.navigate('gateways')">
+        <span class="icon">📡</span> Gateway Monitor
+      </li>
+      <li class="nav-item" onclick="app.navigate('config')">
+        <span class="icon">⚙️</span> Configuration
+      </li>
+      <li class="nav-item" onclick="app.navigate('logs')">
+        <span class="icon">📜</span> System Logs
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <span id="nav-user">admin</span>
+      <button class="logout-btn" onclick="app.logout()">Logout</button>
+    </div>
+  </nav>
+
+  <!-- Main View Container -->
+  <div id="main-container">
+    <header id="topbar">
+      <div class="topbar-title" id="page-title">Dashboard</div>
+      <div class="topbar-status">
+        <div class="status-indicator">
+          <span class="dot"></span>
+          <span>Engine Online</span>
+        </div>
+        <span id="clock-display" style="color: var(--text-muted); font-size: 12px;">--:--:--</span>
+      </div>
+    </header>
+
+    <main id="content-pane">
+      <!-- Dynamic view injected via app.js -->
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+[Unit]
+Description=MitraNet WebUI Management Layer and REST API
+After=network.target network-online.target mitranet-firewall.service
+Wants=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/mitranet
+ExecStart=/usr/bin/python3 -m mitranet.src.api.server
+Restart=always
+RestartSec=3
+KillMode=process
+
+# Security Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/etc/mitranet /var/lib/mitranet /var/log /run /tmp
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
