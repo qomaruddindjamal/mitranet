@@ -1,0 +1,29 @@
+{
+  "project": "MitraNet",
+  "version": "1.0.0",
+  "development_version": "0.1.0-dev",
+  "foundation": "MitraOS 1.0.0",
+  "code_os": "Rinjani",
+  "architecture": "amd64",
+  "source_commit": "b66ca72099a15557ec4623b43f33b842c3ac1bfb",
+  "source_date_epoch": 1791263779,
+  "artifact_name": "mitranet-rinjani-installer.1.0.0.iso",
+  "artifact_size": 99774464,
+  "artifact_sha256": "8e414785059f42b5f1cf7872cf926213c2b037e6291e9ba0d194bb3c9dbe1392",
+  "build_environment": {
+    "host_os": "Windows Server / Workstation (amd64)",
+    "iso_utility": "GNU xorriso 1.5.2 / libburnia",
+    "bootloader": "GNU GRUB 2.12-9+deb13u2",
+    "kernel": "Linux 6.12.111+deb13-amd64"
+  },
+  "package_manifest": {
+    "expected_count": 204,
+    "actual_count": 204,
+    "missing": 0,
+    "duplicates": 0,
+    "manifest_file": "docs/packages/packages.pkg.json"
+  },
+  "installer_revision": "scripts/install_mitranet.sh (v1.0.0 canonical)",
+  "build_timestamp": "2026-10-06T12:18:47Z",
+  "reproducibility": "BIT_FOR_BIT_IDENTICAL"
+}
