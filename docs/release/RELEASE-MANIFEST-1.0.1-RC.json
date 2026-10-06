@@ -5,8 +5,10 @@
   "foundation": "MitraOS 1.0.0",
   "code_os": "Rinjani",
   "architecture": "amd64",
-  "candidate_commit": "b8ca7b0165ee0b2276d6aa7f76114c4ef357c273",
+  "candidate_commit": "34f7c393164c297483f84177e93f29c0648edfbf",
   "target_artifact_name": "mitranet-rinjani-installer.1.0.1.iso",
+  "artifact_size": 99774464,
+  "artifact_sha256": "8e414785059f42b5f1cf7872cf926213c2b037e6291e9ba0d194bb3c9dbe1392",
   "build_environment": {
     "host_os": "Windows Server / Workstation (amd64)",
     "iso_utility": "GNU xorriso 1.5.2 / libburnia",
@@ -21,6 +23,7 @@
     "manifest_file": "docs/packages/packages.pkg.json"
   },
   "installer_revision": "scripts/install_mitranet.sh (v1.0.1-candidate with user provisioning & mitranet-api.service)",
-  "build_status": "READY_FOR_ISO_BUILD",
+  "build_status": "BUILT_AND_VERIFIED",
+  "reproducibility": "BIT_FOR_BIT_IDENTICAL (BUILD #1 == BUILD #2)",
   "security_status": "PASS (CRITICAL=0, HIGH=0, MEDIUM=0, LOW=0)"
 }
