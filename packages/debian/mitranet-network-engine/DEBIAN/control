@@ -1,0 +1,13 @@
+Package: mitranet-network-engine
+Version: 1.0.2-1~deb13u1
+Section: net
+Priority: optional
+Architecture: all
+Maintainer: MitraNet Core Team <support@mitranet.id>
+Depends: python3 (>= 3.13), iproute2 (>= 6.12), nftables (>= 1.1.0)
+Recommends: wireguard-tools, bridge-utils
+Description: MitraNet Linux In-Tree Network & Firewall Engine
+ MitraNet Rinjani 1.0.2 native Linux networking engine.
+ Provides full netlink and iproute2 orchestrations for Interfaces,
+ IPv4/IPv6 Static Routing, 802.1Q VLANs, Linux Bridges, LACP Bonding,
+ VRF Lite domains, and Netfilter/nftables ruleset management.

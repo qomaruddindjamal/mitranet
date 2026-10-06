@@ -1,0 +1,39 @@
+#!/bin/bash
+set -e
+
+case "$1" in
+    configure)
+        # Ensure directories exist with correct permissions
+        mkdir -p /var/log/mitranet /var/lib/mitranet /run/mitranet
+        chmod 750 /var/log/mitranet /var/lib/mitranet
+
+        # Register system identity if not present
+        if [ ! -f /etc/os-release ] || ! grep -q "ID=mitranet" /etc/os-release; then
+            cat << 'EOF' > /etc/os-release
+NAME="MitraNet"
+VERSION="1.0.2"
+ID=mitranet
+ID_LIKE=debian
+VERSION_ID="1.0.2"
+VERSION_CODENAME=Rinjani
+PRETTY_NAME="MitraNet Rinjani 1.0.2"
+HOME_URL="https://mitranet.local"
+SUPPORT_URL="https://mitranet.local/support"
+BUG_REPORT_URL="https://mitranet.local/bugs"
+EOF
+        fi
+
+        # Reload systemd daemon
+        if command -v systemctl >/dev/null 2>&1; then
+            systemctl daemon-reload || true
+        fi
+        ;;
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+exit 0

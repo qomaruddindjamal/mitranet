@@ -1,0 +1,25 @@
+#!/bin/bash
+set -e
+
+case "$1" in
+    configure)
+        # Ensure configuration directory structure exists
+        mkdir -p /etc/mitranet/migrations /etc/mitranet/snapshots /etc/mitranet/secrets
+        chmod 700 /etc/mitranet/secrets
+        chmod 750 /etc/mitranet/snapshots
+
+        # Ensure default running.json exists if not present
+        if [ ! -f /etc/mitranet/running.json ] && [ -f /etc/mitranet/defaults.json ]; then
+            cp -n /etc/mitranet/defaults.json /etc/mitranet/running.json
+            chmod 644 /etc/mitranet/running.json
+        fi
+        ;;
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+exit 0

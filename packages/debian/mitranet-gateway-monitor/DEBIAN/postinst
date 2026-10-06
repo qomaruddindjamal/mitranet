@@ -1,0 +1,20 @@
+#!/bin/bash
+set -e
+
+case "$1" in
+    configure)
+        if command -v systemctl >/dev/null 2>&1; then
+            systemctl daemon-reload || true
+            # Do not auto-start if in chroot or install environment, but enable unit
+            systemctl enable mitranet-gateway-monitor.service >/dev/null 2>&1 || true
+        fi
+        ;;
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+exit 0

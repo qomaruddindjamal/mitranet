@@ -1,0 +1,19 @@
+#!/bin/bash
+set -e
+
+case "$1" in
+    remove|deconfigure)
+        if command -v systemctl >/dev/null 2>&1; then
+            systemctl stop mitranet-gateway-monitor.service >/dev/null 2>&1 || true
+            systemctl disable mitranet-gateway-monitor.service >/dev/null 2>&1 || true
+        fi
+        ;;
+    upgrade|failed-upgrade)
+        ;;
+    *)
+        echo "prerm called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+exit 0

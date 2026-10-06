@@ -1,0 +1,12 @@
+Package: mitranet-config-engine
+Version: 1.0.2-1~deb13u1
+Section: net
+Priority: optional
+Architecture: all
+Maintainer: MitraNet Core Team <support@mitranet.id>
+Depends: python3 (>= 3.13), python3-jsonschema | python3
+Description: MitraNet Configuration, Validation & Transaction Engine
+ MitraNet Rinjani 1.0.2 native configuration engine.
+ Implements JSON Schema validation, candidate/running configuration
+ decoupling, atomic transactions, dry-run evaluation, pre-apply
+ snapshots, automated recovery, and state persistence.

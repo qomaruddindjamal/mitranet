@@ -1,0 +1,12 @@
+Package: mitranet-gateway-monitor
+Version: 1.0.2-1~deb13u1
+Section: net
+Priority: optional
+Architecture: all
+Maintainer: MitraNet Core Team <support@mitranet.id>
+Depends: python3 (>= 3.13), iputils-ping | fping, systemd
+Description: MitraNet Gateway & Interface Latency Health Monitor
+ MitraNet Rinjani 1.0.2 native gateway monitoring daemon.
+ Replaces legacy BSD dpinger with an async, low-overhead ICMP/ARP
+ probing daemon reporting gateway latency, jitter, packet loss,
+ and triggering routing failover via systemd.

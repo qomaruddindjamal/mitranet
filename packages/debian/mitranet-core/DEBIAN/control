@@ -1,0 +1,12 @@
+Package: mitranet-core
+Version: 1.0.2-1~deb13u1
+Section: net
+Priority: optional
+Architecture: all
+Maintainer: MitraNet Core Team <support@mitranet.id>
+Depends: python3 (>= 3.13), systemd, nftables (>= 1.1.0), iproute2 (>= 6.12), mitranet-config-engine (= 1.0.2-1~deb13u1), mitranet-network-engine (= 1.0.2-1~deb13u1)
+Recommends: mitranet-gateway-monitor (= 1.0.2-1~deb13u1), wireguard-tools, dnsmasq, unbound
+Description: MitraNet Operating System Core Services
+ MitraNet Rinjani 1.0.2 main operating system core package.
+ Provides system identity, version management, CLI entry point,
+ service orchestrator, and base system integration.

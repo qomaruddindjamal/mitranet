@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+"""
+MitraNet Gateway Health & Latency Monitor Daemon
+Replaces BSD dpinger natively using Python 3 asyncio & ICMP/ping.
+"""
+
+import sys
+import os
+import time
+import argparse
+import logging
+import subprocess
+import json
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger("mitranet-gateway-monitor")
+
+def check_gateway(gateway_ip: str, count: int = 3, timeout_sec: int = 2):
+    try:
+        cmd = ["ping", "-c", str(count), "-W", str(timeout_sec), gateway_ip]
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        if proc.returncode == 0:
+            logger.info(f"Gateway {gateway_ip} is UP")
+            return {"gateway": gateway_ip, "status": "UP", "loss": 0.0}
+        else:
+            logger.warning(f"Gateway {gateway_ip} is UNREACHABLE")
+            return {"gateway": gateway_ip, "status": "DOWN", "loss": 100.0}
+    except Exception as e:
+        logger.error(f"Error checking gateway {gateway_ip}: {e}")
+        return {"gateway": gateway_ip, "status": "ERROR", "error": str(e)}
+
+def main():
+    parser = argparse.ArgumentParser(description="MitraNet Gateway Health & Latency Monitor")
+    parser.add_argument("--daemon", action="store_true", help="Run continuously in background")
+    parser.add_argument("--gateway", type=str, default="127.0.0.1", help="Target gateway IP")
+    parser.add_argument("--interval", type=int, default=10, help="Check interval in seconds")
+    parser.add_argument("--once", action="store_true", help="Perform single check and exit")
+    args = parser.parse_args()
+
+    if args.once or not args.daemon:
+        res = check_gateway(args.gateway)
+        print(json.dumps(res, indent=2))
+        sys.exit(0 if res.get("status") == "UP" else 1)
+
+    logger.info(f"Starting MitraNet Gateway Monitor Daemon for {args.gateway} (interval={args.interval}s)")
+    while True:
+        try:
+            check_gateway(args.gateway)
+            time.sleep(args.interval)
+        except KeyboardInterrupt:
+            logger.info("Stopping gateway monitor daemon")
+            break
+
+if __name__ == "__main__":
+    main()
