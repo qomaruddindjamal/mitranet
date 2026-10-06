@@ -1,0 +1,607 @@
+{
+  "diag_dump_states.php": [
+    "diag_dump_states.php",
+    "diag_dump_states_sources.php",
+    "diag_resetstate.php"
+  ],
+  "diag_dump_states_sources.php": [
+    "diag_dump_states.php",
+    "diag_dump_states_sources.php",
+    "diag_resetstate.php"
+  ],
+  "diag_resetstate.php": [
+    "diag_dump_states.php",
+    "diag_dump_states_sources.php",
+    "diag_resetstate.php"
+  ],
+  "firewall_aliases.php": [
+    "/firewall_aliases.php?tab=ip",
+    "/firewall_aliases.php?tab=port",
+    "/firewall_aliases.php?tab=url",
+    "/firewall_aliases.php?tab=all"
+  ],
+  "firewall_nat.php": [
+    "firewall_nat.php",
+    "firewall_nat_1to1.php",
+    "firewall_nat_out.php",
+    "firewall_nat_npt.php"
+  ],
+  "firewall_nat_1to1.php": [
+    "firewall_nat.php",
+    "firewall_nat_1to1.php",
+    "firewall_nat_out.php",
+    "firewall_nat_npt.php"
+  ],
+  "firewall_nat_npt.php": [
+    "firewall_nat.php",
+    "firewall_nat_1to1.php",
+    "firewall_nat_out.php",
+    "firewall_nat_npt.php"
+  ],
+  "firewall_nat_out.php": [
+    "firewall_nat.php",
+    "firewall_nat_1to1.php",
+    "firewall_nat_out.php",
+    "firewall_nat_npt.php"
+  ],
+  "firewall_rules.php": [
+    "firewall_rules.php?if={$ifent}"
+  ],
+  "firewall_shaper.php": [
+    "firewall_shaper.php",
+    "firewall_shaper_queues.php",
+    "firewall_shaper_vinterface.php",
+    "firewall_shaper_wizards.php"
+  ],
+  "firewall_shaper_queues.php": [
+    "firewall_shaper.php",
+    "firewall_shaper_queues.php",
+    "firewall_shaper_vinterface.php",
+    "firewall_shaper_wizards.php"
+  ],
+  "firewall_shaper_vinterface.php": [
+    "firewall_shaper.php",
+    "firewall_shaper_queues.php",
+    "firewall_shaper_vinterface.php",
+    "firewall_shaper_wizards.php"
+  ],
+  "firewall_shaper_wizards.php": [
+    "firewall_shaper.php",
+    "firewall_shaper_queues.php",
+    "firewall_shaper_vinterface.php",
+    "firewall_shaper_wizards.php"
+  ],
+  "firewall_virtual_ip.php": [
+    "firewall_virtual_ip.php",
+    "system_hasync.php"
+  ],
+  "interfaces_assign.php": [
+    "interfaces_assign.php",
+    "interfaces_groups.php",
+    "interfaces_wireless.php",
+    "interfaces_vlan.php",
+    "interfaces_qinq.php",
+    "interfaces_ppps.php",
+    "interfaces_gre.php",
+    "interfaces_gif.php",
+    "interfaces_bridge.php",
+    "interfaces_lagg.php"
+  ],
+  "interfaces_bridge.php": [
+    "interfaces_assign.php",
+    "interfaces_groups.php",
+    "interfaces_wireless.php",
+    "interfaces_vlan.php",
+    "interfaces_qinq.php",
+    "interfaces_ppps.php",
+    "interfaces_gre.php",
+    "interfaces_gif.php",
+    "interfaces_bridge.php",
+    "interfaces_lagg.php"
+  ],
+  "interfaces_gif.php": [
+    "interfaces_assign.php",
+    "interfaces_groups.php",
+    "interfaces_wireless.php",
+    "interfaces_vlan.php",
+    "interfaces_qinq.php",
+    "interfaces_ppps.php",
+    "interfaces_gre.php",
+    "interfaces_gif.php",
+    "interfaces_bridge.php",
+    "interfaces_lagg.php"
+  ],
+  "interfaces_gre.php": [
+    "interfaces_assign.php",
+    "interfaces_groups.php",
+    "interfaces_wireless.php",
+    "interfaces_vlan.php",
+    "interfaces_qinq.php",
+    "interfaces_ppps.php",
+    "interfaces_gre.php",
+    "interfaces_gif.php",
+    "interfaces_bridge.php",
+    "interfaces_lagg.php"
+  ],
+  "interfaces_groups.php": [
+    "interfaces_assign.php",
+    "interfaces_groups.php",
+    "interfaces_wireless.php",
+    "interfaces_vlan.php",
+    "interfaces_qinq.php",
+    "interfaces_ppps.php",
+    "interfaces_gre.php",
+    "interfaces_gif.php",
+    "interfaces_bridge.php",
+    "interfaces_lagg.php"
+  ],
+  "interfaces_lagg.php": [
+    "interfaces_assign.php",
+    "interfaces_groups.php",
+    "interfaces_wireless.php",
+    "interfaces_vlan.php",
+    "interfaces_qinq.php",
+    "interfaces_ppps.php",
+    "interfaces_gre.php",
+    "interfaces_gif.php",
+    "interfaces_bridge.php",
+    "interfaces_lagg.php"
+  ],
+  "interfaces_ppps.php": [
+    "interfaces_assign.php",
+    "interfaces_groups.php",
+    "interfaces_wireless.php",
+    "interfaces_vlan.php",
+    "interfaces_qinq.php",
+    "interfaces_ppps.php",
+    "interfaces_gre.php",
+    "interfaces_gif.php",
+    "interfaces_bridge.php",
+    "interfaces_lagg.php"
+  ],
+  "interfaces_qinq.php": [
+    "interfaces_assign.php",
+    "interfaces_groups.php",
+    "interfaces_wireless.php",
+    "interfaces_vlan.php",
+    "interfaces_qinq.php",
+    "interfaces_ppps.php",
+    "interfaces_gre.php",
+    "interfaces_gif.php",
+    "interfaces_bridge.php",
+    "interfaces_lagg.php"
+  ],
+  "interfaces_vlan.php": [
+    "interfaces_assign.php",
+    "interfaces_groups.php",
+    "interfaces_wireless.php",
+    "interfaces_vlan.php",
+    "interfaces_qinq.php",
+    "interfaces_ppps.php",
+    "interfaces_gre.php",
+    "interfaces_gif.php",
+    "interfaces_bridge.php",
+    "interfaces_lagg.php"
+  ],
+  "interfaces_wireless.php": [
+    "interfaces_assign.php",
+    "interfaces_groups.php",
+    "interfaces_wireless.php",
+    "interfaces_vlan.php",
+    "interfaces_qinq.php",
+    "interfaces_ppps.php",
+    "interfaces_gre.php",
+    "interfaces_gif.php",
+    "interfaces_bridge.php",
+    "interfaces_lagg.php"
+  ],
+  "pkg_mgr.php": [
+    "pkg_mgr_installed.php",
+    "pkg_mgr.php"
+  ],
+  "pkg_mgr_install.php": [
+    "pkg_mgr_install.php?id=firmware",
+    "system_update_settings.php",
+    "pkg_mgr_installed.php",
+    "pkg_mgr.php"
+  ],
+  "pkg_mgr_installed.php": [
+    "pkg_mgr_installed.php",
+    "pkg_mgr.php"
+  ],
+  "services_acb.php": [
+    "/services_acb.php?view=",
+    "/services_acb_backup.php"
+  ],
+  "services_acb_backup.php": [
+    "/services_acb_settings.php",
+    "/services_acb.php",
+    "/services_acb_backup.php"
+  ],
+  "services_acb_changekey.php": [
+    "/services_acb_settings.php",
+    "/services_acb.php",
+    "/services_acb_backup.php",
+    "/services_acb_changekey.php"
+  ],
+  "services_acb_settings.php": [
+    "/services_acb_settings.php",
+    "/services_acb.php",
+    "/services_acb_backup.php"
+  ],
+  "services_captiveportal.php": [
+    "services_captiveportal.php?zone={$cpzone}",
+    "services_captiveportal_mac.php?zone={$cpzone}",
+    "services_captiveportal_ip.php?zone={$cpzone}",
+    "services_captiveportal_hostname.php?zone={$cpzone}",
+    "services_captiveportal_vouchers.php?zone={$cpzone}",
+    "services_captiveportal_hasync.php?zone={$cpzone}",
+    "services_captiveportal_filemanager.php?zone={$cpzone}"
+  ],
+  "services_captiveportal_filemanager.php": [
+    "services_captiveportal.php?zone={$cpzone}",
+    "services_captiveportal_mac.php?zone={$cpzone}",
+    "services_captiveportal_ip.php?zone={$cpzone}",
+    "services_captiveportal_hostname.php?zone={$cpzone}",
+    "services_captiveportal_vouchers.php?zone={$cpzone}",
+    "services_captiveportal_hasync.php?zone={$cpzone}",
+    "services_captiveportal_filemanager.php?zone={$cpzone}"
+  ],
+  "services_captiveportal_hasync.php": [
+    "services_captiveportal.php?zone={$cpzone}",
+    "services_captiveportal_mac.php?zone={$cpzone}",
+    "services_captiveportal_ip.php?zone={$cpzone}",
+    "services_captiveportal_hostname.php?zone={$cpzone}",
+    "services_captiveportal_vouchers.php?zone={$cpzone}",
+    "services_captiveportal_hasync.php?zone={$cpzone}",
+    "services_captiveportal_filemanager.php?zone={$cpzone}"
+  ],
+  "services_captiveportal_hostname.php": [
+    "services_captiveportal.php?zone={$cpzone}",
+    "services_captiveportal_mac.php?zone={$cpzone}",
+    "services_captiveportal_ip.php?zone={$cpzone}",
+    "services_captiveportal_hostname.php?zone={$cpzone}",
+    "services_captiveportal_vouchers.php?zone={$cpzone}",
+    "services_captiveportal_hasync.php?zone={$cpzone}",
+    "services_captiveportal_filemanager.php?zone={$cpzone}"
+  ],
+  "services_captiveportal_ip.php": [
+    "services_captiveportal.php?zone={$cpzone}",
+    "services_captiveportal_mac.php?zone={$cpzone}",
+    "services_captiveportal_ip.php?zone={$cpzone}",
+    "services_captiveportal_hostname.php?zone={$cpzone}",
+    "services_captiveportal_vouchers.php?zone={$cpzone}",
+    "services_captiveportal_hasync.php?zone={$cpzone}",
+    "services_captiveportal_filemanager.php?zone={$cpzone}"
+  ],
+  "services_captiveportal_mac.php": [
+    "services_captiveportal.php?zone={$cpzone}",
+    "services_captiveportal_mac.php?zone={$cpzone}",
+    "services_captiveportal_ip.php?zone={$cpzone}",
+    "services_captiveportal_hostname.php?zone={$cpzone}",
+    "services_captiveportal_vouchers.php?zone={$cpzone}",
+    "services_captiveportal_hasync.php?zone={$cpzone}",
+    "services_captiveportal_filemanager.php?zone={$cpzone}"
+  ],
+  "services_captiveportal_vouchers.php": [
+    "services_captiveportal.php?zone={$cpzone}",
+    "services_captiveportal_mac.php?zone={$cpzone}",
+    "services_captiveportal_ip.php?zone={$cpzone}",
+    "services_captiveportal_hostname.php?zone={$cpzone}",
+    "services_captiveportal_vouchers.php?zone={$cpzone}",
+    "services_captiveportal_hasync.php?zone={$cpzone}",
+    "services_captiveportal_filemanager.php?zone={$cpzone}"
+  ],
+  "services_checkip.php": [
+    "services_dyndns.php",
+    "services_rfc2136.php",
+    "services_checkip.php"
+  ],
+  "services_dhcp.php": [
+    "services_dhcp.php?if={$ifent}"
+  ],
+  "services_dhcp_settings.php": [
+    "services_dhcp.php?if={$ifent}"
+  ],
+  "services_dhcpv6.php": [
+    "services_dhcpv6.php?if={$ifent}"
+  ],
+  "services_dhcpv6_settings.php": [
+    "services_dhcpv6.php?if={$ifent}"
+  ],
+  "services_dyndns.php": [
+    "services_dyndns.php",
+    "services_rfc2136.php",
+    "services_checkip.php"
+  ],
+  "services_ntpd.php": [
+    "services_ntpd.php",
+    "services_ntpd_acls.php",
+    "services_ntpd_gps.php",
+    "services_ntpd_pps.php"
+  ],
+  "services_ntpd_acls.php": [
+    "services_ntpd.php",
+    "services_ntpd_acls.php",
+    "services_ntpd_gps.php",
+    "services_ntpd_pps.php"
+  ],
+  "services_ntpd_gps.php": [
+    "services_ntpd.php",
+    "services_ntpd_acls.php",
+    "services_ntpd_gps.php",
+    "services_ntpd_pps.php"
+  ],
+  "services_ntpd_pps.php": [
+    "services_ntpd.php",
+    "services_ntpd_acls.php",
+    "services_ntpd_gps.php",
+    "services_ntpd_pps.php"
+  ],
+  "services_radvd.php": [
+    "services_radvd.php?if="
+  ],
+  "services_rfc2136.php": [
+    "services_dyndns.php",
+    "services_rfc2136.php",
+    "services_checkip.php"
+  ],
+  "services_unbound.php": [
+    "services_unbound.php",
+    "services_unbound_advanced.php",
+    "/services_unbound_acls.php"
+  ],
+  "services_unbound_acls.php": [
+    "/services_unbound.php",
+    "services_unbound_advanced.php",
+    "/services_unbound_acls.php"
+  ],
+  "services_unbound_advanced.php": [
+    "services_unbound.php",
+    "services_unbound_advanced.php",
+    "/services_unbound_acls.php"
+  ],
+  "status_captiveportal.php": [
+    "status_captiveportal.php?zone=",
+    "status_captiveportal_vouchers.php?zone=",
+    "status_captiveportal_voucher_rolls.php?zone=",
+    "status_captiveportal_test.php?zone=",
+    "status_captiveportal_expire.php?zone="
+  ],
+  "status_captiveportal_expire.php": [
+    "status_captiveportal.php?zone=",
+    "status_captiveportal_vouchers.php?zone=",
+    "status_captiveportal_voucher_rolls.php?zone=",
+    "status_captiveportal_test.php?zone=",
+    "status_captiveportal_expire.php?zone="
+  ],
+  "status_captiveportal_test.php": [
+    "status_captiveportal.php?zone=",
+    "status_captiveportal_vouchers.php?zone=",
+    "status_captiveportal_voucher_rolls.php?zone=",
+    "status_captiveportal_test.php?zone=",
+    "status_captiveportal_expire.php?zone="
+  ],
+  "status_captiveportal_voucher_rolls.php": [
+    "status_captiveportal.php?zone=",
+    "status_captiveportal_vouchers.php?zone=",
+    "status_captiveportal_voucher_rolls.php?zone=",
+    "status_captiveportal_test.php?zone=",
+    "status_captiveportal_expire.php?zone="
+  ],
+  "status_captiveportal_vouchers.php": [
+    "status_captiveportal.php?zone=",
+    "status_captiveportal_vouchers.php?zone=",
+    "status_captiveportal_voucher_rolls.php?zone=",
+    "status_captiveportal_test.php?zone=",
+    "status_captiveportal_expire.php?zone="
+  ],
+  "status_gateways.php": [
+    "status_gateways.php",
+    "status_gateway_groups.php"
+  ],
+  "status_ipsec.php": [
+    "status_ipsec.php",
+    "status_ipsec_leases.php",
+    "status_ipsec_sad.php",
+    "status_ipsec_spd.php"
+  ],
+  "status_ipsec_leases.php": [
+    "status_ipsec.php",
+    "status_ipsec_leases.php",
+    "status_ipsec_sad.php",
+    "status_ipsec_spd.php"
+  ],
+  "status_ipsec_sad.php": [
+    "status_ipsec.php",
+    "status_ipsec_leases.php",
+    "status_ipsec_sad.php",
+    "status_ipsec_spd.php"
+  ],
+  "status_wireless.php": [
+    "status_wireless.php?if={$interface}"
+  ],
+  "system_advanced_admin.php": [
+    "system_advanced_admin.php",
+    "system_advanced_firewall.php",
+    "system_advanced_network.php",
+    "system_advanced_misc.php",
+    "system_advanced_sysctl.php",
+    "system_advanced_notifications.php"
+  ],
+  "system_advanced_firewall.php": [
+    "system_advanced_admin.php",
+    "system_advanced_firewall.php",
+    "system_advanced_network.php",
+    "system_advanced_misc.php",
+    "system_advanced_sysctl.php",
+    "system_advanced_notifications.php"
+  ],
+  "system_advanced_misc.php": [
+    "system_advanced_admin.php",
+    "system_advanced_firewall.php",
+    "system_advanced_network.php",
+    "system_advanced_misc.php",
+    "system_advanced_sysctl.php",
+    "system_advanced_notifications.php"
+  ],
+  "system_advanced_network.php": [
+    "system_advanced_admin.php",
+    "system_advanced_firewall.php",
+    "system_advanced_network.php",
+    "system_advanced_misc.php",
+    "system_advanced_sysctl.php",
+    "system_advanced_notifications.php"
+  ],
+  "system_advanced_notifications.php": [
+    "system_advanced_admin.php",
+    "system_advanced_firewall.php",
+    "system_advanced_network.php",
+    "system_advanced_misc.php",
+    "system_advanced_sysctl.php",
+    "system_advanced_notifications.php"
+  ],
+  "system_advanced_sysctl.php": [
+    "system_advanced_admin.php",
+    "system_advanced_firewall.php",
+    "system_advanced_network.php",
+    "system_advanced_misc.php",
+    "system_advanced_sysctl.php",
+    "system_advanced_notifications.php"
+  ],
+  "system_authservers.php": [
+    "system_usermanager.php",
+    "system_groupmanager.php",
+    "system_usermanager_settings.php",
+    "system_usermanager_passwordmg.php",
+    "system_authservers.php"
+  ],
+  "system_camanager.php": [
+    "system_camanager.php",
+    "system_certmanager.php",
+    "system_crlmanager.php"
+  ],
+  "system_certmanager.php": [
+    "system_camanager.php",
+    "system_certmanager.php",
+    "system_crlmanager.php"
+  ],
+  "system_certmanager_renew.php": [
+    "system_camanager.php",
+    "system_certmanager.php",
+    "system_crlmanager.php",
+    "system_certmanager_renew.php"
+  ],
+  "system_crlmanager.php": [
+    "system_camanager.php",
+    "system_certmanager.php",
+    "system_crlmanager.php"
+  ],
+  "system_gateway_groups.php": [
+    "system_gateways.php",
+    "system_routes.php",
+    "system_gateway_groups.php"
+  ],
+  "system_groupmanager.php": [
+    "system_usermanager.php",
+    "system_groupmanager.php",
+    "system_usermanager_settings.php",
+    "system_usermanager_passwordmg.php",
+    "system_authservers.php"
+  ],
+  "system_groupmanager_addprivs.php": [
+    "system_usermanager.php",
+    "system_groupmanager.php",
+    "system_usermanager_settings.php",
+    "system_usermanager_passwordmg.php",
+    "system_authservers.php"
+  ],
+  "system_update_settings.php": [
+    "pkg_mgr_install.php?id=firmware",
+    "system_update_settings.php"
+  ],
+  "system_usermanager.php": [
+    "system_usermanager.php",
+    "system_groupmanager.php",
+    "system_usermanager_settings.php",
+    "system_usermanager_passwordmg.php",
+    "system_authservers.php"
+  ],
+  "system_usermanager_addprivs.php": [
+    "system_usermanager.php",
+    "system_groupmanager.php",
+    "system_usermanager_settings.php",
+    "system_usermanager_passwordmg.php",
+    "system_authservers.php"
+  ],
+  "system_usermanager_passwordmg.php": [
+    "system_usermanager.php",
+    "system_groupmanager.php",
+    "system_usermanager_settings.php",
+    "system_usermanager_passwordmg.php",
+    "system_authservers.php"
+  ],
+  "system_usermanager_settings.php": [
+    "system_usermanager.php",
+    "system_groupmanager.php",
+    "system_usermanager_settings.php",
+    "system_usermanager_passwordmg.php",
+    "system_authservers.php"
+  ],
+  "vpn_ipsec.php": [
+    "vpn_ipsec.php",
+    "vpn_ipsec_mobile.php",
+    "vpn_ipsec_keys.php",
+    "vpn_ipsec_settings.php"
+  ],
+  "vpn_ipsec_keys.php": [
+    "vpn_ipsec.php",
+    "vpn_ipsec_mobile.php",
+    "vpn_ipsec_keys.php",
+    "vpn_ipsec_settings.php"
+  ],
+  "vpn_ipsec_mobile.php": [
+    "vpn_ipsec.php",
+    "vpn_ipsec_mobile.php",
+    "vpn_ipsec_keys.php",
+    "vpn_ipsec_settings.php"
+  ],
+  "vpn_ipsec_phase1.php": [
+    "vpn_ipsec.php",
+    "vpn_ipsec_mobile.php",
+    "vpn_ipsec_keys.php",
+    "vpn_ipsec_settings.php"
+  ],
+  "vpn_ipsec_settings.php": [
+    "vpn_ipsec.php",
+    "vpn_ipsec_mobile.php",
+    "vpn_ipsec_keys.php",
+    "vpn_ipsec_settings.php"
+  ],
+  "vpn_l2tp.php": [
+    "vpn_l2tp.php",
+    "vpn_l2tp_users.php"
+  ],
+  "vpn_l2tp_users.php": [
+    "vpn_l2tp.php",
+    "vpn_l2tp_users.php"
+  ],
+  "vpn_openvpn_client.php": [
+    "vpn_openvpn_server.php",
+    "vpn_openvpn_client.php",
+    "vpn_openvpn_csc.php",
+    "wizard.php?xml=openvpn_wizard.xml"
+  ],
+  "vpn_openvpn_csc.php": [
+    "vpn_openvpn_server.php",
+    "vpn_openvpn_client.php",
+    "vpn_openvpn_csc.php",
+    "wizard.php?xml=openvpn_wizard.xml"
+  ],
+  "vpn_openvpn_server.php": [
+    "vpn_openvpn_server.php",
+    "vpn_openvpn_client.php",
+    "vpn_openvpn_csc.php",
+    "wizard.php?xml=openvpn_wizard.xml"
+  ]
+}

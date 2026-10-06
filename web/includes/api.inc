@@ -152,4 +152,26 @@ class MitraNetApi {
         $res = self::request('/vrfs');
         return $res['status'] === 200 ? $res['data'] : [];
     }
+
+    public static function getArpTable() {
+        $res = self::request('/arp');
+        return $res['status'] === 200 ? $res['data'] : [];
+    }
+
+    public static function getConntrackStates() {
+        $res = self::request('/conntrack');
+        return $res['status'] === 200 ? $res['data'] : ['total' => 0, 'states' => []];
+    }
+
+    public static function ping($host, $count = 3) {
+        return self::request('/diag/ping', 'POST', ['host' => $host, 'count' => $count]);
+    }
+
+    public static function traceroute($host) {
+        return self::request('/diag/traceroute', 'POST', ['host' => $host]);
+    }
+
+    public static function updateHostname($hostname) {
+        return self::request('/system/update', 'POST', ['hostname' => $hostname]);
+    }
 }

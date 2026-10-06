@@ -36,6 +36,8 @@ from mitranet.core.firewall.models import (
     FirewallDirection,
     FirewallPolicy,
     FirewallTableConfig,
+    NatRule,
+    NatType,
 )
 from mitranet.core.transaction.engine import NetworkTransactionEngine
 from mitranet.core.services.sysmetrics import SystemMetricsCollector
@@ -424,6 +426,59 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"category": cat, "lines": lines})
             return
 
+        # 12. ARP Table (Read from Linux /proc/net/arp)
+        if path == "/api/v1/arp":
+            arp_entries = []
+            if os.path.exists("/proc/net/arp"):
+                try:
+                    with open("/proc/net/arp", "r") as f:
+                        lines = f.readlines()
+                    # Skip header line
+                    for line in lines[1:]:
+                        parts = line.split()
+                        if len(parts) >= 6:
+                            ip_addr = parts[0]
+                            hw_type = parts[1]
+                            flags = parts[2]
+                            hw_addr = parts[3]
+                            mask = parts[4]
+                            dev = parts[5]
+                            arp_entries.append({
+                                "ip": ip_addr,
+                                "hw_type": hw_type,
+                                "flags": flags,
+                                "mac": hw_addr,
+                                "mask": mask,
+                                "interface": dev,
+                                "status": "active" if hw_addr != "00:00:00:00:00:00" else "incomplete"
+                            })
+                except Exception as e:
+                    logger.warning("Error reading /proc/net/arp: %s", e)
+            self._send_json(200, arp_entries)
+            return
+
+        # 13. Conntrack / State Table (Read from /proc/net/nf_conntrack)
+        if path == "/api/v1/conntrack":
+            states = []
+            if os.path.exists("/proc/net/nf_conntrack"):
+                try:
+                    with open("/proc/net/nf_conntrack", "r", errors="ignore") as f:
+                        lines = f.readlines()
+                    for line in lines[-200:]: # Top 200 states
+                        parts = line.split()
+                        if len(parts) >= 4:
+                            proto = parts[2]
+                            entry = {
+                                "raw": line.strip(),
+                                "protocol": proto,
+                                "details": parts[3:]
+                            }
+                            states.append(entry)
+                except Exception as e:
+                    logger.warning("Error reading /proc/net/nf_conntrack: %s", e)
+            self._send_json(200, {"total": len(states), "states": states})
+            return
+
         self._send_json(404, {"error": "Endpoint not found"})
 
     # =========================================================================
@@ -657,6 +712,61 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 self._send_json(400, {"error": str(e)})
             return
 
+        # NAT Rule Mutations (Port Forward, Outbound, 1:1)
+        if path == "/api/v1/firewall/nat/add":
+            rid = payload.get("id", "").strip()
+            ntype = payload.get("nat_type", "port_forward")
+            iface = payload.get("interface", "any")
+            proto = payload.get("protocol", "tcp")
+            src_ip = payload.get("src_ip", "any")
+            src_port = payload.get("src_port")
+            dst_ip = payload.get("dst_ip", "any")
+            dst_port = payload.get("dst_port")
+            target_ip = payload.get("target_ip")
+            target_port = payload.get("target_port")
+            masq = bool(payload.get("masquerade", False))
+            prio = int(payload.get("priority", 100))
+            descr = payload.get("description", "")
+
+            try:
+                cand = fw_engine.candidate_config
+                if any(r.id == rid for r in cand.nat_rules):
+                    self._send_json(400, {"error": f"NAT Rule ID '{rid}' already exists"})
+                    return
+                new_nat = NatRule(
+                    id=rid,
+                    nat_type=NatType(ntype),
+                    interface=iface,
+                    protocol=FirewallProtocol(proto),
+                    src_ip=src_ip,
+                    src_port=src_port if src_port != "any" else None,
+                    dst_ip=dst_ip,
+                    dst_port=dst_port if dst_port != "any" else None,
+                    target_ip=target_ip,
+                    target_port=target_port if target_port != "any" else None,
+                    masquerade=masq,
+                    priority=prio,
+                    description=descr,
+                )
+                cand.nat_rules.append(new_nat)
+                fw_engine.save_candidate(cand)
+                self._send_json(200, {"success": True, "message": f"NAT Rule '{rid}' added to candidate"})
+            except Exception as e:
+                logger.exception("Error adding NAT rule: %s", e)
+                self._send_json(400, {"error": str(e)})
+            return
+
+        if path == "/api/v1/firewall/nat/delete":
+            rid = payload.get("id")
+            try:
+                cand = fw_engine.candidate_config
+                cand.nat_rules = [r for r in cand.nat_rules if r.id != rid]
+                fw_engine.save_candidate(cand)
+                self._send_json(200, {"success": True, "message": f"NAT Rule '{rid}' deleted from candidate"})
+            except Exception as e:
+                self._send_json(400, {"error": str(e)})
+            return
+
         if path == "/api/v1/firewall/apply":
             try:
                 rec = fw_engine.apply_and_commit()
@@ -693,6 +803,54 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 self._send_json(200, {"success": True, "message": f"Rolled back to snapshot '{snap_id}'"})
             except Exception as e:
                 self._send_json(500, {"error": f"Rollback failed: {e}"})
+            return
+
+        # 10. System General Settings (Hostname)
+        if path == "/api/v1/system/update":
+            new_hostname = payload.get("hostname", "").strip()
+            if not new_hostname:
+                self._send_json(400, {"error": "hostname is required"})
+                return
+            try:
+                # Update hostname via /etc/hostname and runtime if permissions permit
+                if os.path.exists("/etc/hostname"):
+                    with open("/etc/hostname", "w") as hf:
+                        hf.write(f"{new_hostname}\n")
+                if hasattr(os, "system"):
+                    os.system(f"hostname {new_hostname}")
+                self._send_json(200, {"success": True, "message": f"Hostname updated to {new_hostname}"})
+            except Exception as e:
+                self._send_json(500, {"error": f"Failed setting hostname: {e}"})
+            return
+
+        # 11. Diagnostic Tools (Ping, Traceroute)
+        if path == "/api/v1/diag/ping":
+            target = payload.get("host", "").strip()
+            count = min(max(int(payload.get("count", 3)), 1), 10)
+            if not target or any(c in target for c in ";&|`$<>"):
+                self._send_json(400, {"error": "Invalid target host"})
+                return
+            try:
+                import subprocess
+                cmd = ["ping", "-c", str(count), "-W", "2", target]
+                proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=15)
+                self._send_json(200, {"host": target, "count": count, "output": proc.stdout, "returncode": proc.returncode})
+            except Exception as e:
+                self._send_json(500, {"error": f"Ping execution failed: {e}"})
+            return
+
+        if path == "/api/v1/diag/traceroute":
+            target = payload.get("host", "").strip()
+            if not target or any(c in target for c in ";&|`$<>"):
+                self._send_json(400, {"error": "Invalid target host"})
+                return
+            try:
+                import subprocess
+                cmd = ["traceroute", "-m", "15", "-w", "2", target]
+                proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=20)
+                self._send_json(200, {"host": target, "output": proc.stdout, "returncode": proc.returncode})
+            except Exception as e:
+                self._send_json(500, {"error": f"Traceroute execution failed: {e}"})
             return
 
         self._send_json(404, {"error": "Endpoint not found"})

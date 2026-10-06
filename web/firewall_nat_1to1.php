@@ -1,11 +1,11 @@
 <?php
 /*
- * firewall_nat.php - MitraNet Native Linux NAT Management
- * Adapted from pfSense firewall_nat.php
+ * firewall_nat_1to1.php - MitraNet 1:1 NAT Management
+ * Adapted from pfSense firewall_nat_1to1.php
  * Strictly communicates via REST API -> MitraNet Native nftables Engine.
  */
 
-$pgtitle = "Firewall: NAT: Port Forward";
+$pgtitle = "Firewall: NAT: 1:1";
 $selected_menu = "firewall";
 require_once(__DIR__ . '/includes/head.inc');
 
@@ -17,45 +17,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'add') {
         $rid = trim($_POST['id'] ?? '');
-        $ntype = $_POST['nat_type'] ?? 'port_forward';
-        $iface = $_POST['interface'] ?? 'enp0s8';
-        $proto = $_POST['protocol'] ?? 'tcp';
-        $src_ip = trim($_POST['src_ip'] ?? 'any');
-        $dst_ip = trim($_POST['dst_ip'] ?? 'any');
-        $dst_port = trim($_POST['dst_port'] ?? '');
-        $target_ip = trim($_POST['target_ip'] ?? '');
-        $target_port = trim($_POST['target_port'] ?? '');
+        $iface = $_POST['interface'] ?? 'enp0s3';
+        $ext_ip = trim($_POST['ext_ip'] ?? '');
+        $int_ip = trim($_POST['int_ip'] ?? '');
         $descr = trim($_POST['descr'] ?? '');
         $prio = (int)($_POST['priority'] ?? 100);
 
-        if (!empty($rid)) {
+        if (!empty($rid) && !empty($ext_ip) && !empty($int_ip)) {
             $res = MitraNetApi::request('/firewall/nat/add', 'POST', [
                 'id' => $rid,
-                'nat_type' => $ntype,
+                'nat_type' => 'one_to_one',
                 'interface' => $iface,
-                'protocol' => $proto,
-                'src_ip' => !empty($src_ip) ? $src_ip : 'any',
-                'dst_ip' => !empty($dst_ip) ? $dst_ip : 'any',
-                'dst_port' => !empty($dst_port) ? $dst_port : null,
-                'target_ip' => !empty($target_ip) ? $target_ip : null,
-                'target_port' => !empty($target_port) ? $target_port : null,
+                'protocol' => 'any',
+                'dst_ip' => $ext_ip,
+                'target_ip' => $int_ip,
                 'priority' => $prio,
                 'description' => $descr
             ]);
             if ($res['status'] === 200) {
-                $msg = "NAT Rule '$rid' added to candidate configuration";
+                $msg = "1:1 NAT Rule '$rid' added to candidate configuration";
             } else {
-                $err = $res['data']['error'] ?? 'Failed to add NAT rule';
+                $err = $res['data']['error'] ?? 'Failed to add 1:1 NAT rule';
             }
         } else {
-            $err = 'NAT Rule ID is required';
+            $err = 'Rule ID, External IP, and Internal IP are required';
         }
     } elseif ($action === 'delete') {
         $rid = trim($_POST['id'] ?? '');
         if (!empty($rid)) {
             $res = MitraNetApi::request('/firewall/nat/delete', 'POST', ['id' => $rid]);
             if ($res['status'] === 200) {
-                $msg = "NAT Rule '$rid' deleted from candidate configuration";
+                $msg = "1:1 NAT Rule '$rid' deleted from candidate configuration";
             } else {
                 $err = $res['data']['error'] ?? 'Failed to delete NAT rule';
             }
@@ -63,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'apply') {
         $res = MitraNetApi::request('/firewall/apply', 'POST', []);
         if ($res['status'] === 200) {
-            $msg = "NAT rules applied and committed to Linux kernel nftables successfully";
+            $msg = "1:1 NAT rules applied and committed to Linux kernel nftables successfully";
         } else {
             $err = $res['data']['error'] ?? 'Failed to apply NAT rules';
         }
@@ -71,20 +63,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $fw = MitraNetApi::getFirewall();
-$running_nat = $fw['config']['nat_rules'] ?? [];
-$candidate_nat = $fw['candidate']['nat_rules'] ?? [];
+$running_nat = array_filter($fw['config']['nat_rules'] ?? [], fn($r) => ($r['nat_type'] ?? '') === 'one_to_one');
+$candidate_nat = array_filter($fw['candidate']['nat_rules'] ?? [], fn($r) => ($r['nat_type'] ?? '') === 'one_to_one');
 $ifaces = MitraNetApi::getInterfaces();
 ?>
 
 <!-- Tab Navigation identical to pfSense -->
 <ul class="nav nav-tabs" style="margin-bottom: 20px;">
-	<li class="active"><a href="/firewall_nat.php">Port Forward</a></li>
-	<li><a href="/firewall_nat_1to1.php">1:1</a></li>
+	<li><a href="/firewall_nat.php">Port Forward</a></li>
+	<li class="active"><a href="/firewall_nat_1to1.php">1:1</a></li>
 	<li><a href="/firewall_nat_out.php">Outbound</a></li>
 	<li><a href="/firewall_nat_npt.php">NPt</a></li>
 </ul>
 
-<h2>Firewall: NAT: Port Forward</h2>
+<h2>Firewall: NAT: 1:1</h2>
 
 <?php if (!empty($msg)): ?>
 	<div class="alert alert-success"><?=htmlspecialchars($msg)?></div>
@@ -95,33 +87,27 @@ $ifaces = MitraNetApi::getInterfaces();
 
 <!-- Running NAT Ruleset -->
 <div class="panel panel-default">
-	<div class="panel-heading"><h3 class="panel-title"><i class="fa fa-list"></i> Active / Running NAT Rules</h3></div>
+	<div class="panel-heading"><h3 class="panel-title"><i class="fa fa-list"></i> Active / Running 1:1 NAT Rules</h3></div>
 	<div class="panel-body">
 		<table class="table table-striped table-hover">
 			<thead>
 				<tr>
 					<th>ID</th>
-					<th>Type</th>
 					<th>Interface</th>
-					<th>Proto</th>
-					<th>Ext Port</th>
-					<th>Target IP</th>
-					<th>Target Port</th>
+					<th>External IP</th>
+					<th>Internal IP</th>
 					<th>Description</th>
 				</tr>
 			</thead>
 			<tbody>
 				<?php if (empty($running_nat)): ?>
-					<tr><td colspan="8" class="text-center text-muted">No custom NAT rules defined in running ruleset</td></tr>
+					<tr><td colspan="5" class="text-center text-muted">No custom 1:1 NAT rules defined in running ruleset</td></tr>
 				<?php else: foreach ($running_nat as $nr): ?>
 					<tr>
 						<td><strong><?=htmlspecialchars($nr['id'])?></strong></td>
-						<td><span class="label label-info"><?=strtoupper(str_replace('_', ' ', $nr['nat_type']))?></span></td>
 						<td><?=htmlspecialchars($nr['interface'])?></td>
-						<td><?=strtoupper(htmlspecialchars($nr['protocol'] ?? 'TCP'))?></td>
-						<td><?=htmlspecialchars($nr['dst_port'] ?? 'ANY')?></td>
-						<td><code><?=htmlspecialchars($nr['target_ip'] ?? '-')?></code></td>
-						<td><?=htmlspecialchars($nr['target_port'] ?? '-')?></td>
+						<td><code><?=htmlspecialchars($nr['dst_ip'])?></code></td>
+						<td><code><?=htmlspecialchars($nr['target_ip'])?></code></td>
 						<td><?=htmlspecialchars($nr['description'] ?? '')?></td>
 					</tr>
 				<?php endforeach; endif; ?>
@@ -139,7 +125,7 @@ $ifaces = MitraNetApi::getInterfaces();
 				<button type="submit" class="btn btn-sm btn-success"><i class="fa fa-check"></i> Apply Candidate Changes</button>
 			</form>
 		</div>
-		<h3 class="panel-title"><i class="fa fa-edit"></i> Candidate NAT Rules</h3>
+		<h3 class="panel-title"><i class="fa fa-edit"></i> Candidate 1:1 Rules</h3>
 	</div>
 	<div class="panel-body">
 		<table class="table table-striped">
@@ -147,25 +133,21 @@ $ifaces = MitraNetApi::getInterfaces();
 				<tr>
 					<th>Rule ID</th>
 					<th>Interface</th>
-					<th>Proto</th>
-					<th>Ext Port</th>
-					<th>Target IP</th>
-					<th>Target Port</th>
+					<th>External IP</th>
+					<th>Internal IP</th>
 					<th>Description</th>
 					<th>Action</th>
 				</tr>
 			</thead>
 			<tbody>
 				<?php if (empty($candidate_nat)): ?>
-					<tr><td colspan="8" class="text-center text-muted">Candidate NAT ruleset matches running ruleset</td></tr>
+					<tr><td colspan="6" class="text-center text-muted">Candidate 1:1 ruleset matches running ruleset</td></tr>
 				<?php else: foreach ($candidate_nat as $nr): ?>
 					<tr>
 						<td><?=htmlspecialchars($nr['id'])?></td>
 						<td><?=htmlspecialchars($nr['interface'])?></td>
-						<td><?=strtoupper(htmlspecialchars($nr['protocol'] ?? 'TCP'))?></td>
-						<td><?=htmlspecialchars($nr['dst_port'] ?? 'ANY')?></td>
-						<td><code><?=htmlspecialchars($nr['target_ip'] ?? '-')?></code></td>
-						<td><?=htmlspecialchars($nr['target_port'] ?? '-')?></td>
+						<td><code><?=htmlspecialchars($nr['dst_ip'])?></code></td>
+						<td><code><?=htmlspecialchars($nr['target_ip'])?></code></td>
 						<td><?=htmlspecialchars($nr['description'] ?? '')?></td>
 						<td>
 							<form method="post" style="display:inline;">
@@ -180,13 +162,12 @@ $ifaces = MitraNetApi::getInterfaces();
 		</table>
 
 		<hr>
-		<h4>Add Port Forward (DNAT) Rule</h4>
+		<h4>Add 1:1 NAT Rule</h4>
 		<form method="post" class="form-inline">
 			<input type="hidden" name="action" value="add">
-			<input type="hidden" name="nat_type" value="port_forward">
 			<div class="form-group" style="margin-bottom: 10px;">
 				<label>Rule ID</label><br>
-				<input type="text" name="id" class="form-control input-sm" placeholder="e.g. pf_web_8080" required>
+				<input type="text" name="id" class="form-control input-sm" placeholder="e.g. nat1to1_server" required>
 			</div>
 			<div class="form-group" style="margin-bottom: 10px;">
 				<label>Interface</label><br>
@@ -197,24 +178,12 @@ $ifaces = MitraNetApi::getInterfaces();
 				</select>
 			</div>
 			<div class="form-group" style="margin-bottom: 10px;">
-				<label>Protocol</label><br>
-				<select name="protocol" class="form-control input-sm">
-					<option value="tcp">TCP</option>
-					<option value="udp">UDP</option>
-					<option value="tcp_udp">TCP/UDP</option>
-				</select>
+				<label>External IP</label><br>
+				<input type="text" name="ext_ip" class="form-control input-sm" placeholder="e.g. 10.10.66.50" required>
 			</div>
 			<div class="form-group" style="margin-bottom: 10px;">
-				<label>Ext Port</label><br>
-				<input type="text" name="dst_port" class="form-control input-sm" placeholder="e.g. 8080" style="width: 90px;" required>
-			</div>
-			<div class="form-group" style="margin-bottom: 10px;">
-				<label>Target IP</label><br>
-				<input type="text" name="target_ip" class="form-control input-sm" placeholder="e.g. 192.168.56.101" required>
-			</div>
-			<div class="form-group" style="margin-bottom: 10px;">
-				<label>Target Port</label><br>
-				<input type="text" name="target_port" class="form-control input-sm" placeholder="e.g. 8443" style="width: 90px;">
+				<label>Internal IP</label><br>
+				<input type="text" name="int_ip" class="form-control input-sm" placeholder="e.g. 192.168.56.150" required>
 			</div>
 			<div class="form-group" style="margin-bottom: 10px;">
 				<label>Description</label><br>
@@ -222,7 +191,7 @@ $ifaces = MitraNetApi::getInterfaces();
 			</div>
 			<div class="form-group" style="margin-bottom: 10px;">
 				<label>&nbsp;</label><br>
-				<button type="submit" class="btn btn-sm btn-primary"><i class="fa fa-plus"></i> Add Port Forward</button>
+				<button type="submit" class="btn btn-sm btn-primary"><i class="fa fa-plus"></i> Add 1:1 Rule</button>
 			</div>
 		</form>
 	</div>

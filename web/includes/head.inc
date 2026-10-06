@@ -18,7 +18,14 @@ if (!MitraNetApi::isAuthenticated()) {
     exit;
 }
 
-$pagetitle = isset($pgtitle) ? $pgtitle : 'MitraNet Appliance';
+$pagetitle = 'MitraNet Appliance';
+if (isset($pgtitle)) {
+    if (is_array($pgtitle)) {
+        $pagetitle = implode(': ', $pgtitle);
+    } else {
+        $pagetitle = $pgtitle;
+    }
+}
 $hostname = 'mitranet.local';
 $sys = MitraNetApi::getSystem();
 if (!empty($sys['hostname'])) {
@@ -63,6 +70,7 @@ if (!empty($sys['hostname'])) {
 						<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button">System <span class="caret"></span></a>
 						<ul class="dropdown-menu">
 							<li><a href="/index.php">Dashboard</a></li>
+							<li><a href="/system.php">General Setup</a></li>
 							<li><a href="/system_routes.php">Routing</a></li>
 							<li><a href="/system_gateways.php">Routing: Gateways</a></li>
 							<li class="divider"></li>
@@ -88,7 +96,7 @@ if (!empty($sys['hostname'])) {
 						<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button">Firewall <span class="caret"></span></a>
 						<ul class="dropdown-menu">
 							<li><a href="/firewall_rules.php">Rules (nftables)</a></li>
-							<li><a href="/firewall_nat.php">NAT (Coming Soon in 3B)</a></li>
+							<li><a href="/firewall_nat.php">NAT</a></li>
 							<li><a href="/firewall_aliases.php">Aliases</a></li>
 						</ul>
 					</li>
@@ -107,7 +115,12 @@ if (!empty($sys['hostname'])) {
 					<li class="<?=($selected_menu ?? '') === 'diagnostics' ? 'active dropdown' : 'dropdown'?>">
 						<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button">Diagnostics <span class="caret"></span></a>
 						<ul class="dropdown-menu">
+							<li><a href="/diag_arp.php">ARP Table</a></li>
+							<li><a href="/diag_dump_states.php">States (conntrack)</a></li>
 							<li><a href="/diag_routes.php">Routing Table</a></li>
+							<li class="divider"></li>
+							<li><a href="/diag_ping.php">Ping</a></li>
+							<li><a href="/diag_traceroute.php">Traceroute</a></li>
 							<li><a href="/status_logs.php">Log Viewer</a></li>
 							<li><a href="/diag_backup.php">Backup / Rollback</a></li>
 						</ul>

@@ -1,0 +1,2020 @@
+[
+  {
+    "source_file": "bandwidth_by_ip.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "crash_reporter.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "csrf_error.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_arp.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_authentication.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_backup.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "IMPLEMENTED",
+    "exists_in_mitranet": true
+  },
+  {
+    "source_file": "diag_command.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_confbak.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_defaults.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_dns.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_dump_states.php",
+    "in_menu": true,
+    "tabs": [
+      "diag_dump_states.php",
+      "diag_dump_states_sources.php",
+      "diag_resetstate.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_dump_states_sources.php",
+    "in_menu": false,
+    "tabs": [
+      "diag_dump_states.php",
+      "diag_dump_states_sources.php",
+      "diag_resetstate.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_edit.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_gmirror.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_halt.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_limiter_info.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_ndp.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_packet_capture.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_pf_info.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_pftop.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_ping.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_reboot.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_resetstate.php",
+    "in_menu": false,
+    "tabs": [
+      "diag_dump_states.php",
+      "diag_dump_states_sources.php",
+      "diag_resetstate.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_routes.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_smart.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_sockets.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_states_summary.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_system_activity.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_tables.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_testport.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "diag_traceroute.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "easyrule.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "firewall_aliases.php",
+    "in_menu": true,
+    "tabs": [
+      "/firewall_aliases.php?tab=ip",
+      "/firewall_aliases.php?tab=port",
+      "/firewall_aliases.php?tab=url",
+      "/firewall_aliases.php?tab=all"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "firewall_aliases_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "firewall_aliases_import.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "firewall_nat.php",
+    "in_menu": true,
+    "tabs": [
+      "firewall_nat.php",
+      "firewall_nat_1to1.php",
+      "firewall_nat_out.php",
+      "firewall_nat_npt.php"
+    ],
+    "status": "IMPLEMENTED",
+    "exists_in_mitranet": true
+  },
+  {
+    "source_file": "firewall_nat_1to1.php",
+    "in_menu": false,
+    "tabs": [
+      "firewall_nat.php",
+      "firewall_nat_1to1.php",
+      "firewall_nat_out.php",
+      "firewall_nat_npt.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "firewall_nat_1to1_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "firewall_nat_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "firewall_nat_npt.php",
+    "in_menu": false,
+    "tabs": [
+      "firewall_nat.php",
+      "firewall_nat_1to1.php",
+      "firewall_nat_out.php",
+      "firewall_nat_npt.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "firewall_nat_npt_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "firewall_nat_out.php",
+    "in_menu": false,
+    "tabs": [
+      "firewall_nat.php",
+      "firewall_nat_1to1.php",
+      "firewall_nat_out.php",
+      "firewall_nat_npt.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "firewall_nat_out_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "firewall_rules.php",
+    "in_menu": true,
+    "tabs": [
+      "firewall_rules.php?if={$ifent}"
+    ],
+    "status": "IMPLEMENTED",
+    "exists_in_mitranet": true
+  },
+  {
+    "source_file": "firewall_rules_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "firewall_schedule.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "firewall_schedule_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "firewall_shaper.php",
+    "in_menu": true,
+    "tabs": [
+      "firewall_shaper.php",
+      "firewall_shaper_queues.php",
+      "firewall_shaper_vinterface.php",
+      "firewall_shaper_wizards.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "firewall_shaper_queues.php",
+    "in_menu": false,
+    "tabs": [
+      "firewall_shaper.php",
+      "firewall_shaper_queues.php",
+      "firewall_shaper_vinterface.php",
+      "firewall_shaper_wizards.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "firewall_shaper_vinterface.php",
+    "in_menu": false,
+    "tabs": [
+      "firewall_shaper.php",
+      "firewall_shaper_queues.php",
+      "firewall_shaper_vinterface.php",
+      "firewall_shaper_wizards.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "firewall_shaper_wizards.php",
+    "in_menu": false,
+    "tabs": [
+      "firewall_shaper.php",
+      "firewall_shaper_queues.php",
+      "firewall_shaper_vinterface.php",
+      "firewall_shaper_wizards.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "firewall_virtual_ip.php",
+    "in_menu": true,
+    "tabs": [
+      "firewall_virtual_ip.php",
+      "system_hasync.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "firewall_virtual_ip_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "getqueuestats.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "getserviceproviders.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "getstats.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "graph.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "graph_cpu.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "help.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "ifstats.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "index.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "IMPLEMENTED",
+    "exists_in_mitranet": true
+  },
+  {
+    "source_file": "interfaces.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "IMPLEMENTED",
+    "exists_in_mitranet": true
+  },
+  {
+    "source_file": "interfaces_assign.php",
+    "in_menu": true,
+    "tabs": [
+      "interfaces_assign.php",
+      "interfaces_groups.php",
+      "interfaces_wireless.php",
+      "interfaces_vlan.php",
+      "interfaces_qinq.php",
+      "interfaces_ppps.php",
+      "interfaces_gre.php",
+      "interfaces_gif.php",
+      "interfaces_bridge.php",
+      "interfaces_lagg.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "interfaces_bridge.php",
+    "in_menu": false,
+    "tabs": [
+      "interfaces_assign.php",
+      "interfaces_groups.php",
+      "interfaces_wireless.php",
+      "interfaces_vlan.php",
+      "interfaces_qinq.php",
+      "interfaces_ppps.php",
+      "interfaces_gre.php",
+      "interfaces_gif.php",
+      "interfaces_bridge.php",
+      "interfaces_lagg.php"
+    ],
+    "status": "IMPLEMENTED",
+    "exists_in_mitranet": true
+  },
+  {
+    "source_file": "interfaces_bridge_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "interfaces_gif.php",
+    "in_menu": false,
+    "tabs": [
+      "interfaces_assign.php",
+      "interfaces_groups.php",
+      "interfaces_wireless.php",
+      "interfaces_vlan.php",
+      "interfaces_qinq.php",
+      "interfaces_ppps.php",
+      "interfaces_gre.php",
+      "interfaces_gif.php",
+      "interfaces_bridge.php",
+      "interfaces_lagg.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "interfaces_gif_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "interfaces_gre.php",
+    "in_menu": false,
+    "tabs": [
+      "interfaces_assign.php",
+      "interfaces_groups.php",
+      "interfaces_wireless.php",
+      "interfaces_vlan.php",
+      "interfaces_qinq.php",
+      "interfaces_ppps.php",
+      "interfaces_gre.php",
+      "interfaces_gif.php",
+      "interfaces_bridge.php",
+      "interfaces_lagg.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "interfaces_gre_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "interfaces_groups.php",
+    "in_menu": false,
+    "tabs": [
+      "interfaces_assign.php",
+      "interfaces_groups.php",
+      "interfaces_wireless.php",
+      "interfaces_vlan.php",
+      "interfaces_qinq.php",
+      "interfaces_ppps.php",
+      "interfaces_gre.php",
+      "interfaces_gif.php",
+      "interfaces_bridge.php",
+      "interfaces_lagg.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "interfaces_groups_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "interfaces_lagg.php",
+    "in_menu": false,
+    "tabs": [
+      "interfaces_assign.php",
+      "interfaces_groups.php",
+      "interfaces_wireless.php",
+      "interfaces_vlan.php",
+      "interfaces_qinq.php",
+      "interfaces_ppps.php",
+      "interfaces_gre.php",
+      "interfaces_gif.php",
+      "interfaces_bridge.php",
+      "interfaces_lagg.php"
+    ],
+    "status": "IMPLEMENTED",
+    "exists_in_mitranet": true
+  },
+  {
+    "source_file": "interfaces_lagg_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "interfaces_ppps.php",
+    "in_menu": false,
+    "tabs": [
+      "interfaces_assign.php",
+      "interfaces_groups.php",
+      "interfaces_wireless.php",
+      "interfaces_vlan.php",
+      "interfaces_qinq.php",
+      "interfaces_ppps.php",
+      "interfaces_gre.php",
+      "interfaces_gif.php",
+      "interfaces_bridge.php",
+      "interfaces_lagg.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "interfaces_ppps_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "interfaces_qinq.php",
+    "in_menu": false,
+    "tabs": [
+      "interfaces_assign.php",
+      "interfaces_groups.php",
+      "interfaces_wireless.php",
+      "interfaces_vlan.php",
+      "interfaces_qinq.php",
+      "interfaces_ppps.php",
+      "interfaces_gre.php",
+      "interfaces_gif.php",
+      "interfaces_bridge.php",
+      "interfaces_lagg.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "interfaces_qinq_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "interfaces_vlan.php",
+    "in_menu": false,
+    "tabs": [
+      "interfaces_assign.php",
+      "interfaces_groups.php",
+      "interfaces_wireless.php",
+      "interfaces_vlan.php",
+      "interfaces_qinq.php",
+      "interfaces_ppps.php",
+      "interfaces_gre.php",
+      "interfaces_gif.php",
+      "interfaces_bridge.php",
+      "interfaces_lagg.php"
+    ],
+    "status": "IMPLEMENTED",
+    "exists_in_mitranet": true
+  },
+  {
+    "source_file": "interfaces_vlan_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "interfaces_wireless.php",
+    "in_menu": false,
+    "tabs": [
+      "interfaces_assign.php",
+      "interfaces_groups.php",
+      "interfaces_wireless.php",
+      "interfaces_vlan.php",
+      "interfaces_qinq.php",
+      "interfaces_ppps.php",
+      "interfaces_gre.php",
+      "interfaces_gif.php",
+      "interfaces_bridge.php",
+      "interfaces_lagg.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "interfaces_wireless_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "pkg.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "pkg_edit.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "pkg_mgr.php",
+    "in_menu": false,
+    "tabs": [
+      "pkg_mgr_installed.php",
+      "pkg_mgr.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "pkg_mgr_install.php",
+    "in_menu": true,
+    "tabs": [
+      "pkg_mgr_install.php?id=firmware",
+      "system_update_settings.php",
+      "pkg_mgr_installed.php",
+      "pkg_mgr.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "pkg_mgr_installed.php",
+    "in_menu": true,
+    "tabs": [
+      "pkg_mgr_installed.php",
+      "pkg_mgr.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_acb.php",
+    "in_menu": false,
+    "tabs": [
+      "/services_acb.php?view=",
+      "/services_acb_backup.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_acb_backup.php",
+    "in_menu": false,
+    "tabs": [
+      "/services_acb_settings.php",
+      "/services_acb.php",
+      "/services_acb_backup.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_acb_changekey.php",
+    "in_menu": false,
+    "tabs": [
+      "/services_acb_settings.php",
+      "/services_acb.php",
+      "/services_acb_backup.php",
+      "/services_acb_changekey.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_acb_settings.php",
+    "in_menu": true,
+    "tabs": [
+      "/services_acb_settings.php",
+      "/services_acb.php",
+      "/services_acb_backup.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_captiveportal.php",
+    "in_menu": true,
+    "tabs": [
+      "services_captiveportal.php?zone={$cpzone}",
+      "services_captiveportal_mac.php?zone={$cpzone}",
+      "services_captiveportal_ip.php?zone={$cpzone}",
+      "services_captiveportal_hostname.php?zone={$cpzone}",
+      "services_captiveportal_vouchers.php?zone={$cpzone}",
+      "services_captiveportal_hasync.php?zone={$cpzone}",
+      "services_captiveportal_filemanager.php?zone={$cpzone}"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_captiveportal_filemanager.php",
+    "in_menu": false,
+    "tabs": [
+      "services_captiveportal.php?zone={$cpzone}",
+      "services_captiveportal_mac.php?zone={$cpzone}",
+      "services_captiveportal_ip.php?zone={$cpzone}",
+      "services_captiveportal_hostname.php?zone={$cpzone}",
+      "services_captiveportal_vouchers.php?zone={$cpzone}",
+      "services_captiveportal_hasync.php?zone={$cpzone}",
+      "services_captiveportal_filemanager.php?zone={$cpzone}"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_captiveportal_hasync.php",
+    "in_menu": false,
+    "tabs": [
+      "services_captiveportal.php?zone={$cpzone}",
+      "services_captiveportal_mac.php?zone={$cpzone}",
+      "services_captiveportal_ip.php?zone={$cpzone}",
+      "services_captiveportal_hostname.php?zone={$cpzone}",
+      "services_captiveportal_vouchers.php?zone={$cpzone}",
+      "services_captiveportal_hasync.php?zone={$cpzone}",
+      "services_captiveportal_filemanager.php?zone={$cpzone}"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_captiveportal_hostname.php",
+    "in_menu": false,
+    "tabs": [
+      "services_captiveportal.php?zone={$cpzone}",
+      "services_captiveportal_mac.php?zone={$cpzone}",
+      "services_captiveportal_ip.php?zone={$cpzone}",
+      "services_captiveportal_hostname.php?zone={$cpzone}",
+      "services_captiveportal_vouchers.php?zone={$cpzone}",
+      "services_captiveportal_hasync.php?zone={$cpzone}",
+      "services_captiveportal_filemanager.php?zone={$cpzone}"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_captiveportal_hostname_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_captiveportal_ip.php",
+    "in_menu": false,
+    "tabs": [
+      "services_captiveportal.php?zone={$cpzone}",
+      "services_captiveportal_mac.php?zone={$cpzone}",
+      "services_captiveportal_ip.php?zone={$cpzone}",
+      "services_captiveportal_hostname.php?zone={$cpzone}",
+      "services_captiveportal_vouchers.php?zone={$cpzone}",
+      "services_captiveportal_hasync.php?zone={$cpzone}",
+      "services_captiveportal_filemanager.php?zone={$cpzone}"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_captiveportal_ip_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_captiveportal_mac.php",
+    "in_menu": false,
+    "tabs": [
+      "services_captiveportal.php?zone={$cpzone}",
+      "services_captiveportal_mac.php?zone={$cpzone}",
+      "services_captiveportal_ip.php?zone={$cpzone}",
+      "services_captiveportal_hostname.php?zone={$cpzone}",
+      "services_captiveportal_vouchers.php?zone={$cpzone}",
+      "services_captiveportal_hasync.php?zone={$cpzone}",
+      "services_captiveportal_filemanager.php?zone={$cpzone}"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_captiveportal_mac_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_captiveportal_vouchers.php",
+    "in_menu": false,
+    "tabs": [
+      "services_captiveportal.php?zone={$cpzone}",
+      "services_captiveportal_mac.php?zone={$cpzone}",
+      "services_captiveportal_ip.php?zone={$cpzone}",
+      "services_captiveportal_hostname.php?zone={$cpzone}",
+      "services_captiveportal_vouchers.php?zone={$cpzone}",
+      "services_captiveportal_hasync.php?zone={$cpzone}",
+      "services_captiveportal_filemanager.php?zone={$cpzone}"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_captiveportal_vouchers_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_captiveportal_zones.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_captiveportal_zones_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_checkip.php",
+    "in_menu": false,
+    "tabs": [
+      "services_dyndns.php",
+      "services_rfc2136.php",
+      "services_checkip.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_checkip_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_dhcp.php",
+    "in_menu": false,
+    "tabs": [
+      "services_dhcp.php?if={$ifent}"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_dhcp_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_dhcp_relay.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_dhcp_settings.php",
+    "in_menu": true,
+    "tabs": [
+      "services_dhcp.php?if={$ifent}"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_dhcpv6.php",
+    "in_menu": false,
+    "tabs": [
+      "services_dhcpv6.php?if={$ifent}"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_dhcpv6_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_dhcpv6_relay.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_dhcpv6_settings.php",
+    "in_menu": true,
+    "tabs": [
+      "services_dhcpv6.php?if={$ifent}"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_dnsmasq.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_dnsmasq_domainoverride_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_dnsmasq_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_dyndns.php",
+    "in_menu": true,
+    "tabs": [
+      "services_dyndns.php",
+      "services_rfc2136.php",
+      "services_checkip.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_dyndns_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_igmpproxy.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_igmpproxy_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_ntpd.php",
+    "in_menu": true,
+    "tabs": [
+      "services_ntpd.php",
+      "services_ntpd_acls.php",
+      "services_ntpd_gps.php",
+      "services_ntpd_pps.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_ntpd_acls.php",
+    "in_menu": false,
+    "tabs": [
+      "services_ntpd.php",
+      "services_ntpd_acls.php",
+      "services_ntpd_gps.php",
+      "services_ntpd_pps.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_ntpd_gps.php",
+    "in_menu": false,
+    "tabs": [
+      "services_ntpd.php",
+      "services_ntpd_acls.php",
+      "services_ntpd_gps.php",
+      "services_ntpd_pps.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_ntpd_pps.php",
+    "in_menu": false,
+    "tabs": [
+      "services_ntpd.php",
+      "services_ntpd_acls.php",
+      "services_ntpd_gps.php",
+      "services_ntpd_pps.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_pppoe.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_pppoe_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_radvd.php",
+    "in_menu": true,
+    "tabs": [
+      "services_radvd.php?if="
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_rfc2136.php",
+    "in_menu": false,
+    "tabs": [
+      "services_dyndns.php",
+      "services_rfc2136.php",
+      "services_checkip.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_rfc2136_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_snmp.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_unbound.php",
+    "in_menu": true,
+    "tabs": [
+      "services_unbound.php",
+      "services_unbound_advanced.php",
+      "/services_unbound_acls.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_unbound_acls.php",
+    "in_menu": false,
+    "tabs": [
+      "/services_unbound.php",
+      "services_unbound_advanced.php",
+      "/services_unbound_acls.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_unbound_advanced.php",
+    "in_menu": false,
+    "tabs": [
+      "services_unbound.php",
+      "services_unbound_advanced.php",
+      "/services_unbound_acls.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_unbound_domainoverride_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_unbound_host_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_wol.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "services_wol_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "stats.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_captiveportal.php",
+    "in_menu": true,
+    "tabs": [
+      "status_captiveportal.php?zone=",
+      "status_captiveportal_vouchers.php?zone=",
+      "status_captiveportal_voucher_rolls.php?zone=",
+      "status_captiveportal_test.php?zone=",
+      "status_captiveportal_expire.php?zone="
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_captiveportal_expire.php",
+    "in_menu": false,
+    "tabs": [
+      "status_captiveportal.php?zone=",
+      "status_captiveportal_vouchers.php?zone=",
+      "status_captiveportal_voucher_rolls.php?zone=",
+      "status_captiveportal_test.php?zone=",
+      "status_captiveportal_expire.php?zone="
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_captiveportal_test.php",
+    "in_menu": false,
+    "tabs": [
+      "status_captiveportal.php?zone=",
+      "status_captiveportal_vouchers.php?zone=",
+      "status_captiveportal_voucher_rolls.php?zone=",
+      "status_captiveportal_test.php?zone=",
+      "status_captiveportal_expire.php?zone="
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_captiveportal_voucher_rolls.php",
+    "in_menu": false,
+    "tabs": [
+      "status_captiveportal.php?zone=",
+      "status_captiveportal_vouchers.php?zone=",
+      "status_captiveportal_voucher_rolls.php?zone=",
+      "status_captiveportal_test.php?zone=",
+      "status_captiveportal_expire.php?zone="
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_captiveportal_vouchers.php",
+    "in_menu": false,
+    "tabs": [
+      "status_captiveportal.php?zone=",
+      "status_captiveportal_vouchers.php?zone=",
+      "status_captiveportal_voucher_rolls.php?zone=",
+      "status_captiveportal_test.php?zone=",
+      "status_captiveportal_expire.php?zone="
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_carp.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_dhcp_leases.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_dhcpv6_leases.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_filter_reload.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_gateway_groups.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_gateways.php",
+    "in_menu": true,
+    "tabs": [
+      "status_gateways.php",
+      "status_gateway_groups.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_graph.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_graph_cpu.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_interfaces.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_ipsec.php",
+    "in_menu": true,
+    "tabs": [
+      "status_ipsec.php",
+      "status_ipsec_leases.php",
+      "status_ipsec_sad.php",
+      "status_ipsec_spd.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_ipsec_leases.php",
+    "in_menu": false,
+    "tabs": [
+      "status_ipsec.php",
+      "status_ipsec_leases.php",
+      "status_ipsec_sad.php",
+      "status_ipsec_spd.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_ipsec_sad.php",
+    "in_menu": false,
+    "tabs": [
+      "status_ipsec.php",
+      "status_ipsec_leases.php",
+      "status_ipsec_sad.php",
+      "status_ipsec_spd.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_ipsec_spd.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_logs.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "IMPLEMENTED",
+    "exists_in_mitranet": true
+  },
+  {
+    "source_file": "status_logs_filter.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_logs_filter_dynamic.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_logs_filter_summary.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_logs_packages.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_logs_settings.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_logs_vpn.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_ntpd.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_openvpn.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_queues.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_services.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_unbound.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_upnp.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "status_wireless.php",
+    "in_menu": true,
+    "tabs": [
+      "status_wireless.php?if={$interface}"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_advanced_admin.php",
+    "in_menu": true,
+    "tabs": [
+      "system_advanced_admin.php",
+      "system_advanced_firewall.php",
+      "system_advanced_network.php",
+      "system_advanced_misc.php",
+      "system_advanced_sysctl.php",
+      "system_advanced_notifications.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_advanced_firewall.php",
+    "in_menu": false,
+    "tabs": [
+      "system_advanced_admin.php",
+      "system_advanced_firewall.php",
+      "system_advanced_network.php",
+      "system_advanced_misc.php",
+      "system_advanced_sysctl.php",
+      "system_advanced_notifications.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_advanced_misc.php",
+    "in_menu": false,
+    "tabs": [
+      "system_advanced_admin.php",
+      "system_advanced_firewall.php",
+      "system_advanced_network.php",
+      "system_advanced_misc.php",
+      "system_advanced_sysctl.php",
+      "system_advanced_notifications.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_advanced_network.php",
+    "in_menu": false,
+    "tabs": [
+      "system_advanced_admin.php",
+      "system_advanced_firewall.php",
+      "system_advanced_network.php",
+      "system_advanced_misc.php",
+      "system_advanced_sysctl.php",
+      "system_advanced_notifications.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_advanced_notifications.php",
+    "in_menu": false,
+    "tabs": [
+      "system_advanced_admin.php",
+      "system_advanced_firewall.php",
+      "system_advanced_network.php",
+      "system_advanced_misc.php",
+      "system_advanced_sysctl.php",
+      "system_advanced_notifications.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_advanced_sysctl.php",
+    "in_menu": false,
+    "tabs": [
+      "system_advanced_admin.php",
+      "system_advanced_firewall.php",
+      "system_advanced_network.php",
+      "system_advanced_misc.php",
+      "system_advanced_sysctl.php",
+      "system_advanced_notifications.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_authservers.php",
+    "in_menu": false,
+    "tabs": [
+      "system_usermanager.php",
+      "system_groupmanager.php",
+      "system_usermanager_settings.php",
+      "system_usermanager_passwordmg.php",
+      "system_authservers.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_camanager.php",
+    "in_menu": true,
+    "tabs": [
+      "system_camanager.php",
+      "system_certmanager.php",
+      "system_crlmanager.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_certmanager.php",
+    "in_menu": true,
+    "tabs": [
+      "system_camanager.php",
+      "system_certmanager.php",
+      "system_crlmanager.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_certmanager_renew.php",
+    "in_menu": false,
+    "tabs": [
+      "system_camanager.php",
+      "system_certmanager.php",
+      "system_crlmanager.php",
+      "system_certmanager_renew.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_crlmanager.php",
+    "in_menu": true,
+    "tabs": [
+      "system_camanager.php",
+      "system_certmanager.php",
+      "system_crlmanager.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_gateway_groups.php",
+    "in_menu": false,
+    "tabs": [
+      "system_gateways.php",
+      "system_routes.php",
+      "system_gateway_groups.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_gateway_groups_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_gateways.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "IMPLEMENTED",
+    "exists_in_mitranet": true
+  },
+  {
+    "source_file": "system_gateways_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_groupmanager.php",
+    "in_menu": false,
+    "tabs": [
+      "system_usermanager.php",
+      "system_groupmanager.php",
+      "system_usermanager_settings.php",
+      "system_usermanager_passwordmg.php",
+      "system_authservers.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_groupmanager_addprivs.php",
+    "in_menu": false,
+    "tabs": [
+      "system_usermanager.php",
+      "system_groupmanager.php",
+      "system_usermanager_settings.php",
+      "system_usermanager_passwordmg.php",
+      "system_authservers.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_hasync.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_register.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_routes.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "IMPLEMENTED",
+    "exists_in_mitranet": true
+  },
+  {
+    "source_file": "system_routes_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_update_settings.php",
+    "in_menu": false,
+    "tabs": [
+      "pkg_mgr_install.php?id=firmware",
+      "system_update_settings.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_user_settings.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_usermanager.php",
+    "in_menu": true,
+    "tabs": [
+      "system_usermanager.php",
+      "system_groupmanager.php",
+      "system_usermanager_settings.php",
+      "system_usermanager_passwordmg.php",
+      "system_authservers.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_usermanager_addprivs.php",
+    "in_menu": false,
+    "tabs": [
+      "system_usermanager.php",
+      "system_groupmanager.php",
+      "system_usermanager_settings.php",
+      "system_usermanager_passwordmg.php",
+      "system_authservers.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_usermanager_passwordmg.php",
+    "in_menu": true,
+    "tabs": [
+      "system_usermanager.php",
+      "system_groupmanager.php",
+      "system_usermanager_settings.php",
+      "system_usermanager_passwordmg.php",
+      "system_authservers.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "system_usermanager_settings.php",
+    "in_menu": false,
+    "tabs": [
+      "system_usermanager.php",
+      "system_groupmanager.php",
+      "system_usermanager_settings.php",
+      "system_usermanager_passwordmg.php",
+      "system_authservers.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "uploadconfig.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "vpn_ipsec.php",
+    "in_menu": true,
+    "tabs": [
+      "vpn_ipsec.php",
+      "vpn_ipsec_mobile.php",
+      "vpn_ipsec_keys.php",
+      "vpn_ipsec_settings.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "vpn_ipsec_keys.php",
+    "in_menu": false,
+    "tabs": [
+      "vpn_ipsec.php",
+      "vpn_ipsec_mobile.php",
+      "vpn_ipsec_keys.php",
+      "vpn_ipsec_settings.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "vpn_ipsec_keys_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "vpn_ipsec_mobile.php",
+    "in_menu": false,
+    "tabs": [
+      "vpn_ipsec.php",
+      "vpn_ipsec_mobile.php",
+      "vpn_ipsec_keys.php",
+      "vpn_ipsec_settings.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "vpn_ipsec_phase1.php",
+    "in_menu": false,
+    "tabs": [
+      "vpn_ipsec.php",
+      "vpn_ipsec_mobile.php",
+      "vpn_ipsec_keys.php",
+      "vpn_ipsec_settings.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "vpn_ipsec_phase2.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "vpn_ipsec_settings.php",
+    "in_menu": false,
+    "tabs": [
+      "vpn_ipsec.php",
+      "vpn_ipsec_mobile.php",
+      "vpn_ipsec_keys.php",
+      "vpn_ipsec_settings.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "vpn_l2tp.php",
+    "in_menu": true,
+    "tabs": [
+      "vpn_l2tp.php",
+      "vpn_l2tp_users.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "vpn_l2tp_users.php",
+    "in_menu": false,
+    "tabs": [
+      "vpn_l2tp.php",
+      "vpn_l2tp_users.php"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "vpn_l2tp_users_edit.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "vpn_openvpn_client.php",
+    "in_menu": false,
+    "tabs": [
+      "vpn_openvpn_server.php",
+      "vpn_openvpn_client.php",
+      "vpn_openvpn_csc.php",
+      "wizard.php?xml=openvpn_wizard.xml"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "vpn_openvpn_csc.php",
+    "in_menu": false,
+    "tabs": [
+      "vpn_openvpn_server.php",
+      "vpn_openvpn_client.php",
+      "vpn_openvpn_csc.php",
+      "wizard.php?xml=openvpn_wizard.xml"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "vpn_openvpn_server.php",
+    "in_menu": true,
+    "tabs": [
+      "vpn_openvpn_server.php",
+      "vpn_openvpn_client.php",
+      "vpn_openvpn_csc.php",
+      "wizard.php?xml=openvpn_wizard.xml"
+    ],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "wizard.php",
+    "in_menu": true,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  },
+  {
+    "source_file": "xmlrpc.php",
+    "in_menu": false,
+    "tabs": [],
+    "status": "NOT_STARTED",
+    "exists_in_mitranet": false
+  }
+]
