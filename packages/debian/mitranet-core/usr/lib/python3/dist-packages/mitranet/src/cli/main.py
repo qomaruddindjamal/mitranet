@@ -35,6 +35,17 @@ from mitranet.core.network.exceptions import (
     DeviceNotFoundError,
     UnsupportedBondModeError,
 )
+from mitranet.core.firewall.engine import FirewallTransactionEngine
+from mitranet.core.firewall.models import (
+    FirewallRule,
+    FirewallAction,
+    FirewallFamily,
+    FirewallProtocol,
+    FirewallDirection,
+    FirewallTableConfig,
+)
+from mitranet.core.firewall.errors import FirewallError
+
 
 
 
@@ -990,6 +1001,175 @@ def cmd_vrf_interface(args, service: VRFService = None):
 
 
 
+def cmd_firewall_dispatch(subcmd: str, args: list):
+    is_json = "--json" in args
+    clean_args = [a for a in args if a != "--json"]
+
+    engine = FirewallTransactionEngine()
+
+    if subcmd == "status":
+        st = engine.get_status()
+        if is_json:
+            print(st.model_dump_json(indent=2))
+        else:
+            print("=== MITRANET FIREWALL STATUS ===")
+            print(f"  Active:         {'YES' if st.active else 'NO'}")
+            print(f"  Table:          {st.table_family} {st.table_name}")
+            print(f"  Rules Configured: {st.rule_count}")
+            print(f"  Active Chains:  {', '.join(st.chains) if st.chains else 'None'}")
+            if st.ruleset_hash:
+                print(f"  Ruleset Hash:   {st.ruleset_hash[:16]}...")
+            if st.last_applied:
+                print(f"  Last Applied:   {st.last_applied}")
+
+    elif subcmd in ("list", "show"):
+        cfg = engine.running_config
+        if is_json:
+            print(cfg.model_dump_json(indent=2))
+        else:
+            print("=== MITRANET FIREWALL POLICY & RULES ===")
+            print(f"Default Policy: INPUT={cfg.policy.input_default.value.upper()} "
+                  f"FORWARD={cfg.policy.forward_default.value.upper()} "
+                  f"OUTPUT={cfg.policy.output_default.value.upper()}")
+            print(f"Anti-Lockout:   {'ENABLED' if cfg.policy.anti_lockout_enabled else 'DISABLED'} "
+                  f"(Protected: {', '.join(cfg.policy.management_interfaces)} ports: {', '.join(cfg.policy.management_ports)})")
+            print("\nRules:")
+            if not cfg.rules:
+                print("  (No user rules defined)")
+            for r in cfg.rules:
+                status = "ENABLED" if r.enabled else "DISABLED"
+                print(f"  [{r.priority:03d}] {r.id:<12} {status:<8} {r.direction.value.upper():<4} "
+                      f"{r.protocol.value.upper():<7} {r.source}->{r.destination} => {r.action.value.upper()}")
+
+    elif subcmd == "rule":
+        if not clean_args:
+            print("Usage: mitranet firewall rule [list|show <id>|add ...|delete <id>|enable <id>|disable <id>] [--json]")
+            sys.exit(1)
+        r_action = clean_args[0].lower()
+        r_args = clean_args[1:]
+
+        if r_action == "list":
+            rules = engine.running_config.rules
+            if is_json:
+                print(json.dumps([r.model_dump() for r in rules], indent=2))
+            else:
+                for r in rules:
+                    print(f"  {r.id:<15} prio={r.priority} action={r.action.value} proto={r.protocol.value} src={r.source} dst={r.destination}")
+        elif r_action == "show":
+            if not r_args:
+                print("Usage: mitranet firewall rule show <rule-id>")
+                sys.exit(1)
+            target_id = r_args[0]
+            found = next((r for r in engine.running_config.rules if r.id == target_id), None)
+            if not found:
+                print(f"Rule '{target_id}' not found.")
+                sys.exit(1)
+            if is_json:
+                print(found.model_dump_json(indent=2))
+            else:
+                for k, v in found.model_dump().items():
+                    print(f"  {k}: {v}")
+        elif r_action == "add":
+            # Simple CLI rule creation: mitranet firewall rule add <id> <action> <proto> <src> <dst> [prio]
+            if len(r_args) < 5:
+                print("Usage: mitranet firewall rule add <id> <action:accept|drop|reject> <proto> <src> <dst> [priority]")
+                sys.exit(1)
+            rid, act, proto, src, dst = r_args[0], r_args[1].lower(), r_args[2].lower(), r_args[3], r_args[4]
+            prio = int(r_args[5]) if len(r_args) > 5 else 100
+            
+            cand = engine.candidate_config
+            # check duplicate
+            if any(r.id == rid for r in cand.rules):
+                print(f"Rule ID '{rid}' already exists in candidate config.")
+                sys.exit(1)
+            new_r = FirewallRule(
+                id=rid,
+                action=FirewallAction(act),
+                protocol=FirewallProtocol(proto),
+                source=src,
+                destination=dst,
+                priority=prio,
+            )
+            cand.rules.append(new_r)
+            engine.save_candidate(cand)
+            print(f"[SUCCESS] Added rule '{rid}' to candidate configuration. Run 'mitranet firewall apply' to activate.")
+        elif r_action in ("delete", "del", "remove"):
+            if not r_args:
+                print("Usage: mitranet firewall rule delete <rule-id>")
+                sys.exit(1)
+            target_id = r_args[0]
+            cand = engine.candidate_config
+            orig_len = len(cand.rules)
+            cand.rules = [r for r in cand.rules if r.id != target_id]
+            if len(cand.rules) == orig_len:
+                print(f"Rule '{target_id}' not found in candidate configuration.")
+                sys.exit(1)
+            engine.save_candidate(cand)
+            print(f"[SUCCESS] Deleted rule '{target_id}' from candidate configuration. Run 'mitranet firewall apply' to activate.")
+        elif r_action in ("enable", "disable"):
+            if not r_args:
+                print(f"Usage: mitranet firewall rule {r_action} <rule-id>")
+                sys.exit(1)
+            target_id = r_args[0]
+            cand = engine.candidate_config
+            found = next((r for r in cand.rules if r.id == target_id), None)
+            if not found:
+                print(f"Rule '{target_id}' not found in candidate configuration.")
+                sys.exit(1)
+            found.enabled = (r_action == "enable")
+            engine.save_candidate(cand)
+            print(f"[SUCCESS] Rule '{target_id}' {r_action}d in candidate configuration. Run 'mitranet firewall apply' to activate.")
+
+    elif subcmd == "apply":
+        try:
+            print("Applying firewall configuration transaction...")
+            rec = engine.apply_and_commit()
+            print(f"[SUCCESS] Firewall transaction {rec.transaction_id} COMMITTED.")
+            print(f"          State: {rec.state.value}")
+        except Exception as e:
+            print(f"[FAILURE] Firewall apply failed: {e}")
+            sys.exit(1)
+
+    elif subcmd == "reload":
+        try:
+            print("Reloading running firewall ruleset...")
+            engine.save_candidate(engine.running_config.model_copy(deep=True))
+            rec = engine.apply_and_commit()
+            print(f"[SUCCESS] Reload complete. Transaction: {rec.transaction_id}")
+        except Exception as e:
+            print(f"[FAILURE] Reload failed: {e}")
+            sys.exit(1)
+
+    elif subcmd == "rollback":
+        if not clean_args:
+            print("Usage: mitranet firewall rollback <snapshot_id>")
+            sys.exit(1)
+        snap_id = clean_args[0]
+        try:
+            engine.rollback_to_snapshot(snap_id)
+            print(f"[SUCCESS] Rollback to snapshot '{snap_id}' complete.")
+        except Exception as e:
+            print(f"[FAILURE] Rollback failed: {e}")
+            sys.exit(1)
+
+    elif subcmd == "counters":
+        st = engine.get_status()
+        if is_json:
+            print(json.dumps({k: v.model_dump() for k, v in st.counters.items()}, indent=2))
+        else:
+            print("=== MITRANET FIREWALL RULE COUNTERS ===")
+            if not st.counters:
+                print("  (No active rule counters reported by nftables)")
+            else:
+                for rid, cnt in st.counters.items():
+                    print(f"  Rule '{rid}': {cnt.packets} packets, {cnt.bytes} bytes")
+
+    else:
+        print(f"Unknown firewall subcommand: {subcmd}")
+        sys.exit(1)
+
+
+
 def main():
     if len(sys.argv) < 2 or sys.argv[1].lower() in ["--help", "-h", "help"]:
         print_banner()
@@ -1026,6 +1206,13 @@ def main():
         print("  vrf create <name> <table>                 Create VRF instance with FIB table ID")
         print("  vrf delete <name>                         Delete VRF instance")
         print("  vrf interface add|remove <vrf> <iface>    Attach or detach interface to/from VRF")
+        print("  firewall list|show [--json]               Display firewall table, zones and rules")
+        print("  firewall rule list|show|add|del|enable    Manage individual firewall rules")
+        print("  firewall apply                            Validate and apply firewall configuration")
+        print("  firewall status [--json]                  Show runtime status and ruleset hash")
+        print("  firewall counters [--json]                Display packet and byte counters")
+        print("  firewall reload                           Re-apply active running configuration")
+        print("  firewall rollback <snap_id>               Rollback to previous snapshot")
         print("  config validate <config.json>             Validate configuration file")
         print("  config import-pfsense <xml>               Migrate pfSense config.xml to MitraNet JSON")
         print("  config show                               Display current running configuration")
@@ -1033,6 +1220,7 @@ def main():
         print("  config rollback [snapshot_id]             Rollback to previous snapshot")
         print("  version                                   Show OS and MitraNet version")
         sys.exit(0)
+
 
     category = sys.argv[1].lower()
     if category in ["--version", "-v", "version"]:
@@ -1188,9 +1376,18 @@ def main():
         else:
             print(f"Unknown config subcommand: {subcmd}")
             sys.exit(1)
+
+    elif category == "firewall":
+        if len(sys.argv) < 3:
+            print("Usage: mitranet firewall [list|show|rule|apply|status|counters|reload|rollback] [--json]")
+            sys.exit(1)
+        subcmd = sys.argv[2].lower()
+        subargs = sys.argv[3:]
+        cmd_firewall_dispatch(subcmd, subargs)
     else:
         print(f"Unknown command: {category}")
         sys.exit(1)
+
 
 
 if __name__ == "__main__":
