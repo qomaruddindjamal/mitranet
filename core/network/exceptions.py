@@ -37,3 +37,19 @@ class SafetyConstraintViolationError(NetworkError):
 class VerificationFailureError(NetworkError):
     """Raised when post-write state verification does not match desired state."""
     pass
+
+
+class RouteNotFoundError(NetworkError):
+    """Raised when an operation targets a non-existent routing entry."""
+    pass
+
+
+class RouteAlreadyExistsError(NetworkError):
+    """Raised when attempting to add an identical route that already exists."""
+    pass
+
+
+class ProtectedRouteError(SafetyConstraintViolationError):
+    """Raised when attempting to modify or delete a protected route (e.g., active management default route)."""
+    pass
+

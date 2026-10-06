@@ -35,3 +35,25 @@ class NetworkInterfaceState(BaseModel):
     statistics: InterfaceStatistics = Field(default_factory=InterfaceStatistics)
     parent_device: Optional[str] = Field(default=None, description="Parent interface if VLAN or slave")
     vlan_id: Optional[int] = Field(default=None, ge=1, le=4094, description="VLAN ID if 802.1Q subinterface")
+
+
+class RouteState(BaseModel):
+    """
+    Represents an active routing table entry discovered from the Linux kernel.
+    """
+    family: Literal["inet", "inet6"] = Field(..., description="Address family: inet (IPv4) or inet6 (IPv6)")
+    destination: str = Field(..., description="Destination CIDR prefix, e.g. 192.0.2.0/24, 0.0.0.0/0, ::/0")
+    gateway: Optional[str] = Field(default=None, description="Next-hop gateway IP if applicable")
+    interface: Optional[str] = Field(default=None, description="Egress network interface device name")
+    table: int = Field(default=254, description="Routing table ID (254=main, 255=local, etc.)")
+    metric: Optional[int] = Field(default=None, ge=0, description="Route priority/metric")
+    protocol: Optional[str] = Field(default=None, description="Routing protocol, e.g. kernel, boot, static, dhcp, ra")
+    scope: Optional[str] = Field(default=None, description="Route scope, e.g. global, link, host")
+    type: Optional[str] = Field(default="unicast", description="Route type, e.g. unicast, local, broadcast, blackhole")
+    prefsrc: Optional[str] = Field(default=None, description="Preferred source IP address for outgoing traffic")
+    flags: List[str] = Field(default_factory=list, description="Route flags from kernel")
+
+    @property
+    def is_default(self) -> bool:
+        return self.destination in ("0.0.0.0/0", "::/0", "default")
+

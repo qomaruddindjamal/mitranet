@@ -14,6 +14,8 @@ from mitranet.core.config.transaction import ConfigTransactionManager
 from mitranet.core.migration.exporter import MigrationExporter
 from mitranet.core.network.discovery import InterfaceDiscoveryService
 from mitranet.core.network.config_service import InterfaceConfigurationService
+from mitranet.core.network.routing_discovery import RouteDiscoveryService
+from mitranet.core.network.routing_service import RouteConfigurationService
 from mitranet.core.network.exceptions import (
     InterfaceNotFoundError,
     BackendExecutionError,
@@ -21,7 +23,11 @@ from mitranet.core.network.exceptions import (
     NetworkSecurityError,
     SafetyConstraintViolationError,
     VerificationFailureError,
+    RouteNotFoundError,
+    RouteAlreadyExistsError,
+    ProtectedRouteError,
 )
+
 
 
 def print_banner():
@@ -275,6 +281,170 @@ def cmd_interface_address(args, service: InterfaceConfigurationService = None):
         sys.exit(1)
 
 
+# =========================================================================
+# Phase 1C: Routing Core CLI Commands
+# =========================================================================
+
+def cmd_route_list(args, discovery: RouteDiscoveryService = None):
+    discovery = discovery or RouteDiscoveryService()
+    as_json = "--json" in args
+    family = None
+    table = 254
+
+    i = 0
+    while i < len(args):
+        a = args[i].lower()
+        if a == "--ipv4":
+            family = "inet"
+        elif a == "--ipv6":
+            family = "inet6"
+        elif a == "--table" and i + 1 < len(args):
+            try:
+                table = int(args[i + 1])
+            except ValueError:
+                table = 254
+            i += 1
+        i += 1
+
+    routes = discovery.get_routes(family=family, table=table)
+
+    if as_json:
+        data = [r.model_dump() for r in routes]
+        print(json.dumps(data, indent=2))
+    else:
+        print(f"{'DESTINATION':<28} {'GATEWAY':<20} {'INTERFACE':<10} {'METRIC':<8} {'TABLE':<6} {'FAMILY':<6}")
+        print("-" * 84)
+        for r in routes:
+            gw_str = r.gateway or "*"
+            dev_str = r.interface or "*"
+            metric_str = str(r.metric) if r.metric is not None else "-"
+            print(f"{r.destination:<28} {gw_str:<20} {dev_str:<10} {metric_str:<8} {r.table:<6} {r.family:<6}")
+
+
+def cmd_route_show(args, discovery: RouteDiscoveryService = None):
+    discovery = discovery or RouteDiscoveryService()
+    if not args or args[0].startswith("--"):
+        print("Usage: mitranet route show <destination> [--json] [--table <table>]")
+        sys.exit(1)
+    target_dest = args[0]
+    as_json = "--json" in args
+    table = 254
+
+    for i, a in enumerate(args):
+        if a.lower() == "--table" and i + 1 < len(args):
+            try:
+                table = int(args[i + 1])
+            except ValueError:
+                table = 254
+
+    routes = discovery.get_routes(table=table)
+    matched = [r for r in routes if r.destination == target_dest or (r.is_default and target_dest in ("default", "0.0.0.0/0", "::/0"))]
+
+    if not matched:
+        print(f"[ERROR] Route to '{target_dest}' not found in routing table {table}.")
+        sys.exit(1)
+
+    if as_json:
+        print(json.dumps([r.model_dump() for r in matched], indent=2))
+    else:
+        for r in matched:
+            print(f"Route: {r.destination}")
+            print(f"  Family    : {r.family}")
+            print(f"  Gateway   : {r.gateway or 'Direct / On-link'}")
+            print(f"  Interface : {r.interface or 'N/A'}")
+            print(f"  Metric    : {r.metric if r.metric is not None else 'Default'}")
+            print(f"  Table     : {r.table}")
+            print(f"  Protocol  : {r.protocol or 'N/A'}")
+            print(f"  Scope     : {r.scope or 'N/A'}")
+            print(f"  Type      : {r.type or 'unicast'}")
+
+
+def cmd_route_add(args, service: RouteConfigurationService = None):
+    service = service or RouteConfigurationService()
+    if not args:
+        print("Usage: mitranet route add <destination> [via <gateway>] [dev <interface>] [metric <metric>] [table <table>]")
+        sys.exit(1)
+
+    dest = args[0]
+    gateway = None
+    interface = None
+    metric = None
+    table = 254
+
+    i = 1
+    while i < len(args):
+        token = args[i].lower()
+        if token in ("via", "gw", "gateway") and i + 1 < len(args):
+            gateway = args[i + 1]
+            i += 1
+        elif token in ("dev", "iface", "interface") and i + 1 < len(args):
+            interface = args[i + 1]
+            i += 1
+        elif token == "metric" and i + 1 < len(args):
+            try:
+                metric = int(args[i + 1])
+            except ValueError:
+                print(f"[ERROR] Invalid metric value: {args[i + 1]}")
+                sys.exit(1)
+            i += 1
+        elif token == "table" and i + 1 < len(args):
+            try:
+                table = int(args[i + 1])
+            except ValueError:
+                table = args[i + 1]
+            i += 1
+        i += 1
+
+    try:
+        r = service.add_route(destination=dest, gateway=gateway, interface=interface, metric=metric, table=table)
+        print(f"[SUCCESS] Route to {r.destination} via {r.gateway or 'dev'} {r.interface or ''} added (table {r.table}).")
+    except (NetworkValidationError, NetworkSecurityError, SafetyConstraintViolationError, ProtectedRouteError, RouteAlreadyExistsError) as e:
+        print(f"[VALIDATION ERROR] {e}")
+        sys.exit(1)
+    except (VerificationFailureError, BackendExecutionError, InterfaceNotFoundError) as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+
+
+def cmd_route_remove(args, service: RouteConfigurationService = None):
+    service = service or RouteConfigurationService()
+    if not args:
+        print("Usage: mitranet route remove <destination> [via <gateway>] [dev <interface>] [table <table>]")
+        sys.exit(1)
+
+    dest = args[0]
+    gateway = None
+    interface = None
+    table = 254
+
+    i = 1
+    while i < len(args):
+        token = args[i].lower()
+        if token in ("via", "gw", "gateway") and i + 1 < len(args):
+            gateway = args[i + 1]
+            i += 1
+        elif token in ("dev", "iface", "interface") and i + 1 < len(args):
+            interface = args[i + 1]
+            i += 1
+        elif token == "table" and i + 1 < len(args):
+            try:
+                table = int(args[i + 1])
+            except ValueError:
+                table = args[i + 1]
+            i += 1
+        i += 1
+
+    try:
+        service.remove_route(destination=dest, gateway=gateway, interface=interface, table=table)
+        print(f"[SUCCESS] Route to {dest} removed (table {table}).")
+    except (NetworkValidationError, NetworkSecurityError, SafetyConstraintViolationError, ProtectedRouteError, RouteNotFoundError) as e:
+        print(f"[VALIDATION ERROR] {e}")
+        sys.exit(1)
+    except (VerificationFailureError, BackendExecutionError) as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+
+
 def main():
     if len(sys.argv) < 2 or sys.argv[1].lower() in ["--help", "-h", "help"]:
         print_banner()
@@ -288,6 +458,10 @@ def main():
         print("  interface set <name> mac <mac_address>    Set interface MAC address")
         print("  interface address add <name> <CIDR>       Add IPv4/IPv6 address to interface")
         print("  interface address remove <name> <CIDR>    Remove IPv4/IPv6 address from interface")
+        print("  route list [--json] [--ipv4|--ipv6]       List discovered kernel routing table entries")
+        print("  route show <destination> [--json]         Show routing details for a destination")
+        print("  route add <dest> [via <gw>] [dev <if>]    Add static route with verification")
+        print("  route remove <dest> [via <gw>] [dev <if>] Remove static route from kernel")
         print("  config validate <config.json>             Validate configuration file")
         print("  config import-pfsense <xml>               Migrate pfSense config.xml to MitraNet JSON")
         print("  config show                               Display current running configuration")
@@ -323,6 +497,24 @@ def main():
             print(f"Unknown interface subcommand: {subcmd}")
             sys.exit(1)
 
+    elif category == "route":
+        if len(sys.argv) < 3:
+            print("Specify a route subcommand: 'list', 'show', 'add', 'remove'")
+            sys.exit(1)
+        subcmd = sys.argv[2].lower()
+        subargs = sys.argv[3:]
+        if subcmd == "list":
+            cmd_route_list(subargs)
+        elif subcmd == "show":
+            cmd_route_show(subargs)
+        elif subcmd == "add":
+            cmd_route_add(subargs)
+        elif subcmd in ("remove", "del", "delete"):
+            cmd_route_remove(subargs)
+        else:
+            print(f"Unknown route subcommand: {subcmd}")
+            sys.exit(1)
+
     elif category == "config":
         if len(sys.argv) < 3:
             print("Specify a config subcommand (validate, import-pfsense, show, commit, rollback)")
@@ -349,4 +541,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 

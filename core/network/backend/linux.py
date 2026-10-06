@@ -46,6 +46,41 @@ class NetworkBackend:
     def remove_address(self, iface_name: str, cidr: str) -> bool:
         raise NotImplementedError
 
+    def get_routes(self, family: str = "inet", table: Optional[int] = 254) -> List[Dict[str, Any]]:
+        raise NotImplementedError
+
+    def add_route(
+        self,
+        destination: str,
+        family: str = "inet",
+        gateway: Optional[str] = None,
+        interface: Optional[str] = None,
+        metric: Optional[int] = None,
+        table: Optional[int] = 254,
+    ) -> bool:
+        raise NotImplementedError
+
+    def remove_route(
+        self,
+        destination: str,
+        family: str = "inet",
+        gateway: Optional[str] = None,
+        interface: Optional[str] = None,
+        table: Optional[int] = 254,
+    ) -> bool:
+        raise NotImplementedError
+
+    def replace_route(
+        self,
+        destination: str,
+        family: str = "inet",
+        gateway: Optional[str] = None,
+        interface: Optional[str] = None,
+        metric: Optional[int] = None,
+        table: Optional[int] = 254,
+    ) -> bool:
+        raise NotImplementedError
+
 
 class LinuxNetworkBackend(NetworkBackend):
     """Production Linux Network Backend querying iproute2 and /sys/class/net."""
@@ -62,8 +97,12 @@ class LinuxNetworkBackend(NetworkBackend):
             logger.error("ip utility (iproute2) not found in system PATH.")
             raise BackendExecutionError("Required Linux networking tool 'ip' (iproute2) is not installed.")
         except subprocess.CalledProcessError as e:
-            logger.error("Error executing %s: %s", " ".join(cmd), e.stderr)
-            raise BackendExecutionError(f"Linux kernel network query failed: {e.stderr.strip()}")
+            err = (e.stderr or "").strip()
+            # If the FIB table does not exist yet in the kernel, iproute2 exits with code 2
+            if "FIB table does not exist" in err:
+                return []
+            logger.error("Error executing %s: %s", " ".join(cmd), err)
+            raise BackendExecutionError(f"Linux kernel network query failed: {err}")
         except json.JSONDecodeError as e:
             logger.error("Malformed JSON received from %s: %s", " ".join(cmd), e)
             raise BackendExecutionError(f"Malformed JSON output from 'ip': {e}")
@@ -153,3 +192,73 @@ class LinuxNetworkBackend(NetworkBackend):
 
     def remove_address(self, iface_name: str, cidr: str) -> bool:
         return self._exec_ip_cmd(["address", "del", cidr, "dev", iface_name])
+
+    def get_routes(self, family: str = "inet", table: Optional[int] = 254) -> List[Dict[str, Any]]:
+        """Queries kernel routing table using ip -j route show with family and table filter."""
+        args: List[str] = []
+        if family == "inet6":
+            args.append("-6")
+        args.extend(["route", "show"])
+        if table is not None:
+            args.extend(["table", str(table)])
+        return self._run_ip_json(args)
+
+    def _build_route_args(
+        self,
+        action: str,
+        destination: str,
+        family: str = "inet",
+        gateway: Optional[str] = None,
+        interface: Optional[str] = None,
+        metric: Optional[int] = None,
+        table: Optional[int] = 254,
+    ) -> List[str]:
+        args: List[str] = []
+        if family == "inet6":
+            args.append("-6")
+        args.extend(["route", action, destination])
+        if gateway:
+            args.extend(["via", gateway])
+        if interface:
+            args.extend(["dev", interface])
+        if metric is not None:
+            args.extend(["metric", str(metric)])
+        if table is not None:
+            args.extend(["table", str(table)])
+        return args
+
+    def add_route(
+        self,
+        destination: str,
+        family: str = "inet",
+        gateway: Optional[str] = None,
+        interface: Optional[str] = None,
+        metric: Optional[int] = None,
+        table: Optional[int] = 254,
+    ) -> bool:
+        args = self._build_route_args("add", destination, family, gateway, interface, metric, table)
+        return self._exec_ip_cmd(args)
+
+    def remove_route(
+        self,
+        destination: str,
+        family: str = "inet",
+        gateway: Optional[str] = None,
+        interface: Optional[str] = None,
+        table: Optional[int] = 254,
+    ) -> bool:
+        args = self._build_route_args("del", destination, family, gateway, interface, None, table)
+        return self._exec_ip_cmd(args)
+
+    def replace_route(
+        self,
+        destination: str,
+        family: str = "inet",
+        gateway: Optional[str] = None,
+        interface: Optional[str] = None,
+        metric: Optional[int] = None,
+        table: Optional[int] = 254,
+    ) -> bool:
+        args = self._build_route_args("replace", destination, family, gateway, interface, metric, table)
+        return self._exec_ip_cmd(args)
+
