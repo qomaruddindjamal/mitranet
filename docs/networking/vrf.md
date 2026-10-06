@@ -55,3 +55,13 @@ mitranet vrf interface remove <vrf> <interface>
 ## Transaction Model
 Every state modification follows the transaction pipeline:
 `VALIDATE -> CAPTURE -> APPLY -> DISCOVER -> VERIFY -> COMMIT RESULT` (with automatic rollback upon failure).
+
+## Environment-Gated Testing Harness
+The test harness provides strict preflight capability probing (`VRFEnvironmentProbe`):
+1. **OS & Kernel Validation**: Verifies Linux kernel version and operational VRF driver support.
+2. **iproute2 Support**: Probes `ip link help vrf` for table ID syntax support.
+3. **Privilege Gating**: Enforces `CAP_NET_ADMIN` / root privileges prior to attempting destructive netlink calls.
+4. **Management Protection**: Automatically identifies the active management interface (carrying the default route or management address) and protects it from VRF enslavement.
+5. **Safe Interface Discovery**: Dynamically discovers candidate interfaces for testing (e.g. `enp0s8`) without hardcoding interface names.
+6. **Routing Table Conflict Detection**: Ensures test routing tables are not already in use by VRFs, system services, or Linux reserved table IDs (0, 253, 254, 255).
+7. **Baseline Restoration**: Captures full network link and routing table snapshots before test execution and asserts zero leaks after cleanup.

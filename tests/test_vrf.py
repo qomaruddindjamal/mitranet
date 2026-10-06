@@ -247,5 +247,83 @@ class TestVRFService(unittest.TestCase):
         self.mock_backend.set_nomaster.assert_called_once_with("enp0s8")
 
 
+from mitranet.core.network.vrf_preflight import VRFEnvironmentProbe, VRFEnvironmentPrerequisites
+
+
+class TestVRFEnvironmentGate(unittest.TestCase):
+    """Level 1 unit testing for VRF environment gating and preflight inspection."""
+
+    def test_environment_probe_data_model(self):
+        prereqs = VRFEnvironmentPrerequisites(
+            os_name="Linux",
+            kernel_version="6.12.107+deb13-amd64",
+            architecture="x86_64",
+            iproute2_version="6.15.0",
+            ip_command_path="/usr/sbin/ip",
+            kernel_support=True,
+            iproute2_support=True,
+            net_admin=True,
+            management_interface="enp0s3",
+            management_addresses=["10.0.2.15/24"],
+            default_route={"dev": "enp0s3", "gateway": "10.0.2.2"},
+            candidate_interfaces=["enp0s8"],
+            safe_test_interfaces=["enp0s8"],
+            existing_vrfs=[],
+            existing_vrf_tables=[],
+            available_tables=[100, 200],
+            safe_test_environment=True,
+            ready=True,
+            rejection_reasons=[],
+        )
+        self.assertTrue(prereqs.ready)
+        self.assertEqual(prereqs.management_interface, "enp0s3")
+        self.assertIn("enp0s8", prereqs.safe_test_interfaces)
+
+        # Formatted report test
+        report = VRFEnvironmentProbe.format_preflight_report(prereqs)
+        self.assertIn("VRF ENVIRONMENT PREFLIGHT", report)
+        self.assertIn("VRF Environment Ready: PASS", report)
+
+    def test_environment_gate_rejection_when_unprivileged(self):
+        prereqs = VRFEnvironmentPrerequisites(
+            os_name="Linux",
+            kernel_version="6.12.107",
+            architecture="x86_64",
+            iproute2_version="6.15.0",
+            ip_command_path="/usr/sbin/ip",
+            kernel_support=True,
+            iproute2_support=True,
+            net_admin=False,  # Unprivileged
+            management_interface="enp0s3",
+            safe_test_interfaces=["enp0s8"],
+            available_tables=[100, 200],
+            safe_test_environment=True,
+            ready=False,
+            rejection_reasons=["Missing CAP_NET_ADMIN / root privileges required for VRF netlink operations."],
+        )
+        self.assertFalse(prereqs.ready)
+        self.assertIn("Missing CAP_NET_ADMIN", prereqs.rejection_reasons[0])
+
+    def test_environment_gate_rejection_when_no_safe_interfaces(self):
+        prereqs = VRFEnvironmentPrerequisites(
+            os_name="Linux",
+            kernel_version="6.12.107",
+            architecture="x86_64",
+            iproute2_version="6.15.0",
+            ip_command_path="/usr/sbin/ip",
+            kernel_support=True,
+            iproute2_support=True,
+            net_admin=True,
+            management_interface="enp0s3",
+            safe_test_interfaces=[],  # None available
+            available_tables=[100, 200],
+            safe_test_environment=False,
+            ready=False,
+            rejection_reasons=["No safe isolated test interface found (all interfaces are lo or management)."],
+        )
+        self.assertFalse(prereqs.ready)
+        self.assertFalse(prereqs.safe_test_environment)
+
+
 if __name__ == "__main__":
     unittest.main()

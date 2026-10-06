@@ -21,6 +21,10 @@ from mitranet.core.network.vlan import VlanService
 from mitranet.core.network.bridge import BridgeService
 from mitranet.core.network.bonding import BondService
 from mitranet.core.network.vrf import VRFService
+from mitranet.core.network.vrf_preflight import (
+    VRFEnvironmentPrerequisites,
+    VRFEnvironmentProbe,
+)
 from mitranet.core.network.validator import (
     InterfaceConfigValidator,
     RouteValidator,
@@ -61,6 +65,8 @@ __all__ = [
     "BridgeService",
     "BondService",
     "VRFService",
+    "VRFEnvironmentPrerequisites",
+    "VRFEnvironmentProbe",
     "InterfaceConfigValidator",
     "RouteValidator",
     "VlanValidator",
