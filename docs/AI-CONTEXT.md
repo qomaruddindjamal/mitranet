@@ -137,16 +137,17 @@ When a new AI/Antigravity conversation starts:
   `A7EF94AC2FB9A7FEC454552ABD629B7CC9D5155C886165A45649F5CE6167E355` (Read-only, verified)
 - **pfSense Source ISO (`pfsense-offline-installer.iso`):**
   `16EBD1682C7F18D0B40300EC486611979F0D0C090300EFE2BFFD7C209A624291` (Read-only, verified)
-- **Verified MitraNet ISO Baseline (with WebUI Management Layer v1):**
-  `build/MitraNet-Rinjani-1.0.2-amd64.iso` — SHA256: `336B47E93C401A22B2C8F68C97335C4B7FAC0AFE278586440277341EE67C4536` (Verified)
+- **Verified MitraNet ISO Baseline (with pfSense-Derived Modular PHP WebUI):**
+  `build/MitraNet-Rinjani-1.0.2-amd64.iso` — SHA256: `0D0C57A7456B9A2D526926C8164BB46E144F90840269771E3FC16DF1684A25F4` (Verified)
 
 ---
 
 ## 8. WebUI Management Status
 
-MitraNet WebUI Management Layer v1 is **PASS / LOCKED** and fully operational:
-- Runtime: Native Python `http.server` backend + Vanilla HTML/CSS/JS frontend SPA.
+MitraNet WebUI Management Layer (pfSense-derived modular PHP WebUI) is **PASS / LOCKED** and fully operational:
+- Runtime: Native PHP presentation layer (`/usr/share/mitranet/web`, `php-cli`, `php-curl`) ported from genuine pfSense 2.9.0 web sources + MitraNet REST API backend (`server.py`, port 8443).
+- Architecture: Pure decoupled separation — PHP controllers communicate exclusively with the local MitraNet REST JSON API (`/api/v1/...`) via cURL. Zero shell execution (`shell_exec`, `exec`, `system`) and 0 FreeBSD runtime dependencies.
 - Service: `mitranet-webui.service` (systemd, port 8443).
-- Security: PBKDF2 authentication, HttpOnly SameSite=Strict cookies, CSRF protection.
-- Fully offline capable, zero external CDN dependencies.
+- Security: PBKDF2 authentication, HttpOnly SameSite=Strict session cookies, CSRF tokens (`X-CSRF-Token`).
+- Fully offline capable, 0 external CDN dependencies, self-contained Debian 13 apt repository.
 

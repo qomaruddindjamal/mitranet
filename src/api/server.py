@@ -11,7 +11,7 @@ import json
 import time
 import socket
 import logging
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from http import cookies
 from urllib.parse import urlparse, parse_qs
 from typing import Dict, Any, Optional, Tuple
@@ -136,6 +136,59 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
         except Exception:
             return None
 
+    def _proxy_to_php(self, method: str) -> None:
+        """Proxies WebUI HTTP requests to local PHP-S backend (port 8000) preserving headers & cookies."""
+        import urllib.request
+        import urllib.error
+
+        target_url = f"http://127.0.0.1:8000{self.path}"
+        req_headers = {}
+        for k, v in self.headers.items():
+            if k.lower() not in ("host", "content-length"):
+                req_headers[k] = v
+        req_headers["Host"] = "127.0.0.1:8000"
+
+        req_data = None
+        if method == "POST":
+            length = int(self.headers.get("Content-Length", 0))
+            if length > 0:
+                req_data = self.rfile.read(length)
+
+        try:
+            req = urllib.request.Request(target_url, data=req_data, headers=req_headers, method=method)
+            # Do not follow redirects automatically so cookies & Location are passed back to client
+            class NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+                def redirect_request(self, req, fp, code, msg, hdrs, newurl):
+                    return None
+
+            opener = urllib.request.build_opener(NoRedirectHandler)
+            try:
+                resp = opener.open(req)
+                status_code = resp.status
+                headers = resp.headers
+                content = resp.read()
+            except urllib.error.HTTPError as e:
+                status_code = e.code
+                headers = e.headers
+                content = e.read()
+
+            self.send_response(status_code)
+            for k, v in headers.items():
+                if k.lower() in ("transfer-encoding", "content-length", "connection"):
+                    continue
+                if k.lower() == "set-cookie":
+                    # headers.get_all or raw lines preserve multiple cookies
+                    for sc in headers.get_all("Set-Cookie", [v]):
+                        self.send_header("Set-Cookie", sc)
+                else:
+                    self.send_header(k, v)
+            self.send_header("Content-Length", str(len(content)))
+            self.end_headers()
+            self.wfile.write(content)
+        except Exception as e:
+            logger.error("Failed proxying to PHP WebUI: %s", e)
+            self._send_json(502, {"error": f"WebUI backend gateway error: {e}"})
+
     # =========================================================================
     # GET DISPATCHER
     # =========================================================================
@@ -144,22 +197,9 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
 
-        # Static WebUI Routes
-        if path in ("/", "/index.html", "/ui", "/ui/"):
-            static_dir = os.path.join(os.path.dirname(__file__), "static")
-            self._send_file(os.path.join(static_dir, "index.html"), "text/html; charset=utf-8")
-            return
-
-        if path.startswith("/static/"):
-            filename = os.path.basename(path)
-            static_dir = os.path.join(os.path.dirname(__file__), "static")
-            target = os.path.join(static_dir, filename)
-            ct = "text/plain"
-            if filename.endswith(".html"): ct = "text/html; charset=utf-8"
-            elif filename.endswith(".css"): ct = "text/css; charset=utf-8"
-            elif filename.endswith(".js"): ct = "application/javascript; charset=utf-8"
-            elif filename.endswith(".svg"): ct = "image/svg+xml"
-            self._send_file(target, ct)
+        # If not an API endpoint, forward to PHP WebUI
+        if not path.startswith("/api/v1/"):
+            self._proxy_to_php("GET")
             return
 
         # Public Status Endpoint
@@ -394,6 +434,11 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
 
+        # If not an API endpoint, forward to PHP WebUI
+        if not path.startswith("/api/v1/"):
+            self._proxy_to_php("POST")
+            return
+
         # 1. Login Endpoint
         if path == "/api/v1/auth/login":
             data = self._read_body_json() or {}
@@ -411,6 +456,7 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 self._send_json(200, {
                     "success": True,
                     "username": username,
+                    "session_token": token,
                     "csrf_token": session["csrf_token"],
                 }, set_cookie=cookie_str)
             else:
@@ -654,8 +700,31 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
 
 def run_api_server(host: str = "0.0.0.0", port: int = 8443) -> None:
     """Entry point for launching the MitraNet Management WebUI & REST API server."""
+    import subprocess
+    import shutil
+
+    php_proc = None
+    php_path = shutil.which("php")
+    web_dir = None
+    for candidate in ("/mitranet/web", "/usr/share/mitranet/web", os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "web")):
+        if os.path.isdir(candidate):
+            web_dir = candidate
+            break
+
+    if php_path and web_dir:
+        try:
+            logger.info("Spawning local PHP WebUI worker on 127.0.0.1:8000 (docroot: %s)", web_dir)
+            php_proc = subprocess.Popen(
+                [php_path, "-S", "127.0.0.1:8000", "-t", web_dir],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            time.sleep(0.5)
+        except Exception as e:
+            logger.warning("Could not launch local PHP worker: %s", e)
+
     server_address = (host, port)
-    httpd = HTTPServer(server_address, ManagementApiHandler)
+    httpd = ThreadingHTTPServer(server_address, ManagementApiHandler)
     logger.info("MitraNet Management WebUI & API Server running on %s:%d", host, port)
     print(f"MitraNet Management WebUI & API listening on http://{host}:{port}/")
     try:
@@ -663,6 +732,8 @@ def run_api_server(host: str = "0.0.0.0", port: int = 8443) -> None:
     except KeyboardInterrupt:
         logger.info("Server terminated by user.")
     finally:
+        if php_proc:
+            php_proc.terminate()
         httpd.server_close()
 
 
