@@ -29,6 +29,7 @@ class TestEndToEndMigration(unittest.TestCase):
 
         # 2. Verify loadable JSON
         reloaded_cfg = ConfigLoader.load_from_file(out_json)
+        self.assertEqual(reloaded_cfg.schema_version, "1.0.2")
         self.assertEqual(reloaded_cfg.system.hostname, "pfSense")
         self.assertEqual(reloaded_cfg.system.domain, "home.arpa")
 

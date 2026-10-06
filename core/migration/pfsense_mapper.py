@@ -4,6 +4,7 @@ Translates interfaces, routing, firewall rules, NAT, DHCP, DNS, WireGuard, and r
 """
 
 from typing import Dict, Any, Tuple
+from mitranet.core.version import SCHEMA_VERSION
 from mitranet.core.config.model import (
     MitraNetConfig,
     SystemConfig,
@@ -33,6 +34,7 @@ class PfSenseMapper:
 
     def map_to_mitranet(self, raw_pfsense: Dict[str, Any]) -> Tuple[MitraNetConfig, MigrationReport]:
         report = MigrationReport()
+        report.target_schema_version = SCHEMA_VERSION
         cfg = MitraNetConfig()
 
         pfsense_root = raw_pfsense.get("pfsense", raw_pfsense)

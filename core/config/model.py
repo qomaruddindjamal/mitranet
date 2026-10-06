@@ -5,6 +5,7 @@ Defines the canonical, single-source-of-truth object model for persistent config
 
 from typing import Dict, List, Optional, Literal, Any
 from pydantic import BaseModel, Field, field_validator
+from mitranet.core.version import SCHEMA_VERSION
 
 
 class SystemConfig(BaseModel):
@@ -174,7 +175,7 @@ class VpnConfig(BaseModel):
 
 
 class MitraNetConfig(BaseModel):
-    schema_version: str = Field(default="1.0")
+    schema_version: str = Field(default=SCHEMA_VERSION)
     config_version: int = Field(default=1, ge=1)
     system: SystemConfig = Field(default_factory=SystemConfig)
     interfaces: Dict[str, InterfaceConfig] = Field(default_factory=dict)

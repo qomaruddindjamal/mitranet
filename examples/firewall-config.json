@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.0.2",
   "config_version": 1,
   "system": {
     "hostname": "mitranet-firewall",

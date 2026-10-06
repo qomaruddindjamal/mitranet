@@ -6,6 +6,7 @@ Provides JSON endpoints for monitoring, candidate configuration editing, and com
 
 import json
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from mitranet.core.version import MITRANET_VERSION
 from mitranet.src.config.engine import ConfigEngine
 from mitranet.src.config.models import MitraNetMasterConfig
 from mitranet.src.network.firewall import NftablesCompiler
@@ -25,7 +26,7 @@ class MitraNetApiHandler(BaseHTTPRequestHandler):
         if self.path == "/api/v1/system/status":
             self._send_json(200, {
                 "os": "MitraNet NOS",
-                "version": "1.0.0-phase0",
+                "version": MITRANET_VERSION,
                 "kernel": "Linux 6.x (Debian 13 Trixie)",
                 "status": "operational"
             })

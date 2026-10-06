@@ -6,6 +6,7 @@ Provides operations for config validation, pfSense migration, export, commit, ro
 import sys
 import os
 import json
+from mitranet.core.version import MITRANET_VERSION
 from mitranet.core.config.loader import ConfigLoader, ConfigWriter
 from mitranet.core.config.validator import ConfigValidator
 from mitranet.core.config.transaction import ConfigTransactionManager
@@ -14,7 +15,7 @@ from mitranet.core.migration.exporter import MigrationExporter
 
 def print_banner():
     print("=" * 65)
-    print("       MITRANET NETWORK OPERATING SYSTEM (Debian Core)")
+    print(f"       MITRANET NETWORK OPERATING SYSTEM v{MITRANET_VERSION} (Debian Core)")
     print("       Carrier-Grade Firewall, Routing & Hardware NOS")
     print("=" * 65)
 
@@ -44,7 +45,7 @@ def cmd_import_pfsense(args):
         print("Usage: mitranet config import-pfsense <pfsense-config.xml> [output-config.json]")
         sys.exit(1)
     xml_path = args[0]
-    out_json = args[1] if len(args) > 1 else "C:/mitranet/examples/pfsense-migrated.json"
+    out_json = args[1] if len(args) > 1 else "C:/mitranet/tests/fixtures/pfsense/pfsense-migrated.json"
     out_rep_json = out_json.replace(".json", "-report.json")
     out_rep_md = out_json.replace(".json", "-report.md")
 

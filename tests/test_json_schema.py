@@ -10,7 +10,7 @@ from mitranet.core.config.model import MitraNetConfig, InterfaceConfig, Interfac
 
 class TestJsonSchema(unittest.TestCase):
     def setUp(self):
-        with open("C:/mitranet/schemas/mitranet-config-v1.schema.json", "r", encoding="utf-8") as f:
+        with open("C:/mitranet/schemas/mitranet-config-v1.0.2.schema.json", "r", encoding="utf-8") as f:
             self.schema = json.load(f)
 
     def test_valid_default_config_against_schema(self):
@@ -21,6 +21,7 @@ class TestJsonSchema(unittest.TestCase):
             ipv4=InterfaceIPv4(mode="static", address="192.168.1.1", prefix=24)
         )
         data = json.loads(cfg.model_dump_json())
+        self.assertEqual(data["schema_version"], "1.0.2")
         # Should not raise
         validate(instance=data, schema=self.schema)
 

@@ -17,7 +17,7 @@ from mitranet.core.config.model import (
 class TestConfigModel(unittest.TestCase):
     def test_default_model(self):
         cfg = MitraNetConfig()
-        self.assertEqual(cfg.schema_version, "1.0")
+        self.assertEqual(cfg.schema_version, "1.0.2")
         self.assertEqual(cfg.config_version, 1)
         self.assertEqual(cfg.system.hostname, "mitranet")
         self.assertEqual(cfg.system.domain, "home.arpa")
@@ -41,7 +41,7 @@ class TestConfigModel(unittest.TestCase):
             ipv4=InterfaceIPv4(mode="dhcp")
         )
         json_str = cfg.model_dump_json()
-        self.assertIn('"schema_version":"1.0"', json_str)
+        self.assertIn('"schema_version":"1.0.2"', json_str)
         self.assertIn('"device":"eth0"', json_str)
 
 
