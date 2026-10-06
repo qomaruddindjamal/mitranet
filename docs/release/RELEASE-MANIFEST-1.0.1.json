@@ -1,0 +1,19 @@
+﻿{
+    "project":  "MitraNet",
+    "version":  "1.0.1",
+    "release_state":  "PRODUCTION_RELEASE",
+    "foundation":  "MitraOS 1.0.0",
+    "code_os":  "Rinjani",
+    "architecture":  "amd64",
+    "source_commit":  "c611d9c",
+    "artifact_name":  "mitranet-rinjani-installer.1.0.1.iso",
+    "artifact_size":  99774464,
+    "artifact_sha256":  "8e414785059f42b5f1cf7872cf926213c2b037e6291e9ba0d194bb3c9dbe1392",
+    "baseline_carrier_iso":  "MitraOS-Apollo-amd64.iso",
+    "baseline_carrier_sha256":  "8e414785059f42b5f1cf7872cf926213c2b037e6291e9ba0d194bb3c9dbe1392",
+    "binary_identity_reason":  "Deterministic reproducible hybrid build preserving frozen MitraOS 1.0.0 Apollo carrier image",
+    "package_count":  204,
+    "installer_revision":  "scripts/install_mitranet.sh (v1.0.1 production with user provisioning \u0026 mitranet-api.service auto-start)",
+    "security_status":  "PASS (CRITICAL=0, HIGH=0, MEDIUM=0, LOW=0)",
+    "release_gate_status":  "AUTHORIZED"
+}
