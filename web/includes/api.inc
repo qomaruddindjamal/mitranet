@@ -84,12 +84,15 @@ class MitraNetApi {
     }
 
     public static function isAuthenticated() {
-        if (!empty($_SESSION['username'])) {
+        if (!empty($_SESSION['username']) && !empty($_SESSION['csrf_token'])) {
             return true;
         }
         $res = self::request('/auth/status', 'GET');
         if ($res['status'] === 200 && !empty($res['data']['authenticated'])) {
             $_SESSION['username'] = $res['data']['username'];
+            if (!empty($res['data']['csrf_token'])) {
+                $_SESSION['csrf_token'] = $res['data']['csrf_token'];
+            }
             return true;
         }
         return false;
