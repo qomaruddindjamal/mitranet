@@ -5,7 +5,7 @@
   "foundation": "MitraOS 1.0.0",
   "code_os": "Rinjani",
   "architecture": "amd64",
-  "source_commit": "b66ca72099a15557ec4623b43f33b842c3ac1bfb",
+  "source_commit": "bf2605f7f55301b41bf82f0ed29914e2c50748bf",
   "source_date_epoch": 1791263779,
   "artifact_name": "mitranet-rinjani-installer.1.0.0.iso",
   "artifact_size": 99774464,
