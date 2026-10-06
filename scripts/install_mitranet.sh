@@ -21,6 +21,7 @@ TARGET_HOSTNAME="${2:-mitranet}"
 TARGET_TIMEZONE="${3:-Asia/Jakarta}"
 TARGET_LOCALE="${4:-en_US.UTF-8}"
 TARGET_KEYBOARD="${5:-us}"
+ADMIN_PASS="${6:-mitranet}"
 BOOT_MODE="auto" # auto | uefi | bios
 
 log() {
@@ -34,17 +35,18 @@ error() {
 
 usage() {
     cat <<EOF
-Usage: $0 <target_disk> [hostname] [timezone] [locale] [keyboard]
+Usage: $0 <target_disk> [hostname] [timezone] [locale] [keyboard] [admin_password]
 
 Parameters:
-  target_disk  Target block device (e.g., /dev/sda, /dev/vda, /dev/nvme0n1)
-  hostname     System hostname (default: mitranet)
-  timezone     Timezone string (default: Asia/Jakarta)
-  locale       System locale (default: en_US.UTF-8)
-  keyboard     Keyboard layout (default: us)
+  target_disk     Target block device (e.g., /dev/sda, /dev/vda, /dev/nvme0n1)
+  hostname        System hostname (default: mitranet)
+  timezone        Timezone string (default: Asia/Jakarta)
+  locale          System locale (default: en_US.UTF-8)
+  keyboard        Keyboard layout (default: us)
+  admin_password  Administrator password for installed system (default: mitranet)
 
 Example:
-  $0 /dev/vda mitranet-core Asia/Jakarta en_US.UTF-8 us
+  $0 /dev/vda mitranet-core Asia/Jakarta en_US.UTF-8 us mitranet
 EOF
     exit 1
 }
@@ -155,7 +157,28 @@ EOF
 echo "$TARGET_TIMEZONE" > "$MOUNT_TARGET/etc/timezone"
 ln -sf "/usr/share/zoneinfo/$TARGET_TIMEZONE" "$MOUNT_TARGET/etc/localtime"
 
-# 7. Bootloader Installation (Dual BIOS + UEFI support)
+# 7. User Provisioning & Administrative Security
+log "Provisioning administrator account on installed system..."
+if ! chroot "$MOUNT_TARGET" id -u admin >/dev/null 2>&1; then
+    chroot "$MOUNT_TARGET" useradd -m -s /bin/bash -G sudo,adm,dip admin || \
+    chroot "$MOUNT_TARGET" useradd -m -s /bin/bash admin || true
+fi
+echo "admin:$ADMIN_PASS" | chroot "$MOUNT_TARGET" chpasswd || true
+
+# Provision application database users and bcrypt sync
+mkdir -p "$MOUNT_TARGET/etc/mitranet"
+cat <<EOF > "$MOUNT_TARGET/etc/mitranet/auth.conf"
+admin:\$2y\$10\$5e2kv/Ir7mDVrAVfdFI/V.LHuaedAMYBHWCsxdde/eeJUL8UxRaUK
+EOF
+chmod 600 "$MOUNT_TARGET/etc/mitranet/auth.conf"
+
+# Verify /mitranet package store payload
+if [ -d "$MOUNT_TARGET/mitranet/packages" ]; then
+    PKG_COUNT=$(find "$MOUNT_TARGET/mitranet/packages" -maxdepth 1 -name "*.pkg*" | wc -l)
+    log "Installed package store payload verified: $PKG_COUNT artifacts present."
+fi
+
+# 8. Bootloader Installation (Dual BIOS + UEFI support)
 log "Installing GRUB bootloader to $TARGET_DEV..."
 mount --bind /dev "$MOUNT_TARGET/dev"
 mount --bind /proc "$MOUNT_TARGET/proc"
@@ -172,11 +195,12 @@ fi
 # Generate grub.cfg inside chroot
 chroot "$MOUNT_TARGET" update-grub || true
 
-# 8. First Boot Initialization Service Setup
+# 9. Systemd Services & REST API Daemon Setup
 cat <<'EOF' > "$MOUNT_TARGET/etc/systemd/system/mitranet-init.service"
 [Unit]
 Description=MitraNet First Boot & Configuration Engine Daemon
 After=network.target
+Wants=network.target
 
 [Service]
 Type=oneshot
@@ -188,7 +212,26 @@ ExecStart=/usr/bin/python3 -c "import sys; sys.path.insert(0, '/mitranet/api'); 
 WantedBy=multi-user.target
 EOF
 
+cat <<'EOF' > "$MOUNT_TARGET/etc/systemd/system/mitranet-api.service"
+[Unit]
+Description=MitraNet REST API Control Plane Daemon
+After=network.target mitranet-init.service
+Wants=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/mitranet
+ExecStart=/usr/bin/python3 /mitranet/api/REST/server.py
+Restart=always
+RestartSec=3
+User=root
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
 chroot "$MOUNT_TARGET" systemctl enable mitranet-init.service || true
+chroot "$MOUNT_TARGET" systemctl enable mitranet-api.service || true
 
 # 9. Clean Unmount
 sync

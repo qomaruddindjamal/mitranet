@@ -3,7 +3,14 @@
 // Shared across all modular packages (Modern White Enterprise Theme)
 // ==============================================================================
 
-const API_BASE = '';
+function getApiBase() {
+  if (window.location.port === '8080') {
+    return '';
+  }
+  return `${window.location.protocol}//${window.location.hostname}:8080`;
+}
+
+const API_BASE = getApiBase();
 
 function toggleSidebar() {
   if (typeof jQuery !== 'undefined') {
@@ -40,10 +47,12 @@ function escapeHtml(str) {
 
 async function apiFetch(endpoint, options = {}) {
   try {
+    const authHeader = 'Basic ' + btoa('admin:mitranet');
     const res = await fetch(`${API_BASE}${endpoint}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': authHeader,
         ...(options.headers || {})
       }
     });
