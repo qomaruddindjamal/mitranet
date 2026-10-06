@@ -1,0 +1,73 @@
+[
+  {
+    "ifindex": 1,
+    "ifname": "lo",
+    "flags": ["LOOPBACK", "UP", "LOWER_UP"],
+    "mtu": 65536,
+    "qdisc": "noqueue",
+    "operstate": "UNKNOWN",
+    "linkmode": "DEFAULT",
+    "group": "default",
+    "txqlen": 1000,
+    "link_type": "loopback",
+    "address": "00:00:00:00:00:00",
+    "broadcast": "00:00:00:00:00:00",
+    "stats64": {
+      "rx": {"bytes": 1024, "packets": 12, "errors": 0, "dropped": 0},
+      "tx": {"bytes": 1024, "packets": 12, "errors": 0, "dropped": 0}
+    }
+  },
+  {
+    "ifindex": 2,
+    "ifname": "eth0",
+    "flags": ["BROADCAST", "MULTICAST", "UP", "LOWER_UP"],
+    "mtu": 1500,
+    "qdisc": "fq_codel",
+    "operstate": "UP",
+    "linkmode": "DEFAULT",
+    "group": "default",
+    "txqlen": 1000,
+    "link_type": "ether",
+    "address": "52:54:00:12:34:56",
+    "broadcast": "ff:ff:ff:ff:ff:ff",
+    "stats64": {
+      "rx": {"bytes": 1048576, "packets": 8192, "errors": 0, "dropped": 0},
+      "tx": {"bytes": 524288, "packets": 4096, "errors": 0, "dropped": 0}
+    }
+  },
+  {
+    "ifindex": 3,
+    "ifname": "eth1",
+    "flags": ["BROADCAST", "MULTICAST", "UP"],
+    "mtu": 1500,
+    "qdisc": "fq_codel",
+    "operstate": "DOWN",
+    "linkmode": "DEFAULT",
+    "group": "default",
+    "txqlen": 1000,
+    "link_type": "ether",
+    "address": "52:54:00:12:34:57",
+    "broadcast": "ff:ff:ff:ff:ff:ff",
+    "stats64": {
+      "rx": {"bytes": 0, "packets": 0, "errors": 0, "dropped": 0},
+      "tx": {"bytes": 0, "packets": 0, "errors": 0, "dropped": 0}
+    }
+  },
+  {
+    "ifindex": 4,
+    "ifname": "ens18.100",
+    "link": "eth0",
+    "flags": ["BROADCAST", "MULTICAST", "UP", "LOWER_UP"],
+    "mtu": 1500,
+    "operstate": "UP",
+    "link_type": "ether",
+    "linkinfo": {
+      "info_kind": "vlan"
+    },
+    "address": "52:54:00:12:34:56",
+    "stats64": {
+      "rx": {"bytes": 5000, "packets": 50, "errors": 0, "dropped": 0},
+      "tx": {"bytes": 5000, "packets": 50, "errors": 0, "dropped": 0}
+    }
+  }
+]

@@ -1,0 +1,60 @@
+[
+  {
+    "ifindex": 1,
+    "ifname": "lo",
+    "flags": ["LOOPBACK", "UP", "LOWER_UP"],
+    "addr_info": [
+      {
+        "family": "inet",
+        "local": "127.0.0.1",
+        "prefixlen": 8,
+        "scope": "host"
+      },
+      {
+        "family": "inet6",
+        "local": "::1",
+        "prefixlen": 128,
+        "scope": "host"
+      }
+    ]
+  },
+  {
+    "ifindex": 2,
+    "ifname": "eth0",
+    "flags": ["BROADCAST", "MULTICAST", "UP", "LOWER_UP"],
+    "addr_info": [
+      {
+        "family": "inet",
+        "local": "192.168.100.10",
+        "prefixlen": 24,
+        "broadcast": "192.168.100.255",
+        "scope": "global"
+      },
+      {
+        "family": "inet6",
+        "local": "fe80::5054:ff:fe12:3456",
+        "prefixlen": 64,
+        "scope": "link"
+      }
+    ]
+  },
+  {
+    "ifindex": 3,
+    "ifname": "eth1",
+    "flags": ["BROADCAST", "MULTICAST", "UP"],
+    "addr_info": []
+  },
+  {
+    "ifindex": 4,
+    "ifname": "ens18.100",
+    "flags": ["BROADCAST", "MULTICAST", "UP", "LOWER_UP"],
+    "addr_info": [
+      {
+        "family": "inet",
+        "local": "10.100.0.1",
+        "prefixlen": 24,
+        "scope": "global"
+      }
+    ]
+  }
+]
