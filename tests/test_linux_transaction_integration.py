@@ -195,6 +195,10 @@ class TestLinuxTransactionIntegration(unittest.TestCase):
         )
         self.engine._persist_state(self.engine.current_record)
 
+        clean2, msg2 = self.engine.check_startup_recovery()
+        self.assertFalse(clean2, "Crashed state must trigger recovery requirement.")
+        self.assertIn("RECOVERY_REQUIRED", msg2)
+
     def test_07_invalid_candidate_rejected_without_kernel_mutation(self):
         """Invalid candidate configuration is rejected prior to any kernel operations."""
         candidate = self.engine.get_candidate()

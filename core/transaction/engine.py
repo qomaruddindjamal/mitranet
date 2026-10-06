@@ -413,3 +413,52 @@ class NetworkTransactionEngine:
             return False, f"System is in RECOVERY_REQUIRED state for transaction '{self.current_record.transaction_id}'."
 
         return True, f"System state consistent (last transaction state: {s})."
+
+    def recover(self) -> Tuple[bool, str]:
+        """
+        Executes active crash recovery on an interrupted transaction:
+        Loads snapshot, reverses executed forward operations, verifies baseline restoration,
+        and marks transaction ROLLED_BACK.
+        """
+        # Clear stale lock first
+        if self.lock.is_locked():
+            return False, "Cannot recover: active live process holds transaction lock."
+        self.lock.release()
+
+        if not self.current_record:
+            return True, "No recovery needed: state is clean."
+
+        s = self.current_record.state
+        if s not in [
+            TransactionState.APPLYING,
+            TransactionState.VERIFYING,
+            TransactionState.COMMITTING,
+            TransactionState.ROLLING_BACK,
+            TransactionState.RECOVERY_REQUIRED,
+        ]:
+            return True, f"No recovery needed: transaction is in state '{s}'."
+
+        tx_id = self.current_record.transaction_id
+        logger.info("Initiating recovery for interrupted transaction '%s' (state: %s)", tx_id, s)
+        snapshot = None
+        if self.current_record.snapshot_id:
+            try:
+                snapshot = self.snapshot_mgr.load_snapshot(self.current_record.snapshot_id)
+            except Exception as e:
+                logger.warning("Recovery could not load snapshot %s: %s", self.current_record.snapshot_id, e)
+
+        try:
+            self.transition_state(self.current_record, TransactionState.ROLLING_BACK)
+            self._execute_rollback(self.current_record, snapshot)
+            self.transition_state(self.current_record, TransactionState.ROLLED_BACK)
+            self.current_record.recovery_required = False
+            self.current_record.completed_at = datetime.now(timezone.utc).isoformat()
+            self._persist_state(self.current_record)
+            return True, f"Transaction '{tx_id}' successfully recovered and rolled back to baseline."
+        except Exception as e:
+            logger.critical("Crash recovery rollback failed for transaction '%s': %s", tx_id, e)
+            self.current_record.state = TransactionState.RECOVERY_REQUIRED
+            self.current_record.recovery_required = True
+            self.current_record.error = f"Recovery failed: {e}"
+            self._persist_state(self.current_record)
+            return False, f"Recovery failed! Manual intervention required: {e}"

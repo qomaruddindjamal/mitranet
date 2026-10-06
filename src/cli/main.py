@@ -161,13 +161,15 @@ def cmd_config_apply(args):
 
 def cmd_config_recover(args):
     engine = NetworkTransactionEngine()
-    is_clean, msg = engine.check_startup_recovery()
-    if is_clean:
-        print(f"[INFO] System recovery not needed: {msg}")
-        return
-    print(f"[ATTENTION] Recovering from: {msg}")
-    engine.lock.release()
-    print("[SUCCESS] Stale locks cleared and state reset to IDLE.")
+    as_json = "--json" in args
+    success, msg = engine.recover()
+    if as_json:
+        print(json.dumps({"success": success, "message": msg}, indent=2))
+    else:
+        status_tag = "SUCCESS" if success else "FAIL"
+        print(f"[{status_tag}] {msg}")
+    if not success:
+        sys.exit(1)
 
 
 def cmd_config_commit(args):
