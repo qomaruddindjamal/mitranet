@@ -53,3 +53,19 @@ class ProtectedRouteError(SafetyConstraintViolationError):
     """Raised when attempting to modify or delete a protected route (e.g., active management default route)."""
     pass
 
+
+class DeviceAlreadyExistsError(NetworkError):
+    """Raised when attempting to create a device (VLAN, bridge, bond) that already exists."""
+    pass
+
+
+class DeviceNotFoundError(NetworkError):
+    """Raised when a target device (VLAN, bridge, bond) does not exist."""
+    pass
+
+
+class UnsupportedBondModeError(NetworkValidationError):
+    """Raised when a requested bonding mode is not supported by kernel/system."""
+    pass
+
+

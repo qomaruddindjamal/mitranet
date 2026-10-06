@@ -6,8 +6,12 @@ and checks MAC/MTU/IP format boundaries.
 
 import re
 import ipaddress
-from typing import Union, Optional
-from mitranet.core.network.exceptions import NetworkValidationError, NetworkSecurityError
+from typing import Union, Optional, Any
+from mitranet.core.network.exceptions import (
+    NetworkValidationError,
+    NetworkSecurityError,
+    UnsupportedBondModeError,
+)
 
 
 
@@ -155,4 +159,101 @@ class RouteValidator:
         if t < 1 or t > 4294967295:
             raise NetworkValidationError(f"Routing table {t} out of valid range (1 - 4294967295).")
         return t
+
+
+class VlanValidator:
+    """Security and semantic validation for 802.1Q VLAN devices."""
+
+    @classmethod
+    def validate_vlan_id(cls, vlan_id: Any) -> int:
+        try:
+            vid = int(vlan_id)
+        except (ValueError, TypeError):
+            raise NetworkValidationError(f"VLAN ID must be an integer, got: {vlan_id}")
+        if vid < 1 or vid > 4094:
+            raise NetworkValidationError(f"VLAN ID {vid} out of valid range (1 - 4094).")
+        return vid
+
+    @classmethod
+    def validate_vlan_name(cls, name: str) -> str:
+        return InterfaceConfigValidator.validate_interface_name(name)
+
+    @classmethod
+    def validate_parent_interface(cls, parent: str) -> str:
+        valid_name = InterfaceConfigValidator.validate_interface_name(parent)
+        if valid_name == "lo":
+            raise NetworkValidationError("Loopback interface 'lo' cannot be used as a parent interface for VLAN.")
+        return valid_name
+
+
+class BridgeValidator:
+    """Security and semantic validation for Linux Bridge devices."""
+
+    @classmethod
+    def validate_bridge_name(cls, name: str) -> str:
+        valid_name = InterfaceConfigValidator.validate_interface_name(name)
+        if valid_name == "lo":
+            raise NetworkValidationError("Cannot name a bridge 'lo'.")
+        return valid_name
+
+    @classmethod
+    def validate_port_interface(cls, iface_name: str) -> str:
+        valid_name = InterfaceConfigValidator.validate_interface_name(iface_name)
+        if valid_name == "lo":
+            raise NetworkValidationError("Loopback interface 'lo' cannot be attached as a bridge port.")
+        return valid_name
+
+
+class BondValidator:
+    """Security and semantic validation for Linux Bonding devices."""
+
+    VALID_MODES = [
+        "balance-rr",
+        "active-backup",
+        "balance-xor",
+        "broadcast",
+        "802.3ad",
+        "balance-tlb",
+        "balance-alb",
+    ]
+
+    MODE_ALIASES = {
+        "0": "balance-rr",
+        "1": "active-backup",
+        "2": "balance-xor",
+        "3": "broadcast",
+        "4": "802.3ad",
+        "5": "balance-tlb",
+        "6": "balance-alb",
+        "lacp": "802.3ad",
+    }
+
+    @classmethod
+    def validate_bond_name(cls, name: str) -> str:
+        valid_name = InterfaceConfigValidator.validate_interface_name(name)
+        if valid_name == "lo":
+            raise NetworkValidationError("Cannot name a bond 'lo'.")
+        return valid_name
+
+    @classmethod
+    def validate_mode(cls, mode: str) -> str:
+        if not mode or not isinstance(mode, str):
+            raise NetworkValidationError("Bond mode must be a non-empty string.")
+        m = mode.strip().lower()
+        if any(c in m for c in [";", "&", "|", "`", "$", "(", ")", "<", ">", "\n", "\r", " "]):
+            raise NetworkSecurityError(f"Malicious bond mode rejected: '{mode}'.")
+        canonical = cls.MODE_ALIASES.get(m, m)
+        if canonical not in cls.VALID_MODES:
+            raise UnsupportedBondModeError(
+                f"Unsupported bond mode '{mode}'. Supported modes: {', '.join(cls.VALID_MODES)}."
+            )
+        return canonical
+
+    @classmethod
+    def validate_slave_interface(cls, iface_name: str) -> str:
+        valid_name = InterfaceConfigValidator.validate_interface_name(iface_name)
+        if valid_name == "lo":
+            raise NetworkValidationError("Loopback interface 'lo' cannot be attached as a bond slave.")
+        return valid_name
+
 

@@ -16,6 +16,9 @@ from mitranet.core.network.discovery import InterfaceDiscoveryService
 from mitranet.core.network.config_service import InterfaceConfigurationService
 from mitranet.core.network.routing_discovery import RouteDiscoveryService
 from mitranet.core.network.routing_service import RouteConfigurationService
+from mitranet.core.network.vlan import VlanService
+from mitranet.core.network.bridge import BridgeService
+from mitranet.core.network.bonding import BondService
 from mitranet.core.network.exceptions import (
     InterfaceNotFoundError,
     BackendExecutionError,
@@ -26,6 +29,9 @@ from mitranet.core.network.exceptions import (
     RouteNotFoundError,
     RouteAlreadyExistsError,
     ProtectedRouteError,
+    DeviceAlreadyExistsError,
+    DeviceNotFoundError,
+    UnsupportedBondModeError,
 )
 
 
@@ -445,6 +451,357 @@ def cmd_route_remove(args, service: RouteConfigurationService = None):
         sys.exit(1)
 
 
+# =========================================================================
+# VLAN Subcommands (Phase 1D)
+# =========================================================================
+
+def cmd_vlan_list(args, service: VlanService = None):
+    service = service or VlanService()
+    as_json = "--json" in args
+    try:
+        vlans = service.discover_vlans()
+        if as_json:
+            print(json.dumps([v.model_dump() for v in vlans], indent=2))
+        else:
+            if not vlans:
+                print("No 802.1Q VLAN interfaces found.")
+                return
+            header = f"{'VLAN NAME':<18} {'PARENT':<12} {'VLAN ID':<10} {'STATE':<8} {'MTU':<8} {'IP ADDRESSES'}"
+            print(header)
+            print("-" * 75)
+            for v in vlans:
+                ips = ", ".join(v.ipv4_addresses + v.ipv6_addresses) or "-"
+                print(f"{v.name:<18} {v.parent:<12} {v.vlan_id:<10} {v.admin_state:<8} {v.mtu:<8} {ips}")
+    except Exception as e:
+        print(f"[ERROR] Failed to discover VLANs: {e}")
+        sys.exit(1)
+
+
+def cmd_vlan_show(args, service: VlanService = None):
+    service = service or VlanService()
+    if not args:
+        print("Usage: mitranet vlan show <name> [--json]")
+        sys.exit(1)
+    name = args[0]
+    as_json = "--json" in args
+    try:
+        v = service.get_vlan(name)
+        if as_json:
+            print(json.dumps(v.model_dump(), indent=2))
+        else:
+            print(f"VLAN Interface: {v.name}")
+            print(f"  Parent Interface : {v.parent}")
+            print(f"  VLAN ID          : {v.vlan_id}")
+            print(f"  Protocol         : {v.protocol}")
+            print(f"  Admin State      : {v.admin_state}")
+            print(f"  Operational State: {v.oper_state}")
+            print(f"  MTU              : {v.mtu}")
+            print(f"  MAC Address      : {v.mac_address or '-'}")
+            print(f"  IPv4 Addresses   : {', '.join(v.ipv4_addresses) or '-'}")
+            print(f"  IPv6 Addresses   : {', '.join(v.ipv6_addresses) or '-'}")
+    except (DeviceNotFoundError, NetworkValidationError, NetworkSecurityError) as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+
+
+def cmd_vlan_create(args, service: VlanService = None):
+    service = service or VlanService()
+    if len(args) < 3:
+        print("Usage: mitranet vlan create <name> <parent> <vlan_id>")
+        sys.exit(1)
+    name, parent, vlan_id = args[0], args[1], args[2]
+    try:
+        v = service.create_vlan(name=name, parent=parent, vlan_id=int(vlan_id))
+        print(f"[SUCCESS] VLAN '{v.name}' (id={v.vlan_id}, parent={v.parent}) created successfully.")
+    except (NetworkValidationError, NetworkSecurityError, DeviceAlreadyExistsError) as e:
+        print(f"[VALIDATION ERROR] {e}")
+        sys.exit(1)
+    except (VerificationFailureError, BackendExecutionError, InterfaceNotFoundError) as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+
+
+def cmd_vlan_delete(args, service: VlanService = None):
+    service = service or VlanService()
+    if not args:
+        print("Usage: mitranet vlan delete <name>")
+        sys.exit(1)
+    name = args[0]
+    try:
+        service.delete_vlan(name)
+        print(f"[SUCCESS] VLAN '{name}' deleted successfully.")
+    except (NetworkValidationError, NetworkSecurityError, DeviceNotFoundError) as e:
+        print(f"[VALIDATION ERROR] {e}")
+        sys.exit(1)
+    except (VerificationFailureError, BackendExecutionError) as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+
+
+def cmd_vlan_up(args, service: VlanService = None):
+    service = service or VlanService()
+    if not args:
+        print("Usage: mitranet vlan up <name>")
+        sys.exit(1)
+    name = args[0]
+    try:
+        service.set_vlan_up(name)
+        print(f"[SUCCESS] VLAN '{name}' set UP.")
+    except Exception as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+
+
+def cmd_vlan_down(args, service: VlanService = None):
+    service = service or VlanService()
+    if not args:
+        print("Usage: mitranet vlan down <name>")
+        sys.exit(1)
+    name = args[0]
+    try:
+        service.set_vlan_down(name)
+        print(f"[SUCCESS] VLAN '{name}' set DOWN.")
+    except Exception as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+
+
+# =========================================================================
+# Linux Bridge Subcommands (Phase 1D)
+# =========================================================================
+
+def cmd_bridge_list(args, service: BridgeService = None):
+    service = service or BridgeService()
+    as_json = "--json" in args
+    try:
+        bridges = service.discover_bridges()
+        if as_json:
+            print(json.dumps([b.model_dump() for b in bridges], indent=2))
+        else:
+            if not bridges:
+                print("No Linux bridges found.")
+                return
+            header = f"{'BRIDGE NAME':<18} {'ADMIN':<8} {'OPER':<8} {'STP':<6} {'PORTS':<20} {'IP ADDRESSES'}"
+            print(header)
+            print("-" * 75)
+            for b in bridges:
+                ports_str = ", ".join(p.interface for p in b.ports) or "-"
+                ips = ", ".join(b.ipv4_addresses + b.ipv6_addresses) or "-"
+                print(f"{b.name:<18} {b.admin_state:<8} {b.oper_state:<8} {str(b.stp_enabled):<6} {ports_str:<20} {ips}")
+    except Exception as e:
+        print(f"[ERROR] Failed to discover bridges: {e}")
+        sys.exit(1)
+
+
+def cmd_bridge_show(args, service: BridgeService = None):
+    service = service or BridgeService()
+    if not args:
+        print("Usage: mitranet bridge show <name> [--json]")
+        sys.exit(1)
+    name = args[0]
+    as_json = "--json" in args
+    try:
+        b = service.get_bridge(name)
+        if as_json:
+            print(json.dumps(b.model_dump(), indent=2))
+        else:
+            print(f"Linux Bridge: {b.name}")
+            print(f"  Admin State      : {b.admin_state}")
+            print(f"  Operational State: {b.oper_state}")
+            print(f"  STP Enabled      : {b.stp_enabled}")
+            print(f"  MAC Address      : {b.mac_address or '-'}")
+            print(f"  MTU              : {b.mtu}")
+            ports_summary = ", ".join(f"{p.interface} ({p.state})" for p in b.ports) or "-"
+            print(f"  Member Ports     : {ports_summary}")
+            print(f"  IPv4 Addresses   : {', '.join(b.ipv4_addresses) or '-'}")
+            print(f"  IPv6 Addresses   : {', '.join(b.ipv6_addresses) or '-'}")
+    except (DeviceNotFoundError, NetworkValidationError, NetworkSecurityError) as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+
+
+def cmd_bridge_create(args, service: BridgeService = None):
+    service = service or BridgeService()
+    if not args:
+        print("Usage: mitranet bridge create <name>")
+        sys.exit(1)
+    name = args[0]
+    try:
+        b = service.create_bridge(name)
+        print(f"[SUCCESS] Bridge '{b.name}' created successfully.")
+    except (NetworkValidationError, NetworkSecurityError, DeviceAlreadyExistsError) as e:
+        print(f"[VALIDATION ERROR] {e}")
+        sys.exit(1)
+    except (VerificationFailureError, BackendExecutionError) as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+
+
+def cmd_bridge_delete(args, service: BridgeService = None):
+    service = service or BridgeService()
+    if not args:
+        print("Usage: mitranet bridge delete <name>")
+        sys.exit(1)
+    name = args[0]
+    try:
+        service.delete_bridge(name)
+        print(f"[SUCCESS] Bridge '{name}' deleted successfully.")
+    except (NetworkValidationError, NetworkSecurityError, DeviceNotFoundError) as e:
+        print(f"[VALIDATION ERROR] {e}")
+        sys.exit(1)
+    except (VerificationFailureError, BackendExecutionError) as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+
+
+def cmd_bridge_port(args, service: BridgeService = None):
+    service = service or BridgeService()
+    if len(args) < 3:
+        print("Usage: mitranet bridge port add|remove <bridge> <interface>")
+        sys.exit(1)
+    action = args[0].lower()
+    bname = args[1]
+    iface = args[2]
+
+    try:
+        if action == "add":
+            service.add_port(bname, iface)
+            print(f"[SUCCESS] Interface '{iface}' added to bridge '{bname}'.")
+        elif action in ("remove", "del", "delete"):
+            service.remove_port(bname, iface)
+            print(f"[SUCCESS] Interface '{iface}' removed from bridge '{bname}'.")
+        else:
+            print(f"Unknown bridge port action '{action}'. Use 'add' or 'remove'.")
+            sys.exit(1)
+    except (NetworkValidationError, NetworkSecurityError, SafetyConstraintViolationError, DeviceAlreadyExistsError, DeviceNotFoundError, InterfaceNotFoundError) as e:
+        print(f"[VALIDATION ERROR] {e}")
+        sys.exit(1)
+    except (VerificationFailureError, BackendExecutionError) as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+
+
+# =========================================================================
+# Linux Bonding Subcommands (Phase 1D)
+# =========================================================================
+
+def cmd_bond_list(args, service: BondService = None):
+    service = service or BondService()
+    as_json = "--json" in args
+    try:
+        bonds = service.discover_bonds()
+        if as_json:
+            print(json.dumps([b.model_dump() for b in bonds], indent=2))
+        else:
+            if not bonds:
+                print("No Linux bonding interfaces found.")
+                return
+            header = f"{'BOND NAME':<16} {'MODE':<16} {'ADMIN':<8} {'OPER':<8} {'SLAVES':<20} {'ACTIVE SLAVE'}"
+            print(header)
+            print("-" * 78)
+            for b in bonds:
+                slaves_str = ", ".join(s.interface for s in b.slaves) or "-"
+                print(f"{b.name:<16} {b.mode:<16} {b.admin_state:<8} {b.oper_state:<8} {slaves_str:<20} {b.active_slave or '-'}")
+    except Exception as e:
+        print(f"[ERROR] Failed to discover bonds: {e}")
+        sys.exit(1)
+
+
+def cmd_bond_show(args, service: BondService = None):
+    service = service or BondService()
+    if not args:
+        print("Usage: mitranet bond show <name> [--json]")
+        sys.exit(1)
+    name = args[0]
+    as_json = "--json" in args
+    try:
+        b = service.get_bond(name)
+        if as_json:
+            print(json.dumps(b.model_dump(), indent=2))
+        else:
+            print(f"Linux Bond: {b.name}")
+            print(f"  Bonding Mode     : {b.mode}")
+            print(f"  Admin State      : {b.admin_state}")
+            print(f"  Operational State: {b.oper_state}")
+            print(f"  MAC Address      : {b.mac_address or '-'}")
+            print(f"  MTU              : {b.mtu}")
+            print(f"  MII Monitoring   : {b.miimon or '-'} ms")
+            print(f"  Active Slave     : {b.active_slave or '-'}")
+            slaves_detail = ", ".join(f"{s.interface} (mii={s.mii_status or 'unknown'})" for s in b.slaves) or "-"
+            print(f"  Slave Members    : {slaves_detail}")
+            if b.mode in ("802.3ad", "4"):
+                print(f"  LACP Rate        : {b.lacp_rate or '-'}")
+                print(f"  LACP Active      : {b.lacp_active or '-'}")
+                print(f"  802.3ad Actor Sys: {b.ad_actor_system or '-'}")
+            print(f"  IPv4 Addresses   : {', '.join(b.ipv4_addresses) or '-'}")
+            print(f"  IPv6 Addresses   : {', '.join(b.ipv6_addresses) or '-'}")
+    except (DeviceNotFoundError, NetworkValidationError, NetworkSecurityError) as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+
+
+def cmd_bond_create(args, service: BondService = None):
+    service = service or BondService()
+    if len(args) < 2:
+        print("Usage: mitranet bond create <name> <mode>")
+        sys.exit(1)
+    name, mode = args[0], args[1]
+    try:
+        b = service.create_bond(name, mode=mode)
+        print(f"[SUCCESS] Bond '{b.name}' (mode={b.mode}) created successfully.")
+    except (NetworkValidationError, NetworkSecurityError, UnsupportedBondModeError, DeviceAlreadyExistsError) as e:
+        print(f"[VALIDATION ERROR] {e}")
+        sys.exit(1)
+    except (VerificationFailureError, BackendExecutionError) as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+
+
+def cmd_bond_delete(args, service: BondService = None):
+    service = service or BondService()
+    if not args:
+        print("Usage: mitranet bond delete <name>")
+        sys.exit(1)
+    name = args[0]
+    try:
+        service.delete_bond(name)
+        print(f"[SUCCESS] Bond '{name}' deleted successfully.")
+    except (NetworkValidationError, NetworkSecurityError, DeviceNotFoundError) as e:
+        print(f"[VALIDATION ERROR] {e}")
+        sys.exit(1)
+    except (VerificationFailureError, BackendExecutionError) as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+
+
+def cmd_bond_slave(args, service: BondService = None):
+    service = service or BondService()
+    if len(args) < 3:
+        print("Usage: mitranet bond slave add|remove <bond> <interface>")
+        sys.exit(1)
+    action = args[0].lower()
+    bname = args[1]
+    iface = args[2]
+
+    try:
+        if action == "add":
+            service.add_slave(bname, iface)
+            print(f"[SUCCESS] Slave '{iface}' added to bond '{bname}'.")
+        elif action in ("remove", "del", "delete"):
+            service.remove_slave(bname, iface)
+            print(f"[SUCCESS] Slave '{iface}' removed from bond '{bname}'.")
+        else:
+            print(f"Unknown bond slave action '{action}'. Use 'add' or 'remove'.")
+            sys.exit(1)
+    except (NetworkValidationError, NetworkSecurityError, SafetyConstraintViolationError, DeviceAlreadyExistsError, DeviceNotFoundError, InterfaceNotFoundError) as e:
+        print(f"[VALIDATION ERROR] {e}")
+        sys.exit(1)
+    except (VerificationFailureError, BackendExecutionError) as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+
+
+
 def main():
     if len(sys.argv) < 2 or sys.argv[1].lower() in ["--help", "-h", "help"]:
         print_banner()
@@ -462,6 +819,20 @@ def main():
         print("  route show <destination> [--json]         Show routing details for a destination")
         print("  route add <dest> [via <gw>] [dev <if>]    Add static route with verification")
         print("  route remove <dest> [via <gw>] [dev <if>] Remove static route from kernel")
+        print("  vlan list [--json]                        List 802.1Q VLAN interfaces")
+        print("  vlan show <name> [--json]                 Show details of a VLAN interface")
+        print("  vlan create <name> <parent> <vlan_id>     Create 802.1Q VLAN interface")
+        print("  vlan delete <name>                        Delete VLAN interface")
+        print("  bridge list [--json]                      List Linux bridge interfaces")
+        print("  bridge show <name> [--json]               Show bridge and member ports")
+        print("  bridge create <name>                      Create Linux bridge")
+        print("  bridge delete <name>                      Delete Linux bridge")
+        print("  bridge port add|remove <br> <iface>       Attach or detach bridge port")
+        print("  bond list [--json]                        List bonding interfaces")
+        print("  bond show <name> [--json]                 Show bond mode and slaves")
+        print("  bond create <name> <mode>                 Create bond (e.g. active-backup, 802.3ad)")
+        print("  bond delete <name>                        Delete bonding interface")
+        print("  bond slave add|remove <bond> <iface>      Attach or detach slave interface")
         print("  config validate <config.json>             Validate configuration file")
         print("  config import-pfsense <xml>               Migrate pfSense config.xml to MitraNet JSON")
         print("  config show                               Display current running configuration")
@@ -513,6 +884,68 @@ def main():
             cmd_route_remove(subargs)
         else:
             print(f"Unknown route subcommand: {subcmd}")
+            sys.exit(1)
+
+    elif category == "vlan":
+        if len(sys.argv) < 3:
+            print("Specify a vlan subcommand: 'list', 'show', 'create', 'delete', 'up', 'down'")
+            sys.exit(1)
+        subcmd = sys.argv[2].lower()
+        subargs = sys.argv[3:]
+        if subcmd == "list":
+            cmd_vlan_list(subargs)
+        elif subcmd == "show":
+            cmd_vlan_show(subargs)
+        elif subcmd in ("create", "add"):
+            cmd_vlan_create(subargs)
+        elif subcmd in ("delete", "del", "remove"):
+            cmd_vlan_delete(subargs)
+        elif subcmd == "up":
+            cmd_vlan_up(subargs)
+        elif subcmd == "down":
+            cmd_vlan_down(subargs)
+        else:
+            print(f"Unknown vlan subcommand: {subcmd}")
+            sys.exit(1)
+
+    elif category == "bridge":
+        if len(sys.argv) < 3:
+            print("Specify a bridge subcommand: 'list', 'show', 'create', 'delete', 'port'")
+            sys.exit(1)
+        subcmd = sys.argv[2].lower()
+        subargs = sys.argv[3:]
+        if subcmd == "list":
+            cmd_bridge_list(subargs)
+        elif subcmd == "show":
+            cmd_bridge_show(subargs)
+        elif subcmd in ("create", "add"):
+            cmd_bridge_create(subargs)
+        elif subcmd in ("delete", "del", "remove"):
+            cmd_bridge_delete(subargs)
+        elif subcmd == "port":
+            cmd_bridge_port(subargs)
+        else:
+            print(f"Unknown bridge subcommand: {subcmd}")
+            sys.exit(1)
+
+    elif category == "bond":
+        if len(sys.argv) < 3:
+            print("Specify a bond subcommand: 'list', 'show', 'create', 'delete', 'slave'")
+            sys.exit(1)
+        subcmd = sys.argv[2].lower()
+        subargs = sys.argv[3:]
+        if subcmd == "list":
+            cmd_bond_list(subargs)
+        elif subcmd == "show":
+            cmd_bond_show(subargs)
+        elif subcmd in ("create", "add"):
+            cmd_bond_create(subargs)
+        elif subcmd in ("delete", "del", "remove"):
+            cmd_bond_delete(subargs)
+        elif subcmd == "slave":
+            cmd_bond_slave(subargs)
+        else:
+            print(f"Unknown bond subcommand: {subcmd}")
             sys.exit(1)
 
     elif category == "config":

@@ -81,6 +81,31 @@ class NetworkBackend:
     ) -> bool:
         raise NotImplementedError
 
+    def get_detailed_links(self) -> List[Dict[str, Any]]:
+        raise NotImplementedError
+
+    def create_vlan(self, name: str, parent: str, vlan_id: int, proto: str = "802.1Q") -> bool:
+        raise NotImplementedError
+
+    def delete_link(self, name: str) -> bool:
+        raise NotImplementedError
+
+    def create_bridge(self, name: str) -> bool:
+        raise NotImplementedError
+
+    def set_master(self, iface_name: str, master_name: str) -> bool:
+        raise NotImplementedError
+
+    def set_nomaster(self, iface_name: str) -> bool:
+        raise NotImplementedError
+
+    def create_bond(self, name: str, mode: str, miimon: int = 100) -> bool:
+        raise NotImplementedError
+
+    def get_bonding_proc_info(self, bond_name: str) -> Optional[str]:
+        raise NotImplementedError
+
+
 
 class LinuxNetworkBackend(NetworkBackend):
     """Production Linux Network Backend querying iproute2 and /sys/class/net."""
@@ -261,4 +286,49 @@ class LinuxNetworkBackend(NetworkBackend):
     ) -> bool:
         args = self._build_route_args("replace", destination, family, gateway, interface, metric, table)
         return self._exec_ip_cmd(args)
+
+    def get_detailed_links(self) -> List[Dict[str, Any]]:
+        """Queries detailed link information including linkinfo/kind using ip -d -j link show."""
+        return self._run_ip_json(["-d", "link", "show"])
+
+    def create_vlan(self, name: str, parent: str, vlan_id: int, proto: str = "802.1Q") -> bool:
+        """Creates an 802.1Q VLAN interface using ip link add."""
+        args = ["link", "add", "link", parent, "name", name, "type", "vlan", "id", str(vlan_id)]
+        if proto in ["802.1Q", "802.1ad"]:
+            args.extend(["protocol", proto])
+        return self._exec_ip_cmd(args)
+
+    def delete_link(self, name: str) -> bool:
+        """Deletes a virtual network interface (VLAN, bridge, bond) using ip link del."""
+        return self._exec_ip_cmd(["link", "del", name])
+
+    def create_bridge(self, name: str) -> bool:
+        """Creates a Linux Bridge interface using ip link add name <name> type bridge."""
+        return self._exec_ip_cmd(["link", "add", "name", name, "type", "bridge"])
+
+    def set_master(self, iface_name: str, master_name: str) -> bool:
+        """Attaches an interface as slave/port to a master bridge or bond."""
+        return self._exec_ip_cmd(["link", "set", "dev", iface_name, "master", master_name])
+
+    def set_nomaster(self, iface_name: str) -> bool:
+        """Detaches an interface from its master bridge or bond."""
+        return self._exec_ip_cmd(["link", "set", "dev", iface_name, "nomaster"])
+
+    def create_bond(self, name: str, mode: str, miimon: int = 100) -> bool:
+        """Creates a Linux Bonding master interface using ip link add name <name> type bond mode <mode>."""
+        args = ["link", "add", "name", name, "type", "bond", "mode", mode, "miimon", str(miimon)]
+        return self._exec_ip_cmd(args)
+
+    def get_bonding_proc_info(self, bond_name: str) -> Optional[str]:
+        """Reads /proc/net/bonding/<bond_name> if available."""
+        proc_path = f"/proc/net/bonding/{bond_name}"
+        if not os.path.exists(proc_path):
+            return None
+        try:
+            with open(proc_path, "r", encoding="utf-8", errors="replace") as f:
+                return f.read()
+        except Exception as e:
+            logger.warning("Failed to read %s: %s", proc_path, e)
+            return None
+
 
