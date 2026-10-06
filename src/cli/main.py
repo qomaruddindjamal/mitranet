@@ -276,7 +276,7 @@ def cmd_interface_address(args, service: InterfaceConfigurationService = None):
 
 
 def main():
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 2 or sys.argv[1].lower() in ["--help", "-h", "help"]:
         print_banner()
         print("\nUsage: mitranet <command> <subcommand> [options]")
         print("\nCommands:")
@@ -293,9 +293,14 @@ def main():
         print("  config show                               Display current running configuration")
         print("  config commit [note]                      Commit candidate configuration to running")
         print("  config rollback [snapshot_id]             Rollback to previous snapshot")
+        print("  version                                   Show OS and MitraNet version")
         sys.exit(0)
 
     category = sys.argv[1].lower()
+    if category in ["--version", "-v", "version"]:
+        print(f"{PRETTY_NAME} (OS: MitraNet, Codename: {CODENAME}, Release: {MITRANET_VERSION})")
+        sys.exit(0)
+
     if category == "interface":
         if len(sys.argv) < 3:
             print("Specify an interface subcommand: 'list', 'show', 'up', 'down', 'set', 'address'")
