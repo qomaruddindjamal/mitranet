@@ -22,6 +22,13 @@ from firewall_manager import FirewallManager
 from mitranet_platform import get_onlp_platform_info, get_sfp_diagnostics, get_thermal_and_fan_info, parse_mitranet_config
 from enterprise_network_manager import EnterpriseNetworkManager
 
+# Import canonical MitraNet Configuration Engine
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from config_engine import ConfigurationEngine, LockError
+
+config_engine = ConfigurationEngine()
+
 PORT = 8080
 DEFAULT_USER = "admin"
 DEFAULT_PASS = "mitranet"
@@ -663,9 +670,25 @@ class MitraNetAPIHandler(http.server.SimpleHTTPRequestHandler):
                 "codename": "Rinjani",
                 "timestamp": "2026-10-05T00:00:00Z",
                 "firewall": firewall.config,
-                "enterprise": enterprise.config
+                "enterprise": enterprise.config,
+                "canonical_config": config_engine.get_running_config()
             }
             self.send_json(backup_data)
+        elif path == '/api/config/running':
+            self.send_json({"status": "success", "data": config_engine.get_running_config()})
+        elif path == '/api/config/candidate':
+            self.send_json({"status": "success", "data": config_engine.get_candidate_config()})
+        elif path == '/api/config/diff':
+            diff = config_engine.compute_diff()
+            self.send_json({"status": "success", "diff": diff, "has_changes": bool(diff)})
+        elif path == '/api/config/status':
+            errs = config_engine.validate()
+            self.send_json({
+                "status": "success",
+                "valid": len(errs) == 0,
+                "validation_errors": errs,
+                "transactions_count": len(config_engine.transactions)
+            })
         elif path in ['/api/vpn', '/api/vpn/status']:
             wg = run_cmd("wg show 2>/dev/null") or "WireGuard kernel module active (no active peers configured)"
             ovpn = run_cmd("systemctl is-active openvpn 2>/dev/null") or "OpenVPN service installed"
@@ -1253,6 +1276,39 @@ class MitraNetAPIHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json({"status": "success", "message": "Configuration restored and firewall rules applied successfully!"})
             else:
                 self.send_json({"status": "error", "message": "Invalid JSON configuration format."})
+        elif path == '/api/config/validate':
+            errs = config_engine.validate()
+            if not errs:
+                self.send_json({"status": "success", "valid": True, "errors": []})
+            else:
+                self.send_json({"status": "error", "valid": False, "errors": errs}, status_code=422)
+        elif path == '/api/config/dry-run':
+            ok, msg, errs = config_engine.apply_and_commit(actor="api", dry_run=True)
+            if ok:
+                self.send_json({"status": "success", "message": msg, "diff": config_engine.compute_diff()})
+            else:
+                self.send_json({"status": "error", "message": msg, "errors": errs}, status_code=422)
+        elif path in ['/api/config/apply', '/api/config/commit']:
+            ok, msg, errs = config_engine.apply_and_commit(actor=getattr(self, 'authenticated_user', 'api'), dry_run=False)
+            if ok:
+                self.send_json({"status": "success", "message": msg})
+            else:
+                self.send_json({"status": "error", "message": msg, "errors": errs}, status_code=422)
+        elif path == '/api/config/rollback':
+            ok, msg = config_engine.rollback()
+            if ok:
+                self.send_json({"status": "success", "message": msg})
+            else:
+                self.send_json({"status": "error", "message": msg}, status_code=400)
+        elif path == '/api/config/set':
+            section = req_data.get("section")
+            key = req_data.get("key")
+            val = req_data.get("value")
+            if not section or not key:
+                self.send_json({"status": "error", "message": "Missing section or key parameter"}, status_code=400)
+            else:
+                config_engine.set_candidate_value(section, key, val)
+                self.send_json({"status": "success", "message": f"Updated candidate {section}.{key}", "diff": config_engine.compute_diff()})
         elif path == '/api/mitranet/apply':
             res = firewall.apply_rules()
             self.send_json({"status": "success", "message": "MitraNet configuration and ruleset synchronized!", "details": res})
