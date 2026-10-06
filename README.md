@@ -10,7 +10,7 @@ CODE OS : RINJANI
 ```
 
 - **Project**: MitraNet
-- **Version**: 0.1.0-dev
+- **Version**: 1.0.0 (Released)
 - **Foundation**: MitraOS 1.0.0
 - **Code OS**: Rinjani
 - **Architecture**: amd64
