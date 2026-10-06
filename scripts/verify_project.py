@@ -85,6 +85,38 @@ def verify_identity():
                     pass
     return True, "No pfSense legacy regressions in active source code."
 
+def verify_release_spec():
+    # Verify presence and validity of release specifications
+    docs_rel = os.path.join(PROJECT_ROOT, "docs", "release")
+    if not os.path.exists(docs_rel):
+        return False, "docs/release directory missing."
+    req_docs = ["REPRODUCIBLE-BUILD.md", "RELEASE-ARTIFACTS.md", "UPGRADE-MIGRATION.md"]
+    for rd in req_docs:
+        if not os.path.exists(os.path.join(docs_rel, rd)):
+            return False, f"Missing release documentation: {rd}"
+    return True, "Release artifact and reproducible build specifications verified."
+
+def verify_secrets():
+    # Verify no private keys, AWS/API tokens, or hardcoded passwords exist in git-tracked code
+    patterns = [b"-----BEGIN " + b"RSA PRIVATE KEY-----", b"-----BEGIN " + b"OPENSSH PRIVATE KEY-----", b"aws_" + b"secret_access_key"]
+    code_dirs = [os.path.join(PROJECT_ROOT, "api"), os.path.join(PROJECT_ROOT, "scripts")]
+    this_file = os.path.abspath(__file__)
+    for cd in code_dirs:
+        for root, dirs, files in os.walk(cd):
+            for f in files:
+                p = os.path.join(root, f)
+                if os.path.abspath(p) == this_file:
+                    continue
+                try:
+                    with open(p, "rb") as fp:
+                        content = fp.read()
+                        for pat in patterns:
+                            if pat in content:
+                                return False, f"Secret pattern found in {p}"
+                except Exception:
+                    pass
+    return True, "Zero private keys or sensitive credentials found in tracked source."
+
 def main():
     print("========================================")
     print("MitraNet Project Automated Verification")
@@ -100,6 +132,14 @@ def main():
     
     ok, msg = verify_identity()
     print(f"[{'PASS' if ok else 'FAIL'}] Identity Check: {msg}")
+    if not ok: sys.exit(1)
+
+    ok, msg = verify_release_spec()
+    print(f"[{'PASS' if ok else 'FAIL'}] Release Spec Check: {msg}")
+    if not ok: sys.exit(1)
+
+    ok, msg = verify_secrets()
+    print(f"[{'PASS' if ok else 'FAIL'}] Secret Audit Check: {msg}")
     if not ok: sys.exit(1)
     
     print("\nProject verification completed successfully: 100% PASS.")

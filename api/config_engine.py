@@ -20,9 +20,10 @@ import uuid
 import hashlib
 from typing import Dict, Any, List, Optional, Tuple
 
-DEFAULT_CONFIG_PATH = r"C:\mitranet\api\config.json"
-BACKUP_DIR = r"C:\mitranet\api\backups"
-LOCK_FILE = r"C:\mitranet\api\config.lock"
+BASE_API_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_CONFIG_PATH = os.path.join(BASE_API_DIR, "config.json")
+BACKUP_DIR = os.path.join(BASE_API_DIR, "backups")
+LOCK_FILE = os.path.join(BASE_API_DIR, "config.lock")
 
 SCHEMA_VERSION = "1.0.0"
 
