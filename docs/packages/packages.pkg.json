@@ -1,0 +1,2915 @@
+{
+  "total": 204,
+  "packages": [
+    {
+      "filename": "abseil-20250127.1_2.pkg",
+      "name": "abseil",
+      "version": "20250127.1_2",
+      "arch": "debian:16:x86:64",
+      "size": 1114216,
+      "sha256": "1e1933a51f43b64bd39486171b8e8eb1ea0b0ba7e4621cb54dcd6ca95e77e897",
+      "is_split": false,
+      "comment": "Abseil Common Libraries (C++)",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "beep-1.0_2.pkg",
+      "name": "beep",
+      "version": "1.0_2",
+      "arch": "debian:16:x86:64",
+      "size": 5692,
+      "sha256": "a374b363eeaf86c2758298bd814b8897cad752b8bc0d86972ed79a5bf9e8f75e",
+      "is_split": false,
+      "comment": "Beeps a certain duration and pitch out of the PC Speaker",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "bind-tools-9.20.29.pkg",
+      "name": "bind-tools",
+      "version": "9.20.29",
+      "arch": "debian:16:x86:64",
+      "size": 1516704,
+      "sha256": "0ade3bd8a8bf14bcb2a42ca324c023fc9cd118b702f9ef01f17af28a82c71039",
+      "is_split": false,
+      "comment": "Command line tools from BIND: delv, dig, host, nslookup...",
+      "deps_count": 7,
+      "deps": [
+        "fstrm",
+        "libedit",
+        "libidn2",
+        "libnghttp2",
+        "liburcu",
+        "libuv",
+        "protobuf-c"
+      ]
+    },
+    {
+      "filename": "boost-libs-1.91.0.pkg",
+      "name": "boost-libs",
+      "version": "1.91.0",
+      "arch": "debian:16:x86:64",
+      "size": 16137752,
+      "sha256": "3ae137ce7ee187614362d5a7c7b9e57bcb4c56af72feef6c95d1eacf7428cdea",
+      "is_split": false,
+      "comment": "Free portable C++ libraries (without Boost.Python)",
+      "deps_count": 2,
+      "deps": [
+        "icu",
+        "zstd"
+      ]
+    },
+    {
+      "filename": "brotli-1.2.0,1.pkg",
+      "name": "brotli",
+      "version": "1.2.0,1",
+      "arch": "debian:16:x86:64",
+      "size": 350464,
+      "sha256": "160e7d24e9fa2a2e7ccc6b6c0eb7c4d79ede647de51f494e1f1f1ad1bb2c9c50",
+      "is_split": false,
+      "comment": "Generic-purpose lossless compression algorithm",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "bsnmp-regex-0.6_4.pkg",
+      "name": "bsnmp-regex",
+      "version": "0.6_4",
+      "arch": "debian:16:x86:64",
+      "size": 20260,
+      "sha256": "d8e5733950d4a25d2a53d83e25a5228f18897ae887ab5d5ebe70ce4d316d6187",
+      "is_split": false,
+      "comment": "bsnmpd module allowing creation of counters from log files",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "bsnmp-ucd-0.4.5_1.pkg",
+      "name": "bsnmp-ucd",
+      "version": "0.4.5_1",
+      "arch": "debian:16:x86:64",
+      "size": 17980,
+      "sha256": "2019cd39197227cdaac8871f9e24939f76afffcc8a79f4d00be43f287e432f14",
+      "is_split": false,
+      "comment": "bsnmpd module that implements parts of UCD-SNMP-MIB",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "bwi-firmware-kmod-3.130.20.1600018.pkg",
+      "name": "bwi-firmware-kmod",
+      "version": "3.130.20.1600018",
+      "arch": "debian:16:x86:64",
+      "size": 22516,
+      "sha256": "758316f212bf57f4c4bea484d8cc8b53172de018d50938f2416b464e078677bd",
+      "is_split": false,
+      "comment": "Broadcom AirForce IEEE 802.11 Firmware Kernel Module",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "ca_root_nss-3.130.pkg",
+      "name": "ca_root_nss",
+      "version": "3.130",
+      "arch": "debian:16:*",
+      "size": 239028,
+      "sha256": "eb270a6804497f6dc3e8f7dac463b803f4209f412eebd9554ea44d19579d54e3",
+      "is_split": false,
+      "comment": "Root certificate bundle from the Mozilla Project",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "check_reload_status-0.0.17.pkg",
+      "name": "check_reload_status",
+      "version": "0.0.17",
+      "arch": "debian:16:x86:64",
+      "size": 32504,
+      "sha256": "678af39a9591665e0eaa18d946b395aa2dd1e78f5f8d5c76826e856c87585414",
+      "is_split": false,
+      "comment": "run various MitraNet scripts on event.",
+      "deps_count": 1,
+      "deps": [
+        "libevent"
+      ]
+    },
+    {
+      "filename": "choparp-20150613_1.pkg",
+      "name": "choparp",
+      "version": "20150613_1",
+      "arch": "debian:16:x86:64",
+      "size": 7596,
+      "sha256": "1b11a2bd252c45e07a5a75741edf83603a6a5df17b5a638d6c231f3f51656ee6",
+      "is_split": false,
+      "comment": "Simple proxy arp daemon",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "cpdup-1.22_1.pkg",
+      "name": "cpdup",
+      "version": "1.22_1",
+      "arch": "debian:16:x86:64",
+      "size": 28600,
+      "sha256": "08240bf75ce27397298a3257a49c868b19a04cea9a674ec1f5f7d7cc7a0482e2",
+      "is_split": false,
+      "comment": "Comprehensive filesystem mirroring and backup program",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "cpu-microcode-1.0_1.pkg",
+      "name": "cpu-microcode",
+      "version": "1.0_1",
+      "arch": "debian:16:*",
+      "size": 1256,
+      "sha256": "bd133d05a8da6627404eb54f348b0387e9d05685b580d4038e18d7fd67f967b6",
+      "is_split": false,
+      "comment": "Meta-package for CPU microcode updates",
+      "deps_count": 2,
+      "deps": [
+        "cpu-microcode-amd",
+        "cpu-microcode-intel"
+      ]
+    },
+    {
+      "filename": "cpu-microcode-amd-20251202.pkg",
+      "name": "cpu-microcode-amd",
+      "version": "20251202",
+      "arch": "debian:16:*",
+      "size": 249320,
+      "sha256": "22211b75ebc2d131da917463a28d40f2a5d9bbbc75a58eb9d3af83c630552b8f",
+      "is_split": false,
+      "comment": "AMD CPU microcode updates",
+      "deps_count": 1,
+      "deps": [
+        "cpu-microcode-rc"
+      ]
+    },
+    {
+      "filename": "cpu-microcode-intel-20260812.pkg",
+      "name": "cpu-microcode-intel",
+      "version": "20260812",
+      "arch": "debian:16:*",
+      "size": 25710608,
+      "sha256": "3330534e31814a6638b98ee4494bd4f6fc620a1f53730dff907e6706ab0db541",
+      "is_split": false,
+      "comment": "Intel CPU microcode updates",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "cpu-microcode-rc-1.0_2.pkg",
+      "name": "cpu-microcode-rc",
+      "version": "1.0_2",
+      "arch": "debian:16:*",
+      "size": 2928,
+      "sha256": "b62582c866b018149f7652fdf2198619b7daa59ce75d9ce28676197c35236565",
+      "is_split": false,
+      "comment": "RC script for CPU microcode updates",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "cpustats-0.1_1.pkg",
+      "name": "cpustats",
+      "version": "0.1_1",
+      "arch": "debian:16:x86:64",
+      "size": 3156,
+      "sha256": "1640e89c5afffad3ae84f2c1d2bf4ef9c0dcf719158e2735fb15e1977d518d1a",
+      "is_split": false,
+      "comment": "cpustats",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "curl-8.22.0.pkg",
+      "name": "curl",
+      "version": "8.22.0",
+      "arch": "debian:16:x86:64",
+      "size": 1880772,
+      "sha256": "aa3a4c477facfb1a2cba43a789d355227211405130d1d342773d6039c80c2fbb",
+      "is_split": false,
+      "comment": "Command line tool and library for transferring data with URLs",
+      "deps_count": 6,
+      "deps": [
+        "brotli",
+        "libidn2",
+        "libnghttp2",
+        "libpsl",
+        "libssh2",
+        "zstd"
+      ]
+    },
+    {
+      "filename": "cyrus-sasl-2.1.28_6.pkg",
+      "name": "cyrus-sasl",
+      "version": "2.1.28_6",
+      "arch": "debian:16:x86:64",
+      "size": 1022088,
+      "sha256": "8a52d2403ed9c6b36f6f13c11686486957d0d25192737ace47ea5ef7f2211829",
+      "is_split": false,
+      "comment": "RFC 2222 SASL (Simple Authentication and Security Layer)",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "dbus-1.16.2_4,1.pkg",
+      "name": "dbus",
+      "version": "1.16.2_4,1",
+      "arch": "debian:16:x86:64",
+      "size": 304648,
+      "sha256": "f20c0dc1c2946473adbabe01514b78cc2e06a18d1bbc1f51fe7757806a7517de",
+      "is_split": false,
+      "comment": "Message bus system for inter-application communication",
+      "deps_count": 5,
+      "deps": [
+        "expat",
+        "libICE",
+        "libSM",
+        "libX11",
+        "libxml2"
+      ]
+    },
+    {
+      "filename": "dhcp6-20080615.2_4.pkg",
+      "name": "dhcp6",
+      "version": "20080615.2_4",
+      "arch": "debian:16:x86:64",
+      "size": 112172,
+      "sha256": "7aa37b34d6820eb9dbb34e5c7bbf16948f4577522f9428a90fbdb9e598be6993",
+      "is_split": false,
+      "comment": "KAME DHCP6 client, server, and relay",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "dhcpcd-10.5.2.pkg",
+      "name": "dhcpcd",
+      "version": "10.5.2",
+      "arch": "debian:16:x86:64",
+      "size": 180700,
+      "sha256": "2a90a76fa0416e029a20299ab785ee19f30ffa636585b9b446c304f7127b52d9",
+      "is_split": false,
+      "comment": "DHCP/IPv4LL/IPv6RS/DHCPv6 client",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "dhcpleases-0.5_2.pkg",
+      "name": "dhcpleases",
+      "version": "0.5_2",
+      "arch": "debian:16:x86:64",
+      "size": 10296,
+      "sha256": "03db2f98c2c269defc44fa3870b7bc7d7ebf24a68df9bbf86e680fd4f2bfab1a",
+      "is_split": false,
+      "comment": "read dhpcd.lease file and add it to hosts file",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "dhcpleases6-0.1_4.pkg",
+      "name": "dhcpleases6",
+      "version": "0.1_4",
+      "arch": "debian:16:x86:64",
+      "size": 9060,
+      "sha256": "65591251689bc2dad3f7c6fbf6e2ebe98d7f92361464302fb763b4cf18f30da2",
+      "is_split": false,
+      "comment": "read dhpcd6.leases file and trigger command on modification",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "dmidecode-3.7.pkg",
+      "name": "dmidecode",
+      "version": "3.7",
+      "arch": "debian:16:x86:64",
+      "size": 80656,
+      "sha256": "f986846a31640e02a9dc0f6116eacafbe56de4ba8554b7229d4610d5a37f4ef5",
+      "is_split": false,
+      "comment": "Tool for dumping DMI (SMBIOS) contents in human-readable format",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "dnsmasq-2.93,1.pkg",
+      "name": "dnsmasq",
+      "version": "2.93,1",
+      "arch": "debian:16:x86:64",
+      "size": 409796,
+      "sha256": "a289215cd47a5121ea73c7da7d01b9126900c930dd04f9c3453fed0ce5893cd9",
+      "is_split": false,
+      "comment": "Lightweight DNS forwarder, DHCP, and TFTP server",
+      "deps_count": 4,
+      "deps": [
+        "gettext-runtime",
+        "gmp",
+        "libidn2",
+        "nettle"
+      ]
+    },
+    {
+      "filename": "dpinger-3.6.pkg",
+      "name": "dpinger",
+      "version": "3.6",
+      "arch": "debian:16:x86:64",
+      "size": 10248,
+      "sha256": "16a930cb6d3c596382251a55440454d593f5f4b64934a09f8a3bda74b8ab0cb2",
+      "is_split": false,
+      "comment": "IP device monitoring tool",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "duktape-lib-2.7.0_1.pkg",
+      "name": "duktape-lib",
+      "version": "2.7.0_1",
+      "arch": "debian:16:x86:64",
+      "size": 242044,
+      "sha256": "5f74f134609a4133d75137c84f8b382447ab99feac4752f6df99d3ea5da7b0a2",
+      "is_split": false,
+      "comment": "Embeddable Javascript engine (shared lib)",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "easy-rsa-3.2.6,1.pkg",
+      "name": "easy-rsa",
+      "version": "3.2.6,1",
+      "arch": "debian:16:*",
+      "size": 81516,
+      "sha256": "ab6ced37567225a83214a04f1a0c282079b3526c6368ede05a6ef44dc184d8aa",
+      "is_split": false,
+      "comment": "Small RSA key management package based on openssl",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "expat-2.8.4.pkg",
+      "name": "expat",
+      "version": "2.8.4",
+      "arch": "debian:16:x86:64",
+      "size": 127284,
+      "sha256": "f863cbd58c795fae3622a8cb663b53d56c0ba6e31806aa56b8e70121fa476ee3",
+      "is_split": false,
+      "comment": "XML 1.0 parser written in C",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "expiretable-0.6_3.pkg",
+      "name": "expiretable",
+      "version": "0.6_3",
+      "arch": "debian:16:x86:64",
+      "size": 7572,
+      "sha256": "72d861c690295a7315074ad9aebb0ac1a46c480eeadcc9018415b36f951d1f15",
+      "is_split": false,
+      "comment": "Utility to remove entries from the pf(4) table based on their age",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "filterdns-2.3.pkg",
+      "name": "filterdns",
+      "version": "2.3",
+      "arch": "debian:16:x86:64",
+      "size": 18952,
+      "sha256": "aec9a890a2b5185a10a4f140325c617fa6e372b3fc85d8e59f0153e29c4d7e0b",
+      "is_split": false,
+      "comment": "filterdns",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "filterlog-0.1_11.pkg",
+      "name": "filterlog",
+      "version": "0.1_11",
+      "arch": "debian:16:x86:64",
+      "size": 9616,
+      "sha256": "4a0e6e58101370e4b04365d6bc9102e6f4d6459f0ae3e35442ebeca37dbd11d1",
+      "is_split": false,
+      "comment": "filterlog",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "fstrm-0.6.1_1.pkg",
+      "name": "fstrm",
+      "version": "0.6.1_1",
+      "arch": "debian:16:x86:64",
+      "size": 65792,
+      "sha256": "dcc71cbe62c84de5c779435695ef63c04edd882a1f1648e60008c8ef5622372b",
+      "is_split": false,
+      "comment": "Implementation of the Frame Streams data transport protocol in C",
+      "deps_count": 1,
+      "deps": [
+        "libevent"
+      ]
+    },
+    {
+      "filename": "gettext-runtime-1.0_1.pkg",
+      "name": "gettext-runtime",
+      "version": "1.0_1",
+      "arch": "debian:16:x86:64",
+      "size": 285716,
+      "sha256": "8a54edc7720110b42936164685881291335b2f64984d72b5c29be5486d014b0f",
+      "is_split": false,
+      "comment": "GNU gettext runtime libraries and programs",
+      "deps_count": 1,
+      "deps": [
+        "indexinfo"
+      ]
+    },
+    {
+      "filename": "glib-2.88.3,2.pkg",
+      "name": "glib",
+      "version": "2.88.3,2",
+      "arch": "debian:16:x86:64",
+      "size": 10990708,
+      "sha256": "c701625ed0a5faf0a79ad2379f383aa55517fef866119e672ddae14a769f3bb9",
+      "is_split": false,
+      "comment": "Some useful routines of C programming (current stable version)",
+      "deps_count": 6,
+      "deps": [
+        "gettext-runtime",
+        "libffi",
+        "libiconv",
+        "pcre2",
+        "py312-packaging",
+        "python312"
+      ]
+    },
+    {
+      "filename": "glib-bootstrap-2.88.3,2.pkg",
+      "name": "glib-bootstrap",
+      "version": "2.88.3,2",
+      "arch": "debian:16:x86:64",
+      "size": 2719260,
+      "sha256": "d544a54d9597bd7cab2421635687f71b0576f6505d0f65d3ee21e863f33a6a78",
+      "is_split": false,
+      "comment": "Some useful routines of C programming (current stable version)",
+      "deps_count": 6,
+      "deps": [
+        "gettext-runtime",
+        "libffi",
+        "libiconv",
+        "pcre2",
+        "py312-packaging",
+        "python312"
+      ]
+    },
+    {
+      "filename": "gmp-6.3.0.pkg",
+      "name": "gmp",
+      "version": "6.3.0",
+      "arch": "debian:16:x86:64",
+      "size": 483348,
+      "sha256": "b2bb25ec9739d1fa4933f58d68386d346002cff294a1075447d8b53bfa43c98e",
+      "is_split": false,
+      "comment": "Free library for arbitrary precision arithmetic",
+      "deps_count": 1,
+      "deps": [
+        "indexinfo"
+      ]
+    },
+    {
+      "filename": "graphite2-1.3.15.pkg",
+      "name": "graphite2",
+      "version": "1.3.15",
+      "arch": "debian:16:x86:64",
+      "size": 102184,
+      "sha256": "70b4de788d0339092a9f73004bc01681e22719ff07e6bf0605bb59372f77012e",
+      "is_split": false,
+      "comment": "Rendering capabilities for complex non-Roman writing systems",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "hostapd-2.12_2.pkg",
+      "name": "hostapd",
+      "version": "2.12_2",
+      "arch": "debian:16:x86:64",
+      "size": 490908,
+      "sha256": "b1ae80066ed290a7f68a1ebccb7d58a2ede5eb67c5bf6fd4cd876c4c5bf9b0e8",
+      "is_split": false,
+      "comment": "IEEE 802.11 AP, IEEE 802.1X/WPA/WPA2/EAP/RADIUS Authenticator",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "icu-76.1,1.pkg",
+      "name": "icu",
+      "version": "76.1,1",
+      "arch": "debian:16:x86:64",
+      "size": 12020012,
+      "sha256": "d7281c060ea85cfa5927c22fd0ec46f82b336a9bdbf20f52e64aa55a5446a5c8",
+      "is_split": false,
+      "comment": "International Components for Unicode (from IBM)",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "if_pppoe-kmod-1.0.0.1600018_1.pkg",
+      "name": "if_pppoe-kmod",
+      "version": "1.0.0.1600018_1",
+      "arch": "debian:16:x86:64",
+      "size": 39528,
+      "sha256": "d5c4c4cb6547cabe79cfc1b4c8b608dba362afd0d58a838f6c49705b6588db3b",
+      "is_split": false,
+      "comment": "PPPoE Kernel Driver",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "iftop-1.0.p4_1.pkg",
+      "name": "iftop",
+      "version": "1.0.p4_1",
+      "arch": "debian:16:x86:64",
+      "size": 38296,
+      "sha256": "2b3bc62d2e79ca78d1f52ce3a5e1abbe446518f15a204f46806f6da81af7ce53",
+      "is_split": false,
+      "comment": "Display bandwidth usage on an interface by host",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "igmpproxy-0.4_3,1.pkg",
+      "name": "igmpproxy",
+      "version": "0.4_3,1",
+      "arch": "debian:16:x86:64",
+      "size": 24220,
+      "sha256": "84c1069f029bfddfda4f4b3f6d822ff408efcda89daa080453d2bddcee7f3ffa",
+      "is_split": false,
+      "comment": "Multicast forwarding IGMP proxy",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "indexinfo-0.3.1_1.pkg",
+      "name": "indexinfo",
+      "version": "0.3.1_1",
+      "arch": "debian:16:x86:64",
+      "size": 5604,
+      "sha256": "d77c229f0282109b1ee001eb055b908466c823238d8343b530051e48291bb8e6",
+      "is_split": false,
+      "comment": "Utility to regenerate the GNU info page index",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "ipmitool-1.8.19_3.pkg",
+      "name": "ipmitool",
+      "version": "1.8.19_3",
+      "arch": "debian:16:x86:64",
+      "size": 2000324,
+      "sha256": "961d646f79351bc6ff03ba7ab0b2a39713042ac94890c855f20e9a2257f32b89",
+      "is_split": false,
+      "comment": "CLI to manage IPMI systems",
+      "deps_count": 1,
+      "deps": [
+        "readline"
+      ]
+    },
+    {
+      "filename": "isc-dhcp44-client-4.4.3P1_2.pkg",
+      "name": "isc-dhcp44-client",
+      "version": "4.4.3P1_2",
+      "arch": "debian:16:x86:64",
+      "size": 1041916,
+      "sha256": "ad91eb4c2021b63ae25ab2f470ad9b9c30427fc0b7346d0dbcbe87431d3e0774",
+      "is_split": false,
+      "comment": "The ISC Dynamic Host Configuration Protocol client",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "isc-dhcp44-relay-4.4.3P1_4.pkg",
+      "name": "isc-dhcp44-relay",
+      "version": "4.4.3P1_4",
+      "arch": "debian:16:x86:64",
+      "size": 979372,
+      "sha256": "7f523c187cc3c758f77824f5c4db2b653853cf4d386efd35e97b1a32056b3405",
+      "is_split": false,
+      "comment": "The ISC Dynamic Host Configuration Protocol relay",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "isc-dhcp44-server-4.4.3P1_5.pkg",
+      "name": "isc-dhcp44-server",
+      "version": "4.4.3P1_5",
+      "arch": "debian:16:x86:64",
+      "size": 1538176,
+      "sha256": "2a83f54e1c25b73bad280c464bffb11764a15f459228035ccd94cfd2915ca19a",
+      "is_split": false,
+      "comment": "ISC Dynamic Host Configuration Protocol server",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "jbigkit-2.1_3.pkg",
+      "name": "jbigkit",
+      "version": "2.1_3",
+      "arch": "debian:16:x86:64",
+      "size": 76324,
+      "sha256": "117410ca7475f0f48e9e6b44e899d5a58c334834b9e720ea78b3637faa8df232",
+      "is_split": false,
+      "comment": "Lossless compression for bi-level images such as scanned pages, faxes",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "jq-1.8.2.pkg",
+      "name": "jq",
+      "version": "1.8.2",
+      "arch": "debian:16:x86:64",
+      "size": 322568,
+      "sha256": "430dbc2f793bb6334e2b5c67d7cb59c7b978bd0bfb92a6e4a147d59173d36919",
+      "is_split": false,
+      "comment": "Lightweight and flexible command-line JSON processor",
+      "deps_count": 1,
+      "deps": [
+        "oniguruma"
+      ]
+    },
+    {
+      "filename": "jsoncpp-1.9.8.pkg",
+      "name": "jsoncpp",
+      "version": "1.9.8",
+      "arch": "debian:16:x86:64",
+      "size": 127628,
+      "sha256": "e7cf731984d1c600e512cb48cc599ea1952cf2d9de9924335b9c4672194ebac2",
+      "is_split": false,
+      "comment": "JSON reader and writer library for C++",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "kea-3.2.0_1.pkg",
+      "name": "kea",
+      "version": "3.2.0_1",
+      "arch": "debian:16:x86:64",
+      "size": 5729364,
+      "sha256": "66223fb4f6b419fd050cac11e6df0cc3c3f978a1d0594317b0586679c7aaf89c",
+      "is_split": false,
+      "comment": "Alternative DHCP implementation by ISC",
+      "deps_count": 3,
+      "deps": [
+        "boost-libs",
+        "log4cplus",
+        "python312"
+      ]
+    },
+    {
+      "filename": "kvm.pkg",
+      "name": "kvm",
+      "version": "unknown",
+      "arch": "amd64",
+      "size": 55373724,
+      "sha256": "264fc1f97b853b163fe79d0f110a9edbd2ab890b328953c94731e6c498c0921c",
+      "is_split": false,
+      "comment": "MitraNet Package",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "ldns-1.9.2.pkg",
+      "name": "ldns",
+      "version": "1.9.2",
+      "arch": "debian:16:x86:64",
+      "size": 570680,
+      "sha256": "0fe04cd7a014960be074e53366349a6bdbb6d8980557ca6aaa262a9c2b389ec0",
+      "is_split": false,
+      "comment": "Library for programs conforming to DNS RFCs and drafts",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "lerc-4.2.0.pkg",
+      "name": "lerc",
+      "version": "4.2.0",
+      "arch": "debian:16:x86:64",
+      "size": 158100,
+      "sha256": "733b4ad931f7cca95b9155e73a320724c6b84eeec46c54dfe6816dcf18897a1c",
+      "is_split": false,
+      "comment": "C++ library for Limited Error Raster Compression",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "libICE-1.1.2,1.pkg",
+      "name": "libICE",
+      "version": "1.1.2,1",
+      "arch": "debian:16:x86:64",
+      "size": 95004,
+      "sha256": "e8b462ae209fbf377e5f2a86ff1d05065bd52e739fc4f13aecd77c165055fa9b",
+      "is_split": false,
+      "comment": "Inter Client Exchange library for X11",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "libSM-1.2.6,1.pkg",
+      "name": "libSM",
+      "version": "1.2.6,1",
+      "arch": "debian:16:x86:64",
+      "size": 25032,
+      "sha256": "67ecc93535118c6aa015cb1e5bc3cb67391cd6652b8d489a1cbd01f9b822fba6",
+      "is_split": false,
+      "comment": "Session Management library for X11",
+      "deps_count": 1,
+      "deps": [
+        "libICE"
+      ]
+    },
+    {
+      "filename": "libXau-1.0.12.pkg",
+      "name": "libXau",
+      "version": "1.0.12",
+      "arch": "debian:16:x86:64",
+      "size": 12392,
+      "sha256": "99c62159d6a56aeb561e42a056b670a98f0cf4a0e090401a1faa709414a69c74",
+      "is_split": false,
+      "comment": "Authentication Protocol library for X11",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "libXdmcp-1.1.5.pkg",
+      "name": "libXdmcp",
+      "version": "1.1.5",
+      "arch": "debian:16:x86:64",
+      "size": 15632,
+      "sha256": "5c51abe2ccfa266d15c08e8af527e99398d8f55cff7c94f3987c868cd16a9207",
+      "is_split": false,
+      "comment": "X Display Manager Control Protocol library",
+      "deps_count": 1,
+      "deps": [
+        "xorgproto"
+      ]
+    },
+    {
+      "filename": "libavif-1.4.2.pkg",
+      "name": "libavif",
+      "version": "1.4.2",
+      "arch": "debian:16:x86:64",
+      "size": 264480,
+      "sha256": "ed932f8f70ac006242aee2fbc45a095e7459f2c0b6b596360356fb641a647ce6",
+      "is_split": false,
+      "comment": "Library for encoding and decoding .avif files",
+      "deps_count": 9,
+      "deps": [
+        "aom",
+        "dav1d",
+        "gdk-pixbuf2",
+        "gettext-runtime",
+        "glib",
+        "jpeg-turbo",
+        "libyuv",
+        "png",
+        "webp"
+      ]
+    },
+    {
+      "filename": "libccid-1.8.2.pkg",
+      "name": "libccid",
+      "version": "1.8.2",
+      "arch": "debian:16:x86:64",
+      "size": 70280,
+      "sha256": "c23375197fe4dceac11b4ce315ba300db08ce391d3c34d3504b7683243b45be9",
+      "is_split": false,
+      "comment": "Generic USB CCID and ICCD driver",
+      "deps_count": 1,
+      "deps": [
+        "pcsc-lite"
+      ]
+    },
+    {
+      "filename": "libdeflate-1.26.pkg",
+      "name": "libdeflate",
+      "version": "1.26",
+      "arch": "debian:16:x86:64",
+      "size": 82188,
+      "sha256": "457107ddac2e508f4808918586907d58742c47aebfbff12188275bddf31be125",
+      "is_split": false,
+      "comment": "Fast, whole-buffer DEFLATE-based compression library",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "libedit-3.1.20260512,1.pkg",
+      "name": "libedit",
+      "version": "3.1.20260512,1",
+      "arch": "debian:16:x86:64",
+      "size": 145152,
+      "sha256": "f5e665b4525a9ef88d348d34ddf3471daf1bd82e9372db58290c4eeaba76fadf",
+      "is_split": false,
+      "comment": "Command line editor library",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "libevent-2.1.13.pkg",
+      "name": "libevent",
+      "version": "2.1.13",
+      "arch": "debian:16:x86:64",
+      "size": 333076,
+      "sha256": "97bf4bf49d9aac39beedcbc95b1fc757df0a9f3945eaf4e4f8412cb87832cfad",
+      "is_split": false,
+      "comment": "API for executing callback functions on events or timeouts",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "libffi-3.8.0.pkg",
+      "name": "libffi",
+      "version": "3.8.0",
+      "arch": "debian:16:x86:64",
+      "size": 53192,
+      "sha256": "b0829e42744e58aad5983329cbf51604dfee37caac6eec2fe4a2fd91ac0af545",
+      "is_split": false,
+      "comment": "Foreign Function Interface",
+      "deps_count": 1,
+      "deps": [
+        "indexinfo"
+      ]
+    },
+    {
+      "filename": "libgcrypt-1.12.2.pkg",
+      "name": "libgcrypt",
+      "version": "1.12.2",
+      "arch": "debian:16:x86:64",
+      "size": 827208,
+      "sha256": "4ef27501c96556e10a2aeaee1e7233bc2624e96c47c363e143e29e25d2a447f8",
+      "is_split": false,
+      "comment": "General purpose cryptographic library based on the code from GnuPG",
+      "deps_count": 1,
+      "deps": [
+        "libgpg-error"
+      ]
+    },
+    {
+      "filename": "libgpg-error-1.61.pkg",
+      "name": "libgpg-error",
+      "version": "1.61",
+      "arch": "debian:16:x86:64",
+      "size": 365512,
+      "sha256": "56de4c44017de94f5c27e595fb7c981df26f6ad324c3b878ea282cad7c50bceb",
+      "is_split": false,
+      "comment": "Common error values for all GnuPG components",
+      "deps_count": 2,
+      "deps": [
+        "gettext-runtime",
+        "indexinfo"
+      ]
+    },
+    {
+      "filename": "libiconv-1.18_1.pkg",
+      "name": "libiconv",
+      "version": "1.18_1",
+      "arch": "debian:16:x86:64",
+      "size": 643308,
+      "sha256": "81db051c0b7f49f3da2b9c4e123a329e3804982e4466fa4ffcc615179300434f",
+      "is_split": false,
+      "comment": "Character set conversion library",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "libidn2-2.3.8.pkg",
+      "name": "libidn2",
+      "version": "2.3.8",
+      "arch": "debian:16:x86:64",
+      "size": 142288,
+      "sha256": "500f0cec361630195bd98e15369b747eeb33a3d84f5bfa8410137968c586c83e",
+      "is_split": false,
+      "comment": "Implementation of IDNA2008 internationalized domain names",
+      "deps_count": 2,
+      "deps": [
+        "indexinfo",
+        "libunistring"
+      ]
+    },
+    {
+      "filename": "libltdl-2.6.2.pkg",
+      "name": "libltdl",
+      "version": "2.6.2",
+      "arch": "debian:16:x86:64",
+      "size": 38964,
+      "sha256": "4e6f3d9eab73ca16feb999361346e25de5a4d20e8f5b85c640ba6351f2b10d1e",
+      "is_split": false,
+      "comment": "System independent dlopen wrapper",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "liblz4-1.10.0_2,1.pkg",
+      "name": "liblz4",
+      "version": "1.10.0_2,1",
+      "arch": "debian:16:x86:64",
+      "size": 170112,
+      "sha256": "599808330c191ccd4a3931a997c7f9e8b4b76dc2e4c3e26dd67f406716c56f9d",
+      "is_split": false,
+      "comment": "LZ4 compression library, lossless and very fast",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "libmcrypt-2.5.8_4.pkg",
+      "name": "libmcrypt",
+      "version": "2.5.8_4",
+      "arch": "debian:16:x86:64",
+      "size": 124328,
+      "sha256": "466a9425d8c9162f23aa092fe235fee30b80a904e65f5643e399b8e26cfc4c6c",
+      "is_split": false,
+      "comment": "Multi-cipher cryptographic library (used in PHP)",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "libnghttp2-1.70.0.pkg",
+      "name": "libnghttp2",
+      "version": "1.70.0",
+      "arch": "debian:16:x86:64",
+      "size": 129776,
+      "sha256": "637e257e780bfae13d7d24018fa14d81fa8dcdba6948b65f9325f7b658fd098d",
+      "is_split": false,
+      "comment": "HTTP/2 C Library",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "libpfctl-0.17.pkg",
+      "name": "libpfctl",
+      "version": "0.17",
+      "arch": "debian:16:x86:64",
+      "size": 32756,
+      "sha256": "1c2cc6efcb6078d627909a603bc7395540d8af9ebcb44e12d4c2d11aa596a023",
+      "is_split": false,
+      "comment": "Library for interaction with pf(4)",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "libpsl-0.23.3.pkg",
+      "name": "libpsl",
+      "version": "0.23.3",
+      "arch": "debian:16:x86:64",
+      "size": 64612,
+      "sha256": "a2a16c8894b83dea2e34f61b4468b705efbbe703a7c238dbc54643e403919af6",
+      "is_split": false,
+      "comment": "C library to handle the Public Suffix List",
+      "deps_count": 2,
+      "deps": [
+        "libidn2",
+        "libunistring"
+      ]
+    },
+    {
+      "filename": "libsodium-1.0.22.pkg",
+      "name": "libsodium",
+      "version": "1.0.22",
+      "arch": "debian:16:x86:64",
+      "size": 287340,
+      "sha256": "ca1a4a023c4091c567d6f2b0550c4c6887feb923b38ca4dd97d7d7fa92550ab0",
+      "is_split": false,
+      "comment": "Library to build higher-level cryptographic tools",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "libssh2-1.11.1_1,3.pkg",
+      "name": "libssh2",
+      "version": "1.11.1_1,3",
+      "arch": "debian:16:x86:64",
+      "size": 249448,
+      "sha256": "5f02f9e495bce2cfae569c9997d3415e6a237946f4a1ee5295f4e311e226875e",
+      "is_split": false,
+      "comment": "Library implementing the SSH2 protocol",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "libucl-0.9.4.pkg",
+      "name": "libucl",
+      "version": "0.9.4",
+      "arch": "debian:16:x86:64",
+      "size": 131292,
+      "sha256": "10b9de8f4ffb56bfd5dfde6e433d5c97fc06d266a6c1887f5738a4ea5e5dcf1b",
+      "is_split": false,
+      "comment": "Universal configuration library parser",
+      "deps_count": 1,
+      "deps": [
+        "lua54"
+      ]
+    },
+    {
+      "filename": "libunistring-1.4.2.pkg",
+      "name": "libunistring",
+      "version": "1.4.2",
+      "arch": "debian:16:x86:64",
+      "size": 618500,
+      "sha256": "1b584982239e09f9825a201e57ada20f28659a982ebb104e7e129f9a23f1d599",
+      "is_split": false,
+      "comment": "Unicode string library",
+      "deps_count": 1,
+      "deps": [
+        "indexinfo"
+      ]
+    },
+    {
+      "filename": "liburcu-0.15.7.pkg",
+      "name": "liburcu",
+      "version": "0.15.7",
+      "arch": "debian:16:x86:64",
+      "size": 174244,
+      "sha256": "0e99d11f83904a60d61d28e2d6bedd8fb0f60e0e65626170c568834bc7b36bc5",
+      "is_split": false,
+      "comment": "Userspace read-copy-update (RCU) data synchronization library",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "libuv-1.52.1.pkg",
+      "name": "libuv",
+      "version": "1.52.1",
+      "arch": "debian:16:x86:64",
+      "size": 133772,
+      "sha256": "3a976a8e6edd6123970bdba7e29ff1b77c215ff0dac9aa8b3319c4c433b8a5fc",
+      "is_split": false,
+      "comment": "Multi-platform support library with a focus on asynchronous I/O",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "libxml2-2.15.4.pkg",
+      "name": "libxml2",
+      "version": "2.15.4",
+      "arch": "debian:16:x86:64",
+      "size": 858428,
+      "sha256": "deb608078a7700e79238d9bf22b27697ff6c9afbc7c1d69973b08c3b6519e48a",
+      "is_split": false,
+      "comment": "XML parser library for GNOME",
+      "deps_count": 1,
+      "deps": [
+        "readline"
+      ]
+    },
+    {
+      "filename": "libxslt-1.1.45.pkg",
+      "name": "libxslt",
+      "version": "1.1.45",
+      "arch": "debian:16:x86:64",
+      "size": 281592,
+      "sha256": "b111615f2c8da2e943adb598e02bb7efef7410275e0903940d91916fa7c659fc",
+      "is_split": false,
+      "comment": "XML stylesheet transformation library",
+      "deps_count": 3,
+      "deps": [
+        "libgcrypt",
+        "libgpg-error",
+        "libxml2"
+      ]
+    },
+    {
+      "filename": "libyuv-0.0.1903.pkg",
+      "name": "libyuv",
+      "version": "0.0.1903",
+      "arch": "debian:16:x86:64",
+      "size": 354000,
+      "sha256": "c3b39c2ef89a241abe9743d0d4935620f2e980a3f8ee6bb0013735ce8a38e4d4",
+      "is_split": false,
+      "comment": "Library for freeswitch yuv graphics manipulation",
+      "deps_count": 1,
+      "deps": [
+        "jpeg-turbo"
+      ]
+    },
+    {
+      "filename": "links-2.30_1,1.pkg",
+      "name": "links",
+      "version": "2.30_1,1",
+      "arch": "debian:16:x86:64",
+      "size": 2944964,
+      "sha256": "786cacdbc1bca3a978784a1f4555e775d6e4138422d10e742578906450201a4d",
+      "is_split": false,
+      "comment": "Lynx-like text WWW browser",
+      "deps_count": 10,
+      "deps": [
+        "fontconfig",
+        "freetype2",
+        "jpeg-turbo",
+        "libX11",
+        "libavif",
+        "libevent",
+        "png",
+        "tiff",
+        "webp",
+        "zstd"
+      ]
+    },
+    {
+      "filename": "log4cplus-2.2.0.1.pkg",
+      "name": "log4cplus",
+      "version": "2.2.0.1",
+      "arch": "debian:16:x86:64",
+      "size": 342712,
+      "sha256": "db574a86bfd6ee81d56c71b3095879d652854af23e7532a77e3ddeba4b1b9255",
+      "is_split": false,
+      "comment": "Logging library for C++",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "lua54-5.4.8.pkg",
+      "name": "lua54",
+      "version": "5.4.8",
+      "arch": "debian:16:x86:64",
+      "size": 330088,
+      "sha256": "9350205b7e3955779c0fe181d97cb206568dbba3e416d941e858f5851cba7f8b",
+      "is_split": false,
+      "comment": "Powerful, efficient, lightweight, embeddable scripting language",
+      "deps_count": 1,
+      "deps": [
+        "libedit"
+      ]
+    },
+    {
+      "filename": "lzo2-2.10_2.pkg",
+      "name": "lzo2",
+      "version": "2.10_2",
+      "arch": "debian:16:x86:64",
+      "size": 120376,
+      "sha256": "ed24ec43c8cd2ac9dac094b8198b769eb96df3d649f14b509b62c9604bfb1743",
+      "is_split": false,
+      "comment": "Portable speedy, lossless data compression library",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "minicron-0.0.2.pkg",
+      "name": "minicron",
+      "version": "0.0.2",
+      "arch": "debian:16:x86:64",
+      "size": 2984,
+      "sha256": "a5f19f67d594f702c2bd3a20e9f52d1714fa9ee796d1f6775206bd2d6d0222df",
+      "is_split": false,
+      "comment": "very small cron",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "miniupnpd-2.3.9_1,1.pkg",
+      "name": "miniupnpd",
+      "version": "2.3.9_1,1",
+      "arch": "debian:16:x86:64",
+      "size": 71520,
+      "sha256": "2a07cc0d8430a5c10dee971ddab50f62ed39d0dd8780cc77e2accf116b27a12b",
+      "is_split": false,
+      "comment": "Lightweight UPnP IGD & PCP/NAT-PMP daemon which uses pf",
+      "deps_count": 1,
+      "deps": [
+        "libpfctl"
+      ]
+    },
+    {
+      "filename": "mitranet-1.0.0.pkg",
+      "name": "mitranet",
+      "version": "1.0.0",
+      "arch": "linux:debian:x86:64",
+      "size": 4840,
+      "sha256": "080337ac5967ed9b25fa6f9aaa86cab5ec920eeccba6bdb14aaec754017a122c",
+      "is_split": false,
+      "comment": "Main MitraNet package",
+      "deps_count": 1,
+      "deps": [
+        "mitranet-system"
+      ]
+    },
+    {
+      "filename": "mitranet-Status_Monitoring-php85-1.9.pkg",
+      "name": "mitranet-Status_Monitoring-php85",
+      "version": "1.9",
+      "arch": "linux:debian:x86:64",
+      "size": 18724,
+      "sha256": "66d3c5e9ac792550ca10fd0e7e02a4bf212f7eacfea5f5148c77c7e94dea7a06",
+      "is_split": false,
+      "comment": "MitraNet Status Monitoring",
+      "deps_count": 2,
+      "deps": [
+        "php85",
+        "php85-pecl-rrd"
+      ]
+    },
+    {
+      "filename": "mitranet-base-1.0.0.pkg",
+      "name": "pfSense-base",
+      "version": "2.9.0",
+      "arch": "freebsd:16:x86:64",
+      "size": 115904682,
+      "sha256": "d6281ff6483afb15a10cb5a75f95522c1a2b2c4d6cc4c646dac9e7fccb79c929",
+      "is_split": false,
+      "comment": "pfSense core files",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "mitranet-base-1.0.0.pkg.partaa",
+      "name": "mitranet-base-1.0.0.partaa",
+      "version": "1.0.0",
+      "arch": "amd64",
+      "size": 57952342,
+      "sha256": "473c6ac59807397c93cdab68eaa859a3560973755cd97908dddf68f03fb4bdd8",
+      "is_split": true,
+      "comment": "MitraNet Package",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "mitranet-base-1.0.0.pkg.partab",
+      "name": "mitranet-base-1.0.0.partab",
+      "version": "1.0.0",
+      "arch": "amd64",
+      "size": 57952340,
+      "sha256": "e7a85e77b72a6d842bfd32b9a29c2073b5542100055a7b32a70db9f2bd5b51f8",
+      "is_split": true,
+      "comment": "MitraNet Package",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "mitranet-boot-1.0.0.pkg",
+      "name": "mitranet-boot",
+      "version": "1.0.0",
+      "arch": "linux:debian:x86:64",
+      "size": 1196244,
+      "sha256": "0b821c4a87bcda47b71dfb0dadc6424ba6632f35bc0ae71003f6bb85980f3cca",
+      "is_split": false,
+      "comment": "MitraNet boot files",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "mitranet-composer-deps-0.5_1.pkg",
+      "name": "mitranet-composer-deps",
+      "version": "0.5_1",
+      "arch": "linux:debian:x86:64",
+      "size": 415416,
+      "sha256": "b0f9bca9ef27acc0f4040b384976d7abdf235de2abed741eb8c72467796fda88",
+      "is_split": false,
+      "comment": "MitraNet deps from composer",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "mitranet-default-config-1.0.0.pkg",
+      "name": "mitranet-default-config",
+      "version": "1.0.0",
+      "arch": "linux:debian:x86:64",
+      "size": 6360,
+      "sha256": "56325bdc2818e24d7c70986f75ae190acc1d5e9aa5411a968568b0af837126db",
+      "is_split": false,
+      "comment": "Default config.xml",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "mitranet-gnid-0.21.pkg",
+      "name": "mitranet-gnid",
+      "version": "0.21",
+      "arch": "linux:debian:x86:64",
+      "size": 9068,
+      "sha256": "abc1eace17ec350ae5052ee01c9ab6231e38470f94213b0cc219084193a3516f",
+      "is_split": false,
+      "comment": "GNID tool.",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "mitranet-kernel-debian-1.0.0.pkg",
+      "name": "mitranet-kernel-debian",
+      "version": "1.0.0",
+      "arch": "linux:debian:x86:64",
+      "size": 19261608,
+      "sha256": "25f3e31c7748aa5f290e7c1cc34c8c6cc934540ee2926185b6c66a9753cf9a80",
+      "is_split": false,
+      "comment": "MitraNet Linux kernel for Debian",
+      "deps_count": 1,
+      "deps": [
+        "mitranet-boot"
+      ]
+    },
+    {
+      "filename": "mitranet-pkg-WireGuard-0.2.13_4.pkg",
+      "name": "mitranet-pkg-WireGuard",
+      "version": "0.2.13_4",
+      "arch": "linux:debian:x86:64",
+      "size": 39472,
+      "sha256": "b1fd518e399578e141e98ff1c5601adfb61c9e6a0134fa133c52e5ed461e77d2",
+      "is_split": false,
+      "comment": "MitraNet package WireGuard",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "mitranet-repoc-20260919.051732.pkg",
+      "name": "mitranet-repoc",
+      "version": "20260919.051732",
+      "arch": "linux:debian:x86:64",
+      "size": 9514208,
+      "sha256": "190805dccd57dfc8deae8ecef2bd0beefdfb67be01f206b702b46f167ea952bf",
+      "is_split": false,
+      "comment": "MitraNet dynamic repository client",
+      "deps_count": 1,
+      "deps": [
+        "libucl"
+      ]
+    },
+    {
+      "filename": "mitranet-system-1.0.0.pkg",
+      "name": "mitranet-system",
+      "version": "1.0.0",
+      "arch": "linux:debian:x86:64",
+      "size": 7686656,
+      "sha256": "8a6a5d521a43e8fb3daf89ccfe20cfd2f9465a14c7565336259072ec55ac10a4",
+      "is_split": false,
+      "comment": "MitraNet system package",
+      "deps_count": 108,
+      "deps": [
+        "beep",
+        "bind-tools",
+        "bsnmp-regex",
+        "bsnmp-ucd",
+        "bwi-firmware-kmod",
+        "ca_root_nss",
+        "check_reload_status",
+        "choparp",
+        "cpdup",
+        "cpu-microcode",
+        "cpustats",
+        "dhcp6",
+        "dhcpcd",
+        "dhcpleases",
+        "dhcpleases6",
+        "dmidecode",
+        "dnsmasq",
+        "dpinger",
+        "expiretable",
+        "filterdns",
+        "filterlog",
+        "hostapd",
+        "if_pppoe-kmod",
+        "iftop",
+        "igmpproxy",
+        "ipmitool",
+        "isc-dhcp44-client",
+        "isc-dhcp44-relay",
+        "isc-dhcp44-server",
+        "jq",
+        "kea",
+        "libccid",
+        "libltdl",
+        "libxml2",
+        "links",
+        "minicron",
+        "miniupnpd",
+        "mobile-broadband-provider-info",
+        "mpd5",
+        "nginx",
+        "nss_ldap",
+        "ntp",
+        "opensc",
+        "openvpn",
+        "openvpn-auth-script",
+        "pam_ldap",
+        "pam_mkhomedir",
+        "mitranet-Status_Monitoring-php85",
+        "mitranet-composer-deps",
+        "mitranet-gnid",
+        "mitranet-upgrade",
+        "pftop",
+        "php85",
+        "php85-bcmath",
+        "php85-bz2",
+        "php85-ctype",
+        "php85-curl",
+        "php85-dom",
+        "php85-filter",
+        "php85-gettext",
+        "php85-gmp",
+        "php85-intl",
+        "php85-ldap",
+        "php85-mbstring",
+        "php85-openssl_x509_crl",
+        "php85-pcntl",
+        "php85-pdo",
+        "php85-pdo_sqlite",
+        "php85-pear-Auth_RADIUS",
+        "php85-pear-Crypt_CHAP",
+        "php85-pear-Mail",
+        "php85-pear-Net_IPv6",
+        "php85-pear-XML_RPC2",
+        "php85-pecl-mcrypt",
+        "php85-pecl-radius",
+        "php85-mitranet-module",
+        "php85-phpseclib",
+        "php85-posix",
+        "php85-readline",
+        "php85-session",
+        "php85-shmop",
+        "php85-simplexml",
+        "php85-sockets",
+        "php85-sqlite3",
+        "php85-sysvmsg",
+        "php85-sysvsem",
+        "php85-sysvshm",
+        "php85-tokenizer",
+        "php85-xml",
+        "php85-xmlreader",
+        "php85-xmlwriter",
+        "php85-zlib",
+        "qstats",
+        "radvd",
+        "rate",
+        "scponly",
+        "smartmontools",
+        "ssh_tunnel_shell",
+        "sshguard",
+        "strongswan",
+        "uclcmd",
+        "unbound",
+        "voucher",
+        "whois",
+        "wol",
+        "wpa_supplicant",
+        "wrapalixresetbutton",
+        "xinetd"
+      ]
+    },
+    {
+      "filename": "mitranet-upgrade-1.3.40.pkg",
+      "name": "mitranet-upgrade",
+      "version": "1.3.40",
+      "arch": "linux:debian:x86:64",
+      "size": 29008,
+      "sha256": "0ddf3fca4c7ea0e9caf787f2a87910685aec200ff03843ed7a0f7b8996ac95ca",
+      "is_split": false,
+      "comment": "MitraNet upgrade script",
+      "deps_count": 1,
+      "deps": [
+        "mitranet-repoc"
+      ]
+    },
+    {
+      "filename": "mobile-broadband-provider-info-20251101.pkg",
+      "name": "mobile-broadband-provider-info",
+      "version": "20251101",
+      "arch": "debian:16:*",
+      "size": 61088,
+      "sha256": "6aa9e9dcee6debf5d1bae54c4b3d4296ecb2a72dc19031dd94e6df2f826fb919",
+      "is_split": false,
+      "comment": "Service mobile broadband provider database",
+      "deps_count": 2,
+      "deps": [
+        "libxml2",
+        "libxslt"
+      ]
+    },
+    {
+      "filename": "mpd5-5.9_19.pkg",
+      "name": "mpd5",
+      "version": "5.9_19",
+      "arch": "debian:16:x86:64",
+      "size": 415184,
+      "sha256": "0e0efa009bb82885009d6dcd4a0891417c97130104cbe70de99769ccd53fe463",
+      "is_split": false,
+      "comment": "Multi-link PPP daemon based on netgraph(4)",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "mpdecimal-4.0.1.pkg",
+      "name": "mpdecimal",
+      "version": "4.0.1",
+      "arch": "debian:16:x86:64",
+      "size": 147676,
+      "sha256": "c609a1ee9a2fd7f8ce5b44a8e6415533f487ac71969359da2261b755654a3e6d",
+      "is_split": false,
+      "comment": "C/C++ arbitrary precision decimal floating point libraries",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "nettle-3.10.2.pkg",
+      "name": "nettle",
+      "version": "3.10.2",
+      "arch": "debian:16:x86:64",
+      "size": 1677100,
+      "sha256": "cac266d740784930d01a218b89ce5949f9b3adcdcb213f5f2c6d8cb21ff9e4e2",
+      "is_split": false,
+      "comment": "Low-level cryptographic library",
+      "deps_count": 2,
+      "deps": [
+        "gmp",
+        "indexinfo"
+      ]
+    },
+    {
+      "filename": "nginx-1.30.5,3.pkg",
+      "name": "nginx",
+      "version": "1.30.5,3",
+      "arch": "debian:16:x86:64",
+      "size": 561880,
+      "sha256": "cf945ca512f657e34fa7c2b0086b8c15af920d8a5c69bbce8540d54c2a6b4950",
+      "is_split": false,
+      "comment": "Robust and small WWW server",
+      "deps_count": 1,
+      "deps": [
+        "pcre2"
+      ]
+    },
+    {
+      "filename": "nss_ldap-1.265_15.pkg",
+      "name": "nss_ldap",
+      "version": "1.265_15",
+      "arch": "debian:16:x86:64",
+      "size": 55768,
+      "sha256": "5a120491124825562253339d42dacbd2061d9c9015ea59cbace40d69d6bf4910",
+      "is_split": false,
+      "comment": "RFC 2307 NSS module",
+      "deps_count": 1,
+      "deps": [
+        "openldap26-client"
+      ]
+    },
+    {
+      "filename": "ntp-4.2.8p18_6.pkg",
+      "name": "ntp",
+      "version": "4.2.8p18_6",
+      "arch": "debian:16:x86:64",
+      "size": 1800576,
+      "sha256": "dcd3d85dcd5cad7f49095acde2dd106badd0d8004c57b7f369810ad5d03dcf43",
+      "is_split": false,
+      "comment": "The Network Time Protocol Distribution",
+      "deps_count": 4,
+      "deps": [
+        "gettext-runtime",
+        "libedit",
+        "libevent",
+        "perl5"
+      ]
+    },
+    {
+      "filename": "oniguruma-6.9.10.pkg",
+      "name": "oniguruma",
+      "version": "6.9.10",
+      "arch": "debian:16:x86:64",
+      "size": 237004,
+      "sha256": "cf036682f241f8afc2a9e310b5c9df4baa08f7556cdc6cbaff5b89085aec4351",
+      "is_split": false,
+      "comment": "Regular expressions library compatible with POSIX/GNU/Perl",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "openldap26-client-2.6.15_1.pkg",
+      "name": "openldap26-client",
+      "version": "2.6.15_1",
+      "arch": "debian:16:x86:64",
+      "size": 1077348,
+      "sha256": "06240323d645910a45356994638e88d7066a588365974696231ea69024c1b819",
+      "is_split": false,
+      "comment": "Open source LDAP client implementation",
+      "deps_count": 1,
+      "deps": [
+        "cyrus-sasl"
+      ]
+    },
+    {
+      "filename": "opensc-0.27.0.pkg",
+      "name": "opensc",
+      "version": "0.27.0",
+      "arch": "debian:16:x86:64",
+      "size": 1700588,
+      "sha256": "b030f0fdd88aed2bd92f073a4262ce1f22bd838bd2479bc06bd8648d633a9d7f",
+      "is_split": false,
+      "comment": "Libraries and utilities to access smart cards",
+      "deps_count": 3,
+      "deps": [
+        "gettext-runtime",
+        "glib",
+        "pcsc-lite"
+      ]
+    },
+    {
+      "filename": "openvpn-2.7.7.pkg",
+      "name": "openvpn",
+      "version": "2.7.7",
+      "arch": "debian:16:x86:64",
+      "size": 655252,
+      "sha256": "275d3ae93d4e9012bdb2bc89321e86db0b66d57bda6786a835763cbfd2d16881",
+      "is_split": false,
+      "comment": "Secure IP/Ethernet tunnel daemon",
+      "deps_count": 4,
+      "deps": [
+        "easy-rsa",
+        "liblz4",
+        "lzo2",
+        "pkcs11-helper"
+      ]
+    },
+    {
+      "filename": "openvpn-auth-script-1.0.0.3.pkg",
+      "name": "openvpn-auth-script",
+      "version": "1.0.0.3",
+      "arch": "debian:16:x86:64",
+      "size": 7640,
+      "sha256": "d13cf4c388a0bdf88c3cf68fa2cc3f41f04b8afc019805c7853abacf46f2a0bb",
+      "is_split": false,
+      "comment": "Generic script-based deferred auth plugin for OpenVPN",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "pam_ldap-186_2.pkg",
+      "name": "pam_ldap",
+      "version": "186_2",
+      "arch": "debian:16:x86:64",
+      "size": 39096,
+      "sha256": "8696fa1e553a84b378951cc9967a89b4501764606a93e0a587a841274ebe799c",
+      "is_split": false,
+      "comment": "PAM module for authenticating with LDAP",
+      "deps_count": 1,
+      "deps": [
+        "openldap26-client"
+      ]
+    },
+    {
+      "filename": "pam_mkhomedir-0.2_1.pkg",
+      "name": "pam_mkhomedir",
+      "version": "0.2_1",
+      "arch": "debian:16:x86:64",
+      "size": 6504,
+      "sha256": "3c6dd228dd52fd96e16c71f6966cc4a4ddef849fc37bfb960703e062f6679180",
+      "is_split": false,
+      "comment": "Create HOME with a PAM module on demand",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "pcre2-10.48.pkg",
+      "name": "pcre2",
+      "version": "10.48",
+      "arch": "debian:16:x86:64",
+      "size": 1447372,
+      "sha256": "f2da23fe46cee4b6e42b6f8a620cb317140854755b66b41b9a43b5f5e92d6ccc",
+      "is_split": false,
+      "comment": "Perl Compatible Regular Expressions library, version 2",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "pcsc-lite-2.5.2,2.pkg",
+      "name": "pcsc-lite",
+      "version": "2.5.2,2",
+      "arch": "debian:16:x86:64",
+      "size": 113232,
+      "sha256": "8a9abd694839297dfa98a23409ccfe3a82e59905b15846730166758ae3ea7ee2",
+      "is_split": false,
+      "comment": "Middleware library to access a smart card using SCard API (PC/SC)",
+      "deps_count": 1,
+      "deps": [
+        "polkit"
+      ]
+    },
+    {
+      "filename": "perl5-5.42.3.pkg",
+      "name": "perl5",
+      "version": "5.42.3",
+      "arch": "debian:16:x86:64",
+      "size": 16027860,
+      "sha256": "e252ad3b22ffe00ee486b3979006e14c039c32807068527adda969c5d82f0098",
+      "is_split": false,
+      "comment": "Practical Extraction and Report Language",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "pftop-0.13.pkg",
+      "name": "pftop",
+      "version": "0.13",
+      "arch": "debian:16:x86:64",
+      "size": 59048,
+      "sha256": "95ba30d33c7f909501ccb20175595b6caf05c01649b0f048d72bd0af080056a6",
+      "is_split": false,
+      "comment": "Utility for real-time display of statistics for pf",
+      "deps_count": 1,
+      "deps": [
+        "libpfctl"
+      ]
+    },
+    {
+      "filename": "php85-8.5.10.pkg",
+      "name": "php85",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 12152516,
+      "sha256": "539f72a6f1e2abbde74d37faaf19a394391e9ac4de225c0518f2ffae0badc778",
+      "is_split": false,
+      "comment": "PHP Scripting Language (8.5.X branch)",
+      "deps_count": 2,
+      "deps": [
+        "libxml2",
+        "pcre2"
+      ]
+    },
+    {
+      "filename": "php85-bcmath-8.5.10.pkg",
+      "name": "php85-bcmath",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 44372,
+      "sha256": "fa722be01a3a003cb6a693c4065e7b3576a55e37555fe2ff819b3d73ff09c5c2",
+      "is_split": false,
+      "comment": "The bcmath shared extension for php",
+      "deps_count": 1,
+      "deps": [
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-bz2-8.5.10.pkg",
+      "name": "php85-bz2",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 12816,
+      "sha256": "7c9d5c01ffcd506ff9b64c4061e52417a66e9cef10f8d8eb767d94c31f013a59",
+      "is_split": false,
+      "comment": "The bz2 shared extension for php",
+      "deps_count": 1,
+      "deps": [
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-ctype-8.5.10.pkg",
+      "name": "php85-ctype",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 7436,
+      "sha256": "13af0de70459c4d3d880960a39535c7c68497c5db1d0200c27483d7f1d75e503",
+      "is_split": false,
+      "comment": "The ctype shared extension for php",
+      "deps_count": 1,
+      "deps": [
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-curl-8.5.10.pkg",
+      "name": "php85-curl",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 49636,
+      "sha256": "09790a3d16339ad60b4424f2a3a0c943fbe7bb41c8483c268c97fcceb7655358",
+      "is_split": false,
+      "comment": "The curl shared extension for php",
+      "deps_count": 2,
+      "deps": [
+        "curl",
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-dom-8.5.10.pkg",
+      "name": "php85-dom",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 153040,
+      "sha256": "fc057b5976477fc751c2c878d273a6228170f881ded6ac483adb412ee01da6aa",
+      "is_split": false,
+      "comment": "The dom shared extension for php",
+      "deps_count": 2,
+      "deps": [
+        "libxml2",
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-filter-8.5.10.pkg",
+      "name": "php85-filter",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 26364,
+      "sha256": "00e45f29bebb26d29cfba8d0ee1448378e68aea65c36e8f4bb7e75e937a644a8",
+      "is_split": false,
+      "comment": "The filter shared extension for php",
+      "deps_count": 1,
+      "deps": [
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-gettext-8.5.10.pkg",
+      "name": "php85-gettext",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 9084,
+      "sha256": "aaf26c79df9b3b4aec6022d4e5b49fb3215533997503eb0156748e5325cd274d",
+      "is_split": false,
+      "comment": "The gettext shared extension for php",
+      "deps_count": 2,
+      "deps": [
+        "gettext-runtime",
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-gmp-8.5.10.pkg",
+      "name": "php85-gmp",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 23228,
+      "sha256": "2fea01c390d74af15ab7a7abec3dc5fa2c93f4f007087ca243920e5733d78f93",
+      "is_split": false,
+      "comment": "The gmp shared extension for php",
+      "deps_count": 2,
+      "deps": [
+        "gmp",
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-intl-8.5.10.pkg",
+      "name": "php85-intl",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 158164,
+      "sha256": "69b774840290d4cdff6cc66629dd9343858736447006e0b485526e72293b8d55",
+      "is_split": false,
+      "comment": "The intl shared extension for php",
+      "deps_count": 2,
+      "deps": [
+        "icu",
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-ldap-8.5.10.pkg",
+      "name": "php85-ldap",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 36896,
+      "sha256": "e0a1d1ce0e501a076944b34031cdd73d711b808090be2809d26cd2f2ee6cbdf7",
+      "is_split": false,
+      "comment": "The ldap shared extension for php",
+      "deps_count": 3,
+      "deps": [
+        "cyrus-sasl",
+        "openldap26-client",
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-mbstring-8.5.10.pkg",
+      "name": "php85-mbstring",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 825896,
+      "sha256": "cfb645e37ddb6c3be864d663ec5373b27f93803ea3c7adfd8b74f8373fd78fb1",
+      "is_split": false,
+      "comment": "The mbstring shared extension for php",
+      "deps_count": 2,
+      "deps": [
+        "oniguruma",
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-mitranet-module-1.0.0.pkg",
+      "name": "php85-mitranet-module",
+      "version": "1.0.0",
+      "arch": "linux:debian:x86:64",
+      "size": 36604,
+      "sha256": "60787630ef3e14576cd3e0708c889688abfa5264ec910de7b71bb7571ce53c08",
+      "is_split": false,
+      "comment": "Library for getting useful info",
+      "deps_count": 3,
+      "deps": [
+        "libpfctl",
+        "php85",
+        "strongswan"
+      ]
+    },
+    {
+      "filename": "php85-openssl_x509_crl-1.3_3.pkg",
+      "name": "php85-openssl_x509_crl",
+      "version": "1.3_3",
+      "arch": "debian:16:*",
+      "size": 15336,
+      "sha256": "355d6f1fee23ff87079d7927fbe2086a3c3f9f76ddba20f1c3f4e1b9111ef862",
+      "is_split": false,
+      "comment": "PHP Class to create openssl Certificate Revocation List (CRL)",
+      "deps_count": 2,
+      "deps": [
+        "php85",
+        "php85-bcmath"
+      ]
+    },
+    {
+      "filename": "php85-pcntl-8.5.10.pkg",
+      "name": "php85-pcntl",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 22660,
+      "sha256": "3fd312749e4301fa201c78f34e59809d2c597ae98766397ebb89bd9baad2e009",
+      "is_split": false,
+      "comment": "The pcntl shared extension for php",
+      "deps_count": 1,
+      "deps": [
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-pdo-8.5.10.pkg",
+      "name": "php85-pdo",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 56356,
+      "sha256": "ec8f9e59c1df049983713f70bb2a4e1aad0d3e45cb18e19d70586d25fe9f41c2",
+      "is_split": false,
+      "comment": "The pdo shared extension for php",
+      "deps_count": 1,
+      "deps": [
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-pdo_sqlite-8.5.10.pkg",
+      "name": "php85-pdo_sqlite",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 21400,
+      "sha256": "696e4a74f7a59db4ecdd498a4c9e1dd52e30bdf8d8f621c38823c2d1befe287d",
+      "is_split": false,
+      "comment": "The pdo_sqlite shared extension for php",
+      "deps_count": 3,
+      "deps": [
+        "php85",
+        "php85-pdo",
+        "sqlite3"
+      ]
+    },
+    {
+      "filename": "php85-pear-1.10.18.pkg",
+      "name": "php85-pear",
+      "version": "1.10.18",
+      "arch": "debian:16:*",
+      "size": 261380,
+      "sha256": "2a6bc2671dfd16c9c57b7575c7401fa5a92b435a4aaf385290c7509404348586",
+      "is_split": false,
+      "comment": "PEAR framework for PHP",
+      "deps_count": 3,
+      "deps": [
+        "php85",
+        "php85-xml",
+        "php85-zlib"
+      ]
+    },
+    {
+      "filename": "php85-pear-Auth_RADIUS-1.1.0_5.pkg",
+      "name": "php85-pear-Auth_RADIUS",
+      "version": "1.1.0_5",
+      "arch": "debian:16:x86:64",
+      "size": 10340,
+      "sha256": "f6ac6265a756dbea0f8f5dc3ca8c690d7f0732a307362d33e528619dc891454e",
+      "is_split": false,
+      "comment": "PEAR wrapper classes for the RADIUS PECL",
+      "deps_count": 3,
+      "deps": [
+        "php85",
+        "php85-pear",
+        "php85-pecl-radius"
+      ]
+    },
+    {
+      "filename": "php85-pear-Cache_Lite-1.8.3,1.pkg",
+      "name": "php85-pear-Cache_Lite",
+      "version": "1.8.3,1",
+      "arch": "debian:16:*",
+      "size": 34480,
+      "sha256": "f159299fce36808d325fe426de9cfdf7fc0ebe7880a6f5c4e35729388afa1b61",
+      "is_split": false,
+      "comment": "Fast and Safe little cache system",
+      "deps_count": 2,
+      "deps": [
+        "php85",
+        "php85-pear"
+      ]
+    },
+    {
+      "filename": "php85-pear-Crypt_CHAP-1.5.0_2.pkg",
+      "name": "php85-pear-Crypt_CHAP",
+      "version": "1.5.0_2",
+      "arch": "debian:16:*",
+      "size": 6428,
+      "sha256": "e64762b42075abea55804eb8c87be9031a99910dbfbb40081beaca1106987505",
+      "is_split": false,
+      "comment": "PEAR class for generating CHAP packets",
+      "deps_count": 3,
+      "deps": [
+        "php85",
+        "php85-pear",
+        "php85-pecl-mcrypt"
+      ]
+    },
+    {
+      "filename": "php85-pear-HTTP_Request2-2.7.0,1.pkg",
+      "name": "php85-pear-HTTP_Request2",
+      "version": "2.7.0,1",
+      "arch": "debian:16:*",
+      "size": 115360,
+      "sha256": "e153ccc7840de8cc85001d059a282cf8238ec7a611d8b6ad1134ba1659eb2e86",
+      "is_split": false,
+      "comment": "PEAR classes providing an easy way to perform HTTP requests",
+      "deps_count": 3,
+      "deps": [
+        "php85",
+        "php85-pear",
+        "php85-pear-Net_URL2"
+      ]
+    },
+    {
+      "filename": "php85-pear-Mail-2.0.0,1.pkg",
+      "name": "php85-pear-Mail",
+      "version": "2.0.0,1",
+      "arch": "debian:16:x86:64",
+      "size": 22480,
+      "sha256": "c71434f6c2aa001572851ca94a3fb1bb37be4a887c8fdc9c15cc07a9ca7ef67e",
+      "is_split": false,
+      "comment": "PEAR class that provides multiple interfaces for sending emails",
+      "deps_count": 2,
+      "deps": [
+        "php85",
+        "php85-pear"
+      ]
+    },
+    {
+      "filename": "php85-pear-Net_IPv6-1.3.0.b4_2.pkg",
+      "name": "php85-pear-Net_IPv6",
+      "version": "1.3.0.b4_2",
+      "arch": "debian:16:*",
+      "size": 12732,
+      "sha256": "50ee890a9361a2b17ece58763eb1c5d44d298ca2ee7da6daffc1d0c5130be7df",
+      "is_split": false,
+      "comment": "Check and validate IPv6 addresses",
+      "deps_count": 2,
+      "deps": [
+        "php85",
+        "php85-pear"
+      ]
+    },
+    {
+      "filename": "php85-pear-Net_URL2-2.2.3.pkg",
+      "name": "php85-pear-Net_URL2",
+      "version": "2.2.3",
+      "arch": "debian:16:*",
+      "size": 19540,
+      "sha256": "1a9ce98533a6fa73d1b307a4b1e97c0d75c77747945ab59a4807ff5bb806df3c",
+      "is_split": false,
+      "comment": "PEAR Class for parsing and handling URL",
+      "deps_count": 2,
+      "deps": [
+        "php85",
+        "php85-pear"
+      ]
+    },
+    {
+      "filename": "php85-pear-XML_RPC2-1.1.5.pkg",
+      "name": "php85-pear-XML_RPC2",
+      "version": "1.1.5",
+      "arch": "debian:16:*",
+      "size": 64640,
+      "sha256": "0388e381dc9b205d4d00d05b1880c965acbcccf314ef47b309b1198fcbbb16cf",
+      "is_split": false,
+      "comment": "XML-RPC client/server library",
+      "deps_count": 5,
+      "deps": [
+        "php85",
+        "php85-curl",
+        "php85-pear",
+        "php85-pear-Cache_Lite",
+        "php85-pear-HTTP_Request2"
+      ]
+    },
+    {
+      "filename": "php85-pecl-mcrypt-1.0.9.pkg",
+      "name": "php85-pecl-mcrypt",
+      "version": "1.0.9",
+      "arch": "debian:16:x86:64",
+      "size": 15384,
+      "sha256": "34e0fd7436cc964ce84f86d13a05f198abdc03a08664c23e2cf6ff61b62438c8",
+      "is_split": false,
+      "comment": "PHP extension for mcrypt, removed in PHP 7.2",
+      "deps_count": 3,
+      "deps": [
+        "libltdl",
+        "libmcrypt",
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-pecl-radius-1.4.0b1_6.pkg",
+      "name": "php85-pecl-radius",
+      "version": "1.4.0b1_6",
+      "arch": "debian:16:x86:64",
+      "size": 28760,
+      "sha256": "91ec6a7e88039f86cfe7ddb1410c39ea4fc92cc9e6b5897c796690caeb54f3c7",
+      "is_split": false,
+      "comment": "Radius client library for PHP",
+      "deps_count": 1,
+      "deps": [
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-pecl-rrd-2.0.4.pkg",
+      "name": "php85-pecl-rrd",
+      "version": "2.0.4",
+      "arch": "debian:16:x86:64",
+      "size": 14676,
+      "sha256": "886711b70d2e081b5a5514a981bbf84a2c9167e8ea7fa55588b41aad3aa8855f",
+      "is_split": false,
+      "comment": "PHP bindings to rrd tool system",
+      "deps_count": 2,
+      "deps": [
+        "php85",
+        "rrdtool"
+      ]
+    },
+    {
+      "filename": "php85-phpseclib-2.0.17.pkg",
+      "name": "php85-phpseclib",
+      "version": "2.0.17",
+      "arch": "debian:16:*",
+      "size": 177292,
+      "sha256": "8e1edbbd2b1025f820724c7ead5b8f4958effc8c0afefb883ba2336e53371162",
+      "is_split": false,
+      "comment": "PHP arbitrary-precision integer arithmetic library",
+      "deps_count": 1,
+      "deps": [
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-posix-8.5.10.pkg",
+      "name": "php85-posix",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 16404,
+      "sha256": "5d39f46eb002850b8dfd30fe60fd8f7a2483f9a0ff005da1756e5c08f9a21de9",
+      "is_split": false,
+      "comment": "The posix shared extension for php",
+      "deps_count": 1,
+      "deps": [
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-readline-8.5.10.pkg",
+      "name": "php85-readline",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 14880,
+      "sha256": "89f4fef2718e87cbca11fd1d9367b65301a9da62bdae97202082f334b424b2f3",
+      "is_split": false,
+      "comment": "The readline shared extension for php",
+      "deps_count": 2,
+      "deps": [
+        "libedit",
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-session-8.5.10.pkg",
+      "name": "php85-session",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 41476,
+      "sha256": "7f1dec724e9bc3ee9142774fe873b9893c29ff4359b8be7474cab5a53e7a97a5",
+      "is_split": false,
+      "comment": "The session shared extension for php",
+      "deps_count": 1,
+      "deps": [
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-shmop-8.5.10.pkg",
+      "name": "php85-shmop",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 9120,
+      "sha256": "0f18d5b4f96cccf813ffbc3ab64def6d1b30cb9aad740a6d143671edba19983c",
+      "is_split": false,
+      "comment": "The shmop shared extension for php",
+      "deps_count": 1,
+      "deps": [
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-simplexml-8.5.10.pkg",
+      "name": "php85-simplexml",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 24516,
+      "sha256": "cd70695ea524effbe4c116f29920156d12078289c3835f44dccb8b342f04f2eb",
+      "is_split": false,
+      "comment": "The simplexml shared extension for php",
+      "deps_count": 2,
+      "deps": [
+        "libxml2",
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-sockets-8.5.10.pkg",
+      "name": "php85-sockets",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 48052,
+      "sha256": "da311a05b8cd9e1ce8503cfb5547d98be631da8f2ec657e19d9515b58d45cf61",
+      "is_split": false,
+      "comment": "The sockets shared extension for php",
+      "deps_count": 1,
+      "deps": [
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-sqlite3-8.5.10.pkg",
+      "name": "php85-sqlite3",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 28340,
+      "sha256": "7fd56afa3c7d14b36440a688bb629ed40a9a3d7a21f39fecf9094aa9233ea8c0",
+      "is_split": false,
+      "comment": "The sqlite3 shared extension for php",
+      "deps_count": 2,
+      "deps": [
+        "php85",
+        "sqlite3"
+      ]
+    },
+    {
+      "filename": "php85-sysvmsg-8.5.10.pkg",
+      "name": "php85-sysvmsg",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 10536,
+      "sha256": "6627c9e4e0dd6b682485fa60b99c0a82ea183f04751905f5a09e886d84bb2b12",
+      "is_split": false,
+      "comment": "The sysvmsg shared extension for php",
+      "deps_count": 1,
+      "deps": [
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-sysvsem-8.5.10.pkg",
+      "name": "php85-sysvsem",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 8372,
+      "sha256": "51eca0a1cf4a6f5397eb9307da8b066887989a062804aa8b39fbabfba96ed7ff",
+      "is_split": false,
+      "comment": "The sysvsem shared extension for php",
+      "deps_count": 1,
+      "deps": [
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-sysvshm-8.5.10.pkg",
+      "name": "php85-sysvshm",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 9664,
+      "sha256": "0d5462663559b715fe9e1fd7203be1af30b86ef2392d0d07c6f128503f247ef8",
+      "is_split": false,
+      "comment": "The sysvshm shared extension for php",
+      "deps_count": 1,
+      "deps": [
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-tokenizer-8.5.10.pkg",
+      "name": "php85-tokenizer",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 14768,
+      "sha256": "4356cda69f5057da05478fcf21a5de6841bf1a3d54b4089906fd95398a184854",
+      "is_split": false,
+      "comment": "The tokenizer shared extension for php",
+      "deps_count": 1,
+      "deps": [
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-xml-8.5.10.pkg",
+      "name": "php85-xml",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 26404,
+      "sha256": "d0a282c96d45432739e2e0db9e925605d50a0af3f930b20bd4864c68a146c4b0",
+      "is_split": false,
+      "comment": "The xml shared extension for php",
+      "deps_count": 2,
+      "deps": [
+        "libxml2",
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-xmlreader-8.5.10.pkg",
+      "name": "php85-xmlreader",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 18680,
+      "sha256": "8f9b29c3630eaf2001f777d0d84909e0353e8dfb6f333a29e36dd765c8c85bf0",
+      "is_split": false,
+      "comment": "The xmlreader shared extension for php",
+      "deps_count": 3,
+      "deps": [
+        "libxml2",
+        "php85",
+        "php85-dom"
+      ]
+    },
+    {
+      "filename": "php85-xmlwriter-8.5.10.pkg",
+      "name": "php85-xmlwriter",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 17152,
+      "sha256": "da6db3ad3f3fd0410f0ee5ec2a437035f71d400e81409d207c89cbc259102aed",
+      "is_split": false,
+      "comment": "The xmlwriter shared extension for php",
+      "deps_count": 2,
+      "deps": [
+        "libxml2",
+        "php85"
+      ]
+    },
+    {
+      "filename": "php85-zlib-8.5.10.pkg",
+      "name": "php85-zlib",
+      "version": "8.5.10",
+      "arch": "debian:16:x86:64",
+      "size": 21688,
+      "sha256": "5e65efa6952d0362df12304df454d15d5c09cf111067eaa40f365e7f41eec103",
+      "is_split": false,
+      "comment": "The zlib shared extension for php",
+      "deps_count": 1,
+      "deps": [
+        "php85"
+      ]
+    },
+    {
+      "filename": "pkcs11-helper-1.31.0.pkg",
+      "name": "pkcs11-helper",
+      "version": "1.31.0",
+      "arch": "debian:16:x86:64",
+      "size": 99148,
+      "sha256": "5c9e6871ab5ab0b22b37974ee06701b9c9b1020bf50290e05557189340fcd38b",
+      "is_split": false,
+      "comment": "Helper library for multiple PKCS#11 providers",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "pkg-2.8.4.pkg",
+      "name": "pkg",
+      "version": "2.8.4",
+      "arch": "debian:16:x86:64",
+      "size": 12862660,
+      "sha256": "7d5bd57d2ae0128f6c47f12218784abf22e56dff5e4235a6526014095758fdbe",
+      "is_split": false,
+      "comment": "Package manager",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "polkit-127.pkg",
+      "name": "polkit",
+      "version": "127",
+      "arch": "debian:16:x86:64",
+      "size": 167096,
+      "sha256": "9731c55981187459d8dc18d8b6196c4ad4ae37fc4d3437bb18c0303d7aa9305f",
+      "is_split": false,
+      "comment": "Framework for controlling access to system-wide components",
+      "deps_count": 5,
+      "deps": [
+        "dbus",
+        "duktape-lib",
+        "expat",
+        "gettext-runtime",
+        "glib"
+      ]
+    },
+    {
+      "filename": "protobuf-29.6,1.pkg",
+      "name": "protobuf",
+      "version": "29.6,1",
+      "arch": "debian:16:x86:64",
+      "size": 2441544,
+      "sha256": "90247660674aafffe916e01b60bb7b2c5253349ca4c4d27669f20069f66785ec",
+      "is_split": false,
+      "comment": "Data interchange format library",
+      "deps_count": 2,
+      "deps": [
+        "abseil",
+        "jsoncpp"
+      ]
+    },
+    {
+      "filename": "protobuf-c-1.5.1_4.pkg",
+      "name": "protobuf-c",
+      "version": "1.5.1_4",
+      "arch": "debian:16:x86:64",
+      "size": 95488,
+      "sha256": "2f039eafd5c77571cb7b0111ac1fc8e7b5abc49789167fc57288cd706a9776b9",
+      "is_split": false,
+      "comment": "Code generator and libraries to use Protocol Buffers from pure C",
+      "deps_count": 2,
+      "deps": [
+        "abseil",
+        "protobuf"
+      ]
+    },
+    {
+      "filename": "py312-packaging-26.3.pkg",
+      "name": "py312-packaging",
+      "version": "26.3",
+      "arch": "debian:16:*",
+      "size": 230244,
+      "sha256": "80596ee32d284f9855fbd72fd55dac2a19c2113c242a9f8fe2e466040dbb5169",
+      "is_split": false,
+      "comment": "Core utilities for Python packages",
+      "deps_count": 1,
+      "deps": [
+        "python312"
+      ]
+    },
+    {
+      "filename": "python3-3_4.pkg",
+      "name": "python3",
+      "version": "3_4",
+      "arch": "debian:16:*",
+      "size": 1568,
+      "sha256": "e1e89cb6218c5e26a76a46bc3e62353c18d80d21e833e4979286c4e40ab55420",
+      "is_split": false,
+      "comment": "Meta-port for the Python interpreter 3.x",
+      "deps_count": 1,
+      "deps": [
+        "python312"
+      ]
+    },
+    {
+      "filename": "python312-3.12.14_1.pkg",
+      "name": "python312",
+      "version": "3.12.14_1",
+      "arch": "freebsd:16:x86:64",
+      "size": 40673016,
+      "sha256": "90a27d0fc60ffe1cefdf39477f50d09ea6eb4b10608af3de4b350b8ab6555b08",
+      "is_split": false,
+      "comment": "Interpreted object-oriented programming language",
+      "deps_count": 5,
+      "deps": [
+        "expat",
+        "gettext-runtime",
+        "libffi",
+        "mpdecimal",
+        "readline"
+      ]
+    },
+    {
+      "filename": "qstats-0.2.pkg",
+      "name": "qstats",
+      "version": "0.2",
+      "arch": "debian:16:x86:64",
+      "size": 5964,
+      "sha256": "85eb70c0922a6204345b7b6df6ebe327e5f2a8301bdcba5b1b4d6ac7f0e3ad53",
+      "is_split": false,
+      "comment": "read dhpcd.lease file and add it to hosts file",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "radvd-2.20.pkg",
+      "name": "radvd",
+      "version": "2.20",
+      "arch": "debian:16:x86:64",
+      "size": 72360,
+      "sha256": "aab3470ca692a639cf7204623bf44523424fe3d89d4480af281833fe8d80a154",
+      "is_split": false,
+      "comment": "Linux/BSD IPv6 router advertisement daemon",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "rate-0.9_4.pkg",
+      "name": "rate",
+      "version": "0.9_4",
+      "arch": "debian:16:x86:64",
+      "size": 45532,
+      "sha256": "afc9c75154e5eac9594184559511fd58b36c9b1703e441cf39da3bfcff37cce9",
+      "is_split": false,
+      "comment": "Traffic analysis command-line utility",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "readline-8.3.6.pkg",
+      "name": "readline",
+      "version": "8.3.6",
+      "arch": "debian:16:x86:64",
+      "size": 458412,
+      "sha256": "45e3d448be58e8caeabe26349210a3c31ad2b02b5a41d17bbbc1ebb485ee7abd",
+      "is_split": false,
+      "comment": "Library for editing command lines as they are typed",
+      "deps_count": 1,
+      "deps": [
+        "indexinfo"
+      ]
+    },
+    {
+      "filename": "rrdtool-1.9.0_1.pkg",
+      "name": "rrdtool",
+      "version": "1.9.0_1",
+      "arch": "debian:16:x86:64",
+      "size": 223924,
+      "sha256": "74d58bd43035d4cecdf88ce5afd929753793b3469681a05c730af0a5cfaf7ff3",
+      "is_split": false,
+      "comment": "Round Robin Database Tools",
+      "deps_count": 4,
+      "deps": [
+        "gettext-runtime",
+        "glib",
+        "libxml2",
+        "perl5"
+      ]
+    },
+    {
+      "filename": "scponly-4.8.20110526_8.pkg",
+      "name": "scponly",
+      "version": "4.8.20110526_8",
+      "arch": "debian:16:x86:64",
+      "size": 22888,
+      "sha256": "067eaed36bc180b7613ab7130d6591888a73ee0e83bf4eb94652f7751e465f85",
+      "is_split": false,
+      "comment": "Tiny shell that only permits scp and sftp",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "shared-mime-info-2.4_2.pkg",
+      "name": "shared-mime-info",
+      "version": "2.4_2",
+      "arch": "debian:16:x86:64",
+      "size": 572880,
+      "sha256": "3cc1854742066f7fd564868531aece546364393eb811887288b8994686303033",
+      "is_split": false,
+      "comment": "MIME types database from the freedesktop.org project",
+      "deps_count": 3,
+      "deps": [
+        "gettext-runtime",
+        "glib",
+        "libxml2"
+      ]
+    },
+    {
+      "filename": "smartmontools-7.5_2.pkg",
+      "name": "smartmontools",
+      "version": "7.5_2",
+      "arch": "debian:16:x86:64",
+      "size": 575692,
+      "sha256": "0611464c6392c833a0e0ec220329f49598c7f612480cabf1c7dc226bcf22e9f2",
+      "is_split": false,
+      "comment": "S.M.A.R.T. disk monitoring tools",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "speedtest.pkg",
+      "name": "speedtest",
+      "version": "unknown",
+      "arch": "amd64",
+      "size": 657796,
+      "sha256": "026a845591b6f4d4ef6694bf7f3ec78923f00c1521bdbbaa3567619450843727",
+      "is_split": false,
+      "comment": "MitraNet Package",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "sqlite3-3.53.4,1.pkg",
+      "name": "sqlite3",
+      "version": "3.53.4,1",
+      "arch": "debian:16:x86:64",
+      "size": 1324240,
+      "sha256": "944f572003254e16321c20a8d084755dc6df81610a4697a405b38ca166ef3709",
+      "is_split": false,
+      "comment": "SQL database engine in a C library",
+      "deps_count": 1,
+      "deps": [
+        "libedit"
+      ]
+    },
+    {
+      "filename": "ssh_tunnel_shell-0.2_2.pkg",
+      "name": "ssh_tunnel_shell",
+      "version": "0.2_2",
+      "arch": "debian:16:x86:64",
+      "size": 254920,
+      "sha256": "0f2d1985d9515d10edc9b9c249ff4df81a01b66a80dc9bba26908c877e23b125",
+      "is_split": false,
+      "comment": "SSH tunnel shell",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "sshguard-2.5.1_2,1.pkg",
+      "name": "sshguard",
+      "version": "2.5.1_2,1",
+      "arch": "debian:16:x86:64",
+      "size": 318916,
+      "sha256": "0d949672b7acc03e7f322f3499de7de9cfa9dc2487fed582dc6c8dfdcd294dd3",
+      "is_split": false,
+      "comment": "Protect hosts from brute-force attacks against SSH and other services",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "strongswan-6.1.0_1.pkg",
+      "name": "strongswan",
+      "version": "6.1.0_1",
+      "arch": "debian:16:x86:64",
+      "size": 935644,
+      "sha256": "0c76b9b8f70d7598c8c2e179b6f105232832b30b2a685ef9fe4892bb4f773b0c",
+      "is_split": false,
+      "comment": "Open Source IKEv2 IPsec-based VPN solution",
+      "deps_count": 4,
+      "deps": [
+        "curl",
+        "ldns",
+        "unbound",
+        "vstr"
+      ]
+    },
+    {
+      "filename": "tcl86-8.6.18_1.pkg",
+      "name": "tcl86",
+      "version": "8.6.18_1",
+      "arch": "debian:16:x86:64",
+      "size": 2562032,
+      "sha256": "dd8d26ddc72b228203963412b2499408372b7e52b81e6e877f8ee0077ddb3f89",
+      "is_split": false,
+      "comment": "Tool Command Language",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "uclcmd-0.2.20211204.pkg",
+      "name": "uclcmd",
+      "version": "0.2.20211204",
+      "arch": "debian:16:x86:64",
+      "size": 16604,
+      "sha256": "b0ef98060617fd83785bc93448cac90081cb51c9f5361c36cd5aff119e4a026a",
+      "is_split": false,
+      "comment": "Command line tool for working with UCL config files",
+      "deps_count": 1,
+      "deps": [
+        "libucl"
+      ]
+    },
+    {
+      "filename": "unbound-1.26.1.pkg",
+      "name": "unbound",
+      "version": "1.26.1",
+      "arch": "debian:16:x86:64",
+      "size": 2651700,
+      "sha256": "22b2c1bd7820e8b242e8348384e9f3d1a829bbd6914c05e43edac36211279e10",
+      "is_split": false,
+      "comment": "Validating, recursive, and caching DNS resolver",
+      "deps_count": 4,
+      "deps": [
+        "expat",
+        "libevent",
+        "libnghttp2",
+        "libsodium"
+      ]
+    },
+    {
+      "filename": "unzip-6.0_8.pkg",
+      "name": "unzip",
+      "version": "6.0_8",
+      "arch": "debian:16:x86:64",
+      "size": 138504,
+      "sha256": "d09a045a552b3024360295628bff7f5480a6db07494e01f0713ea70f2beb32ce",
+      "is_split": false,
+      "comment": "List, test, and extract compressed files from a ZIP archive",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "voucher-0.1_3.pkg",
+      "name": "voucher",
+      "version": "0.1_3",
+      "arch": "debian:16:x86:64",
+      "size": 4620,
+      "sha256": "e3d7837a16fc72540f31b46024f95feb4c32c49481d7aaaf2c2e4aa8684eb134",
+      "is_split": false,
+      "comment": "Voucher support",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "vstr-1.0.15_2.pkg",
+      "name": "vstr",
+      "version": "1.0.15_2",
+      "arch": "debian:16:x86:64",
+      "size": 309364,
+      "sha256": "7a3d2517f3132f6f3e8d8647735c21d395375962e0a7702b0ad5146678fa628b",
+      "is_split": false,
+      "comment": "General purpose string library for C",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "whois-5.5.7_1.pkg",
+      "name": "whois",
+      "version": "5.5.7_1",
+      "arch": "debian:16:x86:64",
+      "size": 65992,
+      "sha256": "e3a4ae6b881214012df08babadc0ebfff9a626b4a0c9fe156ca8ddee4146baa7",
+      "is_split": false,
+      "comment": "Marco d'Itri whois client",
+      "deps_count": 2,
+      "deps": [
+        "gettext-runtime",
+        "libidn2"
+      ]
+    },
+    {
+      "filename": "wifi.pkg",
+      "name": "wifi",
+      "version": "unknown",
+      "arch": "amd64",
+      "size": 15328,
+      "sha256": "b65ad46c9b41e97433226d7a1ede103ab191c79fdaa6d125395a8b4137c74034",
+      "is_split": false,
+      "comment": "MitraNet Package",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "wireguard-mitranet.pkg",
+      "name": "wireguard-mitranet",
+      "version": "1.0.0",
+      "arch": "amd64",
+      "size": 2732,
+      "sha256": "4776ef7a33096965ec85ae7ca54866ba92a78d88fd4f40a2e2eae2877d8edee9",
+      "is_split": false,
+      "comment": "MitraNet Package",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "wol-0.7.1_5.pkg",
+      "name": "wol",
+      "version": "0.7.1_5",
+      "arch": "debian:16:x86:64",
+      "size": 31208,
+      "sha256": "2a32cc0cc4650c6355d6103e7aa6190838ba73a39f915fc8c5ae1f330a10b968",
+      "is_split": false,
+      "comment": "Tool to wake up Wake-On-LAN compliant computers",
+      "deps_count": 2,
+      "deps": [
+        "gettext-runtime",
+        "indexinfo"
+      ]
+    },
+    {
+      "filename": "wpa_supplicant-2.12_1.pkg",
+      "name": "wpa_supplicant",
+      "version": "2.12_1",
+      "arch": "debian:16:x86:64",
+      "size": 697924,
+      "sha256": "1e2a4e3e268bf980899dcaf26ea01cf5d4e47b17b80d808b3bcacb4ac4ab4404",
+      "is_split": false,
+      "comment": "Supplicant (client) for WPA/802.1x protocols",
+      "deps_count": 2,
+      "deps": [
+        "dbus",
+        "readline"
+      ]
+    },
+    {
+      "filename": "wrapalixresetbutton-0.0.16.pkg",
+      "name": "wrapalixresetbutton",
+      "version": "0.0.16",
+      "arch": "debian:16:x86:64",
+      "size": 4220,
+      "sha256": "b24725182647c624aee7ef9c4744dc75e903ba9c2a9ed006cc9c6f97c2804af9",
+      "is_split": false,
+      "comment": "Utility to detect platform reset button state for use in scripting",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "xinetd-2.3.15_3.pkg",
+      "name": "xinetd",
+      "version": "2.3.15_3",
+      "arch": "debian:16:x86:64",
+      "size": 86540,
+      "sha256": "5ce9610b15573c079a954654343e7b90ec7cb524748197f1f96cbb6081fe6d34",
+      "is_split": false,
+      "comment": "Replacement for inetd with better control and logging",
+      "deps_count": 1,
+      "deps": [
+        "perl5"
+      ]
+    },
+    {
+      "filename": "xray-mitranet.pkg",
+      "name": "xray-mitranet",
+      "version": "1.0.0",
+      "arch": "amd64",
+      "size": 9174280,
+      "sha256": "a8a36ebbdff5206223f453caafa4f76af8e644f1d995d7b1f0697baaf3ecd772",
+      "is_split": false,
+      "comment": "MitraNet Package",
+      "deps_count": 0,
+      "deps": []
+    },
+    {
+      "filename": "zstd-1.5.7_2.pkg",
+      "name": "zstd",
+      "version": "1.5.7_2",
+      "arch": "debian:16:x86:64",
+      "size": 486520,
+      "sha256": "7b46c529893279d6e778be7c3e3813ebed11fe516931e49d62f7299f01eff980",
+      "is_split": false,
+      "comment": "Fast real-time compression algorithm",
+      "deps_count": 1,
+      "deps": [
+        "liblz4"
+      ]
+    }
+  ]
+}
