@@ -1,0 +1,26 @@
+{
+  "project": "MitraNet",
+  "version": "1.0.1",
+  "release_state": "RELEASE_CANDIDATE",
+  "foundation": "MitraOS 1.0.0",
+  "code_os": "Rinjani",
+  "architecture": "amd64",
+  "candidate_commit": "b8ca7b0165ee0b2276d6aa7f76114c4ef357c273",
+  "target_artifact_name": "mitranet-rinjani-installer.1.0.1.iso",
+  "build_environment": {
+    "host_os": "Windows Server / Workstation (amd64)",
+    "iso_utility": "GNU xorriso 1.5.2 / libburnia",
+    "bootloader": "GNU GRUB 2.12-9+deb13u2",
+    "kernel": "Linux 6.12.111+deb13-amd64"
+  },
+  "package_manifest": {
+    "expected_count": 204,
+    "actual_count": 204,
+    "missing": 0,
+    "duplicates": 0,
+    "manifest_file": "docs/packages/packages.pkg.json"
+  },
+  "installer_revision": "scripts/install_mitranet.sh (v1.0.1-candidate with user provisioning & mitranet-api.service)",
+  "build_status": "READY_FOR_ISO_BUILD",
+  "security_status": "PASS (CRITICAL=0, HIGH=0, MEDIUM=0, LOW=0)"
+}
