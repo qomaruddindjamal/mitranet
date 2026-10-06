@@ -135,3 +135,19 @@ class BondState(BaseModel):
     ipv6_addresses: List[str] = Field(default_factory=list, description="IPv6 addresses with CIDR")
 
 
+class VRFState(BaseModel):
+    """
+    Represents an active Linux Virtual Routing and Forwarding (VRF) device and domain.
+    """
+    name: str = Field(..., description="VRF device name, e.g. vrf-blue, vrf100")
+    table: int = Field(..., ge=1, le=4294967295, description="Associated routing table ID")
+    admin_state: Literal["UP", "DOWN", "UNKNOWN"] = Field(default="DOWN", description="Administrative state")
+    oper_state: Literal["UP", "DOWN", "UNKNOWN", "DORMANT", "LOWERLAYERDOWN"] = Field(
+        default="UNKNOWN", description="Operational link state"
+    )
+    mac_address: Optional[str] = Field(default=None, description="VRF device MAC address")
+    interfaces: List[str] = Field(default_factory=list, description="Member network interfaces assigned to this VRF")
+    routes_count: Optional[int] = Field(default=None, description="Number of active routes in this VRF table")
+
+
+

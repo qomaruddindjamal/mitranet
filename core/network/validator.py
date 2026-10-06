@@ -11,6 +11,7 @@ from mitranet.core.network.exceptions import (
     NetworkValidationError,
     NetworkSecurityError,
     UnsupportedBondModeError,
+    SafetyConstraintViolationError,
 )
 
 
@@ -255,5 +256,54 @@ class BondValidator:
         if valid_name == "lo":
             raise NetworkValidationError("Loopback interface 'lo' cannot be attached as a bond slave.")
         return valid_name
+
+
+class VRFValidator:
+    """Security and semantic validation for Linux Virtual Routing and Forwarding (VRF) devices."""
+
+    # Linux reserved routing table IDs (0: unspec, 253: default, 254: main, 255: local)
+    RESERVED_TABLE_IDS = {0, 253, 254, 255}
+
+    @classmethod
+    def validate_vrf_name(cls, name: str) -> str:
+        if not name or not isinstance(name, str):
+            raise NetworkValidationError("VRF name must be a non-empty string.")
+        name_str = name.strip()
+        if any(c in name_str for c in [";", "&", "|", "`", "$", "(", ")", "<", ">", "\n", "\r", " ", "/", "\\"]):
+            raise NetworkSecurityError(f"Malicious VRF name rejected: '{name}'.")
+        valid_name = InterfaceConfigValidator.validate_interface_name(name_str)
+        if valid_name == "lo":
+            raise SafetyConstraintViolationError("Cannot name a VRF 'lo'.")
+        return valid_name
+
+    @classmethod
+    def validate_table_id(cls, table: Any) -> int:
+        if isinstance(table, str):
+            t_str = table.strip()
+            if any(c in t_str for c in [";", "&", "|", "`", "$", "(", ")", "<", ">", "\n", "\r", " "]):
+                raise NetworkSecurityError(f"Malicious table ID rejected: '{table}'.")
+        try:
+            t = int(table)
+        except (ValueError, TypeError):
+            raise NetworkValidationError(f"VRF table ID must be an integer, got: {table}")
+        if t in cls.RESERVED_TABLE_IDS:
+            raise NetworkValidationError(
+                f"Routing table {t} is reserved by Linux (0, 253, 254, 255) and cannot be used as a VRF table."
+            )
+        if t < 1 or t > 2147483647:
+            raise NetworkValidationError(f"VRF table ID {t} out of valid range (1 - 2147483647).")
+        return t
+
+    @classmethod
+    def validate_member_interface(cls, iface_name: str) -> str:
+        if not iface_name or not isinstance(iface_name, str):
+            raise NetworkValidationError("Member interface name must be a non-empty string.")
+        if any(c in iface_name for c in [";", "&", "|", "`", "$", "(", ")", "<", ">", "\n", "\r", " "]):
+            raise NetworkSecurityError(f"Malicious interface name rejected: '{iface_name}'.")
+        valid_name = InterfaceConfigValidator.validate_interface_name(iface_name)
+        if valid_name == "lo":
+            raise SafetyConstraintViolationError("Loopback interface 'lo' cannot be assigned to a VRF.")
+        return valid_name
+
 
 

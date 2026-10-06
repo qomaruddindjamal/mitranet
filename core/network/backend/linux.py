@@ -105,6 +105,10 @@ class NetworkBackend:
     def get_bonding_proc_info(self, bond_name: str) -> Optional[str]:
         raise NotImplementedError
 
+    def create_vrf(self, name: str, table_id: int) -> bool:
+        raise NotImplementedError
+
+
 
 
 class LinuxNetworkBackend(NetworkBackend):
@@ -330,5 +334,10 @@ class LinuxNetworkBackend(NetworkBackend):
         except Exception as e:
             logger.warning("Failed to read %s: %s", proc_path, e)
             return None
+
+    def create_vrf(self, name: str, table_id: int) -> bool:
+        """Creates a Linux VRF device using ip link add <name> type vrf table <table_id>."""
+        return self._exec_ip_cmd(["link", "add", name, "type", "vrf", "table", str(table_id)])
+
 
 

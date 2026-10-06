@@ -11,6 +11,7 @@ from mitranet.core.network.models import (
     BridgePortState,
     BondState,
     BondSlaveState,
+    VRFState,
 )
 from mitranet.core.network.discovery import InterfaceDiscoveryService
 from mitranet.core.network.config_service import InterfaceConfigurationService
@@ -19,12 +20,14 @@ from mitranet.core.network.routing_service import RouteConfigurationService
 from mitranet.core.network.vlan import VlanService
 from mitranet.core.network.bridge import BridgeService
 from mitranet.core.network.bonding import BondService
+from mitranet.core.network.vrf import VRFService
 from mitranet.core.network.validator import (
     InterfaceConfigValidator,
     RouteValidator,
     VlanValidator,
     BridgeValidator,
     BondValidator,
+    VRFValidator,
 )
 from mitranet.core.network.backend import NetworkBackend, LinuxNetworkBackend
 from mitranet.core.network.exceptions import (
@@ -49,6 +52,7 @@ __all__ = [
     "BridgePortState",
     "BondState",
     "BondSlaveState",
+    "VRFState",
     "InterfaceDiscoveryService",
     "InterfaceConfigurationService",
     "RouteDiscoveryService",
@@ -56,11 +60,13 @@ __all__ = [
     "VlanService",
     "BridgeService",
     "BondService",
+    "VRFService",
     "InterfaceConfigValidator",
     "RouteValidator",
     "VlanValidator",
     "BridgeValidator",
     "BondValidator",
+    "VRFValidator",
     "NetworkBackend",
     "LinuxNetworkBackend",
     "NetworkError",
@@ -74,5 +80,6 @@ __all__ = [
     "DeviceNotFoundError",
     "UnsupportedBondModeError",
 ]
+
 
 

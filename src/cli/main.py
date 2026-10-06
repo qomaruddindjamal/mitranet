@@ -19,6 +19,7 @@ from mitranet.core.network.routing_service import RouteConfigurationService
 from mitranet.core.network.vlan import VlanService
 from mitranet.core.network.bridge import BridgeService
 from mitranet.core.network.bonding import BondService
+from mitranet.core.network.vrf import VRFService
 from mitranet.core.network.exceptions import (
     InterfaceNotFoundError,
     BackendExecutionError,
@@ -801,6 +802,123 @@ def cmd_bond_slave(args, service: BondService = None):
         sys.exit(1)
 
 
+# =========================================================================
+# VRF Subcommands (Phase 1E)
+# =========================================================================
+
+def cmd_vrf_list(args, service: VRFService = None):
+    service = service or VRFService()
+    as_json = "--json" in args
+    try:
+        vrfs = service.discover_vrfs()
+        if as_json:
+            print(json.dumps([v.model_dump() for v in vrfs], indent=2))
+        else:
+            if not vrfs:
+                print("No VRF instances found.")
+                return
+            header = f"{'VRF NAME':<18} {'TABLE':<8} {'ADMIN':<8} {'OPER':<8} {'MEMBERS':<25} {'ROUTES'}"
+            print(header)
+            print("-" * 75)
+            for v in vrfs:
+                members_str = ", ".join(v.interfaces) or "-"
+                print(f"{v.name:<18} {v.table:<8} {v.admin_state:<8} {v.oper_state:<8} {members_str:<25} {v.routes_count}")
+    except Exception as e:
+        print(f"[ERROR] Failed to discover VRFs: {e}")
+        sys.exit(1)
+
+
+def cmd_vrf_show(args, service: VRFService = None):
+    service = service or VRFService()
+    if not args:
+        print("Usage: mitranet vrf show <name> [--json]")
+        sys.exit(1)
+    name = args[0]
+    as_json = "--json" in args
+    try:
+        v = service.get_vrf(name)
+        if as_json:
+            print(json.dumps(v.model_dump(), indent=2))
+        else:
+            print(f"VRF Instance: {v.name}")
+            print(f"  Routing Table    : {v.table}")
+            print(f"  Admin State      : {v.admin_state}")
+            print(f"  Operational State: {v.oper_state}")
+            print(f"  MAC Address      : {v.mac_address or '-'}")
+            print(f"  Member Interfaces: {', '.join(v.interfaces) or 'None'}")
+            print(f"  Active Routes    : {v.routes_count}")
+    except (DeviceNotFoundError, NetworkValidationError, NetworkSecurityError) as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+
+
+def cmd_vrf_create(args, service: VRFService = None):
+    service = service or VRFService()
+    if len(args) < 2:
+        print("Usage: mitranet vrf create <name> <table>")
+        sys.exit(1)
+    name, table_str = args[0], args[1]
+    try:
+        table_id = int(table_str)
+    except ValueError:
+        print(f"[VALIDATION ERROR] VRF routing table ID must be an integer, got: {table_str}")
+        sys.exit(1)
+
+    try:
+        v = service.create_vrf(name=name, table=table_id)
+        print(f"[SUCCESS] VRF '{v.name}' (table={v.table}) created successfully.")
+    except (NetworkValidationError, NetworkSecurityError, DeviceAlreadyExistsError) as e:
+        print(f"[VALIDATION ERROR] {e}")
+        sys.exit(1)
+    except (VerificationFailureError, BackendExecutionError) as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+
+
+def cmd_vrf_delete(args, service: VRFService = None):
+    service = service or VRFService()
+    if not args:
+        print("Usage: mitranet vrf delete <name>")
+        sys.exit(1)
+    name = args[0]
+    try:
+        service.delete_vrf(name)
+        print(f"[SUCCESS] VRF '{name}' deleted successfully.")
+    except (NetworkValidationError, NetworkSecurityError, DeviceNotFoundError) as e:
+        print(f"[VALIDATION ERROR] {e}")
+        sys.exit(1)
+    except (VerificationFailureError, BackendExecutionError) as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+
+
+def cmd_vrf_interface(args, service: VRFService = None):
+    service = service or VRFService()
+    if len(args) < 3:
+        print("Usage: mitranet vrf interface add|remove <vrf> <interface>")
+        sys.exit(1)
+    action = args[0].lower()
+    vrf_name = args[1]
+    iface = args[2]
+
+    try:
+        if action == "add":
+            service.add_interface(vrf_name, iface)
+            print(f"[SUCCESS] Interface '{iface}' attached to VRF '{vrf_name}'.")
+        elif action in ("remove", "del", "delete"):
+            service.remove_interface(vrf_name, iface)
+            print(f"[SUCCESS] Interface '{iface}' detached from VRF '{vrf_name}'.")
+        else:
+            print(f"Unknown vrf interface action '{action}'. Use 'add' or 'remove'.")
+            sys.exit(1)
+    except (NetworkValidationError, NetworkSecurityError, SafetyConstraintViolationError, DeviceAlreadyExistsError, DeviceNotFoundError, InterfaceNotFoundError) as e:
+        print(f"[VALIDATION ERROR] {e}")
+        sys.exit(1)
+    except (VerificationFailureError, BackendExecutionError) as e:
+        print(f"[ERROR] {e}")
+        sys.exit(1)
+
+
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1].lower() in ["--help", "-h", "help"]:
@@ -833,6 +951,11 @@ def main():
         print("  bond create <name> <mode>                 Create bond (e.g. active-backup, 802.3ad)")
         print("  bond delete <name>                        Delete bonding interface")
         print("  bond slave add|remove <bond> <iface>      Attach or detach slave interface")
+        print("  vrf list [--json]                         List VRF instances")
+        print("  vrf show <name> [--json]                  Show details of a VRF instance")
+        print("  vrf create <name> <table>                 Create VRF instance with FIB table ID")
+        print("  vrf delete <name>                         Delete VRF instance")
+        print("  vrf interface add|remove <vrf> <iface>    Attach or detach interface to/from VRF")
         print("  config validate <config.json>             Validate configuration file")
         print("  config import-pfsense <xml>               Migrate pfSense config.xml to MitraNet JSON")
         print("  config show                               Display current running configuration")
@@ -946,6 +1069,26 @@ def main():
             cmd_bond_slave(subargs)
         else:
             print(f"Unknown bond subcommand: {subcmd}")
+            sys.exit(1)
+
+    elif category == "vrf":
+        if len(sys.argv) < 3:
+            print("Specify a vrf subcommand: 'list', 'show', 'create', 'delete', 'interface'")
+            sys.exit(1)
+        subcmd = sys.argv[2].lower()
+        subargs = sys.argv[3:]
+        if subcmd == "list":
+            cmd_vrf_list(subargs)
+        elif subcmd == "show":
+            cmd_vrf_show(subargs)
+        elif subcmd in ("create", "add"):
+            cmd_vrf_create(subargs)
+        elif subcmd in ("delete", "del", "remove"):
+            cmd_vrf_delete(subargs)
+        elif subcmd in ("interface", "iface"):
+            cmd_vrf_interface(subargs)
+        else:
+            print(f"Unknown vrf subcommand: {subcmd}")
             sys.exit(1)
 
     elif category == "config":
