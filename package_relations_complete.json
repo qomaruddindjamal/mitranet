@@ -1,0 +1,1044 @@
+[
+  {
+    "pkg_name": "acme",
+    "pkg_version": "1.3.2",
+    "category": "Utilities & Tools",
+    "description": "Automated Certificate Management Environment, for automated use of LetsEncrypt certificates.",
+    "freebsd_pkg_dependencies": [
+      "php85-8.5.7",
+      "php85-ftp-8.5.7",
+      "pecl-ssh2-1.3.1",
+      "socat-1.8.1.1"
+    ],
+    "debian_deb_packages": "certbot, acme-tiny, python3-acme",
+    "runtime_daemon": "cron/certbot.timer",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_acme.php (Services -> ACME Certificates)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "ANDwatch",
+    "pkg_version": "2.1_3",
+    "category": "Monitoring & Analytics",
+    "description": "ANDwatch is a daemon for monitoring ARP and Neighbor Discovery activity, keeping track of IP to Ethernet address mappings, and providing notifications when the mappings change.",
+    "freebsd_pkg_dependencies": [
+      "andwatch-2.4.0"
+    ],
+    "debian_deb_packages": "arpwatch, ndpmon",
+    "runtime_daemon": "arpwatch.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_andwatch.php (Services -> ANDwatch)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "apcupsd",
+    "pkg_version": "0.3.92_12",
+    "category": "Monitoring & Analytics",
+    "description": "\"apcupsd\" can be used for controlling all APC UPS models It can monitor and log the current power and battery status, perform automatic shutdown, and can run in network mode in order to power down other hosts on a LAN",
+    "freebsd_pkg_dependencies": [
+      "apcupsd-3.14.14_6"
+    ],
+    "debian_deb_packages": "apcupsd",
+    "runtime_daemon": "apcupsd.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/status_apcupsd.php (Status / Services -> APCUPSD)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "arping",
+    "pkg_version": "1.2.2_7",
+    "category": "Utilities & Tools",
+    "description": "Broadcasts a who-has ARP packet on the network and prints answers.",
+    "freebsd_pkg_dependencies": [
+      "arping-2.25"
+    ],
+    "debian_deb_packages": "iputils-arping, arping",
+    "runtime_daemon": "cli",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_arping.php (Services -> arping)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "arpwatch",
+    "pkg_version": "0.2.5",
+    "category": "Monitoring & Analytics",
+    "description": "This package contains tools that monitors ethernet activity and maintains a database of ethernet/ip address pairings. It also reports certain changes via email.",
+    "freebsd_pkg_dependencies": [
+      "arpwatch-3.9"
+    ],
+    "debian_deb_packages": "arpwatch",
+    "runtime_daemon": "arpwatch.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_arpwatch.php (Services -> ARPwatch)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "Avahi",
+    "pkg_version": "2.2_10",
+    "category": "Core Network Services",
+    "description": "Avahi is a system which facilitates host and service discovery in local networks via mDNS (Multicast DNS) and DNS-SD (DNS Service Discovery). This package allows mDNS/DNS-SD protocols to work across multiple LAN segments. mDNS/DNS-SD is known in Apple circles as \"Bonjour\" and is part of the Zeroconf suite of protocols.",
+    "freebsd_pkg_dependencies": [
+      "avahi-app-0.8_6",
+      "nss_mdns-0.14.1.20200624_1"
+    ],
+    "debian_deb_packages": "avahi-daemon",
+    "runtime_daemon": "avahi-daemon.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_avahi.php (Services -> Avahi)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "Backup",
+    "pkg_version": "0.7",
+    "category": "System & Hardware Management",
+    "description": "Tool to Backup and Restore files and directories.",
+    "freebsd_pkg_dependencies": [],
+    "debian_deb_packages": "mitranet-backup, tar, rsync",
+    "runtime_daemon": "systemd",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_backup.php (Services -> Backup)",
+    "sync_status": "Builtin MitraNet"
+  },
+  {
+    "pkg_name": "bandwidthd",
+    "pkg_version": "0.7.11",
+    "category": "VPN & Tunnels",
+    "description": "BandwidthD tracks usage of TCP/IP network subnets and builds html files with graphs to display utilization. Charts are built by individual IPs, and by default display utilization over 2 day, 8 day, 40 day, and 400 day periods. Furthermore, each IP address's utilization can be logged out in CDF format, or to a backend database server. HTTP, TCP, UDP, ICMP, VPN, and P2P traffic are color coded.",
+    "freebsd_pkg_dependencies": [
+      "bandwidthd-2.0.1_12"
+    ],
+    "debian_deb_packages": "bandwidthd",
+    "runtime_daemon": "bandwidthd.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_bandwidthd.php (Services -> bandwidthd)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "bind",
+    "pkg_version": "9.20_8",
+    "category": "Core Network Services",
+    "description": "pfSense GUI for BIND DNS server",
+    "freebsd_pkg_dependencies": [
+      "bind920-9.20.23"
+    ],
+    "debian_deb_packages": "bind9, bind9-utils",
+    "runtime_daemon": "named.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_bind.php (Services -> BIND DNS)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "cellular",
+    "pkg_version": "1.2.8",
+    "category": "Utilities & Tools",
+    "description": "pfSense GUI for Cellular Cards Currently it supports certain Huawei models, Simcom and Quectel EC25.",
+    "freebsd_pkg_dependencies": [
+      "py-pyserial-3.5_4",
+      "python311-3.11.15_3"
+    ],
+    "debian_deb_packages": "modemmanager, libqmi-utils, libmbim-utils",
+    "runtime_daemon": "ModemManager.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_cellular.php (Services -> cellular)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "collectd",
+    "pkg_version": "1.1",
+    "category": "Monitoring & Analytics",
+    "description": "collectd is a small daemon written in C for performance. It reads various system & network statistics and can forward them to another collectd server for storage.",
+    "freebsd_pkg_dependencies": [
+      "collectd5-5.12.0_24"
+    ],
+    "debian_deb_packages": "collectd, collectd-core",
+    "runtime_daemon": "collectd.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_collectd.php (Services -> collectd)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "Cron",
+    "pkg_version": "0.3.8_8",
+    "category": "System & Hardware Management",
+    "description": "The cron utility is used to manage commands on a schedule.",
+    "freebsd_pkg_dependencies": [],
+    "debian_deb_packages": "cron",
+    "runtime_daemon": "cron.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_cron.php (Services -> Cron)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "darkstat",
+    "pkg_version": "3.1.6",
+    "category": "Monitoring & Analytics",
+    "description": "darkstat is a network statistics gatherer. It's a packet sniffer that runs as a background process on a cable/DSL router, gathers all sorts of statistics about network usage, and serves them over HTTP.",
+    "freebsd_pkg_dependencies": [
+      "darkstat-3.0.721_1"
+    ],
+    "debian_deb_packages": "darkstat",
+    "runtime_daemon": "darkstat.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_darkstat.php (Status / Services -> Darkstat)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "Filer",
+    "pkg_version": "0.62.2",
+    "category": "Utilities & Tools",
+    "description": "Allows you to create and overwrite files from the GUI.",
+    "freebsd_pkg_dependencies": [],
+    "debian_deb_packages": "mitranet-core (REST file editor)",
+    "runtime_daemon": "webui",
+    "conflicts_with": [],
+    "webui_menu_integration": "/diag_filer.php (Diagnostics -> Filer)",
+    "sync_status": "Builtin MitraNet"
+  },
+  {
+    "pkg_name": "freeradius3",
+    "pkg_version": "0.16.4_1",
+    "category": "Core Network Services",
+    "description": "A free implementation of the RADIUS protocol. Supports MySQL, PostgreSQL, LDAP, Kerberos.",
+    "freebsd_pkg_dependencies": [
+      "bash-5.3.15",
+      "freeradius3-3.2.10",
+      "python311-3.11.15_3"
+    ],
+    "debian_deb_packages": "freeradius, freeradius-utils",
+    "runtime_daemon": "freeradius.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_freeradius.php (Services -> FreeRADIUS)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "frr",
+    "pkg_version": "2.1.3_3",
+    "category": "Routing & Multicast",
+    "description": "FRR routing daemon for BGP, OSPF, and OSPF6 Conflicts with Quagga OSPF and OpenBGPD. These packages cannot be installed at the same time.",
+    "freebsd_pkg_dependencies": [
+      "frr10-10.7.1",
+      "frr10-pythontools-10.7.1"
+    ],
+    "debian_deb_packages": "frr, frr-pythontools",
+    "runtime_daemon": "frr.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_frr.php (Services -> FRR BGP/OSPF)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "FTP_Client_Proxy",
+    "pkg_version": "0.3_12",
+    "category": "Core Network Services",
+    "description": "Basic FTP Client Proxy using ftp-proxy from FreeBSD.",
+    "freebsd_pkg_dependencies": [],
+    "debian_deb_packages": "frox, ftp-proxy",
+    "runtime_daemon": "systemd",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_ftp_client_proxy.php (Services -> FTP_Client_Proxy)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "haproxy",
+    "pkg_version": "0.65.7",
+    "category": "Proxy & Load Balancing",
+    "description": "The Reliable, High Performance TCP/HTTP(S) Load Balancer. This package implements the TCP, HTTP and HTTPS balancing features from haproxy. Supports ACLs for smart backend switching.",
+    "freebsd_pkg_dependencies": [
+      "haproxy-3.2.19"
+    ],
+    "debian_deb_packages": "haproxy",
+    "runtime_daemon": "haproxy.service",
+    "conflicts_with": [
+      "haproxy-devel"
+    ],
+    "webui_menu_integration": "/services_haproxy.php (Services -> HAProxy)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "haproxy-devel",
+    "pkg_version": "0.66.7",
+    "category": "Proxy & Load Balancing",
+    "description": "The Reliable, High Performance TCP/HTTP(S) Load Balancer. This package implements the TCP, HTTP and HTTPS balancing features from haproxy. Supports ACLs for smart backend switching.",
+    "freebsd_pkg_dependencies": [
+      "haproxy-devel-3.3.d10"
+    ],
+    "debian_deb_packages": "haproxy",
+    "runtime_daemon": "haproxy.service",
+    "conflicts_with": [
+      "haproxy"
+    ],
+    "webui_menu_integration": "/services_haproxy.php (Services -> HAProxy Devel)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "iperf",
+    "pkg_version": "3.0.6",
+    "category": "Utilities & Tools",
+    "description": "Iperf is a tool for testing network throughput, loss, and jitter.",
+    "freebsd_pkg_dependencies": [
+      "iperf3-3.21"
+    ],
+    "debian_deb_packages": "iperf, iperf3",
+    "runtime_daemon": "iperf3.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/diag_iperf.php (Diagnostics -> iPerf)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "LADVD",
+    "pkg_version": "1.2.2_7",
+    "category": "Utilities & Tools",
+    "description": "Send and decode link layer advertisements. Support for LLDP (Link Layer Discovery Protocol), CDP (Cisco Discovery Protocol), EDP (Extreme Discovery Protocol) and NDP (Nortel Discovery Protocol).",
+    "freebsd_pkg_dependencies": [
+      "ladvd-1.1.4"
+    ],
+    "debian_deb_packages": "ladvd, lldpd",
+    "runtime_daemon": "ladvd.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_ladvd.php (Services -> LADVD)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "LCDproc",
+    "pkg_version": "0.12.4",
+    "category": "System & Hardware Management",
+    "description": "LCD display driver.",
+    "freebsd_pkg_dependencies": [
+      "lcdproc-0.5.9_1"
+    ],
+    "debian_deb_packages": "lcdproc",
+    "runtime_daemon": "LCDd.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_lcdproc.php (Services -> LCDproc)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "Lightsquid",
+    "pkg_version": "3.0.11",
+    "category": "Proxy & Load Balancing",
+    "description": "LightSquid is a high performance web proxy reporting tool. Includes proxy realtime statistics (SQStat). Requires Squid package.",
+    "freebsd_pkg_dependencies": [
+      "lightsquid-1.8_5",
+      "lighttpd-1.4.83"
+    ],
+    "debian_deb_packages": "lightsquid",
+    "runtime_daemon": "apache2/php",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_lightsquid.php (Services -> Lightsquid)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "lldpd",
+    "pkg_version": "0.9.13",
+    "category": "Utilities & Tools",
+    "description": "lldpd provies support for the 802.1ab Link Layer Discovery Protocol (LLDP), as well as support for several proprietary discovery protocols including Cisco Discovery Protocol (CDP), Extreme Discovery Protocol (EDP), Foundry Discovery Protocol (FDP), and Nortel Discovery Protocol (NDP / SONMP).",
+    "freebsd_pkg_dependencies": [
+      "lldpd-1.0.21"
+    ],
+    "debian_deb_packages": "lldpd",
+    "runtime_daemon": "lldpd.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_lldpd.php (Services -> lldpd)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "mailreport",
+    "pkg_version": "3.6.4_7",
+    "category": "Utilities & Tools",
+    "description": "Allows you to setup periodic e-mail reports containing command output, and log file contents",
+    "freebsd_pkg_dependencies": [],
+    "debian_deb_packages": "bsd-mailx, msmtp, postfix",
+    "runtime_daemon": "cron",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_mailreport.php (Services -> mailreport)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "mcast-bridge",
+    "pkg_version": "1.4",
+    "category": "Routing & Multicast",
+    "description": "Multicast Bridge is a daemon for forwarding UDP multicast data between network interfaces, supporting both IPv4 and IPv6. It supports statically configured forwarding, and dynamic interest-based forwarding using IGMP and MLD.",
+    "freebsd_pkg_dependencies": [
+      "mcast-bridge-1.7.0"
+    ],
+    "debian_deb_packages": "smcroute, pimd",
+    "runtime_daemon": "smcroute.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_mcast-bridge.php (Services -> mcast-bridge)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "mDNS-Bridge",
+    "pkg_version": "3.0",
+    "category": "Core Network Services",
+    "description": "mDNS Bridge is a daemon for sharing Multicast DNS (mDNS) information across multiple network interfaces. This allows local DNS Service Discovery (DNS-SD) across multiple network segments, which is commonly used for sharing network print services, audio/video streaming, home automation, etc.",
+    "freebsd_pkg_dependencies": [
+      "mdns-bridge-3.0.0"
+    ],
+    "debian_deb_packages": "avahi-daemon (reflector)",
+    "runtime_daemon": "avahi-daemon.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_mdns-bridge.php (Services -> mDNS-Bridge)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "mtr-nox11",
+    "pkg_version": "0.85.6_6",
+    "category": "Utilities & Tools",
+    "description": "Enhanced traceroute replacement. mtr combines the functionality of the traceroute and ping programs in a single network diagnostic tool.",
+    "freebsd_pkg_dependencies": [
+      "mtr-0.96"
+    ],
+    "debian_deb_packages": "mtr-tiny",
+    "runtime_daemon": "cli",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_mtr-nox11.php (Services -> mtr-nox11)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "net-snmp",
+    "pkg_version": "0.1.6",
+    "category": "Monitoring & Analytics",
+    "description": "A GUI for the NET-SNMP Daemon.",
+    "freebsd_pkg_dependencies": [
+      "net-snmp-5.9.5.2,1"
+    ],
+    "debian_deb_packages": "snmpd, snmp",
+    "runtime_daemon": "snmpd.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_net-snmp.php (Services -> net-snmp)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "Netgate_Firmware_Upgrade",
+    "pkg_version": "0.47.3",
+    "category": "Utilities & Tools",
+    "description": "Provide a mechanism to update firmware of Netgate hardware",
+    "freebsd_pkg_dependencies": [
+      "flashrom-1.6.0_1",
+      "libuuid-2.42.1"
+    ],
+    "debian_deb_packages": "mitranet-update, apt",
+    "runtime_daemon": "systemd",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_netgate_firmware_upgrade.php (Services -> Netgate_Firmware_Upgrade)",
+    "sync_status": "Builtin MitraNet"
+  },
+  {
+    "pkg_name": "nmap",
+    "pkg_version": "1.4.4_12",
+    "category": "Utilities & Tools",
+    "description": "Nmap is a utility for network exploration or security auditing. It supports ping scanning (determine which hosts are up), many port scanning techniques (determine what services the hosts are offering), version detection (determine what application/service is running on a port), and TCP/IP fingerprinting (remote host OS or device identification). It also offers flexible target and port specification, decoy/stealth scanning, SunRPC scanning, and more.",
+    "freebsd_pkg_dependencies": [
+      "nmap-7.99_1"
+    ],
+    "debian_deb_packages": "nmap",
+    "runtime_daemon": "cli",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_nmap.php (Services -> nmap)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "node_exporter",
+    "pkg_version": "0.18.1_8",
+    "category": "Monitoring & Analytics",
+    "description": "Prometheus exporter for machine metrics",
+    "freebsd_pkg_dependencies": [
+      "node_exporter-1.11.0_3",
+      "python311-3.11.15_3"
+    ],
+    "debian_deb_packages": "prometheus-node-exporter",
+    "runtime_daemon": "prometheus-node-exporter.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_node_exporter.php (Services -> node_exporter)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "Notes",
+    "pkg_version": "0.2.9_6",
+    "category": "Utilities & Tools",
+    "description": "Track things you want to note for this system.",
+    "freebsd_pkg_dependencies": [],
+    "debian_deb_packages": "mitranet-core",
+    "runtime_daemon": "webui",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_notes.php (Services -> Notes)",
+    "sync_status": "Builtin MitraNet"
+  },
+  {
+    "pkg_name": "nrpe",
+    "pkg_version": "4.3.1_2",
+    "category": "Utilities & Tools",
+    "description": "pfSense software package GUI for Nagios NRPE nrpe is used to execute Nagios plugins on remote hosts and report the results to the main Nagios server. From the Nagios homepage: Allows you to execute \"local\" plugins (like check_disk, check_procs, etc.) on remote hosts. The check_nrpe plugin is called from Nagios and actually makes the plugin requests to the remote host. Requires that nrpe be running on the remote host (either as a standalone daemon or as a service under inetd).",
+    "freebsd_pkg_dependencies": [
+      "nrpe-4.1.3"
+    ],
+    "debian_deb_packages": "nagios-nrpe-server",
+    "runtime_daemon": "nagios-nrpe-server.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_nrpe.php (Services -> nrpe)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "ntopng",
+    "pkg_version": "6.2.0_7",
+    "category": "Monitoring & Analytics",
+    "description": "ntopng (replaces ntop) is a network probe that shows network usage in a way similar to what top does for processes. In interactive mode, it displays the network status on the user's terminal. In Web mode it acts as a Web server, creating an HTML dump of the network status. It sports a NetFlow/sFlow emitter/collector, an HTTP-based client interface for creating ntop-centric monitoring applications, and RRD for persistently storing traffic statistics.",
+    "freebsd_pkg_dependencies": [
+      "gdbm-1.26",
+      "graphviz-15.0.0_1",
+      "libmaxminddb-1.13.3",
+      "ntopng-6.6.d20260604,1",
+      "redis-8.8.0",
+      "webfonts-0.30_14"
+    ],
+    "debian_deb_packages": "ntopng, ntopng-data",
+    "runtime_daemon": "ntopng.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_ntopng.php (Services -> ntopng)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "nut",
+    "pkg_version": "2.8.2_9",
+    "category": "Monitoring & Analytics",
+    "description": "Network UPS Tools provides support for monitoring of Uninterruptible Power Supplies. It supports UPS units attached locally via USB or serial, and remote units via the SNMP protocol, the APCUPSD protocol or the NUT protocol.",
+    "freebsd_pkg_dependencies": [
+      "nut-2.8.5_1"
+    ],
+    "debian_deb_packages": "nut, nut-server, nut-client",
+    "runtime_daemon": "nut-server.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_nut.php (Services -> NUT UPS)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "Open-VM-Tools",
+    "pkg_version": "10.1.0_8,1",
+    "category": "Utilities & Tools",
+    "description": "VMware Tools is a suite of utilities that enhances the performance of the virtual machine's guest operating system and improves management of the virtual machine.",
+    "freebsd_pkg_dependencies": [
+      "open-vm-tools-13.1.0,2"
+    ],
+    "debian_deb_packages": "open-vm-tools",
+    "runtime_daemon": "open-vm-tools.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_open-vm-tools.php (Services -> Open-VM-Tools)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "openvpn-client-export",
+    "pkg_version": "1.9.13",
+    "category": "VPN & Tunnels",
+    "description": "Exports pre-configured OpenVPN Client configurations directly from pfSense software.",
+    "freebsd_pkg_dependencies": [
+      "7-zip-26.01",
+      "openvpn-2.7.5",
+      "openvpn-client-export-2.7.4",
+      "zip-3.0_5"
+    ],
+    "debian_deb_packages": "openvpn, easy-rsa",
+    "runtime_daemon": "webui",
+    "conflicts_with": [],
+    "webui_menu_integration": "/vpn_openvpn_export.php (VPN -> OpenVPN Export)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "pfBlockerNG",
+    "pkg_version": "3.2.17_1",
+    "category": "Security & IDS/IPS",
+    "description": "Manage IPv4/v6 List Sources into 'Deny, Permit or Match' formats. GeoIP database by MaxMind Inc. (GeoLite2 Free version). De-Duplication, Suppression, and Reputation enhancements. Provision to download from diverse List formats. Advanced Integration for Proofpoint ET IQRisk IP Reputation Threat Sources. Domain Name (DNSBL) blocking via Unbound DNS Resolver.",
+    "freebsd_pkg_dependencies": [
+      "gnugrep-3.12",
+      "grepcidr-2.0_1",
+      "iprange-2.0.0_1",
+      "jq-1.8.1",
+      "libmaxminddb-1.13.3",
+      "lighttpd-1.4.83",
+      "php85-8.5.7",
+      "php85-intl-8.5.7",
+      "py-maxminddb-2.8.2",
+      "py-sqlite3-3.11.15_10",
+      "python311-3.11.15_3",
+      "rsync-3.4.4"
+    ],
+    "debian_deb_packages": "dnsmasq/unbound blocklists, nftables sets, ipset",
+    "runtime_daemon": "mitranet-firewall",
+    "conflicts_with": [
+      "pfBlockerNG-devel"
+    ],
+    "webui_menu_integration": "/services_pfblockerng.php (Firewall -> pfBlockerNG)",
+    "sync_status": "Builtin MitraNet"
+  },
+  {
+    "pkg_name": "pfBlockerNG-devel",
+    "pkg_version": "3.2.17_1",
+    "category": "Security & IDS/IPS",
+    "description": "pfBlockerNG-devel is the Next Generation of pfBlockerNG. Manage IPv4/v6 List Sources into 'Deny, Permit or Match' formats. GeoIP database by MaxMind Inc. (GeoLite2 Free version). De-Duplication, Suppression, and Reputation enhancements. Provision to download from diverse List formats. Advanced Integration for Proofpoint ET IQRisk IP Reputation Threat Sources. Domain Name (DNSBL) blocking via Unbound DNS Resolver.",
+    "freebsd_pkg_dependencies": [
+      "gnugrep-3.12",
+      "grepcidr-2.0_1",
+      "iprange-2.0.0_1",
+      "jq-1.8.1",
+      "libmaxminddb-1.13.3",
+      "lighttpd-1.4.83",
+      "php85-8.5.7",
+      "php85-intl-8.5.7",
+      "py-maxminddb-2.8.2",
+      "py-sqlite3-3.11.15_10",
+      "python311-3.11.15_3",
+      "rsync-3.4.4"
+    ],
+    "debian_deb_packages": "dnsmasq/unbound blocklists, nftables sets, ipset",
+    "runtime_daemon": "mitranet-firewall",
+    "conflicts_with": [
+      "pfBlockerNG"
+    ],
+    "webui_menu_integration": "/services_pfblockerng.php (Firewall -> pfBlockerNG)",
+    "sync_status": "Builtin MitraNet"
+  },
+  {
+    "pkg_name": "pimd",
+    "pkg_version": "0.0.3_9",
+    "category": "Routing & Multicast",
+    "description": "PIMD Multicast Routing. Lightweight, stand-alone implementation of Protocol Independent Multicast-Sparse Mode. Conflicts with Quagga OSPF. These packages cannot be installed at the same time.",
+    "freebsd_pkg_dependencies": [
+      "pimd-2.3.2b_1"
+    ],
+    "debian_deb_packages": "pimd",
+    "runtime_daemon": "pimd.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_pimd.php (Services -> pimd)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "RRD_Summary",
+    "pkg_version": "2.2.2",
+    "category": "Utilities & Tools",
+    "description": "RRD Summary Page, which will give estimated month-over-month traffic passed In/Out during the specified period.",
+    "freebsd_pkg_dependencies": [],
+    "debian_deb_packages": "rrdtool, librrds-perl",
+    "runtime_daemon": "webui",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_rrd_summary.php (Services -> RRD_Summary)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "Service_Watchdog",
+    "pkg_version": "1.8.7_7",
+    "category": "Monitoring & Analytics",
+    "description": "Monitors for stopped services and restarts them.",
+    "freebsd_pkg_dependencies": [],
+    "debian_deb_packages": "monit, systemd watchdog",
+    "runtime_daemon": "systemd",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_service_watchdog.php (Services -> Service_Watchdog)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "Shellcmd",
+    "pkg_version": "1.0.7",
+    "category": "System & Hardware Management",
+    "description": "The shellcmd utility is used to manage commands on system startup.",
+    "freebsd_pkg_dependencies": [],
+    "debian_deb_packages": "systemd, /etc/rc.local, cron @reboot",
+    "runtime_daemon": "systemd",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_shellcmd.php (Services -> Shellcmd)",
+    "sync_status": "Builtin MitraNet"
+  },
+  {
+    "pkg_name": "siproxd",
+    "pkg_version": "1.1.8_1",
+    "category": "Proxy & Load Balancing",
+    "description": "Proxy for handling NAT of multiple SIP devices to a single public IP.",
+    "freebsd_pkg_dependencies": [
+      "siproxd-0.8.4"
+    ],
+    "debian_deb_packages": "siproxd",
+    "runtime_daemon": "siproxd.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_siproxd.php (Services -> siproxd)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "snmptt",
+    "pkg_version": "1.0.3",
+    "category": "Monitoring & Analytics",
+    "description": "SNMPTT (SNMP Trap Translator) is an SNMP trap handler written in Perl for use with the Net-SNMP. Easy to setup and use.",
+    "freebsd_pkg_dependencies": [
+      "snmptt-1.5_1"
+    ],
+    "debian_deb_packages": "snmptt",
+    "runtime_daemon": "snmptt.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_snmptt.php (Services -> snmptt)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "snort",
+    "pkg_version": "4.1.10",
+    "category": "Security & IDS/IPS",
+    "description": "Snort is an open source network intrusion prevention and detection system (IDS/IPS). Combining the benefits of signature, protocol, and anomaly-based inspection.",
+    "freebsd_pkg_dependencies": [
+      "snort-2.9.20_9"
+    ],
+    "debian_deb_packages": "snort, snort-rules-default",
+    "runtime_daemon": "snort.service",
+    "conflicts_with": [
+      "suricata"
+    ],
+    "webui_menu_integration": "/services_snort.php (Services -> Snort IDS)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "softflowd",
+    "pkg_version": "1.2.6_4",
+    "category": "System & Hardware Management",
+    "description": "Softflowd is flow-based network traffic analyser capable of Cisco NetFlow data export. Softflowd semi-statefully tracks traffic flows recorded by listening on a network interface or by reading a packet capture file. These flows may be reported via NetFlow to a collecting host or summarised within softflowd itself. Softflowd supports Netflow versions 1, 5, 9 and 10 (IPFIX) and is fully IPv6-capable - it can track IPv6 flows and send export datagrams via IPv6. It also supports export to multicast groups, allowing for redundant flow collectors.",
+    "freebsd_pkg_dependencies": [
+      "softflowd-1.0.0_1"
+    ],
+    "debian_deb_packages": "softflowd",
+    "runtime_daemon": "softflowd.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_softflowd.php (Services -> softflowd)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "squid",
+    "pkg_version": "0.5.11",
+    "category": "Security & IDS/IPS",
+    "description": "High performance web proxy cache (3.5 branch). It combines Squid as a proxy server with its capabilities of acting as a HTTP / HTTPS reverse proxy. It includes an Exchange-Web-Access (OWA) Assistant, SSL filtering and antivirus integration via C-ICAP.",
+    "freebsd_pkg_dependencies": [
+      "c-icap-modules-0.5.7_1",
+      "squid-7.4",
+      "squid_radius_auth-1.10",
+      "squidclamav-7.3_2"
+    ],
+    "debian_deb_packages": "squid",
+    "runtime_daemon": "squid.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_squid.php (Services -> Squid Proxy)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "squidGuard",
+    "pkg_version": "1.16.30",
+    "category": "Security & IDS/IPS",
+    "description": "High performance web proxy URL filter.",
+    "freebsd_pkg_dependencies": [
+      "pfSense-pkg-squid-0.5.11",
+      "squidguard-1.4_15"
+    ],
+    "debian_deb_packages": "squidguard",
+    "runtime_daemon": "squid.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_squidguard.php (Services -> SquidGuard)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "Status_Traffic_Totals",
+    "pkg_version": "2.3.5_3",
+    "category": "Utilities & Tools",
+    "description": "Traffic Totals page under the Status menu, which will give a total amount of traffic passed In/Out over the period of hours, days, and months. Uses vnStat for data collection.",
+    "freebsd_pkg_dependencies": [
+      "vnstat-2.13"
+    ],
+    "debian_deb_packages": "vnstat, vnstati",
+    "runtime_daemon": "vnstat.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_status_traffic_totals.php (Services -> Status_Traffic_Totals)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "stunnel",
+    "pkg_version": "5.52.2_1",
+    "category": "Proxy & Load Balancing",
+    "description": "SSL encryption wrapper between remote client and local or remote servers.",
+    "freebsd_pkg_dependencies": [
+      "stunnel-5.78,1"
+    ],
+    "debian_deb_packages": "stunnel4",
+    "runtime_daemon": "stunnel4.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_stunnel.php (Services -> stunnel)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "sudo",
+    "pkg_version": "0.3.4",
+    "category": "Utilities & Tools",
+    "description": "sudo allows delegation of privileges to users in the shell so commands can be run as other users, such as root.",
+    "freebsd_pkg_dependencies": [
+      "sudo-1.9.17p2_2"
+    ],
+    "debian_deb_packages": "sudo",
+    "runtime_daemon": "cli",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_sudo.php (Services -> sudo)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "suricata",
+    "pkg_version": "7.0.9_1",
+    "category": "Security & IDS/IPS",
+    "description": "High Performance Network IDS, IPS and Security Monitoring engine by OISF.",
+    "freebsd_pkg_dependencies": [
+      "suricata-8.0.5_1"
+    ],
+    "debian_deb_packages": "suricata",
+    "runtime_daemon": "suricata.service",
+    "conflicts_with": [
+      "snort"
+    ],
+    "webui_menu_integration": "/services_suricata.php (Services -> Suricata IPS)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "syslog-ng",
+    "pkg_version": "1.16.5",
+    "category": "Utilities & Tools",
+    "description": "Syslog-ng syslog server. This service is not intended to replace the default pfSense syslog server but rather acts as an independent syslog server.",
+    "freebsd_pkg_dependencies": [
+      "logrotate-3.22.0",
+      "syslog-ng-4.11.0_2"
+    ],
+    "debian_deb_packages": "syslog-ng, syslog-ng-core",
+    "runtime_daemon": "syslog-ng.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_syslog_ng.php (Services -> Syslog-ng)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "System_Patches",
+    "pkg_version": "2.3.5_1",
+    "category": "System & Hardware Management",
+    "description": "A package to apply and maintain custom and recommended system patches.",
+    "freebsd_pkg_dependencies": [],
+    "debian_deb_packages": "patch, dpkg, git",
+    "runtime_daemon": "cli",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_system_patches.php (Services -> System_Patches)",
+    "sync_status": "Builtin MitraNet"
+  },
+  {
+    "pkg_name": "Tailscale",
+    "pkg_version": "0.1.10",
+    "category": "VPN & Tunnels",
+    "description": "Tailscale is a mesh VPN alternative, based on WireGuard, that connects your computers, databases, and services together securely without any proxies.",
+    "freebsd_pkg_dependencies": [
+      "tailscale-1.98.5_1"
+    ],
+    "debian_deb_packages": "tailscale",
+    "runtime_daemon": "tailscaled.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_tailscale.php (VPN -> Tailscale)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "Telegraf",
+    "pkg_version": "0.9.3",
+    "category": "Monitoring & Analytics",
+    "description": "Telegraf is an agent written in Go for collecting, processing, aggregating, and writing metrics.",
+    "freebsd_pkg_dependencies": [
+      "telegraf-1.39.0"
+    ],
+    "debian_deb_packages": "telegraf",
+    "runtime_daemon": "telegraf.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_telegraf.php (Services -> Telegraf)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "tftpd",
+    "pkg_version": "0.2",
+    "category": "Core Network Services",
+    "description": "tftpd installs and runs a TFTP server. We use the versatile tftp-hpa server.",
+    "freebsd_pkg_dependencies": [
+      "tftp-hpa-5.2_3"
+    ],
+    "debian_deb_packages": "tftpd-hpa",
+    "runtime_daemon": "tftpd-hpa.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_tftpd.php (Services -> tftpd)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "tinc",
+    "pkg_version": "1.0.39",
+    "category": "VPN & Tunnels",
+    "description": "tinc is a Virtual Private Network (VPN) daemon that uses tunnelling and encryption to create a secure private network between hosts on the Internet. Because the tunnel appears to the IP level network code as a normal network device, there is no need to adapt any existing software. This tunnelling allows VPN sites to share information with each other over the Internet without exposing any information to others. A single tinc daemon can accept more than one connection at a time, thus making it possible to create larger virtual networks, because some limitations are circumvented. Instead of most other VPN implementations, tinc encapsulates each network packet in its own UDP packet, instead of encapsulating all into one TCP or even PPP over TCP stream. This results in lower latencies, less overhead, and in general better responsiveness and throughput. LICENSE: GPL3 or later with execption to link with OpenSSL",
+    "freebsd_pkg_dependencies": [
+      "tinc-1.0.37"
+    ],
+    "debian_deb_packages": "tinc",
+    "runtime_daemon": "tinc.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_tinc.php (Services -> tinc)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "udpbroadcastrelay",
+    "pkg_version": "1.2.8",
+    "category": "Routing & Multicast",
+    "description": "A GUI for UDP Broadcast Relay. This program listens for UDP broadcast packets and retransmits on additional interfaces.",
+    "freebsd_pkg_dependencies": [
+      "udpbroadcastrelay-1.1"
+    ],
+    "debian_deb_packages": "udp-broadcast-relay-linux, bcrelay",
+    "runtime_daemon": "systemd",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_udpbroadcastrelay.php (Services -> udpbroadcastrelay)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "WireGuard",
+    "pkg_version": "0.2.13_4",
+    "category": "VPN & Tunnels",
+    "description": "WireGuard(R) is an extremely simple yet fast and modern VPN that utilizes state-of-the-art cryptography. It aims to be faster, simpler, leaner, and more useful than IPSec, while avoiding the massive headache. It intends to be considerably more performant than OpenVPN. WireGuard is designed as a general purpose VPN for running on embedded interfaces and super computers alike, fit for many different circumstances. Initially released for the Linux kernel, it is now cross-platform and widely deployable. It is currently under heavy development, but already it might be regarded as the most secure, easiest to use, and simplest VPN solution in the industry.",
+    "freebsd_pkg_dependencies": [
+      "wireguard-kmod (FreeBSD)",
+      "wireguard-tools",
+      "libuv"
+    ],
+    "debian_deb_packages": "wireguard, wireguard-tools, linux-headers-amd64 (in-tree kernel wireguard.ko)",
+    "runtime_daemon": "wg-quick@wg0.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/wg/vpn_wg_tunnels.php (VPN / Sidebar -> WireGuard)",
+    "sync_status": "ACTIVE & RUNNING (.deb)"
+  },
+  {
+    "pkg_name": "zabbix-agent6",
+    "pkg_version": "1.1_1",
+    "category": "Monitoring & Analytics",
+    "description": "Zabbix agent is deployed on a monitoring target to actively monitor local resources and applications (hard drives, memory, processor statistics etc). The agent gathers operational information locally and reports data to Zabbix server for further processing. In case of failures (such as a hard disk running full or a crashed service process), Zabbix server can actively alert the administrators of the particular machine that reported the failure. Zabbix is an enterprise-class open source distributed monitoring solution.",
+    "freebsd_pkg_dependencies": [
+      "zabbix6-agent-6.0.46"
+    ],
+    "debian_deb_packages": "zabbix-agent, zabbix-agent2",
+    "runtime_daemon": "zabbix-agent.service",
+    "conflicts_with": [
+      "zabbix-agent7",
+      "zabbix-agent74"
+    ],
+    "webui_menu_integration": "/services_zabbixagent.php (Services -> Zabbix Agent)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "zabbix-agent7",
+    "pkg_version": "1.1_1",
+    "category": "Monitoring & Analytics",
+    "description": "Zabbix agent is deployed on a monitoring target to actively monitor local resources and applications (hard drives, memory, processor statistics etc). The agent gathers operational information locally and reports data to Zabbix server for further processing. In case of failures (such as a hard disk running full or a crashed service process), Zabbix server can actively alert the administrators of the particular machine that reported the failure. Zabbix is an enterprise-class open source distributed monitoring solution.",
+    "freebsd_pkg_dependencies": [
+      "zabbix7-agent-7.0.27"
+    ],
+    "debian_deb_packages": "zabbix-agent, zabbix-agent2",
+    "runtime_daemon": "zabbix-agent.service",
+    "conflicts_with": [
+      "zabbix-agent6",
+      "zabbix-agent74"
+    ],
+    "webui_menu_integration": "/services_zabbixagent.php (Services -> Zabbix Agent 7)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "zabbix-agent74",
+    "pkg_version": "1.1_1",
+    "category": "Monitoring & Analytics",
+    "description": "Zabbix agent is deployed on a monitoring target to actively monitor local resources and applications (hard drives, memory, processor statistics etc). The agent gathers operational information locally and reports data to Zabbix server for further processing. In case of failures (such as a hard disk running full or a crashed service process), Zabbix server can actively alert the administrators of the particular machine that reported the failure. Zabbix is an enterprise-class open source distributed monitoring solution.",
+    "freebsd_pkg_dependencies": [
+      "zabbix74-agent-7.4.11"
+    ],
+    "debian_deb_packages": "zabbix-agent, zabbix-agent2",
+    "runtime_daemon": "zabbix-agent.service",
+    "conflicts_with": [
+      "zabbix-agent6",
+      "zabbix-agent7"
+    ],
+    "webui_menu_integration": "/services_zabbixagent.php (Services -> Zabbix Agent 7.4)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "zabbix-proxy6",
+    "pkg_version": "1.1_1",
+    "category": "Monitoring & Analytics",
+    "description": "A Zabbix proxy can collect performance and availability data on behalf of the Zabbix server. This way, a proxy can take on itself some of the load of collecting data and offload the Zabbix server. Also, using a proxy is the easiest way of implementing centralized and distributed monitoring, when all agents and proxies report to one Zabbix server and all data is collected centrally. Zabbix is an enterprise-class open source distributed monitoring solution.",
+    "freebsd_pkg_dependencies": [
+      "zabbix6-proxy-6.0.46"
+    ],
+    "debian_deb_packages": "zabbix-proxy-sqlite3",
+    "runtime_daemon": "zabbix-proxy.service",
+    "conflicts_with": [
+      "zabbix-proxy7",
+      "zabbix-proxy74"
+    ],
+    "webui_menu_integration": "/services_zabbix-proxy6.php (Services -> zabbix-proxy6)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "zabbix-proxy7",
+    "pkg_version": "1.1_1",
+    "category": "Monitoring & Analytics",
+    "description": "A Zabbix proxy can collect performance and availability data on behalf of the Zabbix server. This way, a proxy can take on itself some of the load of collecting data and offload the Zabbix server. Also, using a proxy is the easiest way of implementing centralized and distributed monitoring, when all agents and proxies report to one Zabbix server and all data is collected centrally. Zabbix is an enterprise-class open source distributed monitoring solution.",
+    "freebsd_pkg_dependencies": [
+      "zabbix7-proxy-7.0.27"
+    ],
+    "debian_deb_packages": "zabbix-proxy-sqlite3",
+    "runtime_daemon": "zabbix-proxy.service",
+    "conflicts_with": [
+      "zabbix-proxy6",
+      "zabbix-proxy74"
+    ],
+    "webui_menu_integration": "/services_zabbix-proxy7.php (Services -> zabbix-proxy7)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "zabbix-proxy74",
+    "pkg_version": "1.1_1",
+    "category": "Monitoring & Analytics",
+    "description": "A Zabbix proxy can collect performance and availability data on behalf of the Zabbix server. This way, a proxy can take on itself some of the load of collecting data and offload the Zabbix server. Also, using a proxy is the easiest way of implementing centralized and distributed monitoring, when all agents and proxies report to one Zabbix server and all data is collected centrally. Zabbix is an enterprise-class open source distributed monitoring solution.",
+    "freebsd_pkg_dependencies": [
+      "zabbix74-proxy-7.4.11"
+    ],
+    "debian_deb_packages": "zabbix-proxy-sqlite3",
+    "runtime_daemon": "zabbix-proxy.service",
+    "conflicts_with": [
+      "zabbix-proxy6",
+      "zabbix-proxy7"
+    ],
+    "webui_menu_integration": "/services_zabbix-proxy74.php (Services -> zabbix-proxy74)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "zeek",
+    "pkg_version": "3.0.7",
+    "category": "Utilities & Tools",
+    "description": "Zeek (formerly Bro) is a passive, open-source network traffic analyzer. It detects specific attacks, including those defined by signatures or events, as well as unusual activity.",
+    "freebsd_pkg_dependencies": [
+      "zeek-8.0.8"
+    ],
+    "debian_deb_packages": "zeek, zeek-core",
+    "runtime_daemon": "zeek.service",
+    "conflicts_with": [],
+    "webui_menu_integration": "/services_zeek.php (Services -> zeek)",
+    "sync_status": "Available in Debian"
+  },
+  {
+    "pkg_name": "xray-core",
+    "pkg_version": "1.8.24",
+    "category": "VPN & Tunnels",
+    "description": "Next-generation multi-protocol proxy engine supporting VLESS Reality, VMess WS, Trojan, Shadowsocks, and TUN routing.",
+    "freebsd_pkg_dependencies": [
+      "xray-bin",
+      "geoip-database",
+      "geosite-database"
+    ],
+    "debian_deb_packages": "xray-core (Linux amd64), ca-certificates",
+    "runtime_daemon": "xray.service (Port 10443)",
+    "conflicts_with": [
+      "v2ray-core"
+    ],
+    "webui_menu_integration": "/vpn_xray.php (VPN / Sidebar -> Xray-core)",
+    "sync_status": "ACTIVE & RUNNING (Linux amd64)"
+  }
+]
