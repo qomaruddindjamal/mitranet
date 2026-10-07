@@ -15,11 +15,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     if ($action === 'create') {
         $name = trim($_POST['name'] ?? '');
-        $members = array_filter(array_map('trim', explode(',', $_POST['members'] ?? '')));
+        $members = $_POST['members'] ?? [];
+        if (!is_array($members)) {
+            $members = array_filter(array_map('trim', explode(',', (string)$members)));
+        }
         if ($name) {
             $res = MitraNetApi::request('/bridges/create', 'POST', [
                 'name' => $name,
-                'members' => $members
+                'members' => array_values($members)
             ]);
             if ($res['status'] === 200) {
                 $msg = "Bridge interface '$name' created successfully";
@@ -41,6 +44,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $bridges = MitraNetApi::getBridges();
+$all_ifaces = MitraNetApi::getInterfaces();
+
+// Filter candidate member interfaces: exclude loopback and bridge itself
+$candidate_ifaces = [];
+foreach ($all_ifaces as $if_item) {
+    $if_name = $if_item['name'];
+    if ($if_name === 'lo') continue;
+    // Exclude existing bridges from being members of another bridge
+    $is_existing_bridge = false;
+    foreach ($bridges as $b_check) {
+        if ($b_check['name'] === $if_name) {
+            $is_existing_bridge = true;
+            break;
+        }
+    }
+    if (!$is_existing_bridge) {
+        $candidate_ifaces[] = $if_item;
+    }
+}
 
 $tab_array = array();
 $tab_array[] = array(gettext("Interface Assignments"), false, "interfaces_assign.php");
@@ -110,13 +132,25 @@ if (!empty($err)) {
 			<div class="form-group">
 				<label class="col-sm-2 control-label"><span class="element-required">*</span><?=gettext("Member Interfaces")?></label>
 				<div class="col-sm-10">
-					<input type="text" name="members" class="form-control" placeholder="enp0s8, enp0s9">
-					<span class="help-block"><?=gettext("Comma-separated list of member interfaces to bridge together.")?></span>
+					<select name="members[]" class="form-control" multiple size="<?=min(max(count($candidate_ifaces), 3), 7)?>" required>
+						<?php if (empty($candidate_ifaces)): ?>
+							<option disabled><?=gettext("Tidak ada interface fisik/virtual yang tersedia")?></option>
+						<?php else: foreach ($candidate_ifaces as $cand): ?>
+							<?php
+							$ip_desc = !empty($cand['ipv4_addresses']) ? ' (' . implode(', ', $cand['ipv4_addresses']) . ')' : '';
+							$state_desc = !empty($cand['is_up']) ? ' [UP]' : ' [DOWN]';
+							?>
+							<option value="<?=htmlspecialchars($cand['name'])?>">
+								<?=htmlspecialchars(strtoupper($cand['name']))?> - <?=htmlspecialchars($cand['name'])?><?=$state_desc?><?=$ip_desc?> (<?=htmlspecialchars($cand['mac_address'] ?? 'N/A')?>)
+							</option>
+						<?php endforeach; endif; ?>
+					</select>
+					<span class="help-block"><?=gettext("Pilih satu atau lebih interface untuk digabungkan ke bridge (tahan tombol Ctrl/Cmd untuk memilih lebih dari satu).")?></span>
 				</div>
 			</div>
 			<div class="form-group">
 				<div class="col-sm-offset-2 col-sm-10">
-					<button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus icon-embed-btn"></i><?=gettext("Add Bridge")?></button>
+					<button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus icon-embed-btn"></i> <?=gettext("Add Bridge")?></button>
 				</div>
 			</div>
 		</form>

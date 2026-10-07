@@ -2063,6 +2063,54 @@ AllowedIPs = {allowed_ips}
                 self._send_json(500, {"error": f"Gagal menghapus interface: {e}"})
             return
 
+        # 23. Linux Bridge Creation & Member Port Attachment
+        if path == "/api/v1/bridges/create":
+            name = payload.get("name", "").strip()
+            members = payload.get("members", [])
+            if not name:
+                self._send_json(400, {"error": "Bridge name required"})
+                return
+
+            try:
+                # 1. Create bridge
+                b_res = bridge_service.create_bridge(name)
+                # 2. Attach member ports if provided
+                if isinstance(members, list):
+                    for m in members:
+                        m_str = str(m).strip()
+                        if m_str and m_str != "lo":
+                            try:
+                                bridge_service.add_port(name, m_str)
+                            except Exception as pe:
+                                logger.warning("Could not attach port %s to bridge %s: %s", m_str, name, pe)
+
+                # 3. Bring bridge UP
+                import subprocess
+                subprocess.run(["ip", "link", "set", name, "up"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                self._send_json(200, {
+                    "success": True,
+                    "message": f"Bridge '{name}' successfully created.",
+                    "bridge": b_res.model_dump()
+                })
+            except Exception as e:
+                self._send_json(500, {"error": f"Failed creating bridge: {e}"})
+            return
+
+        # 24. Linux Bridge Deletion
+        if path == "/api/v1/bridges/delete":
+            name = payload.get("name", "").strip()
+            if not name:
+                self._send_json(400, {"error": "Bridge name required"})
+                return
+
+            try:
+                bridge_service.delete_bridge(name)
+                self._send_json(200, {"success": True, "message": f"Bridge '{name}' successfully deleted."})
+            except Exception as e:
+                self._send_json(500, {"error": f"Failed deleting bridge: {e}"})
+            return
+
         self._send_json(404, {"error": "Endpoint not found"})
 
 
