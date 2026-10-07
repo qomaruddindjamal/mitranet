@@ -54,10 +54,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $msg = "Status & MTU interface '{$ifname}' diperbarui. " . $err_detail;
                 }
             }
-        } else {
-            $msg = "Konfigurasi interface '{$ifname}' berhasil diperbarui.";
         }
-        $target_if = $ifname;
+
+        // Redirect to main Interface Assignments page upon save
+        header("Location: interfaces_assign.php?saved=" . urlencode($ifname));
+        exit;
     } elseif ($action === 'remove_ip' && !empty($ifname)) {
         $cidr = trim($_POST['cidr'] ?? '');
         if (!empty($cidr)) {
@@ -93,6 +94,18 @@ if ($selected_iface) {
 }
 $selected_menu = "interfaces";
 require_once(__DIR__ . '/includes/head.inc');
+
+$tab_array = array();
+$tab_array[] = array(gettext("Interface Assignments"), empty($selected_iface), "interfaces_assign.php");
+$tab_array[] = array(gettext("VLANs"), false, "interfaces_vlan.php");
+$tab_array[] = array(gettext("Bridges"), false, "interfaces_bridge.php");
+$tab_array[] = array(gettext("LAGGs"), false, "interfaces_lagg.php");
+$tab_array[] = array(gettext("VRFs"), false, "interfaces_vrf.php");
+$tab_array[] = array(gettext("vEthernet (KVM)"), false, "interfaces_vethernet.php");
+if ($selected_iface) {
+    $tab_array[] = array(strtoupper($selected_iface['name']), true, "interfaces.php?if=" . urlencode($selected_iface['name']));
+}
+display_top_tabs($tab_array);
 
 if (!empty($msg)) {
     print_info_box($msg, "success");
@@ -217,7 +230,7 @@ $is_protected = ($selected_iface['name'] === 'lo' || $selected_iface['name'] ===
 			<div class="form-group">
 				<div class="col-sm-offset-3 col-sm-9">
 					<button type="submit" class="btn btn-primary"><i class="fa-solid fa-save icon-embed-btn"></i> <?=gettext("Save")?></button>
-					<a href="interfaces.php" class="btn btn-default" style="margin-left: 5px;"><?=gettext("Back to List")?></a>
+					<a href="interfaces_assign.php" class="btn btn-default" style="margin-left: 5px;"><?=gettext("Back to List")?></a>
 				</div>
 			</div>
 		</form>

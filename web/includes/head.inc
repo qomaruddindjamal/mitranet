@@ -177,7 +177,7 @@ $help_menu = array(
 $sidebar_structure = array(
     array('id' => 'system', 'name' => 'System', 'icon' => 'fa-gears', 'menu' => $system_menu),
     array('id' => 'wifi', 'name' => 'Wifi', 'icon' => 'fa-wifi', 'url' => '/interfaces_wifi.php', 'direct' => true),
-    array('id' => 'interfaces', 'name' => 'Interfaces', 'icon' => 'fa-network-wired', 'menu' => $interfaces_menu),
+    array('id' => 'interfaces', 'name' => 'Interfaces', 'icon' => 'fa-network-wired', 'url' => '/interfaces_assign.php', 'direct' => true),
     array('id' => 'wireguard', 'name' => 'WireGuard', 'icon' => 'fa-circle-nodes', 'url' => '/wg/vpn_wg_tunnels.php', 'direct' => true),
     array('id' => 'firewall', 'name' => 'Firewall', 'icon' => 'fa-shield-halved', 'menu' => $firewall_menu),
     array('id' => 'services', 'name' => 'Services', 'icon' => 'fa-cubes', 'menu' => $services_menu),
