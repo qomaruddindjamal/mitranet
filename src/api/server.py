@@ -1943,6 +1943,107 @@ AllowedIPs = {allowed_ips}
             })
             return
 
+        # Virtual Machine (KVM) Configuration Update (e.g. aaPanel or any VM)
+        if path == "/api/v1/services/kvm/update":
+            import re
+            import subprocess
+            vm_id = re.sub(r'[^a-zA-Z0-9_\-]', '', payload.get("id", "").strip().lower())
+            if not vm_id:
+                self._send_json(400, {"error": "VM ID required"})
+                return
+
+            vm_dir = f"/var/lib/mitranet/vms/{vm_id}"
+            conf_dir = "/etc/mitranet/vms"
+            env_file = f"{conf_dir}/{vm_id}.env"
+
+            if not os.path.isdir(vm_dir):
+                self._send_json(404, {"error": f"Virtual machine '{vm_id}' not found"})
+                return
+
+            # Read existing values
+            ram_mb = 1024
+            vcpu = 1
+            port_fwd = 8888
+            net_mode = "veth"
+            veth_iface = "veth0"
+            guest_ip = ""
+            iso_file = ""
+            vnc_port = 5900
+
+            if os.path.isfile(env_file):
+                try:
+                    with open(env_file, "r") as ef:
+                        for line in ef:
+                            line = line.strip()
+                            if line.startswith("RAM_MB="):
+                                ram_mb = int(line.split("=", 1)[1])
+                            elif line.startswith("VCPU="):
+                                vcpu = int(line.split("=", 1)[1])
+                            elif line.startswith("PORT_FWD="):
+                                port_fwd = int(line.split("=", 1)[1])
+                            elif line.startswith("NET_MODE="):
+                                net_mode = line.split("=", 1)[1].strip()
+                            elif line.startswith("VETH_IFACE="):
+                                veth_iface = line.split("=", 1)[1].strip()
+                            elif line.startswith("GUEST_IP="):
+                                guest_ip = line.split("=", 1)[1].strip()
+                            elif line.startswith("ISO_FILE="):
+                                iso_file = line.split("=", 1)[1].strip()
+                            elif line.startswith("VNC_PORT="):
+                                vnc_port = int(line.split("=", 1)[1])
+                except Exception:
+                    pass
+
+            # Apply updates if provided
+            if "ram_mb" in payload:
+                ram_mb = int(payload["ram_mb"])
+            if "vcpu" in payload:
+                vcpu = int(payload["vcpu"])
+            if "port_fwd" in payload:
+                port_fwd = int(payload["port_fwd"])
+            if "veth_iface" in payload:
+                veth_iface = str(payload["veth_iface"]).strip()
+            if "net_mode" in payload:
+                net_mode = str(payload["net_mode"]).strip()
+            if "guest_ip" in payload:
+                guest_ip = str(payload["guest_ip"]).strip()
+            if "iso" in payload:
+                iso_file = str(payload["iso"]).strip()
+
+            os.makedirs(conf_dir, exist_ok=True)
+            with open(env_file, "w") as f:
+                f.write(f"RAM_MB={ram_mb}\n")
+                f.write(f"VCPU={vcpu}\n")
+                f.write(f"PORT_FWD={port_fwd}\n")
+                f.write(f"NET_MODE={net_mode}\n")
+                f.write(f"VETH_IFACE={veth_iface}\n")
+                if guest_ip:
+                    f.write(f"GUEST_IP={guest_ip}\n")
+                if iso_file:
+                    f.write(f"ISO_FILE={iso_file}\n")
+                f.write(f"VNC_PORT={vnc_port}\n")
+
+            # Check if VM is currently running, restart it to apply network changes if requested
+            restart_needed = payload.get("restart", False)
+            if restart_needed:
+                subprocess.run(["systemctl", "restart", f"mitranet-vm@{vm_id}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            self._send_json(200, {
+                "success": True,
+                "message": f"Konfigurasi Virtual Machine '{vm_id}' berhasil diperbarui.",
+                "vm": {
+                    "id": vm_id,
+                    "ram_mb": ram_mb,
+                    "vcpu": vcpu,
+                    "port_fwd": port_fwd,
+                    "net_mode": net_mode,
+                    "veth_iface": veth_iface,
+                    "guest_ip": guest_ip,
+                    "iso": iso_file,
+                }
+            })
+            return
+
         # Virtual Machine (KVM) Deletion
         if path == "/api/v1/services/kvm/delete":
             import subprocess

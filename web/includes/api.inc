@@ -340,6 +340,10 @@ class MitraNetApi {
         return self::request('/services/kvm/create', 'POST', $payload);
     }
 
+    public static function updateVm($payload) {
+        return self::request('/services/kvm/update', 'POST', $payload);
+    }
+
     public static function deleteVm($id) {
         return self::request('/services/kvm/delete', 'POST', ['id' => $id]);
     }
