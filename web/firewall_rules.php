@@ -4,7 +4,7 @@
  * Adapted from pfSense firewall_rules.php
  */
 
-$pgtitle = "Firewall: Rules";
+$pgtitle = array(gettext("Firewall"), gettext("Rules"));
 $selected_menu = "firewall";
 require_once(__DIR__ . '/includes/head.inc');
 
@@ -61,20 +61,24 @@ $fw = MitraNetApi::getFirewall();
 $status = $fw['status'] ?? [];
 $running_rules = $fw['config']['rules'] ?? [];
 $candidate_rules = $fw['candidate']['rules'] ?? [];
+
+$tab_array = array();
+$tab_array[] = array(gettext("Floating"), false, "firewall_rules.php?if=floating");
+$tab_array[] = array(gettext("WAN (enp0s3)"), false, "firewall_rules.php?if=wan");
+$tab_array[] = array(gettext("LAN (enp0s8)"), true, "firewall_rules.php?if=lan");
+display_top_tabs($tab_array);
+
+if (!empty($msg)) {
+    print_info_box($msg, "success");
+}
+if (!empty($err)) {
+    print_info_box($err, "danger");
+}
 ?>
-
-<h2>Firewall Rules (nftables)</h2>
-
-<?php if (!empty($msg)): ?>
-	<div class="alert alert-success"><?=htmlspecialchars($msg)?></div>
-<?php endif; ?>
-<?php if (!empty($err)): ?>
-	<div class="alert alert-danger"><?=htmlspecialchars($err)?></div>
-<?php endif; ?>
 
 <!-- Status & Base Policies -->
 <div class="panel panel-default">
-	<div class="panel-heading"><h3 class="panel-title"><i class="fa fa-shield-alt"></i> Engine Status & Base Policies</h3></div>
+	<div class="panel-heading"><h2 class="panel-title"><?=gettext("Firewall Rules (nftables Engine)")?></h2></div>
 	<div class="panel-body">
 		<div class="row">
 			<div class="col-md-3"><strong>Status:</strong> <span class="label label-success"><?=strtoupper($status['status'] ?? 'ACTIVE')?></span></div>

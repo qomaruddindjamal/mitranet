@@ -5,7 +5,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-$pgtitle = array("Interfaces", "Assignments");
+$pgtitle = array(gettext("Interfaces"), gettext("Interface Assignments"));
 $selected_menu = "interfaces";
 require_once(__DIR__ . '/includes/head.inc');
 
@@ -13,36 +13,34 @@ $ifaces = MitraNetApi::getInterfaces();
 $vlans = MitraNetApi::getVlans();
 $bridges = MitraNetApi::getBridges();
 $bonds = MitraNetApi::getBonds();
+
+$tab_array = array();
+$tab_array[] = array(gettext("Interface Assignments"), true, "interfaces_assign.php");
+$tab_array[] = array(gettext("VLANs"), false, "interfaces_vlan.php");
+$tab_array[] = array(gettext("Bridges"), false, "interfaces_bridge.php");
+$tab_array[] = array(gettext("LAGGs"), false, "interfaces_lagg.php");
+$tab_array[] = array(gettext("VRFs"), false, "interfaces_vrf.php");
+display_top_tabs($tab_array);
 ?>
 
-<h2>Interfaces: Interface Assignments</h2>
-
-<ul class="nav nav-tabs">
-	<li class="active"><a href="interfaces_assign.php">Interface Assignments</a></li>
-	<li><a href="interfaces_vlan.php">VLANs</a></li>
-	<li><a href="interfaces_bridge.php">Bridges</a></li>
-	<li><a href="interfaces_lagg.php">LAGGs</a></li>
-	<li><a href="interfaces_vrf.php">VRFs</a></li>
-</ul>
-
-<div class="panel panel-default" style="margin-top: 15px;">
-	<div class="panel-heading"><h2 class="panel-title"><i class="fa fa-network-wired"></i> Assigned Network Ports</h2></div>
+<div class="panel panel-default">
+	<div class="panel-heading"><h2 class="panel-title"><?=gettext("Interface Assignments")?></h2></div>
 	<div class="panel-body">
 		<div class="table-responsive">
 			<table class="table table-striped table-hover table-condensed">
 				<thead>
 					<tr>
-						<th>Interface Identifier</th>
-						<th>Network Port</th>
-						<th>MAC Address</th>
-						<th>OperState</th>
-						<th>Actions</th>
+						<th><?=gettext("Interface Identifier")?></th>
+						<th><?=gettext("Network Port")?></th>
+						<th><?=gettext("MAC Address")?></th>
+						<th><?=gettext("Status")?></th>
+						<th><?=gettext("Actions")?></th>
 					</tr>
 				</thead>
 				<tbody>
 				<?php foreach ($ifaces as $idx => $if): ?>
 					<tr>
-						<td><strong><?=htmlspecialchars(strtoupper($if['name']))?></strong></td>
+						<td><a href="interfaces.php?name=<?=urlencode($if['name'])?>"><strong><?=htmlspecialchars(strtoupper($if['name']))?></strong></a></td>
 						<td><?=htmlspecialchars($if['name'])?> (<?=htmlspecialchars($if['type'] ?? 'ether')?>)</td>
 						<td><code><?=htmlspecialchars($if['mac_address'] ?? 'N/A')?></code></td>
 						<td>
@@ -53,7 +51,7 @@ $bonds = MitraNetApi::getBonds();
 							<?php endif; ?>
 						</td>
 						<td>
-							<a href="interfaces.php?name=<?=urlencode($if['name'])?>" class="btn btn-default btn-xs" title="Configure"><i class="fa fa-pencil-alt"></i> Edit</a>
+							<a href="interfaces.php?name=<?=urlencode($if['name'])?>" class="fa-solid fa-pencil" title="<?=gettext('Edit interface')?>"></a>
 						</td>
 					</tr>
 				<?php endforeach; ?>
@@ -61,6 +59,22 @@ $bonds = MitraNetApi::getBonds();
 			</table>
 		</div>
 	</div>
+</div>
+
+<nav class="action-buttons">
+	<a href="interfaces_assign.php" role="button" class="btn btn-default btn-sm">
+		<i class="fa-solid fa-rotate icon-embed-btn"></i>
+		<?=gettext("Refresh")?>
+	</a>
+</nav>
+
+<div class="infoblock">
+<?php
+print_info_box(
+	gettext("Interfaces that are configured as members of a LAGG or Bridge interface will have their traffic managed by their respective virtual interfaces.") .
+	'<br/><br/>' .
+	gettext("VLAN interfaces must be created on the VLANs tab before they can be assigned."), 'info', false);
+?>
 </div>
 
 <?php require_once(__DIR__ . '/includes/foot.inc'); ?>

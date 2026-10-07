@@ -5,7 +5,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-$pgtitle = array("Diagnostics", "Routing Tables");
+$pgtitle = array(gettext("Diagnostics"), gettext("Routing Tables"));
 $selected_menu = "diagnostics";
 require_once(__DIR__ . '/includes/head.inc');
 
@@ -14,28 +14,26 @@ $v4_routes = $routes['ipv4'] ?? [];
 $v6_routes = $routes['ipv6'] ?? [];
 ?>
 
-<h2>Diagnostics: Routing Tables</h2>
-
 <div class="panel panel-default">
 	<div class="panel-heading">
-		<h2 class="panel-title"><i class="fa fa-route"></i> IPv4 Routing Table</h2>
+		<h2 class="panel-title"><?=gettext("IPv4 Routing Table")?></h2>
 	</div>
 	<div class="panel-body">
 		<div class="table-responsive">
 			<table class="table table-striped table-hover table-condensed">
 				<thead>
 					<tr>
-						<th>Destination</th>
-						<th>Gateway</th>
-						<th>Interface</th>
-						<th>Protocol</th>
-						<th>Scope</th>
-						<th>Metric</th>
+						<th><?=gettext("Destination")?></th>
+						<th><?=gettext("Gateway")?></th>
+						<th><?=gettext("Interface")?></th>
+						<th><?=gettext("Protocol")?></th>
+						<th><?=gettext("Scope")?></th>
+						<th><?=gettext("Metric")?></th>
 					</tr>
 				</thead>
 				<tbody>
 				<?php if (empty($v4_routes)): ?>
-					<tr><td colspan="6" class="text-center text-muted">No IPv4 routes found.</td></tr>
+					<tr><td colspan="6" class="text-center text-muted"><?=gettext("No IPv4 routes found.")?></td></tr>
 				<?php else: ?>
 					<?php foreach ($v4_routes as $r): ?>
 					<tr>
@@ -56,7 +54,7 @@ $v6_routes = $routes['ipv6'] ?? [];
 
 <div class="panel panel-default">
 	<div class="panel-heading">
-		<h2 class="panel-title"><i class="fa fa-route"></i> IPv6 Routing Table</h2>
+		<h2 class="panel-title"><?=gettext("IPv6 Routing Table")?></h2>
 	</div>
 	<div class="panel-body">
 		<div class="table-responsive">
@@ -91,7 +89,10 @@ $v6_routes = $routes['ipv6'] ?? [];
 </div>
 
 <nav class="action-buttons">
-	<a href="diag_routes.php" class="btn btn-default"><i class="fa fa-sync"></i> Refresh Routing Tables</a>
+	<a href="diag_routes.php" role="button" class="btn btn-default btn-sm">
+		<i class="fa-solid fa-rotate icon-embed-btn"></i>
+		<?=gettext("Refresh")?>
+	</a>
 </nav>
 
 <?php require_once(__DIR__ . '/includes/foot.inc'); ?>

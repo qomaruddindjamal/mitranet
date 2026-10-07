@@ -5,7 +5,7 @@
  * Strictly communicates via REST API -> MitraNet Native nftables Engine.
  */
 
-$pgtitle = "Firewall: NAT: Port Forward";
+$pgtitle = array(gettext("Firewall"), gettext("NAT"), gettext("Port Forward"));
 $selected_menu = "firewall";
 require_once(__DIR__ . '/includes/head.inc');
 
@@ -74,24 +74,20 @@ $fw = MitraNetApi::getFirewall();
 $running_nat = $fw['config']['nat_rules'] ?? [];
 $candidate_nat = $fw['candidate']['nat_rules'] ?? [];
 $ifaces = MitraNetApi::getInterfaces();
+$tab_array = array();
+$tab_array[] = array(gettext("Port Forward"), true, "firewall_nat.php");
+$tab_array[] = array(gettext("1:1"), false, "firewall_nat_1to1.php");
+$tab_array[] = array(gettext("Outbound"), false, "firewall_nat_out.php");
+$tab_array[] = array(gettext("NPt"), false, "firewall_nat_npt.php");
+display_top_tabs($tab_array);
+
+if (!empty($msg)) {
+    print_info_box($msg, "success");
+}
+if (!empty($err)) {
+    print_info_box($err, "danger");
+}
 ?>
-
-<!-- Tab Navigation identical to pfSense -->
-<ul class="nav nav-tabs" style="margin-bottom: 20px;">
-	<li class="active"><a href="/firewall_nat.php">Port Forward</a></li>
-	<li><a href="/firewall_nat_1to1.php">1:1</a></li>
-	<li><a href="/firewall_nat_out.php">Outbound</a></li>
-	<li><a href="/firewall_nat_npt.php">NPt</a></li>
-</ul>
-
-<h2>Firewall: NAT: Port Forward</h2>
-
-<?php if (!empty($msg)): ?>
-	<div class="alert alert-success"><?=htmlspecialchars($msg)?></div>
-<?php endif; ?>
-<?php if (!empty($err)): ?>
-	<div class="alert alert-danger"><?=htmlspecialchars($err)?></div>
-<?php endif; ?>
 
 <!-- Running NAT Ruleset -->
 <div class="panel panel-default">

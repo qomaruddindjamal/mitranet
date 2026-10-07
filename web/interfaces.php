@@ -4,7 +4,7 @@
  * Adapted from pfSense interfaces.php
  */
 
-$pgtitle = "Interfaces: General Details";
+$pgtitle = array(gettext("Interfaces"), gettext("Interface Details"));
 $selected_menu = "interfaces";
 require_once(__DIR__ . '/includes/head.inc');
 
@@ -41,19 +41,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $ifaces = MitraNetApi::getInterfaces();
+
+if (!empty($msg)) {
+    print_info_box($msg, "success");
+}
+if (!empty($err)) {
+    print_info_box($err, "danger");
+}
 ?>
 
-<h2>Interfaces</h2>
-
-<?php if (!empty($msg)): ?>
-	<div class="alert alert-success"><?=htmlspecialchars($msg)?></div>
-<?php endif; ?>
-<?php if (!empty($err)): ?>
-	<div class="alert alert-danger"><?=htmlspecialchars($err)?></div>
-<?php endif; ?>
-
 <div class="panel panel-default">
-	<div class="panel-heading"><h3 class="panel-title">Detected Network Interfaces</h3></div>
+	<div class="panel-heading"><h2 class="panel-title"><?=gettext("Interface Details & Configuration")?></h2></div>
 	<div class="panel-body">
 		<table class="table table-striped table-hover">
 			<thead>

@@ -4,7 +4,7 @@
  * Adapted from pfSense diag_backup.php
  */
 
-$pgtitle = "Diagnostics: Backup, Restore & Transactions";
+$pgtitle = array(gettext("Diagnostics"), gettext("Backup & Restore"));
 $selected_menu = "diagnostics";
 require_once(__DIR__ . '/includes/head.inc');
 
@@ -34,42 +34,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $cfg = MitraNetApi::getConfigStatus();
+
+$tab_array = array();
+$tab_array[] = array(gettext("Backup & Restore"), true, "diag_backup.php");
+$tab_array[] = array(gettext("Config History"), false, "diag_backup.php#history");
+display_top_tabs($tab_array);
+
+if (!empty($msg)) {
+    print_info_box($msg, "success");
+}
+if (!empty($err)) {
+    print_info_box($err, "danger");
+}
 ?>
 
-<h2>Configuration & Transactions</h2>
-
-<?php if (!empty($msg)): ?>
-	<div class="alert alert-success"><?=htmlspecialchars($msg)?></div>
-<?php endif; ?>
-<?php if (!empty($err)): ?>
-	<div class="alert alert-danger"><?=htmlspecialchars($err)?></div>
-<?php endif; ?>
-
 <div class="panel panel-default">
-	<div class="panel-heading"><h3 class="panel-title"><i class="fa fa-history"></i> Transaction Engine Status</h3></div>
+	<div class="panel-heading"><h2 class="panel-title"><?=gettext("Transaction Engine Status")?></h2></div>
 	<div class="panel-body">
-		<p><strong>Running Config Version:</strong> <span class="label label-success">v<?=htmlspecialchars($cfg['running_version'] ?? 1)?></span></p>
-		<p><strong>Candidate Config Version:</strong> <span class="label label-info">v<?=htmlspecialchars($cfg['candidate_version'] ?? 1)?></span></p>
-		<p><strong>Transaction Lock:</strong> <?=!empty($cfg['is_locked']) ? '<span class="label label-danger">LOCKED</span>' : '<span class="label label-default">IDLE / UNLOCKED</span>'?></p>
-
-		<hr>
-		<form method="post" style="display:inline;">
-			<input type="hidden" name="action" value="apply">
-			<button type="submit" class="btn btn-success"><i class="fa fa-check"></i> Commit Candidate Changes</button>
-		</form>
+		<div class="content">
+			<p><strong><?=gettext("Running Config Version:")?></strong> <span class="label label-success">v<?=htmlspecialchars($cfg['running_version'] ?? 1)?></span></p>
+			<p><strong><?=gettext("Candidate Config Version:")?></strong> <span class="label label-info">v<?=htmlspecialchars($cfg['candidate_version'] ?? 1)?></span></p>
+			<p><strong><?=gettext("Transaction Lock:")?></strong> <?=!empty($cfg['is_locked']) ? '<span class="label label-danger">' . gettext("LOCKED") . '</span>' : '<span class="label label-default">' . gettext("IDLE / UNLOCKED") . '</span>'?></p>
+		</div>
+		<div class="panel-footer">
+			<form method="post" style="display:inline;">
+				<input type="hidden" name="action" value="apply">
+				<button type="submit" class="btn btn-success"><i class="fa-solid fa-check icon-embed-btn"></i><?=gettext("Commit Candidate Changes")?></button>
+			</form>
+		</div>
 	</div>
 </div>
 
 <div class="panel panel-default">
-	<div class="panel-heading"><h3 class="panel-title"><i class="fa fa-undo"></i> Rollback Configuration</h3></div>
+	<div class="panel-heading"><h2 class="panel-title"><?=gettext("Rollback Configuration")?></h2></div>
 	<div class="panel-body">
-		<form method="post" class="form-inline">
+		<form method="post" class="form-horizontal">
 			<input type="hidden" name="action" value="rollback">
 			<div class="form-group">
-				<label>Snapshot ID</label>
-				<input type="text" name="snapshot_id" class="form-control" placeholder="snap_20261007_..." required>
+				<label class="col-sm-2 control-label"><span class="element-required">*</span><?=gettext("Snapshot ID")?></label>
+				<div class="col-sm-6">
+					<input type="text" name="snapshot_id" class="form-control" placeholder="snap_20261007_..." required>
+				</div>
 			</div>
-			<button type="submit" class="btn btn-warning"><i class="fa fa-undo"></i> Rollback to Snapshot</button>
+			<div class="form-group">
+				<div class="col-sm-offset-2 col-sm-10">
+					<button type="submit" class="btn btn-warning"><i class="fa-solid fa-rotate-left icon-embed-btn"></i><?=gettext("Rollback to Snapshot")?></button>
+				</div>
+			</div>
 		</form>
 	</div>
 </div>

@@ -5,33 +5,36 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-$pgtitle = array("Diagnostics", "States");
+$pgtitle = array(gettext("Diagnostics"), gettext("States"));
 $selected_menu = "diagnostics";
 require_once(__DIR__ . '/includes/head.inc');
 
 $conntrack = MitraNetApi::getConntrackStates();
 $states = $conntrack['states'] ?? [];
 $total = $conntrack['total'] ?? count($states);
-?>
 
-<h2>Diagnostics: States & Connection Tracking</h2>
+$tab_array = array();
+$tab_array[] = array(gettext("States"), true, "diag_dump_states.php");
+$tab_array[] = array(gettext("Reset States"), false, "diag_dump_states.php#reset");
+display_top_tabs($tab_array);
+?>
 
 <div class="panel panel-default">
 	<div class="panel-heading">
-		<h2 class="panel-title"><i class="fa fa-exchange-alt"></i> Active Netfilter Conntrack States (Total: <?=intval($total)?>)</h2>
+		<h2 class="panel-title"><?=sprintf(gettext("Active Netfilter Conntrack States (Total: %d)"), intval($total))?></h2>
 	</div>
 	<div class="panel-body">
 		<div class="table-responsive">
 			<table class="table table-striped table-hover table-condensed" style="font-family: monospace; font-size: 12px;">
 				<thead>
 					<tr>
-						<th>Proto</th>
-						<th>State Details</th>
+						<th><?=gettext("Proto")?></th>
+						<th><?=gettext("State Details")?></th>
 					</tr>
 				</thead>
 				<tbody>
 				<?php if (empty($states)): ?>
-					<tr><td colspan="2" class="text-center text-muted">No active connection tracking states recorded.</td></tr>
+					<tr><td colspan="2" class="text-center text-muted"><?=gettext("No active connection tracking states recorded.")?></td></tr>
 				<?php else: ?>
 					<?php foreach ($states as $s): ?>
 					<tr>
@@ -47,7 +50,10 @@ $total = $conntrack['total'] ?? count($states);
 </div>
 
 <nav class="action-buttons">
-	<a href="diag_dump_states.php" class="btn btn-default"><i class="fa fa-sync"></i> Refresh States</a>
+	<a href="diag_dump_states.php" role="button" class="btn btn-default btn-sm">
+		<i class="fa-solid fa-rotate icon-embed-btn"></i>
+		<?=gettext("Refresh")?>
+	</a>
 </nav>
 
 <?php require_once(__DIR__ . '/includes/foot.inc'); ?>

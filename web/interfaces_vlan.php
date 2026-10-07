@@ -4,7 +4,7 @@
  * Adapted from pfSense interfaces_vlan.php
  */
 
-$pgtitle = "Interfaces: VLANs";
+$pgtitle = array(gettext("Interfaces"), gettext("VLANs"));
 $selected_menu = "interfaces";
 require_once(__DIR__ . '/includes/head.inc');
 
@@ -16,10 +16,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'create') {
         $parent = $_POST['parent'] ?? '';
         $tag = (int)($_POST['tag'] ?? 0);
+        $descr = trim($_POST['descr'] ?? '');
         if ($parent && $tag > 0 && $tag <= 4094) {
             $res = MitraNetApi::request('/vlans/create', 'POST', [
                 'parent_interface' => $parent,
-                'vlan_id' => $tag
+                'vlan_id' => $tag,
+                'description' => $descr
             ]);
             if ($res['status'] === 200) {
                 $msg = "VLAN interface '$parent.$tag' created successfully";
@@ -42,68 +44,95 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $vlans = MitraNetApi::getVlans();
 $ifaces = MitraNetApi::getInterfaces();
+
+$tab_array = array();
+$tab_array[] = array(gettext("Interface Assignments"), false, "interfaces_assign.php");
+$tab_array[] = array(gettext("VLANs"), true, "interfaces_vlan.php");
+$tab_array[] = array(gettext("Bridges"), false, "interfaces_bridge.php");
+$tab_array[] = array(gettext("LAGGs"), false, "interfaces_lagg.php");
+$tab_array[] = array(gettext("VRFs"), false, "interfaces_vrf.php");
+display_top_tabs($tab_array);
+
+if (!empty($msg)) {
+    print_info_box($msg, "success");
+}
+if (!empty($err)) {
+    print_info_box($err, "danger");
+}
 ?>
 
-<h2>VLANs</h2>
-
-<?php if (!empty($msg)): ?>
-	<div class="alert alert-success"><?=htmlspecialchars($msg)?></div>
-<?php endif; ?>
-<?php if (!empty($err)): ?>
-	<div class="alert alert-danger"><?=htmlspecialchars($err)?></div>
-<?php endif; ?>
+<div class="panel panel-default">
+	<div class="panel-heading"><h2 class="panel-title"><?=gettext("VLAN Interfaces")?></h2></div>
+	<div class="panel-body">
+		<div class="table-responsive">
+			<table class="table table-striped table-hover table-condensed">
+				<thead>
+					<tr>
+						<th><?=gettext("Interface")?></th>
+						<th><?=gettext("Parent Interface")?></th>
+						<th><?=gettext("VLAN Tag")?></th>
+						<th><?=gettext("Description")?></th>
+						<th><?=gettext("Actions")?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php if (empty($vlans)): ?>
+						<tr><td colspan="5" class="text-center text-muted"><?=gettext("No VLAN interfaces configured")?></td></tr>
+					<?php else: foreach ($vlans as $v): ?>
+						<tr>
+							<td><strong><?=htmlspecialchars($v['name'])?></strong></td>
+							<td><?=htmlspecialchars($v['parent_interface'])?></td>
+							<td><span class="label label-info"><?=htmlspecialchars($v['vlan_id'])?></span></td>
+							<td><?=htmlspecialchars($v['description'] ?? '')?></td>
+							<td>
+								<form method="post" style="display:inline;">
+									<input type="hidden" name="action" value="delete">
+									<input type="hidden" name="name" value="<?=htmlspecialchars($v['name'])?>">
+									<button type="submit" class="btn btn-xs btn-danger" title="<?=gettext('Delete VLAN')?>"><i class="fa-solid fa-trash-can"></i></button>
+								</form>
+							</td>
+						</tr>
+					<?php endforeach; endif; ?>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
 
 <div class="panel panel-default">
-	<div class="panel-heading"><h3 class="panel-title">802.1Q VLAN Interfaces</h3></div>
+	<div class="panel-heading"><h2 class="panel-title"><?=gettext("Create 802.1Q VLAN Interface")?></h2></div>
 	<div class="panel-body">
-		<table class="table table-striped table-hover">
-			<thead>
-				<tr>
-					<th>Interface</th>
-					<th>Parent Interface</th>
-					<th>VLAN Tag</th>
-					<th>Description</th>
-					<th>Action</th>
-				</tr>
-			</thead>
-			<tbody>
-				<?php if (empty($vlans)): ?>
-					<tr><td colspan="5" class="text-center text-muted">No VLAN interfaces configured</td></tr>
-				<?php else: foreach ($vlans as $v): ?>
-					<tr>
-						<td><strong><?=htmlspecialchars($v['name'])?></strong></td>
-						<td><?=htmlspecialchars($v['parent_interface'])?></td>
-						<td><span class="label label-info"><?=htmlspecialchars($v['vlan_id'])?></span></td>
-						<td><?=htmlspecialchars($v['description'] ?? '')?></td>
-						<td>
-							<form method="post" style="display:inline;">
-								<input type="hidden" name="action" value="delete">
-								<input type="hidden" name="name" value="<?=htmlspecialchars($v['name'])?>">
-								<button type="submit" class="btn btn-xs btn-danger"><i class="fa fa-trash"></i></button>
-							</form>
-						</td>
-					</tr>
-				<?php endforeach; endif; ?>
-			</tbody>
-		</table>
-
-		<hr>
-		<h4>Create VLAN Interface</h4>
-		<form method="post" class="form-inline">
+		<form method="post" class="form-horizontal">
 			<input type="hidden" name="action" value="create">
 			<div class="form-group">
-				<label>Parent Interface</label>
-				<select name="parent" class="form-control" required>
-					<?php foreach ($ifaces as $i): if ($i['name']!=='lo'): ?>
-						<option value="<?=htmlspecialchars($i['name'])?>"><?=htmlspecialchars($i['name'])?></option>
-					<?php endif; endforeach; ?>
-				</select>
+				<label class="col-sm-2 control-label"><span class="element-required">*</span><?=gettext("Parent Interface")?></label>
+				<div class="col-sm-10">
+					<select name="parent" class="form-control" required>
+						<?php foreach ($ifaces as $i): if ($i['name']!=='lo'): ?>
+							<option value="<?=htmlspecialchars($i['name'])?>"><?=htmlspecialchars($i['name'])?> (<?=htmlspecialchars($i['type'] ?? 'ether')?>)</option>
+						<?php endif; endforeach; ?>
+					</select>
+					<span class="help-block"><?=gettext("Physical interface on which the 802.1Q tag will be encapsulated.")?></span>
+				</div>
 			</div>
 			<div class="form-group">
-				<label>VLAN Tag (1-4094)</label>
-				<input type="number" name="tag" class="form-control" min="1" max="4094" placeholder="100" required>
+				<label class="col-sm-2 control-label"><span class="element-required">*</span><?=gettext("VLAN Tag")?></label>
+				<div class="col-sm-10">
+					<input type="number" name="tag" class="form-control" min="1" max="4094" placeholder="100" required>
+					<span class="help-block"><?=gettext("802.1Q VLAN tag (integer between 1 and 4094).")?></span>
+				</div>
 			</div>
-			<button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i> Add VLAN</button>
+			<div class="form-group">
+				<label class="col-sm-2 control-label"><?=gettext("Description")?></label>
+				<div class="col-sm-10">
+					<input type="text" name="descr" class="form-control" placeholder="Office VLAN">
+				</div>
+			</div>
+			<div class="form-group">
+				<div class="col-sm-offset-2 col-sm-10">
+					<button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus icon-embed-btn"></i><?=gettext("Add VLAN")?></button>
+				</div>
+			</div>
 		</form>
 	</div>
 </div>

@@ -5,7 +5,7 @@
  * Strictly communicates via REST API -> MitraNet Native nftables Engine.
  */
 
-$pgtitle = "Firewall: NAT: Outbound";
+$pgtitle = array(gettext("Firewall"), gettext("NAT"), gettext("Outbound"));
 $selected_menu = "firewall";
 require_once(__DIR__ . '/includes/head.inc');
 
@@ -71,28 +71,24 @@ $fw = MitraNetApi::getFirewall();
 $running_nat = array_filter($fw['config']['nat_rules'] ?? [], fn($r) => ($r['nat_type'] ?? '') === 'outbound');
 $candidate_nat = array_filter($fw['candidate']['nat_rules'] ?? [], fn($r) => ($r['nat_type'] ?? '') === 'outbound');
 $ifaces = MitraNetApi::getInterfaces();
+$tab_array = array();
+$tab_array[] = array(gettext("Port Forward"), false, "firewall_nat.php");
+$tab_array[] = array(gettext("1:1"), false, "firewall_nat_1to1.php");
+$tab_array[] = array(gettext("Outbound"), true, "firewall_nat_out.php");
+$tab_array[] = array(gettext("NPt"), false, "firewall_nat_npt.php");
+display_top_tabs($tab_array);
+
+if (!empty($msg)) {
+    print_info_box($msg, "success");
+}
+if (!empty($err)) {
+    print_info_box($err, "danger");
+}
 ?>
-
-<!-- Tab Navigation identical to pfSense -->
-<ul class="nav nav-tabs" style="margin-bottom: 20px;">
-	<li><a href="/firewall_nat.php">Port Forward</a></li>
-	<li><a href="/firewall_nat_1to1.php">1:1</a></li>
-	<li class="active"><a href="/firewall_nat_out.php">Outbound</a></li>
-	<li><a href="/firewall_nat_npt.php">NPt</a></li>
-</ul>
-
-<h2>Firewall: NAT: Outbound (SNAT / Masquerade)</h2>
-
-<?php if (!empty($msg)): ?>
-	<div class="alert alert-success"><?=htmlspecialchars($msg)?></div>
-<?php endif; ?>
-<?php if (!empty($err)): ?>
-	<div class="alert alert-danger"><?=htmlspecialchars($err)?></div>
-<?php endif; ?>
 
 <!-- Running NAT Ruleset -->
 <div class="panel panel-default">
-	<div class="panel-heading"><h3 class="panel-title"><i class="fa fa-list"></i> Active / Running Outbound NAT Rules</h3></div>
+	<div class="panel-heading"><h2 class="panel-title"><?=gettext("Active Outbound NAT Rules (SNAT / Masquerade)")?></h2></div>
 	<div class="panel-body">
 		<table class="table table-striped table-hover">
 			<thead>

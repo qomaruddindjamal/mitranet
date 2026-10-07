@@ -4,20 +4,17 @@
  * Adapted from pfSense firewall_nat_npt.php
  */
 
-$pgtitle = "Firewall: NAT: NPt (Network Prefix Translation IPv6)";
+$pgtitle = array(gettext("Firewall"), gettext("NAT"), gettext("NPt"));
 $selected_menu = "firewall";
 require_once(__DIR__ . '/includes/head.inc');
+
+$tab_array = array();
+$tab_array[] = array(gettext("Port Forward"), false, "firewall_nat.php");
+$tab_array[] = array(gettext("1:1"), false, "firewall_nat_1to1.php");
+$tab_array[] = array(gettext("Outbound"), false, "firewall_nat_out.php");
+$tab_array[] = array(gettext("NPt"), true, "firewall_nat_npt.php");
+display_top_tabs($tab_array);
 ?>
-
-<!-- Tab Navigation identical to pfSense -->
-<ul class="nav nav-tabs" style="margin-bottom: 20px;">
-	<li><a href="/firewall_nat.php">Port Forward</a></li>
-	<li><a href="/firewall_nat_1to1.php">1:1</a></li>
-	<li><a href="/firewall_nat_out.php">Outbound</a></li>
-	<li class="active"><a href="/firewall_nat_npt.php">NPt</a></li>
-</ul>
-
-<h2>Firewall: NAT: NPt (IPv6 Prefix Translation)</h2>
 
 <div class="panel panel-default">
 	<div class="panel-heading"><h3 class="panel-title"><i class="fa fa-info-circle"></i> IPv6 Prefix Translation</h3></div>

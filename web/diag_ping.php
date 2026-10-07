@@ -5,7 +5,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-$pgtitle = array("Diagnostics", "Ping");
+$pgtitle = array(gettext("Diagnostics"), gettext("Ping"));
 $selected_menu = "diagnostics";
 require_once(__DIR__ . '/includes/head.inc');
 
@@ -28,29 +28,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $err = "Host/IP address is required.";
     }
 }
+
+if (!empty($err)) {
+    print_info_box($err, "danger");
+}
 ?>
-
-<h2>Diagnostics: Ping</h2>
-
-<?php if (!empty($err)): ?>
-	<div class="alert alert-danger alert-dismissible" role="alert">
-		<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-		<i class="fa fa-exclamation-circle"></i> <?=htmlspecialchars($err)?>
-	</div>
-<?php endif; ?>
 
 <form method="post" action="diag_ping.php" class="form-horizontal">
 	<div class="panel panel-default">
-		<div class="panel-heading"><h2 class="panel-title"><i class="fa fa-terminal"></i> Ping Target</h2></div>
+		<div class="panel-heading"><h2 class="panel-title"><?=gettext("Ping Target")?></h2></div>
 		<div class="panel-body">
 			<div class="form-group">
-				<label class="col-sm-2 control-label" for="host">Hostname / IP Address</label>
+				<label class="col-sm-2 control-label" for="host"><span class="element-required">*</span><?=gettext("Hostname / IP Address")?></label>
 				<div class="col-sm-6">
 					<input type="text" class="form-control" id="host" name="host" value="<?=htmlspecialchars($host)?>" placeholder="e.g. 192.168.56.1 or 8.8.8.8" required>
 				</div>
 			</div>
 			<div class="form-group">
-				<label class="col-sm-2 control-label" for="count">Count</label>
+				<label class="col-sm-2 control-label" for="count"><?=gettext("Count")?></label>
 				<div class="col-sm-2">
 					<select class="form-control" id="count" name="count">
 						<option value="1" <?=$count===1?'selected':''?>>1</option>
@@ -61,9 +56,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					</select>
 				</div>
 			</div>
-		</div>
-		<div class="panel-footer">
-			<button type="submit" class="btn btn-primary"><i class="fa fa-play"></i> Send Ping</button>
+			<div class="form-group">
+				<div class="col-sm-offset-2 col-sm-10">
+					<button type="submit" class="btn btn-primary"><i class="fa-solid fa-play icon-embed-btn"></i><?=gettext("Ping")?></button>
+				</div>
+			</div>
 		</div>
 	</div>
 </form>

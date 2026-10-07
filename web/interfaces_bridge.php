@@ -4,7 +4,7 @@
  * Adapted from pfSense interfaces_bridge.php
  */
 
-$pgtitle = "Interfaces: Bridges";
+$pgtitle = array(gettext("Interfaces"), gettext("Bridges"));
 $selected_menu = "interfaces";
 require_once(__DIR__ . '/includes/head.inc');
 
@@ -41,64 +41,86 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $bridges = MitraNetApi::getBridges();
+
+$tab_array = array();
+$tab_array[] = array(gettext("Interface Assignments"), false, "interfaces_assign.php");
+$tab_array[] = array(gettext("VLANs"), false, "interfaces_vlan.php");
+$tab_array[] = array(gettext("Bridges"), true, "interfaces_bridge.php");
+$tab_array[] = array(gettext("LAGGs"), false, "interfaces_lagg.php");
+$tab_array[] = array(gettext("VRFs"), false, "interfaces_vrf.php");
+display_top_tabs($tab_array);
+
+if (!empty($msg)) {
+    print_info_box($msg, "success");
+}
+if (!empty($err)) {
+    print_info_box($err, "danger");
+}
 ?>
 
-<h2>Bridges</h2>
-
-<?php if (!empty($msg)): ?>
-	<div class="alert alert-success"><?=htmlspecialchars($msg)?></div>
-<?php endif; ?>
-<?php if (!empty($err)): ?>
-	<div class="alert alert-danger"><?=htmlspecialchars($err)?></div>
-<?php endif; ?>
+<div class="panel panel-default">
+	<div class="panel-heading"><h2 class="panel-title"><?=gettext("Configured Bridges")?></h2></div>
+	<div class="panel-body">
+		<div class="table-responsive">
+			<table class="table table-striped table-hover table-condensed">
+				<thead>
+					<tr>
+						<th><?=gettext("Bridge Interface")?></th>
+						<th><?=gettext("Member Interfaces")?></th>
+						<th><?=gettext("STP Enabled")?></th>
+						<th><?=gettext("Actions")?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php if (empty($bridges)): ?>
+						<tr><td colspan="4" class="text-center text-muted"><?=gettext("No bridges configured")?></td></tr>
+					<?php else: foreach ($bridges as $b): ?>
+						<tr>
+							<td><strong><?=htmlspecialchars($b['name'])?></strong></td>
+							<td><?=htmlspecialchars(implode(', ', $b['members'] ?? []))?></td>
+							<td><?=!empty($b['stp']) ? 'Yes' : 'No'?></td>
+							<td>
+								<form method="post" style="display:inline;">
+									<input type="hidden" name="action" value="delete">
+									<input type="hidden" name="name" value="<?=htmlspecialchars($b['name'])?>">
+									<button type="submit" class="btn btn-xs btn-danger" title="<?=gettext('Delete bridge')?>"><i class="fa-solid fa-trash-can"></i></button>
+								</form>
+							</td>
+						</tr>
+					<?php endforeach; endif; ?>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
 
 <div class="panel panel-default">
-	<div class="panel-heading"><h3 class="panel-title">Configured Bridges</h3></div>
+	<div class="panel-heading"><h2 class="panel-title"><?=gettext("Create Bridge Interface")?></h2></div>
 	<div class="panel-body">
-		<table class="table table-striped table-hover">
-			<thead>
-				<tr>
-					<th>Bridge Interface</th>
-					<th>Member Interfaces</th>
-					<th>STP Enabled</th>
-					<th>Action</th>
-				</tr>
-			</thead>
-			<tbody>
-				<?php if (empty($bridges)): ?>
-					<tr><td colspan="4" class="text-center text-muted">No bridges configured</td></tr>
-				<?php else: foreach ($bridges as $b): ?>
-					<tr>
-						<td><strong><?=htmlspecialchars($b['name'])?></strong></td>
-						<td><?=htmlspecialchars(implode(', ', $b['members'] ?? []))?></td>
-						<td><?=!empty($b['stp']) ? 'Yes' : 'No'?></td>
-						<td>
-							<form method="post" style="display:inline;">
-								<input type="hidden" name="action" value="delete">
-								<input type="hidden" name="name" value="<?=htmlspecialchars($b['name'])?>">
-								<button type="submit" class="btn btn-xs btn-danger"><i class="fa fa-trash"></i></button>
-							</form>
-						</td>
-					</tr>
-				<?php endforeach; endif; ?>
-			</tbody>
-		</table>
-
-		<hr>
-		<h4>Create Bridge</h4>
-		<form method="post" class="form-inline">
+		<form method="post" class="form-horizontal">
 			<input type="hidden" name="action" value="create">
 			<div class="form-group">
-				<label>Bridge Name</label>
-				<input type="text" name="name" class="form-control" placeholder="br0" required>
+				<label class="col-sm-2 control-label"><span class="element-required">*</span><?=gettext("Bridge Name")?></label>
+				<div class="col-sm-10">
+					<input type="text" name="name" class="form-control" placeholder="br0" required>
+					<span class="help-block"><?=gettext("Name identifier for the Linux bridge device (e.g. br0).")?></span>
+				</div>
 			</div>
 			<div class="form-group">
-				<label>Members (comma separated)</label>
-				<input type="text" name="members" class="form-control" placeholder="enp0s8">
+				<label class="col-sm-2 control-label"><span class="element-required">*</span><?=gettext("Member Interfaces")?></label>
+				<div class="col-sm-10">
+					<input type="text" name="members" class="form-control" placeholder="enp0s8, enp0s9">
+					<span class="help-block"><?=gettext("Comma-separated list of member interfaces to bridge together.")?></span>
+				</div>
 			</div>
-			<button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i> Add Bridge</button>
+			<div class="form-group">
+				<div class="col-sm-offset-2 col-sm-10">
+					<button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus icon-embed-btn"></i><?=gettext("Add Bridge")?></button>
+				</div>
+			</div>
 		</form>
 	</div>
 </div>
 
 <?php require_once(__DIR__ . '/includes/foot.inc'); ?>
+
