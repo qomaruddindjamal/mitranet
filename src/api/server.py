@@ -479,6 +479,115 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"total": len(states), "states": states})
             return
 
+        # 14. Packages List
+        if path == "/api/v1/packages":
+            import subprocess
+            packages = []
+            try:
+                cmd = ["dpkg-query", "-W", "-f=${Package}|${Version}|${Status}|${Description}\\n"]
+                proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
+                for line in proc.stdout.splitlines():
+                    parts = line.split("|")
+                    if len(parts) >= 3 and "installed" in parts[2]:
+                        pkg_name = parts[0]
+                        version = parts[1]
+                        desc = parts[3].split("\n")[0] if len(parts) > 3 else ""
+                        packages.append({
+                            "name": pkg_name,
+                            "version": version,
+                            "status": "installed",
+                            "description": desc,
+                            "category": "system"
+                        })
+            except Exception as e:
+                logger.warning("Error querying dpkg packages: %s", e)
+            self._send_json(200, {"packages": packages})
+            return
+
+        # 15. WireGuard Status & Config
+        if path == "/api/v1/wireguard":
+            import subprocess
+            tunnels = []
+            wg_running = False
+            try:
+                proc = subprocess.run(["systemctl", "is-active", "wg-quick@wg0"], stdout=subprocess.PIPE, text=True)
+                wg_running = (proc.stdout.strip() == "active")
+
+                show_proc = subprocess.run(["wg", "show", "all", "dump"], stdout=subprocess.PIPE, text=True)
+                lines = show_proc.stdout.strip().splitlines()
+                
+                cur_tun = None
+                for line in lines:
+                    cols = line.split("\t")
+                    if len(cols) == 5:
+                        # Interface line
+                        dev, priv, pub, port, fwmark = cols
+                        cur_tun = {
+                            "name": dev,
+                            "public_key": pub,
+                            "listen_port": port,
+                            "enabled": True,
+                            "peers": []
+                        }
+                        tunnels.append(cur_tun)
+                    elif len(cols) == 9 and cur_tun:
+                        # Peer line
+                        dev, pub, psk, endpoint, allowed_ips, latest_handshake, rx, tx, persistent_keepalive = cols
+                        cur_tun["peers"].append({
+                            "public_key": pub,
+                            "endpoint": endpoint,
+                            "allowed_ips": allowed_ips,
+                            "latest_handshake": latest_handshake,
+                            "transfer_rx": rx,
+                            "transfer_tx": tx,
+                            "persistent_keepalive": persistent_keepalive
+                        })
+            except Exception as e:
+                logger.warning("Error getting wireguard status: %s", e)
+
+            # Fallback if config exists on disk but wg not running
+            if not tunnels and os.path.exists("/etc/wireguard/wg0.conf"):
+                tunnels.append({
+                    "name": "wg0",
+                    "public_key": "Configured on /etc/wireguard/wg0.conf",
+                    "listen_port": 51820,
+                    "enabled": wg_running,
+                    "peers": []
+                })
+
+            self._send_json(200, {
+                "running": wg_running,
+                "tunnels": tunnels
+            })
+            return
+
+        # 16. Xray-core Status & Config
+        if path == "/api/v1/xray":
+            import subprocess
+            xray_running = False
+            version_str = "Xray 1.8.24 (go1.23.0 linux/amd64)"
+            cfg_obj = {}
+            try:
+                proc = subprocess.run(["systemctl", "is-active", "xray"], stdout=subprocess.PIPE, text=True)
+                xray_running = (proc.stdout.strip() == "active")
+
+                vproc = subprocess.run(["/usr/local/bin/xray", "version"], stdout=subprocess.PIPE, text=True)
+                if vproc.returncode == 0:
+                    version_str = vproc.stdout.splitlines()[0]
+
+                if os.path.exists("/usr/local/etc/xray/config.json"):
+                    with open("/usr/local/etc/xray/config.json", "r") as f:
+                        cfg_obj = json.load(f)
+            except Exception as e:
+                logger.warning("Error querying xray status: %s", e)
+
+            self._send_json(200, {
+                "running": xray_running,
+                "version": version_str,
+                "config": cfg_obj
+            })
+            return
+
         self._send_json(404, {"error": "Endpoint not found"})
 
     # =========================================================================
@@ -851,6 +960,56 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 self._send_json(200, {"host": target, "output": proc.stdout, "returncode": proc.returncode})
             except Exception as e:
                 self._send_json(500, {"error": f"Traceroute execution failed: {e}"})
+            return
+
+        # 12. WireGuard Service Mutations
+        if path == "/api/v1/wireguard/service":
+            action = payload.get("action", "") # start, stop, restart
+            if action not in ("start", "stop", "restart"):
+                self._send_json(400, {"error": "Invalid action. Use start, stop, or restart"})
+                return
+            try:
+                import subprocess
+                cmd = ["systemctl", action, "wg-quick@wg0"]
+                proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
+                is_active = (subprocess.run(["systemctl", "is-active", "wg-quick@wg0"], stdout=subprocess.PIPE, text=True).stdout.strip() == "active")
+                self._send_json(200, {
+                    "success": (proc.returncode == 0),
+                    "action": action,
+                    "running": is_active,
+                    "message": f"WireGuard service {action} executed"
+                })
+            except Exception as e:
+                self._send_json(500, {"error": f"WireGuard service action failed: {e}"})
+            return
+
+        # 13. Xray-core Service Mutations
+        if path == "/api/v1/xray/service":
+            action = payload.get("action", "") # start, stop, restart, test
+            if action not in ("start", "stop", "restart", "test"):
+                self._send_json(400, {"error": "Invalid action. Use start, stop, restart, or test"})
+                return
+            try:
+                import subprocess
+                if action == "test":
+                    proc = subprocess.run(["/usr/local/bin/xray", "run", "-test", "-c", "/usr/local/etc/xray/config.json"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=10)
+                    self._send_json(200, {
+                        "success": (proc.returncode == 0),
+                        "output": proc.stdout
+                    })
+                    return
+
+                cmd = ["systemctl", action, "xray"]
+                proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
+                is_active = (subprocess.run(["systemctl", "is-active", "xray"], stdout=subprocess.PIPE, text=True).stdout.strip() == "active")
+                self._send_json(200, {
+                    "success": (proc.returncode == 0),
+                    "action": action,
+                    "running": is_active,
+                    "message": f"Xray service {action} executed"
+                })
+            except Exception as e:
+                self._send_json(500, {"error": f"Xray service action failed: {e}"})
             return
 
         self._send_json(404, {"error": "Endpoint not found"})

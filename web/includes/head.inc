@@ -44,7 +44,7 @@ $system_menu = array(
     array("Certificates", "#"),
     array("General Setup", "/system.php"),
     array("High Availability", "#"),
-    array("Package Manager", "#"),
+    array("Package Manager", "/pkg_mgr_installed.php"),
     array("Register", "#"),
     array("Routing", "/system_gateways.php"),
     array("Setup Wizard", "#"),
@@ -102,7 +102,8 @@ $vpn_menu = array(
     array("IPsec", "#"),
     array("L2TP", "#"),
     array("OpenVPN", "#"),
-    array("Xray-core", "#")
+    array("WireGuard", "/wg/vpn_wg_tunnels.php"),
+    array("Xray-core", "/vpn_xray.php")
 );
 
 $status_menu = array(
@@ -123,7 +124,8 @@ $status_menu = array(
     array("Services", "#"),
     array("System Logs", "/status_logs.php"),
     array("Traffic Graph", "#"),
-    array("UPnP IGD &amp; PCP", "#")
+    array("UPnP IGD &amp; PCP", "#"),
+    array("WireGuard", "/wg/status_wireguard.php")
 );
 
 $diagnostics_menu = array(
@@ -175,6 +177,8 @@ $sidebar_structure = array(
     array('id' => 'firewall', 'name' => 'Firewall', 'icon' => 'fa-shield-halved', 'menu' => $firewall_menu),
     array('id' => 'services', 'name' => 'Services', 'icon' => 'fa-cubes', 'menu' => $services_menu),
     array('id' => 'vpn', 'name' => 'VPN', 'icon' => 'fa-key', 'menu' => $vpn_menu),
+    array('id' => 'wireguard', 'name' => 'WireGuard', 'icon' => 'fa-circle-nodes', 'url' => '/wg/vpn_wg_tunnels.php', 'direct' => true),
+    array('id' => 'xray', 'name' => 'Xray-core', 'icon' => 'fa-bolt', 'url' => '/vpn_xray.php', 'direct' => true),
     array('id' => 'kvm', 'name' => 'KVM', 'icon' => 'fa-server', 'url' => '/services_virtual.php', 'direct' => true),
     array('id' => 'diagnostics', 'name' => 'Diagnostics', 'icon' => 'fa-toolbox', 'menu' => $diagnostics_menu),
     array('id' => 'terminal', 'name' => 'Terminal', 'icon' => 'fa-terminal', 'url' => '/diag_terminal.php', 'direct' => true),

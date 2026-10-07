@@ -174,4 +174,27 @@ class MitraNetApi {
     public static function updateHostname($hostname) {
         return self::request('/system/update', 'POST', ['hostname' => $hostname]);
     }
+
+    public static function getPackages() {
+        $res = self::request('/packages');
+        return $res['status'] === 200 ? ($res['data']['packages'] ?? []) : [];
+    }
+
+    public static function getWireGuard() {
+        $res = self::request('/wireguard');
+        return $res['status'] === 200 ? $res['data'] : ['running' => false, 'tunnels' => []];
+    }
+
+    public static function controlWireGuard($action) {
+        return self::request('/wireguard/service', 'POST', ['action' => $action]);
+    }
+
+    public static function getXray() {
+        $res = self::request('/xray');
+        return $res['status'] === 200 ? $res['data'] : ['running' => false, 'version' => '', 'config' => []];
+    }
+
+    public static function controlXray($action) {
+        return self::request('/xray/service', 'POST', ['action' => $action]);
+    }
 }
