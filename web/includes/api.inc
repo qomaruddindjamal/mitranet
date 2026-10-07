@@ -368,5 +368,14 @@ class MitraNetApi {
     public static function deleteVethernet($name) {
         return self::request('/interfaces/vethernet/delete', 'POST', ['name' => $name]);
     }
+
+    public static function getDhcpConfigs() {
+        $res = self::request('/services/dhcp');
+        return $res['status'] === 200 ? ($res['data']['dhcp'] ?? []) : [];
+    }
+
+    public static function saveDhcpConfig($payload) {
+        return self::request('/services/dhcp/save', 'POST', $payload);
+    }
 }
 

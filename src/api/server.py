@@ -844,6 +844,45 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"success": True, "vethernet": vethernets})
             return
 
+        # 18b. DHCP Server Settings (dnsmasq per-interface config)
+        if path == "/api/v1/services/dhcp":
+            import glob
+            dhcp_configs = {}
+            conf_dir = "/etc/dnsmasq.d"
+            if os.path.isdir(conf_dir):
+                for fpath in glob.glob(f"{conf_dir}/*.conf"):
+                    fname = os.path.basename(fpath)
+                    ifname = fname.replace("vethernet_", "").replace("dhcp_", "").replace(".conf", "")
+                    cfg = {
+                        "interface": ifname,
+                        "enabled": True,
+                        "range_start": "",
+                        "range_end": "",
+                        "gateway": "",
+                        "dns": [],
+                        "lease_time": "12h"
+                    }
+                    try:
+                        with open(fpath, "r") as cf:
+                            for line in cf:
+                                line = line.strip()
+                                if line.startswith("dhcp-range="):
+                                    parts = line.split("=", 1)[1].split(",")
+                                    if len(parts) >= 3:
+                                        cfg["range_start"] = parts[1]
+                                        cfg["range_end"] = parts[2]
+                                        if len(parts) >= 5:
+                                            cfg["lease_time"] = parts[4]
+                                elif line.startswith("dhcp-option=") and "option:router" in line:
+                                    cfg["gateway"] = line.split(",")[-1]
+                                elif line.startswith("dhcp-option=") and "option:dns-server" in line:
+                                    cfg["dns"] = line.split(",")[2:]
+                        dhcp_configs[ifname] = cfg
+                    except Exception:
+                        pass
+            self._send_json(200, {"success": True, "dhcp": dhcp_configs})
+            return
+
         # 19. Virtual Machines (KVM / Containers) - Live Inspection (No Dummy)
         if path == "/api/v1/services/kvm":
             import subprocess
@@ -2214,6 +2253,82 @@ AllowedIPs = {allowed_ips}
                 self._send_json(200, {"success": True, "message": f"vEthernet interface '{name}' berhasil dihapus."})
             except Exception as e:
                 self._send_json(500, {"error": f"Gagal menghapus interface: {e}"})
+            return
+
+        # 22b. DHCP Server Settings Mutation
+        if path == "/api/v1/services/dhcp/save":
+            import subprocess
+            ifname = payload.get("interface", "").strip()
+            enabled = bool(payload.get("enabled", True))
+            range_start = payload.get("range_start", "").strip()
+            range_end = payload.get("range_end", "").strip()
+            gateway = payload.get("gateway", "").strip()
+            dns_servers = payload.get("dns", [])
+            lease_time = payload.get("lease_time", "12h").strip() or "12h"
+
+            if not ifname:
+                self._send_json(400, {"error": "Interface name required"})
+                return
+
+            conf_file = f"/etc/dnsmasq.d/dhcp_{ifname}.conf"
+            # Also check vethernet conf file
+            veth_conf_file = f"/etc/dnsmasq.d/vethernet_{ifname}.conf"
+
+            try:
+                if not enabled:
+                    # Remove configuration if disabled
+                    for cf in (conf_file, veth_conf_file):
+                        if os.path.exists(cf):
+                            os.remove(cf)
+                    subprocess.run(["systemctl", "restart", "dnsmasq"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    self._send_json(200, {"success": True, "message": f"DHCP Server for {ifname} disabled."})
+                    return
+
+                if not range_start or not range_end:
+                    self._send_json(400, {"error": "DHCP range start and end required"})
+                    return
+
+                # Build dnsmasq config lines
+                lines = [
+                    f"interface={ifname}",
+                    f"bind-interfaces",
+                    f"dhcp-range={ifname},{range_start},{range_end},255.255.255.0,{lease_time}",
+                ]
+                if gateway:
+                    lines.append(f"dhcp-option={ifname},option:router,{gateway}")
+                if dns_servers:
+                    if isinstance(dns_servers, list):
+                        dns_str = ",".join(str(d).strip() for d in dns_servers if str(d).strip())
+                    else:
+                        dns_str = str(dns_servers).strip()
+                    if dns_str:
+                        lines.append(f"dhcp-option={ifname},option:dns-server,{dns_str}")
+
+                target_file = veth_conf_file if os.path.exists(veth_conf_file) else conf_file
+                os.makedirs("/etc/dnsmasq.d", exist_ok=True)
+                with open(target_file, "w") as df:
+                    df.write("\n".join(lines) + "\n")
+
+                # Restart dnsmasq
+                subprocess.run(["systemctl", "restart", "dnsmasq"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                # Ensure NAT masquerade if interface has private IP subnet
+                try:
+                    import ipaddress
+                    if gateway:
+                        net_obj = ipaddress.ip_network(f"{gateway}/24", strict=False)
+                        subprocess.run([
+                            "iptables", "-t", "nat", "-C", "POSTROUTING", "-s", str(net_obj), "!", "-o", ifname, "-j", "MASQUERADE"
+                        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                        subprocess.run([
+                            "iptables", "-t", "nat", "-A", "POSTROUTING", "-s", str(net_obj), "!", "-o", ifname, "-j", "MASQUERADE"
+                        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                except Exception:
+                    pass
+
+                self._send_json(200, {"success": True, "message": f"DHCP Server for {ifname} saved and active."})
+            except Exception as e:
+                self._send_json(500, {"error": f"Failed saving DHCP configuration: {e}"})
             return
 
         # 23. Linux Bridge Creation & Member Port Attachment

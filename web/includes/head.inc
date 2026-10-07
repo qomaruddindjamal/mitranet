@@ -83,11 +83,11 @@ $firewall_menu = array(
 
 $services_menu = array(
     array("Auto Config Backup", "#"),
-    array("Captive Portal", "#"),
-    array("DHCP Relay", "#"),
-    array("DHCP Server", "#"),
-    array("DHCPv6 Relay", "#"),
-    array("DHCPv6 Server", "#"),
+    array("Captive Portal", "/services_captiveportal.php"),
+    array("DHCP Relay", "/services_dhcp_relay.php"),
+    array("DHCP Server", "/services_dhcp_settings.php"),
+    array("DHCPv6 Relay", "/services_dhcpv6_relay.php"),
+    array("DHCPv6 Server", "/services_dhcpv6_settings.php"),
     array("DNS Forwarder", "#"),
     array("DNS Resolver", "#"),
     array("Dynamic DNS", "#"),
