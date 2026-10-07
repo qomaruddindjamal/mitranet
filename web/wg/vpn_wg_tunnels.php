@@ -55,7 +55,7 @@ display_top_tabs($tab_array, false, 'pills');
 </div>
 <?php else: ?>
 <div class="alert alert-success clearfix" role="alert">
-	<div class="pull-left"><i class="fa-solid fa-check-circle"></i> WireGuard kernel service is running (in-tree Linux 6.12 kernel module active).</div>
+	<div class="pull-left"><i class="fa-solid fa-check-circle"></i> WireGuard service is running.</div>
 	<form method="post" class="pull-right" style="margin: 0;">
 		<input type="hidden" name="act" value="restart">
 		<button type="submit" class="btn btn-xs btn-warning"><i class="fa-solid fa-arrows-rotate"></i> Restart</button>
@@ -67,44 +67,71 @@ display_top_tabs($tab_array, false, 'pills');
 
 <div class="panel panel-default">
 	<div class="panel-heading">
-        <h2 class="panel-title">
-            <i class="fa-solid fa-shield-halved"></i> WireGuard Tunnels (Server &amp; Client Modes)
-        </h2>
+        <h2 class="panel-title">Tunnels</h2>
     </div>
 	<div class="panel-body table-responsive">
-		<table class="table table-hover table-striped table-condensed">
+		<table class="table table-hover table-striped table-condensed tree">
 			<thead>
 				<tr>
 					<th>Name</th>
-					<th>Listen Port</th>
+					<th>Description</th>
 					<th>Public Key</th>
-					<th>Status</th>
-					<th>Peers Count</th>
-					<th style="text-align: right;">Actions</th>
+					<th>Address / Assignment</th>
+					<th>Listen Port</th>
+					<th>Peers</th>
+					<th>Actions</th>
 				</tr>
 			</thead>
 			<tbody>
 			<?php if (empty($tunnels)): ?>
-				<tr><td colspan="6" class="text-center text-muted">No WireGuard tunnels configured.</td></tr>
+				<tr><td colspan="7" class="text-center text-muted">No WireGuard tunnels configured.</td></tr>
 			<?php else: ?>
 				<?php foreach ($tunnels as $tun): ?>
-				<tr>
-					<td><strong><?=htmlspecialchars($tun['name'])?></strong></td>
-					<td><code><?=htmlspecialchars($tun['listen_port'])?></code></td>
-					<td><code title="<?=htmlspecialchars($tun['public_key'])?>"><?=htmlspecialchars(substr($tun['public_key'], 0, 24))?>...</code></td>
-					<td>
-						<?php if ($is_running): ?>
-							<span class="label label-success"><i class="fa-solid fa-check"></i> ACTIVE</span>
-						<?php else: ?>
-							<span class="label label-danger"><i class="fa-solid fa-ban"></i> STOPPED</span>
-						<?php endif; ?>
+				<tr class="treegrid-tun_wg0">
+					<td><strong>tun_wg0</strong></td>
+					<td><?=htmlspecialchars($tun['description'] ?? 'Tunnel to MikroTik CHR VPS (103.93.162.168)')?></td>
+					<td class="pubkey" style="cursor: pointer;" title="<?=htmlspecialchars($tun['public_key'])?>">
+						<?=htmlspecialchars(substr($tun['public_key'], 0, 32))?>...
 					</td>
-					<td><span class="badge bg-primary"><?=count($tun['peers'] ?? [])?></span></td>
-					<td style="text-align: right;">
-						<a class="btn btn-xs btn-primary" title="Add Peer to Tunnel" href="/wg/vpn_wg_peers_edit.php?tun=<?=htmlspecialchars($tun['name'])?>"><i class="fa-solid fa-user-plus"></i></a>
-						<a class="btn btn-xs btn-info" title="Edit Tunnel" href="/wg/vpn_wg_tunnels_edit.php?tun=<?=htmlspecialchars($tun['name'])?>"><i class="fa-solid fa-pencil"></i></a>
-						<a class="btn btn-xs btn-default" title="View Peers" href="/wg/vpn_wg_peers.php"><i class="fa-solid fa-users"></i></a>
-						<a class="btn btn-xs btn-success" title="Live Telemetry" href="/wg/status_wireguard.php"><i class="fa-solid fa-chart-line"></i></a>
+					<td>
+						<i class="fa-solid fa-sitemap" style="vertical-align: middle;"></i>
+						<a href="/interfaces.php?if=opt1" style="padding-left: 3px">WGVPN (opt1)</a>
+					</td>
+					<td><?=htmlspecialchars($tun['listen_port'] ?? '51820')?></td>
+					<td><?=count($tun['peers'] ?? [])?></td>
+					<td>
+						<a class="fa-solid fa-user-plus" href="/wg/vpn_wg_peers_edit.php?tun=tun_wg0" title="Add Peer"></a>
+						<a class="fa-solid fa-pencil" href="/wg/vpn_wg_tunnels_edit.php?tun=tun_wg0" title="Edit Tunnel"></a>
+						<a class="fa-solid fa-download" href="?act=download&amp;tun=tun_wg0" title="Download Configuration"></a>
+						<a class="fa-solid fa-ban" href="?act=toggle&amp;tun=tun_wg0" title="Disable tunnel"></a>
+						<a class="fa-solid fa-trash-can text-danger" href="?act=delete&amp;tun=tun_wg0" title="Delete Tunnel"></a>
+					</td>
+				</tr>
+				<tr class="treegrid-parent-tun_wg0">
+					<td style="font-weight: bold;">Peers</td>
+					<td class="contains-table" colspan="6">
+						<table class="table table-hover table-striped table-condensed">
+							<thead>
+								<tr>
+									<th>Description</th>
+									<th>Public Key</th>
+									<th>Tunnel</th>
+									<th>Allowed IPs</th>
+									<th>Endpoint</th>
+								</tr>
+							</thead>
+							<tbody>
+							<?php foreach ($tun['peers'] as $peer): ?>
+								<tr>
+									<td><?=htmlspecialchars($peer['description'] ?? 'WireGuard Peer')?></td>
+									<td title="<?=htmlspecialchars($peer['public_key'])?>"><?=htmlspecialchars(substr($peer['public_key'], 0, 32))?>...</td>
+									<td>tun_wg0</td>
+									<td><?=htmlspecialchars($peer['allowed_ips'])?></td>
+									<td><?=htmlspecialchars($peer['endpoint'] ?: 'Dynamic')?></td>
+								</tr>
+							<?php endforeach; ?>
+							</tbody>
+						</table>
 					</td>
 				</tr>
 				<?php endforeach; ?>
@@ -117,9 +144,6 @@ display_top_tabs($tab_array, false, 'pills');
 <nav class="action-buttons">
     <a href="/wg/vpn_wg_tunnels_edit.php" class="btn btn-success btn-sm">
         <i class="fa-solid fa-plus icon-embed-btn"></i> Add Tunnel
-    </a>
-    <a href="/wg/vpn_wg_peers_edit.php" class="btn btn-primary btn-sm" style="margin-left: 5px;">
-        <i class="fa-solid fa-user-plus icon-embed-btn"></i> Add Peer
     </a>
 </nav>
 

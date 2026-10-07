@@ -8,17 +8,15 @@
 require_once(__DIR__ . '/../includes/api.inc');
 
 $savemsg = $_GET['savemsg'] ?? '';
-$err_msg = '';
+$err_msg = "";
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['act']) && $_POST['act'] === 'delete') {
-    $tun = $_POST['tun'] ?? 'wg0';
-    $pubkey = $_POST['pubkey'] ?? '';
-    if (!empty($pubkey)) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_GET['act']) && $_GET['act'] === 'delete') {
+        $tun = $_POST['tun'] ?? 'tun_wg0';
+        $pubkey = $_POST['peer'] ?? '';
         $res = MitraNetApi::deleteWireGuardPeer($tun, $pubkey);
-        if ($res['status'] === 200 && !empty($res['data']['success'])) {
-            $savemsg = "Peer deleted successfully.";
-        } else {
-            $err_msg = $res['data']['error'] ?? 'Failed to delete peer.';
+        if (!empty($res['data']['success'])) {
+            $savemsg = "WireGuard peer deleted successfully.";
         }
     }
 }
@@ -27,8 +25,17 @@ $wg = MitraNetApi::getWireGuard();
 $is_running = !empty($wg['running']);
 $tunnels = $wg['tunnels'] ?? [];
 
+$all_peers = [];
+foreach ($tunnels as $t) {
+    foreach ($t['peers'] ?? [] as $idx => $p) {
+        $p['tunnel_name'] = $t['name'];
+        $p['idx'] = $idx;
+        $all_peers[] = $p;
+    }
+}
+
 $pgtitle = array("VPN", "WireGuard", "Peers");
-$pglinks = array("", "/wg/vpn_wg_tunnels.php", "@self");
+$pglinks = array("", "/wg/vpn_wg_peers.php", "@self");
 $selected_menu = "wireguard";
 require_once(__DIR__ . '/../includes/head.inc');
 
@@ -47,71 +54,49 @@ display_top_tabs($tab_array, false, 'pills');
 	<div class="pull-left"><i class="fa-solid fa-check"></i> <?=htmlspecialchars($savemsg)?></div>
 </div>
 <?php endif; ?>
-<?php if ($err_msg): ?>
-<div class="alert alert-danger clearfix" role="alert">
-	<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-	<div class="pull-left"><i class="fa-solid fa-triangle-exclamation"></i> <?=htmlspecialchars($err_msg)?></div>
-</div>
-<?php endif; ?>
 
 <div class="panel panel-default">
-	<div class="panel-heading"><h2 class="panel-title"><i class="fa-solid fa-users"></i> Configured WireGuard Peers (Server Clients &amp; Remote Endpoints)</h2></div>
+	<div class="panel-heading"><h2 class="panel-title">Peers</h2></div>
 	<div class="panel-body table-responsive">
 		<table class="table table-hover table-striped table-condensed">
 			<thead>
 				<tr>
+					<th>Description</th>
+					<th>Public key</th>
 					<th>Tunnel</th>
-					<th>Public Key</th>
 					<th>Allowed IPs</th>
-					<th>Endpoint</th>
-					<th>Latest Handshake</th>
-					<th>Transfer</th>
-					<th style="text-align: right;">Actions</th>
+					<th>Endpoint : Port</th>
+					<th>Actions</th>
 				</tr>
 			</thead>
 			<tbody>
-			<?php
-			$has_peers = false;
-			foreach ($tunnels as $tun) {
-				foreach ($tun['peers'] ?? [] as $peer) {
-					$has_peers = true;
-					?>
-					<tr>
-						<td><strong><?=htmlspecialchars($tun['name'])?></strong></td>
-						<td><code title="<?=htmlspecialchars($peer['public_key'])?>"><?=htmlspecialchars(substr($peer['public_key'], 0, 24))?>...</code></td>
-						<td><span class="label label-info"><?=htmlspecialchars($peer['allowed_ips'])?></span></td>
-						<td><code><?=htmlspecialchars(($peer['endpoint'] && $peer['endpoint'] !== '(none)') ? $peer['endpoint'] : 'Dynamic')?></code></td>
-						<td><?=htmlspecialchars(($peer['latest_handshake'] && $peer['latest_handshake'] !== '0') ? $peer['latest_handshake'] : 'Never')?></td>
-						<td>
-							<small>
-								RX: <?=htmlspecialchars($peer['transfer_rx'] ?? '0')?> B | 
-								TX: <?=htmlspecialchars($peer['transfer_tx'] ?? '0')?> B
-							</small>
-						</td>
-						<td style="text-align: right;">
-							<a class="btn btn-xs btn-info" title="Edit Peer" href="/wg/vpn_wg_peers_edit.php?peer=<?=urlencode($peer['public_key'])?>&tun=<?=htmlspecialchars($tun['name'])?>"><i class="fa-solid fa-pencil"></i></a>
-							<form method="post" style="display: inline-block;">
-								<input type="hidden" name="act" value="delete">
-								<input type="hidden" name="tun" value="<?=htmlspecialchars($tun['name'])?>">
-								<input type="hidden" name="pubkey" value="<?=htmlspecialchars($peer['public_key'])?>">
-								<button type="submit" class="btn btn-xs btn-danger" title="Delete Peer" onclick="return confirm('Hapus peer WireGuard ini?');"><i class="fa-solid fa-trash"></i></button>
-							</form>
-						</td>
-					</tr>
-					<?php
-				}
-			}
-			if (!$has_peers) {
-				echo '<tr><td colspan="7" class="text-center text-muted">Belum ada peer WireGuard terkonfigurasi. Klik "Add Peer" untuk menambahkan client atau uplink VPS.</td></tr>';
-			}
-			?>
+			<?php if (empty($all_peers)): ?>
+				<tr><td colspan="6" class="text-center text-muted">No WireGuard peers configured.</td></tr>
+			<?php else: ?>
+				<?php foreach ($all_peers as $p): ?>
+				<tr ondblclick="document.location='vpn_wg_peers_edit.php?peer=<?=htmlspecialchars($p['idx'])?>';">
+					<td><strong><?=htmlspecialchars($p['description'] ?? 'Peer')?></strong></td>
+					<td class="pubkey" style="cursor: pointer;" title="<?=htmlspecialchars($p['public_key'])?>">
+						<?=htmlspecialchars(substr($p['public_key'], 0, 16))?>...
+					</td>
+					<td><code>tun_wg0</code></td>
+					<td><?=htmlspecialchars($p['allowed_ips'])?></td>
+					<td><?=htmlspecialchars($p['endpoint'] ?: 'Dynamic')?></td>
+					<td style="cursor: pointer;">
+						<a class="fa-solid fa-pencil" href="/wg/vpn_wg_peers_edit.php?peer=<?=htmlspecialchars($p['idx'])?>" title="Edit Peer"></a>
+						<a class="fa-solid fa-ban" href="?act=toggle&amp;peer=<?=htmlspecialchars($p['idx'])?>" title="Disable peer"></a>
+						<a class="fa-solid fa-trash-can text-danger" href="?act=delete&amp;peer=<?=htmlspecialchars($p['idx'])?>" title="Delete Peer"></a>
+					</td>
+				</tr>
+				<?php endforeach; ?>
+			<?php endif; ?>
 			</tbody>
 		</table>
 	</div>
 </div>
 
 <nav class="action-buttons">
-    <a href="/wg/vpn_wg_peers_edit.php" class="btn btn-primary btn-sm">
+    <a href="/wg/vpn_wg_peers_edit.php" class="btn btn-success btn-sm">
         <i class="fa-solid fa-plus icon-embed-btn"></i> Add Peer
     </a>
 </nav>
