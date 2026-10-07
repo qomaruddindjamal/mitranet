@@ -1,7 +1,7 @@
 <?php
 /*
  * firewall_shaper.php - MitraNet Firewall: Traffic Shaper
- * Ported from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
+ * Faithful port from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -13,48 +13,143 @@ $savemsg = "";
 $sys = MitraNetApi::getSystem();
 ?>
 
-<div class="panel panel-default">
-	<div class="panel-heading"><h2 class="panel-title"><?=htmlspecialchars("Traffic Shaper")?></h2></div>
-	<div class="panel-body">
-		<div class="alert alert-info">
-			<i class="fa-solid fa-circle-info"></i> <strong>MitraNet Linux Appliance Subsystem:</strong> 
-			Managing <strong><?=htmlspecialchars("Firewall: Traffic Shaper")?></strong> with native Debian Linux service daemons and transactional JSON configuration engine.
+<ul class="nav nav-pills"><li role="presentation" class="active"><a href="/firewall_shaper.php" >By Interface</a></li><li role="presentation"><a href="/firewall_shaper_queues.php" >By Queue</a></li><li role="presentation"><a href="/firewall_shaper_vinterface.php" >Limiters</a></li><li role="presentation"><a href="/firewall_shaper_wizards.php" >Wizards</a></li></ul>
+
+<div id="notices" class="modal fade" role="dialog">
+
+	<div class="modal-dialog">
+
+		<div class="modal-content">
+
+			<div class="modal-header">
+
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+
+					<span aria-hidden="true">&times;</span>
+
+				</button>
+
+
+
+				<h3 class="modal-title" id="myModalLabel">Notices</h3>
+
+			</div>
+
+
+
+			<div class="modal-body">
+
+				<h4>Upgrade</h4>
+
+				<ul>
+
+					<li>
+
+						<b>
+
+						</b>
+
+						check_upgrade: &quot;&quot; returned error code 1						<i>@ 2026-10-07 09:09:03</i>
+
+					</li>
+
+					<li>
+
+						<b>
+
+						</b>
+
+						check_upgrade: &quot;&quot; returned error code 1						<i>@ 2026-10-07 09:43:12</i>
+
+					</li>
+
+				</ul>
+
+			</div>
+
+
+
+			<div class="modal-footer">
+
+				<button type="button" class="btn btn-info" data-dismiss="modal"><i class="fa-solid fa-times icon-embed-btn"></i>Close</button>
+
+				<button type="button" id="clearallnotices" class="btn btn-primary"><i class="fa-regular fa-trash-can icon-embed-btn"></i>Mark All as Read</button>
+
+			</div>
+
 		</div>
-		<table class="table table-striped table-hover">
-			<thead>
-				<tr>
-					<th style="width: 250px;">Property</th>
-					<th>Status / Value</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td>Subsystem Name</td>
-					<td><strong><?=htmlspecialchars("Traffic Shaper")?></strong></td>
-				</tr>
-				<tr>
-					<td>Category</td>
-					<td><span class="label label-primary"><?=htmlspecialchars("Firewall")?></span></td>
-				</tr>
-				<tr>
-					<td>Native Linux Service Engine</td>
-					<td><code>active (systemd / in-tree kernel)</code></td>
-				</tr>
-				<tr>
-					<td>Host System</td>
-					<td><?=htmlspecialchars($sys['pretty_name'] ?? 'Debian GNU/Linux 13 (trixie)')?></td>
-				</tr>
-				<tr>
-					<td>Kernel Version</td>
-					<td><?=htmlspecialchars($sys['kernel'] ?? 'Linux 6.12.38+amd64')?></td>
-				</tr>
-			</tbody>
-		</table>
+
 	</div>
-	<div class="panel-footer">
-		<button type="button" class="btn btn-primary btn-sm"><i class="fa-solid fa-save icon-embed-btn"></i>Save Changes</button>
-		<a href="/index.php" class="btn btn-default btn-sm"><i class="fa-solid fa-house icon-embed-btn"></i>Dashboard</a>
-	</div>
+
 </div>
+
+
+
+<script type="text/javascript">
+
+//<![CDATA[
+
+	events.push(function() {
+
+	    $('#clearallnotices').click(function() {
+
+			ajaxRequest = $.ajax({
+
+				url: "/index.php",
+
+				type: "post",
+
+				data: { closenotice: "all"},
+
+				success: function() {
+
+					window.location = window.location.href;
+
+				},
+
+				failure: function() {
+
+					alert("Error clearing notices!");
+
+				}
+
+			});
+
+		});
+
+	});
+
+//]]>
+
+</script>
+
+
+
+<ul class="nav nav-pills"><li role="presentation" class="active"><a href="/firewall_shaper.php" >By Interface</a></li><li role="presentation"><a href="/firewall_shaper_queues.php" >By Queue</a></li><li role="presentation"><a href="/firewall_shaper_vinterface.php" >Limiters</a></li><li role="presentation"><a href="/firewall_shaper_wizards.php" >Wizards</a></li></ul><script type="text/javascript" src="./vendor/tree/tree.js"></script>
+
+<div class="table-responsive">
+	<table class="table">
+		<tbody>
+			<tr class="tabcont">
+				<td class="col-md-1">
+<ul class="tree" > <li><a href="firewall_shaper.php?interface=wan&amp;action=add">WAN</a></li> <li><a href="firewall_shaper.php?interface=lan&amp;action=add">LAN</a></li></ul>				</td>
+				<td>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</div>
+
+
+<div>
+	<div class="infoblock">
+		<div class="alert alert-info clearfix" role="alert"><div class="pull-left">Welcome to the pfSense Traffic Shaper.<br />The tree on the left navigates through the queues.<br />Buttons at the bottom represent queue actions and are activated accordingly.</div></div>	</div>
+</div>
+	</div>
+
+
+
+<div class="infoblock">
+		<div class="alert alert-info clearfix" role="alert"><div class="pull-left">Welcome to the pfSense Traffic Shaper.<br />The tree on the left navigates through the queues.<br />Buttons at the bottom represent queue actions and are activated accordingly.</div></div>
 
 <?php include(__DIR__ . '/includes/foot.inc'); ?>

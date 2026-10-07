@@ -1,60 +1,46 @@
 <?php
 /*
- * services_virtual.php - MitraNet KVM: KVM
- * Ported from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
+ * services_virtual.php - MitraNet DIRECT: KVM
+ * Faithful port from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
  * Licensed under the Apache License, Version 2.0.
  */
 
-$pgtitle = array("KVM", "KVM");
-$selected_menu = "kvm";
+$pgtitle = array("DIRECT", "KVM");
+$selected_menu = "direct";
 require_once(__DIR__ . '/includes/head.inc');
 
 $savemsg = "";
 $sys = MitraNetApi::getSystem();
 ?>
 
+<ul class="nav nav-pills"><li role="presentation" class="active"><a href="/services_virtual.php" >Virtual Machines</a></li><li role="presentation"><a href="/services_virtual.php?act=images" >ISO & Images Manager</a></li><li role="presentation"><a href="/services_virtual.php?act=hypervisor" >Hypervisor Status</a></li><li role="presentation"><a href="/services_virtual.php?act=network" >Network & Bridge</a></li></ul>
+
 <div class="panel panel-default">
-	<div class="panel-heading"><h2 class="panel-title"><?=htmlspecialchars("KVM")?></h2></div>
-	<div class="panel-body">
-		<div class="alert alert-info">
-			<i class="fa-solid fa-circle-info"></i> <strong>MitraNet Linux Appliance Subsystem:</strong> 
-			Managing <strong><?=htmlspecialchars("KVM: KVM")?></strong> with native Debian Linux service daemons and transactional JSON configuration engine.
-		</div>
-		<table class="table table-striped table-hover">
-			<thead>
-				<tr>
-					<th style="width: 250px;">Property</th>
-					<th>Status / Value</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td>Subsystem Name</td>
-					<td><strong><?=htmlspecialchars("KVM")?></strong></td>
-				</tr>
-				<tr>
-					<td>Category</td>
-					<td><span class="label label-primary"><?=htmlspecialchars("KVM")?></span></td>
-				</tr>
-				<tr>
-					<td>Native Linux Service Engine</td>
-					<td><code>active (systemd / in-tree kernel)</code></td>
-				</tr>
-				<tr>
-					<td>Host System</td>
-					<td><?=htmlspecialchars($sys['pretty_name'] ?? 'Debian GNU/Linux 13 (trixie)')?></td>
-				</tr>
-				<tr>
-					<td>Kernel Version</td>
-					<td><?=htmlspecialchars($sys['kernel'] ?? 'Linux 6.12.38+amd64')?></td>
-				</tr>
-			</tbody>
-		</table>
-	</div>
-	<div class="panel-footer">
-		<button type="button" class="btn btn-primary btn-sm"><i class="fa-solid fa-save icon-embed-btn"></i>Save Changes</button>
-		<a href="/index.php" class="btn btn-default btn-sm"><i class="fa-solid fa-house icon-embed-btn"></i>Dashboard</a>
-	</div>
-</div>
+        <div class="panel-heading">
+            <h2 class="panel-title">
+                <i class="fa-solid fa-server"></i> Daftar Virtual Machine (KVM / Bhyve Hypervisor)            </h2>
+        </div>
+        <div class="panel-body">
+            <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <a href="services_virtual.php?act=add" class="btn btn-success">
+                        <i class="fa-solid fa-plus"></i> Tambah Virtual Machine Baru                    </a>
+                    <a href="services_virtual.php?act=images" class="btn btn-default" style="margin-left: 5px;">
+                        <i class="fa-solid fa-compact-disc text-primary"></i> Kelola ISO / Images                    </a>
+                    <form method="post" action="services_virtual.php" style="display: inline-block; margin-left: 5px;">
+                        <input type="hidden" name="act" value="setup_hypervisor" />
+                        <button type="submit" class="btn btn-primary" title="Muat modul kernel hypervisor">
+                            <i class="fa-solid fa-shield-halved"></i> Aktifkan Hypervisor                        </button>
+                    </form>
+                </div>
+                <div>
+                    <a href="http://10.10.66.47:8888" target="_blank" class="btn btn-info">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Buka aaPanel Web (Port 8888)                    </a>
+                </div>
+            </div>
+
+
+
+
 
 <?php include(__DIR__ . '/includes/foot.inc'); ?>

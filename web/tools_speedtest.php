@@ -1,7 +1,7 @@
 <?php
 /*
  * tools_speedtest.php - MitraNet Tools: Speedtest
- * Ported from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
+ * Faithful port from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -13,48 +13,72 @@ $savemsg = "";
 $sys = MitraNetApi::getSystem();
 ?>
 
+
+
 <div class="panel panel-default">
-	<div class="panel-heading"><h2 class="panel-title"><?=htmlspecialchars("Speedtest")?></h2></div>
-	<div class="panel-body">
-		<div class="alert alert-info">
-			<i class="fa-solid fa-circle-info"></i> <strong>MitraNet Linux Appliance Subsystem:</strong> 
-			Managing <strong><?=htmlspecialchars("Tools: Speedtest")?></strong> with native Debian Linux service daemons and transactional JSON configuration engine.
-		</div>
-		<table class="table table-striped table-hover">
-			<thead>
-				<tr>
-					<th style="width: 250px;">Property</th>
-					<th>Status / Value</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td>Subsystem Name</td>
-					<td><strong><?=htmlspecialchars("Speedtest")?></strong></td>
-				</tr>
-				<tr>
-					<td>Category</td>
-					<td><span class="label label-primary"><?=htmlspecialchars("Tools")?></span></td>
-				</tr>
-				<tr>
-					<td>Native Linux Service Engine</td>
-					<td><code>active (systemd / in-tree kernel)</code></td>
-				</tr>
-				<tr>
-					<td>Host System</td>
-					<td><?=htmlspecialchars($sys['pretty_name'] ?? 'Debian GNU/Linux 13 (trixie)')?></td>
-				</tr>
-				<tr>
-					<td>Kernel Version</td>
-					<td><?=htmlspecialchars($sys['kernel'] ?? 'Linux 6.12.38+amd64')?></td>
-				</tr>
-			</tbody>
-		</table>
-	</div>
-	<div class="panel-footer">
-		<button type="button" class="btn btn-primary btn-sm"><i class="fa-solid fa-save icon-embed-btn"></i>Save Changes</button>
-		<a href="/index.php" class="btn btn-default btn-sm"><i class="fa-solid fa-house icon-embed-btn"></i>Dashboard</a>
-	</div>
-</div>
+                    <div class="panel-heading"><h3 class="panel-title"><i class="fa-solid fa-circle-info"></i> Connection Details</h3></div>
+                    <div class="panel-body">
+                        <div class="info-item">
+                            <span class="info-title">ISP Provider:</span>
+                            <span class="info-val" id="det-isp">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-title">Client IP:</span>
+                            <span class="info-val" id="det-ip">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-title">Packet Loss:</span>
+                            <span class="info-val" id="det-loss">-</span>
+                        </div>
+                    </div>
+
+<div class="panel panel-default">
+                    <div class="panel-heading"><h3 class="panel-title"><i class="fa-solid fa-server"></i> Target Server</h3></div>
+                    <div class="panel-body">
+                        <div class="info-item">
+                            <span class="info-title">Server Sponsor:</span>
+                            <span class="info-val" id="det-server">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-title">Tested Interface:</span>
+                            <span class="info-val" id="det-if">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-title">Online Result:</span>
+                            <span class="info-val" id="det-url">-</span>
+                        </div>
+                    </div>
+
+<div class="panel panel-default" style="margin-top: 10px;">
+            <div class="panel-heading">
+                <h3 class="panel-title">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Speedtest History (Last 20 Tests)                    <button type="button" id="btn-clear-history" class="btn btn-xs btn-default pull-right">
+                        <i class="fa-solid fa-trash"></i> Clear History                    </button>
+                </h3>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Engine</th>
+                            <th>Interface</th>
+                            <th>Server</th>
+                            <th>Ping</th>
+                            <th>Download</th>
+                            <th>Upload</th>
+                            <th>Link</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-tbody">
+                                                    <tr><td colspan="8" class="text-center text-muted" style="padding: 20px; font-style: italic;">Belum ada data pengujian. Silakan klik tombol 'Start Test' untuk melakukan pengujian kecepatan riil.</td></tr>
+                                            </tbody>
+                </table>
+            </div>
+        </div>
+
+
+
+
 
 <?php include(__DIR__ . '/includes/foot.inc'); ?>

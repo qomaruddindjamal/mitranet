@@ -1,7 +1,7 @@
 <?php
 /*
  * status_graph.php - MitraNet Status: Traffic Graph
- * Ported from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
+ * Faithful port from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -13,48 +13,74 @@ $savemsg = "";
 $sys = MitraNetApi::getSystem();
 ?>
 
+
+
 <div class="panel panel-default">
-	<div class="panel-heading"><h2 class="panel-title"><?=htmlspecialchars("Graph Settings")?></h2></div>
-	<div class="panel-body">
-		<div class="alert alert-info">
-			<i class="fa-solid fa-circle-info"></i> <strong>MitraNet Linux Appliance Subsystem:</strong> 
-			Managing <strong><?=htmlspecialchars("Status: Traffic Graph")?></strong> with native Debian Linux service daemons and transactional JSON configuration engine.
+		<div class="panel-heading">
+			<h2 class="panel-title">Graph Settings</h2>
 		</div>
-		<table class="table table-striped table-hover">
-			<thead>
-				<tr>
-					<th style="width: 250px;">Property</th>
-					<th>Status / Value</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td>Subsystem Name</td>
-					<td><strong><?=htmlspecialchars("Traffic Graph")?></strong></td>
-				</tr>
-				<tr>
-					<td>Category</td>
-					<td><span class="label label-primary"><?=htmlspecialchars("Status")?></span></td>
-				</tr>
-				<tr>
-					<td>Native Linux Service Engine</td>
-					<td><code>active (systemd / in-tree kernel)</code></td>
-				</tr>
-				<tr>
-					<td>Host System</td>
-					<td><?=htmlspecialchars($sys['pretty_name'] ?? 'Debian GNU/Linux 13 (trixie)')?></td>
-				</tr>
-				<tr>
-					<td>Kernel Version</td>
-					<td><?=htmlspecialchars($sys['kernel'] ?? 'Linux 6.12.38+amd64')?></td>
-				</tr>
-			</tbody>
-		</table>
+		<div class="panel-body">
+				<div class="form-group">
+		<label class="col-sm-2 control-label">
+			<span>Traffic Graph</span>
+		</label>
+			<div class="col-sm-2">
+		
+			<select class="form-control" name="if" id="if">
+		<option value="wan" selected>WAN</option><option value="lan">LAN</option><option value="opt1">WGVPN</option>
+	</select>
+		
+
+		<span class="help-block">Interface</span>
+	</div>	<div class="col-sm-2">
+		
+			<select class="form-control" name="sort" id="sort">
+		<option value="in">Bandwidth In</option><option value="out">Bandwidth Out</option>
+	</select>
+		
+
+		<span class="help-block">Sort by</span>
+	</div>	<div class="col-sm-2">
+		
+			<select class="form-control" name="filter" id="filter">
+		<option value="local">Local</option><option value="remote">Remote</option><option value="all">All</option>
+	</select>
+		
+
+		<span class="help-block">Filter</span>
+	</div>	<div class="col-sm-2">
+		
+			<select class="form-control" name="hostipformat" id="hostipformat">
+		<option value="" selected>IP Address</option><option value="hostname">Host Name</option><option value="descr">Description</option><option value="fqdn">FQDN</option>
+	</select>
+		
+
+		<span class="help-block">Display</span>
+	</div>	<div class="col-sm-2">
+		
+			<select class="form-control" name="mode" id="mode">
+		<option value="rate">rate (standard)</option><option value="iftop">iftop (experimental)</option>
+	</select>
+		
+
+		<span class="help-block">Mode</span>
 	</div>
-	<div class="panel-footer">
-		<button type="button" class="btn btn-primary btn-sm"><i class="fa-solid fa-save icon-embed-btn"></i>Save Changes</button>
-		<a href="/index.php" class="btn btn-default btn-sm"><i class="fa-solid fa-house icon-embed-btn"></i>Dashboard</a>
+		
 	</div>
-</div>
+
+<div class="panel panel-default">
+	<div class="panel-heading">
+		<h2 class="panel-title">Traffic Graph</h2>
+	</div>
+	<div class="panel-body">
+		<div class="col-sm-6">
+			<div id="traffic-chart-wan" class="d3-chart traffic-widget-chart">
+				<svg></svg>
+			</div>
+		</div>
+
+
+
+
 
 <?php include(__DIR__ . '/includes/foot.inc'); ?>

@@ -1,7 +1,7 @@
 <?php
 /*
  * firewall_schedule.php - MitraNet Firewall: Schedules
- * Ported from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
+ * Faithful port from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -13,48 +13,34 @@ $savemsg = "";
 $sys = MitraNetApi::getSystem();
 ?>
 
+
+
 <div class="panel panel-default">
-	<div class="panel-heading"><h2 class="panel-title"><?=htmlspecialchars("Schedules")?></h2></div>
-	<div class="panel-body">
-		<div class="alert alert-info">
-			<i class="fa-solid fa-circle-info"></i> <strong>MitraNet Linux Appliance Subsystem:</strong> 
-			Managing <strong><?=htmlspecialchars("Firewall: Schedules")?></strong> with native Debian Linux service daemons and transactional JSON configuration engine.
-		</div>
-		<table class="table table-striped table-hover">
+	<div class="panel-heading"><h2 class="panel-title">Schedules</h2></div>
+	<div class="panel-body table-responsive">
+		<table class="table table-striped table-hover table-condensed table-rowdblclickedit">
 			<thead>
 				<tr>
-					<th style="width: 250px;">Property</th>
-					<th>Status / Value</th>
+					<th><!--"Active" indicator--></th>
+					<th>Name</th>
+					<th>Range: Date / Times / Name</th>
+					<th>Description</th>
+					<th>Actions</th>
 				</tr>
 			</thead>
 			<tbody>
-				<tr>
-					<td>Subsystem Name</td>
-					<td><strong><?=htmlspecialchars("Schedules")?></strong></td>
-				</tr>
-				<tr>
-					<td>Category</td>
-					<td><span class="label label-primary"><?=htmlspecialchars("Firewall")?></span></td>
-				</tr>
-				<tr>
-					<td>Native Linux Service Engine</td>
-					<td><code>active (systemd / in-tree kernel)</code></td>
-				</tr>
-				<tr>
-					<td>Host System</td>
-					<td><?=htmlspecialchars($sys['pretty_name'] ?? 'Debian GNU/Linux 13 (trixie)')?></td>
-				</tr>
-				<tr>
-					<td>Kernel Version</td>
-					<td><?=htmlspecialchars($sys['kernel'] ?? 'Linux 6.12.38+amd64')?></td>
-				</tr>
 			</tbody>
 		</table>
 	</div>
-	<div class="panel-footer">
-		<button type="button" class="btn btn-primary btn-sm"><i class="fa-solid fa-save icon-embed-btn"></i>Save Changes</button>
-		<a href="/index.php" class="btn btn-default btn-sm"><i class="fa-solid fa-house icon-embed-btn"></i>Dashboard</a>
-	</div>
 </div>
+
+<nav class="action-buttons">
+	<a href="/firewall_schedule_edit.php" class="btn btn-sm btn-success">
+		<i class="fa-solid fa-plus icon-embed-btn"></i>
+		Add	</a>
+</nav>
+
+<div class="infoblock">
+	<div class="alert alert-info clearfix" role="alert"><div class="pull-left">Schedules act as placeholders for time ranges to be used in firewall rules.</div></div>
 
 <?php include(__DIR__ . '/includes/foot.inc'); ?>

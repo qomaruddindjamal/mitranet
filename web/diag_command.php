@@ -1,7 +1,7 @@
 <?php
 /*
  * diag_command.php - MitraNet Diagnostics: Command Prompt
- * Ported from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
+ * Faithful port from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -13,48 +13,58 @@ $savemsg = "";
 $sys = MitraNetApi::getSystem();
 ?>
 
+
+
 <div class="panel panel-default">
-	<div class="panel-heading"><h2 class="panel-title"><?=htmlspecialchars("Execute Shell Command")?></h2></div>
-	<div class="panel-body">
-		<div class="alert alert-info">
-			<i class="fa-solid fa-circle-info"></i> <strong>MitraNet Linux Appliance Subsystem:</strong> 
-			Managing <strong><?=htmlspecialchars("Diagnostics: Command Prompt")?></strong> with native Debian Linux service daemons and transactional JSON configuration engine.
+		<div class="panel-heading"><h2 class="panel-title">Execute Shell Command</h2></div>
+		<div class="panel-body">
+			<div class="content">
+				<input id="txtCommand" name="txtCommand" placeholder="Command" type="text" class="col-sm-7"	 value="" />
+				<br /><br />
+				<input type="hidden" name="txtRecallBuffer" value="" />
+
+				<div class="btn-group">
+					<button type="button" class="btn btn-success btn-sm" name="btnRecallPrev" onclick="btnRecall_onClick( this.form, -1 );" title="Recall Previous Command">
+						<i class="fa-solid fa-angle-double-left"></i>
+					</button>
+					<button name="submit" type="submit" class="btn btn-warning btn-sm" value="EXEC" title="Execute the entered command">
+						<i class="fa-solid fa-bolt"></i>
+						Execute					</button>
+					<button type="button" class="btn btn-success btn-sm" name="btnRecallNext" onclick="btnRecall_onClick( this.form,  1 );" title="Recall Next Command">
+						<i class="fa-solid fa-angle-double-right"></i>
+					</button>
+					<button style="margin-left: 10px;" type="button" class="btn btn-default btn-sm" onclick="return Reset_onClick( this.form );" title="Clear command entry">
+						<i class="fa-solid fa-undo"></i>
+						Clear					</button>
+				</div>
+			</div>
+
+<div class="panel panel-default">
+		<div class="panel-heading"><h2 class="panel-title">Download File</h2></div>
+		<div class="panel-body">
+			<div class="content">
+				<input name="dlPath" type="text" id="dlPath" placeholder="File to download" class="col-sm-4" value=""/>
+				<br /><br />
+				<button name="submit" type="submit" class="btn btn-primary btn-sm" id="download" value="DOWNLOAD">
+					<i class="fa-solid fa-download icon-embed-btn"></i>
+					Download				</button>
+			</div>
 		</div>
-		<table class="table table-striped table-hover">
-			<thead>
-				<tr>
-					<th style="width: 250px;">Property</th>
-					<th>Status / Value</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td>Subsystem Name</td>
-					<td><strong><?=htmlspecialchars("Command Prompt")?></strong></td>
-				</tr>
-				<tr>
-					<td>Category</td>
-					<td><span class="label label-primary"><?=htmlspecialchars("Diagnostics")?></span></td>
-				</tr>
-				<tr>
-					<td>Native Linux Service Engine</td>
-					<td><code>active (systemd / in-tree kernel)</code></td>
-				</tr>
-				<tr>
-					<td>Host System</td>
-					<td><?=htmlspecialchars($sys['pretty_name'] ?? 'Debian GNU/Linux 13 (trixie)')?></td>
-				</tr>
-				<tr>
-					<td>Kernel Version</td>
-					<td><?=htmlspecialchars($sys['kernel'] ?? 'Linux 6.12.38+amd64')?></td>
-				</tr>
-			</tbody>
-		</table>
-	</div>
-	<div class="panel-footer">
-		<button type="button" class="btn btn-primary btn-sm"><i class="fa-solid fa-save icon-embed-btn"></i>Save Changes</button>
-		<a href="/index.php" class="btn btn-default btn-sm"><i class="fa-solid fa-house icon-embed-btn"></i>Dashboard</a>
-	</div>
-</div>
+
+<div class="panel panel-default">
+		<div class="panel-heading"><h2 class="panel-title">Upload File</h2></div>
+		<div class="panel-body">
+			<div class="content">
+				<input name="ulfile" type="file" class="btn btn-default btn-sm btn-file" id="ulfile" />
+				<br />
+				<button name="submit" type="submit" class="btn btn-primary btn-sm" id="upload" value="UPLOAD">
+					<i class="fa-solid fa-upload icon-embed-btn"></i>
+					Upload				</button>
+			</div>
+		</div>
+
+
+
+
 
 <?php include(__DIR__ . '/includes/foot.inc'); ?>

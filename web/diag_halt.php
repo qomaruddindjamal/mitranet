@@ -1,7 +1,7 @@
 <?php
 /*
  * diag_halt.php - MitraNet Diagnostics: Halt System
- * Ported from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
+ * Faithful port from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -13,48 +13,28 @@ $savemsg = "";
 $sys = MitraNetApi::getSystem();
 ?>
 
+
+
 <div class="panel panel-default">
-	<div class="panel-heading"><h2 class="panel-title"><?=htmlspecialchars("System Halt Confirmation")?></h2></div>
+	<div class="panel-heading">
+		<h2 class="panel-title">System Halt Confirmation</h2>
+	</div>
 	<div class="panel-body">
-		<div class="alert alert-info">
-			<i class="fa-solid fa-circle-info"></i> <strong>MitraNet Linux Appliance Subsystem:</strong> 
-			Managing <strong><?=htmlspecialchars("Diagnostics: Halt System")?></strong> with native Debian Linux service daemons and transactional JSON configuration engine.
+		<div class="content">
+			<p>Click "Halt" to halt the system immediately, or "Cancel" to go to the system dashboard. (There will be a brief delay before the dashboard appears.)</p>
+			<form action="diag_halt.php" method="post">
+				<button type="submit" class="btn btn-danger pull-center" name="save" value="Halt" title="Halt the system and power off">
+					<i class="fa-solid fa-stop-circle"></i>
+					Halt				</button>
+				<a href="/" class="btn btn-info">
+					<i class="fa-solid fa-undo"></i>
+					Cancel				</a>
+			</form>
 		</div>
-		<table class="table table-striped table-hover">
-			<thead>
-				<tr>
-					<th style="width: 250px;">Property</th>
-					<th>Status / Value</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td>Subsystem Name</td>
-					<td><strong><?=htmlspecialchars("Halt System")?></strong></td>
-				</tr>
-				<tr>
-					<td>Category</td>
-					<td><span class="label label-primary"><?=htmlspecialchars("Diagnostics")?></span></td>
-				</tr>
-				<tr>
-					<td>Native Linux Service Engine</td>
-					<td><code>active (systemd / in-tree kernel)</code></td>
-				</tr>
-				<tr>
-					<td>Host System</td>
-					<td><?=htmlspecialchars($sys['pretty_name'] ?? 'Debian GNU/Linux 13 (trixie)')?></td>
-				</tr>
-				<tr>
-					<td>Kernel Version</td>
-					<td><?=htmlspecialchars($sys['kernel'] ?? 'Linux 6.12.38+amd64')?></td>
-				</tr>
-			</tbody>
-		</table>
 	</div>
-	<div class="panel-footer">
-		<button type="button" class="btn btn-primary btn-sm"><i class="fa-solid fa-save icon-embed-btn"></i>Save Changes</button>
-		<a href="/index.php" class="btn btn-default btn-sm"><i class="fa-solid fa-house icon-embed-btn"></i>Dashboard</a>
-	</div>
-</div>
+
+
+
+
 
 <?php include(__DIR__ . '/includes/foot.inc'); ?>

@@ -1,7 +1,7 @@
 <?php
 /*
  * system_hasync.php - MitraNet System: High Availability
- * Ported from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
+ * Faithful port from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -13,48 +13,48 @@ $savemsg = "";
 $sys = MitraNetApi::getSystem();
 ?>
 
+
+
 <div class="panel panel-default">
-	<div class="panel-heading"><h2 class="panel-title"><?=htmlspecialchars("State Synchronization Settings (pfsync)")?></h2></div>
-	<div class="panel-body">
-		<div class="alert alert-info">
-			<i class="fa-solid fa-circle-info"></i> <strong>MitraNet Linux Appliance Subsystem:</strong> 
-			Managing <strong><?=htmlspecialchars("System: High Availability")?></strong> with native Debian Linux service daemons and transactional JSON configuration engine.
+		<div class="panel-heading">
+			<h2 class="panel-title">State Synchronization Settings (pfsync)</h2>
 		</div>
-		<table class="table table-striped table-hover">
-			<thead>
-				<tr>
-					<th style="width: 250px;">Property</th>
-					<th>Status / Value</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td>Subsystem Name</td>
-					<td><strong><?=htmlspecialchars("High Availability")?></strong></td>
-				</tr>
-				<tr>
-					<td>Category</td>
-					<td><span class="label label-primary"><?=htmlspecialchars("System")?></span></td>
-				</tr>
-				<tr>
-					<td>Native Linux Service Engine</td>
-					<td><code>active (systemd / in-tree kernel)</code></td>
-				</tr>
-				<tr>
-					<td>Host System</td>
-					<td><?=htmlspecialchars($sys['pretty_name'] ?? 'Debian GNU/Linux 13 (trixie)')?></td>
-				</tr>
-				<tr>
-					<td>Kernel Version</td>
-					<td><?=htmlspecialchars($sys['kernel'] ?? 'Linux 6.12.38+amd64')?></td>
-				</tr>
-			</tbody>
-		</table>
+		<div class="panel-body">
+				<div class="form-group">
+		<label class="col-sm-2 control-label">
+			<span>Synchronize states</span>
+		</label>
+			<div class="checkbox col-sm-10">
+		
+		<label class="chkboxlbl"><input name="pfsyncenabled" id="pfsyncenabled" type="checkbox" value="on"> pfsync transfers state insertion, update, and deletion messages between firewalls.</label>
+		
+
+		<span class="help-block">Each firewall sends these messages out via multicast on a specified interface, using the PFSYNC protocol (IP Protocol 240). It also listens on that interface for similar messages from other firewalls, and imports them into the local state table.<br />This setting should be enabled on all members of a failover group.<br />Clicking "Save" will force a configuration sync if it is enabled! (see Configuration Synchronization Settings below)</span>
 	</div>
-	<div class="panel-footer">
-		<button type="button" class="btn btn-primary btn-sm"><i class="fa-solid fa-save icon-embed-btn"></i>Save Changes</button>
-		<a href="/index.php" class="btn btn-default btn-sm"><i class="fa-solid fa-house icon-embed-btn"></i>Dashboard</a>
+		
 	</div>
-</div>
+
+<div class="panel panel-default">
+		<div class="panel-heading">
+			<h2 class="panel-title">Configuration Synchronization Settings (XMLRPC Sync)</h2>
+		</div>
+		<div class="panel-body">
+				<div class="form-group">
+		<label class="col-sm-2 control-label">
+			<span>Synchronize Config to IP</span>
+		</label>
+			<div class="col-sm-10">
+		
+		<input class="form-control" name="synchronizetoip" id="synchronizetoip" type="text" placeholder="IP Address">
+		
+
+		<span class="help-block">Enter the IP address of the firewall to which the selected configuration sections should be synchronized.<br /><br />XMLRPC sync is currently only supported over connections using the same protocol and port as this system - make sure the remote system's port and protocol are set accordingly!<br />Do not use the Synchronize Config to IP and password option on backup cluster members!</span>
+	</div>
+		
+	</div>
+
+
+
+
 
 <?php include(__DIR__ . '/includes/foot.inc'); ?>

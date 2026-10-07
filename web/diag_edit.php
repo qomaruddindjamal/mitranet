@@ -1,7 +1,7 @@
 <?php
 /*
  * diag_edit.php - MitraNet Diagnostics: Edit File
- * Ported from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
+ * Faithful port from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -13,48 +13,47 @@ $savemsg = "";
 $sys = MitraNetApi::getSystem();
 ?>
 
+
+
 <div class="panel panel-default">
-	<div class="panel-heading"><h2 class="panel-title"><?=htmlspecialchars("Save / Load a File from the Filesystem")?></h2></div>
+	<div class="panel-heading"><h2 class="panel-title">Save / Load a File from the Filesystem</h2></div>
 	<div class="panel-body">
-		<div class="alert alert-info">
-			<i class="fa-solid fa-circle-info"></i> <strong>MitraNet Linux Appliance Subsystem:</strong> 
-			Managing <strong><?=htmlspecialchars("Diagnostics: Edit File")?></strong> with native Debian Linux service daemons and transactional JSON configuration engine.
+		<div class="content">
+			<form>
+				<p><input type="text" class="form-control" id="fbTarget" placeholder="Path to file to be edited"/></p>
+				<div class="btn-group">
+					<p>
+						<button type="button" class="btn btn-default btn-sm" onclick="loadFile();"	value="Load">
+							<i class="fa-regular fa-file-lines"></i>
+							Load						</button>
+						<button type="button" class="btn btn-default btn-sm" id="fbOpen"		value="Browse">
+							<i class="fa-solid fa-list"></i>
+							Browse						</button>
+						<button type="button" class="btn btn-default btn-sm" onclick="saveFile();"	value="Save">
+							<i class="fa-solid fa-save"></i>
+							Save						</button>
+					</p>
+				</div>
+				<p class="pull-right">
+					<button id="btngoto" class="btn btn-default btn-sm"><i class="fa-solid fa-forward"></i>GoTo Line #</button> <input type="number" id="gotoline" size="6" style="padding: 3px 0px;"/>
+				</p>
+			</form>
+
+			<div id="fbBrowser" style="display:none; border:1px dashed gray; width:98%; padding:10px"></div>
+
+			<script type="text/javascript">
+			//<![CDATA[
+			window.onload=function() {
+				document.getElementById("fileContent").wrap='off';
+			}
+			//]]>
+			</script>
+			<textarea id="fileContent" name="fileContent" class="form-control" rows="30" cols="20"  style="line-height: 18px;"></textarea>
 		</div>
-		<table class="table table-striped table-hover">
-			<thead>
-				<tr>
-					<th style="width: 250px;">Property</th>
-					<th>Status / Value</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td>Subsystem Name</td>
-					<td><strong><?=htmlspecialchars("Edit File")?></strong></td>
-				</tr>
-				<tr>
-					<td>Category</td>
-					<td><span class="label label-primary"><?=htmlspecialchars("Diagnostics")?></span></td>
-				</tr>
-				<tr>
-					<td>Native Linux Service Engine</td>
-					<td><code>active (systemd / in-tree kernel)</code></td>
-				</tr>
-				<tr>
-					<td>Host System</td>
-					<td><?=htmlspecialchars($sys['pretty_name'] ?? 'Debian GNU/Linux 13 (trixie)')?></td>
-				</tr>
-				<tr>
-					<td>Kernel Version</td>
-					<td><?=htmlspecialchars($sys['kernel'] ?? 'Linux 6.12.38+amd64')?></td>
-				</tr>
-			</tbody>
-		</table>
 	</div>
-	<div class="panel-footer">
-		<button type="button" class="btn btn-primary btn-sm"><i class="fa-solid fa-save icon-embed-btn"></i>Save Changes</button>
-		<a href="/index.php" class="btn btn-default btn-sm"><i class="fa-solid fa-house icon-embed-btn"></i>Dashboard</a>
-	</div>
-</div>
+
+
+
+
 
 <?php include(__DIR__ . '/includes/foot.inc'); ?>

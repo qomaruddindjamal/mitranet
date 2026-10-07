@@ -1,7 +1,7 @@
 <?php
 /*
  * diag_pftop.php - MitraNet Diagnostics: pfTop
- * Ported from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
+ * Faithful port from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -13,48 +13,38 @@ $savemsg = "";
 $sys = MitraNetApi::getSystem();
 ?>
 
+
+
 <div class="panel panel-default">
-	<div class="panel-heading"><h2 class="panel-title"><?=htmlspecialchars("pfTop Configuration")?></h2></div>
-	<div class="panel-body">
-		<div class="alert alert-info">
-			<i class="fa-solid fa-circle-info"></i> <strong>MitraNet Linux Appliance Subsystem:</strong> 
-			Managing <strong><?=htmlspecialchars("Diagnostics: pfTop")?></strong> with native Debian Linux service daemons and transactional JSON configuration engine.
+		<div class="panel-heading">
+			<h2 class="panel-title">pfTop Configuration</h2>
 		</div>
-		<table class="table table-striped table-hover">
-			<thead>
-				<tr>
-					<th style="width: 250px;">Property</th>
-					<th>Status / Value</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td>Subsystem Name</td>
-					<td><strong><?=htmlspecialchars("pfTop")?></strong></td>
-				</tr>
-				<tr>
-					<td>Category</td>
-					<td><span class="label label-primary"><?=htmlspecialchars("Diagnostics")?></span></td>
-				</tr>
-				<tr>
-					<td>Native Linux Service Engine</td>
-					<td><code>active (systemd / in-tree kernel)</code></td>
-				</tr>
-				<tr>
-					<td>Host System</td>
-					<td><?=htmlspecialchars($sys['pretty_name'] ?? 'Debian GNU/Linux 13 (trixie)')?></td>
-				</tr>
-				<tr>
-					<td>Kernel Version</td>
-					<td><?=htmlspecialchars($sys['kernel'] ?? 'Linux 6.12.38+amd64')?></td>
-				</tr>
-			</tbody>
-		</table>
+		<div class="panel-body">
+				<div class="form-group">
+		<label class="col-sm-2 control-label">
+			<span>View</span>
+		</label>
+			<div class="col-sm-10">
+		
+			<select class="form-control" name="viewtype" id="viewtype">
+		<option value="default" selected>default</option><option value="label">label</option><option value="long">long</option><option value="queue">queue</option><option value="rules">rules</option><option value="size">size</option><option value="speed">speed</option><option value="state">state</option><option value="time">time</option>
+	</select>
+		
+
+		
 	</div>
-	<div class="panel-footer">
-		<button type="button" class="btn btn-primary btn-sm"><i class="fa-solid fa-save icon-embed-btn"></i>Save Changes</button>
-		<a href="/index.php" class="btn btn-default btn-sm"><i class="fa-solid fa-house icon-embed-btn"></i>Dashboard</a>
+		
+	</div>
+
+<div class="panel panel-default">
+	<div class="panel-heading"><h2 class="panel-title">Output</h2></div>
+	<div class="panel panel-body">
+		<pre id="xhrOutput">Gathering pfTOP activity, please wait...</pre>
 	</div>
 </div>
+
+
+
+
 
 <?php include(__DIR__ . '/includes/foot.inc'); ?>

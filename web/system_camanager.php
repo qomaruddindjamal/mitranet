@@ -1,7 +1,7 @@
 <?php
 /*
  * system_camanager.php - MitraNet System: Certificates
- * Ported from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
+ * Faithful port from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -13,48 +13,67 @@ $savemsg = "";
 $sys = MitraNetApi::getSystem();
 ?>
 
-<div class="panel panel-default">
-	<div class="panel-heading"><h2 class="panel-title"><?=htmlspecialchars("Certificate Authorities")?></h2></div>
-	<div class="panel-body">
-		<div class="alert alert-info">
-			<i class="fa-solid fa-circle-info"></i> <strong>MitraNet Linux Appliance Subsystem:</strong> 
-			Managing <strong><?=htmlspecialchars("System: Certificates")?></strong> with native Debian Linux service daemons and transactional JSON configuration engine.
+<ul class="nav nav-pills"><li role="presentation" class="active"><a href="/system_camanager.php" >Authorities</a></li><li role="presentation"><a href="/system_certmanager.php" >Certificates</a></li><li role="presentation"><a href="/system_crlmanager.php" >Revocation</a></li></ul>
+
+<div class="panel panel-default" id="search-panel">
+	<div class="panel-heading">
+		<h2 class="panel-title">
+			Search			<span class="widget-heading-icon pull-right">
+				<a data-toggle="collapse" href="#search-panel_panel-body">
+					<i class="fa-solid fa-plus-circle"></i>
+				</a>
+			</span>
+		</h2>
+	</div>
+	<div id="search-panel_panel-body" class="panel-body collapse in">
+		<div class="form-group">
+			<label class="col-sm-2 control-label">
+				Search term			</label>
+			<div class="col-sm-5"><input class="form-control" name="searchstr" id="searchstr" type="text"/></div>
+			<div class="col-sm-2">
+				<select id="where" class="form-control">
+					<option value="0">Name</option>
+					<option value="1">Distinguished Name</option>
+					<option value="2" selected>Both</option>
+				</select>
+			</div>
+			<div class="col-sm-3">
+				<a id="btnsearch" title="Search" class="btn btn-primary btn-sm"><i class="fa-solid fa-search icon-embed-btn"></i>Search</a>
+				<a id="btnclear" title="Clear" class="btn btn-info btn-sm"><i class="fa-solid fa-undo icon-embed-btn"></i>Clear</a>
+			</div>
+			<div class="col-sm-10 col-sm-offset-2">
+				<span class="help-block">Enter a search string or *nix regular expression to search certificate names and distinguished names.</span>
+			</div>
 		</div>
-		<table class="table table-striped table-hover">
+
+<div class="panel panel-default">
+	<div class="panel-heading"><h2 class="panel-title">Certificate Authorities</h2></div>
+	<div class="panel-body">
+		<div class="table-responsive">
+		<table id="catable" class="table table-striped table-hover table-rowdblclickedit sortable-theme-bootstrap" data-sortable>
 			<thead>
 				<tr>
-					<th style="width: 250px;">Property</th>
-					<th>Status / Value</th>
+					<th>Name</th>
+					<th>Internal</th>
+					<th>Issuer</th>
+					<th>Certificates</th>
+					<th>Identity</th>
+					<th>In Use</th>
+					<th>Actions</th>
 				</tr>
 			</thead>
 			<tbody>
-				<tr>
-					<td>Subsystem Name</td>
-					<td><strong><?=htmlspecialchars("Certificates")?></strong></td>
-				</tr>
-				<tr>
-					<td>Category</td>
-					<td><span class="label label-primary"><?=htmlspecialchars("System")?></span></td>
-				</tr>
-				<tr>
-					<td>Native Linux Service Engine</td>
-					<td><code>active (systemd / in-tree kernel)</code></td>
-				</tr>
-				<tr>
-					<td>Host System</td>
-					<td><?=htmlspecialchars($sys['pretty_name'] ?? 'Debian GNU/Linux 13 (trixie)')?></td>
-				</tr>
-				<tr>
-					<td>Kernel Version</td>
-					<td><?=htmlspecialchars($sys['kernel'] ?? 'Linux 6.12.38+amd64')?></td>
-				</tr>
 			</tbody>
 		</table>
+		</div>
 	</div>
-	<div class="panel-footer">
-		<button type="button" class="btn btn-primary btn-sm"><i class="fa-solid fa-save icon-embed-btn"></i>Save Changes</button>
-		<a href="/index.php" class="btn btn-default btn-sm"><i class="fa-solid fa-house icon-embed-btn"></i>Dashboard</a>
-	</div>
-</div>
+
+<nav class="action-buttons">
+	<a href="/?act=new" class="btn btn-success btn-sm">
+		<i class="fa-solid fa-plus icon-embed-btn"></i>
+		Add	</a>
+</nav>
+
+
 
 <?php include(__DIR__ . '/includes/foot.inc'); ?>

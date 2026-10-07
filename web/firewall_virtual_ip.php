@@ -1,7 +1,7 @@
 <?php
 /*
  * firewall_virtual_ip.php - MitraNet Firewall: Virtual IPs
- * Ported from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
+ * Faithful port from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -13,48 +13,49 @@ $savemsg = "";
 $sys = MitraNetApi::getSystem();
 ?>
 
+
+
 <div class="panel panel-default">
-	<div class="panel-heading"><h2 class="panel-title"><?=htmlspecialchars("Virtual IP Address")?></h2></div>
-	<div class="panel-body">
-		<div class="alert alert-info">
-			<i class="fa-solid fa-circle-info"></i> <strong>MitraNet Linux Appliance Subsystem:</strong> 
-			Managing <strong><?=htmlspecialchars("Firewall: Virtual IPs")?></strong> with native Debian Linux service daemons and transactional JSON configuration engine.
-		</div>
-		<table class="table table-striped table-hover">
+	<div class="panel-heading"><h2 class="panel-title">Virtual IP Address</h2></div>
+	<div class="panel-body table-responsive">
+		<table class="table table-striped table-hover table-condensed table-rowdblclickedit sortable-theme-bootstrap" data-sortable>
 			<thead>
 				<tr>
-					<th style="width: 250px;">Property</th>
-					<th>Status / Value</th>
+					<th>Virtual IP address</th>
+					<th>Interface</th>
+					<th>Type</th>
+					<th>Description</th>
+					<th>Actions</th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr>
-					<td>Subsystem Name</td>
-					<td><strong><?=htmlspecialchars("Virtual IPs")?></strong></td>
-				</tr>
-				<tr>
-					<td>Category</td>
-					<td><span class="label label-primary"><?=htmlspecialchars("Firewall")?></span></td>
-				</tr>
-				<tr>
-					<td>Native Linux Service Engine</td>
-					<td><code>active (systemd / in-tree kernel)</code></td>
-				</tr>
-				<tr>
-					<td>Host System</td>
-					<td><?=htmlspecialchars($sys['pretty_name'] ?? 'Debian GNU/Linux 13 (trixie)')?></td>
-				</tr>
-				<tr>
-					<td>Kernel Version</td>
-					<td><?=htmlspecialchars($sys['kernel'] ?? 'Linux 6.12.38+amd64')?></td>
+					<td>
+10.20.30.254/24					</td>
+					<td>
+						WAN&nbsp;
+					</td>
+					<td>
+						IP Alias					</td>
+					<td>
+						IP Virtual					</td>
+					<td>
+						<a class="fa-solid fa-pencil" title="Edit virtual ip" href="firewall_virtual_ip_edit.php?id=0"></a>
+						<a class="fa-solid fa-trash-can"	title="Delete virtual ip" href="firewall_virtual_ip.php?act=del&amp;id=0" usepost></a>
+					</td>
 				</tr>
 			</tbody>
 		</table>
 	</div>
-	<div class="panel-footer">
-		<button type="button" class="btn btn-primary btn-sm"><i class="fa-solid fa-save icon-embed-btn"></i>Save Changes</button>
-		<a href="/index.php" class="btn btn-default btn-sm"><i class="fa-solid fa-house icon-embed-btn"></i>Dashboard</a>
-	</div>
 </div>
+
+<nav class="action-buttons">
+	<a href="/firewall_virtual_ip_edit.php" class="btn btn-sm btn-success">
+		<i class="fa-solid fa-plus icon-embed-btn"></i>
+		Add	</a>
+</nav>
+
+<div class="infoblock">
+	<div class="alert alert-info clearfix" role="alert"><div class="pull-left">The virtual IP addresses defined on this page may be used in <a href="firewall_nat.php">NAT</a> mappings.<br />Check the status of CARP Virtual IPs and interfaces <a href="status_carp.php">here</a>.</div></div>
 
 <?php include(__DIR__ . '/includes/foot.inc'); ?>

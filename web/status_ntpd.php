@@ -1,7 +1,7 @@
 <?php
 /*
  * status_ntpd.php - MitraNet Status: NTP
- * Ported from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
+ * Faithful port from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -13,48 +13,118 @@ $savemsg = "";
 $sys = MitraNetApi::getSystem();
 ?>
 
+
+
 <div class="panel panel-default">
-	<div class="panel-heading"><h2 class="panel-title"><?=htmlspecialchars("Network Time Protocol Status")?></h2></div>
-	<div class="panel-body">
-		<div class="alert alert-info">
-			<i class="fa-solid fa-circle-info"></i> <strong>MitraNet Linux Appliance Subsystem:</strong> 
-			Managing <strong><?=htmlspecialchars("Status: NTP")?></strong> with native Debian Linux service daemons and transactional JSON configuration engine.
-		</div>
-		<table class="table table-striped table-hover">
+	<div class="panel-heading"><h2 class="panel-title">Network Time Protocol Status</h2></div>
+	<div class="panel-body table-responsive">
+		<table class="table table-striped table-hover table-condensed sortable-theme-bootstrap" data-sortable>
 			<thead>
 				<tr>
-					<th style="width: 250px;">Property</th>
-					<th>Status / Value</th>
+					<th>Status</th>
+					<th>Server</th>
+					<th>Ref ID</th>
+					<th>Stratum</th>
+					<th>Type</th>
+					<th>When</th>
+					<th>Poll (s)</th>
+					<th>Reach</th>
+					<th>Delay (ms)</th>
+					<th>Offset (ms)</th>
+					<th>Jitter (ms)</th>
+					<th>AssocID</th>
+					<th>Status Word</th>
+					<th>Auth</th>
 				</tr>
 			</thead>
-			<tbody>
+			<tbody id="ntpbody">
 				<tr>
-					<td>Subsystem Name</td>
-					<td><strong><?=htmlspecialchars("NTP")?></strong></td>
-				</tr>
-				<tr>
-					<td>Category</td>
-					<td><span class="label label-primary"><?=htmlspecialchars("Status")?></span></td>
-				</tr>
-				<tr>
-					<td>Native Linux Service Engine</td>
-					<td><code>active (systemd / in-tree kernel)</code></td>
-				</tr>
-				<tr>
-					<td>Host System</td>
-					<td><?=htmlspecialchars($sys['pretty_name'] ?? 'Debian GNU/Linux 13 (trixie)')?></td>
-				</tr>
-				<tr>
-					<td>Kernel Version</td>
-					<td><?=htmlspecialchars($sys['kernel'] ?? 'Linux 6.12.38+amd64')?></td>
-				</tr>
+<td>Pool Placeholder</td>
+<td>2.pfsense.pool.ntp.org</td>
+<td>.POOL.</td>
+<td>16</td>
+<td>p</td>
+<td>-</td>
+<td>64</td>
+<td>0</td>
+<td>0.000</td>
+<td>+0.000</td>
+<td>0.000</td>
+<td>17935</td>
+<td>8811</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Candidate</td>
+<td>14.102.153.110</td>
+<td>133.243.238.243</td>
+<td>2</td>
+<td>u</td>
+<td>120</td>
+<td>128</td>
+<td>377</td>
+<td>13.818</td>
+<td>-1.330</td>
+<td>1.646</td>
+<td>17937</td>
+<td>141a</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Outlier</td>
+<td>185.125.190.58</td>
+<td>29.88.99.4</td>
+<td>2</td>
+<td>u</td>
+<td>108</td>
+<td>256</td>
+<td>377</td>
+<td>174.743</td>
+<td>+0.024</td>
+<td>0.652</td>
+<td>17938</td>
+<td>1314</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Active Peer</td>
+<td>172.232.235.123</td>
+<td>216.239.35.4</td>
+<td>2</td>
+<td>u</td>
+<td>102</td>
+<td>128</td>
+<td>377</td>
+<td>13.462</td>
+<td>-0.072</td>
+<td>3.998</td>
+<td>17939</td>
+<td>161a</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Candidate</td>
+<td>203.89.31.13</td>
+<td>160.250.227.196</td>
+<td>3</td>
+<td>u</td>
+<td>103</td>
+<td>128</td>
+<td>377</td>
+<td>27.197</td>
+<td>+0.638</td>
+<td>0.550</td>
+<td>17940</td>
+<td>1414</td>
+<td>none</td>
+</tr>
 			</tbody>
 		</table>
 	</div>
-	<div class="panel-footer">
-		<button type="button" class="btn btn-primary btn-sm"><i class="fa-solid fa-save icon-embed-btn"></i>Save Changes</button>
-		<a href="/index.php" class="btn btn-default btn-sm"><i class="fa-solid fa-house icon-embed-btn"></i>Dashboard</a>
-	</div>
 </div>
+
+
+
+
 
 <?php include(__DIR__ . '/includes/foot.inc'); ?>

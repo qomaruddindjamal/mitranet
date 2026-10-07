@@ -1,7 +1,7 @@
 <?php
 /*
  * diag_packet_capture.php - MitraNet Diagnostics: Packet Capture
- * Ported from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
+ * Faithful port from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -13,48 +13,39 @@ $savemsg = "";
 $sys = MitraNetApi::getSystem();
 ?>
 
+
+
 <div class="panel panel-default">
-	<div class="panel-heading"><h2 class="panel-title"><?=htmlspecialchars("Packet Capture Options")?></h2></div>
-	<div class="panel-body">
-		<div class="alert alert-info">
-			<i class="fa-solid fa-circle-info"></i> <strong>MitraNet Linux Appliance Subsystem:</strong> 
-			Managing <strong><?=htmlspecialchars("Diagnostics: Packet Capture")?></strong> with native Debian Linux service daemons and transactional JSON configuration engine.
+		<div class="panel-heading">
+			<h2 class="panel-title">Packet Capture Options</h2>
 		</div>
-		<table class="table table-striped table-hover">
-			<thead>
-				<tr>
-					<th style="width: 250px;">Property</th>
-					<th>Status / Value</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td>Subsystem Name</td>
-					<td><strong><?=htmlspecialchars("Packet Capture")?></strong></td>
-				</tr>
-				<tr>
-					<td>Category</td>
-					<td><span class="label label-primary"><?=htmlspecialchars("Diagnostics")?></span></td>
-				</tr>
-				<tr>
-					<td>Native Linux Service Engine</td>
-					<td><code>active (systemd / in-tree kernel)</code></td>
-				</tr>
-				<tr>
-					<td>Host System</td>
-					<td><?=htmlspecialchars($sys['pretty_name'] ?? 'Debian GNU/Linux 13 (trixie)')?></td>
-				</tr>
-				<tr>
-					<td>Kernel Version</td>
-					<td><?=htmlspecialchars($sys['kernel'] ?? 'Linux 6.12.38+amd64')?></td>
-				</tr>
-			</tbody>
-		</table>
+		<div class="panel-body">
+				<div class="form-group">
+		<label class="col-sm-2 control-label">
+			<span>Capture Options</span>
+		</label>
+			<div class="col-sm-4">
+		
+			<select class="form-control" name="interface" id="interface">
+		<option value="vtnet0">WAN (vtnet0)</option><option value="vtnet1">LAN (vtnet1)</option><option value="enc0">IPsec (enc0)</option><option value="lo0">Localhost (lo0)</option><option value="tap0">unassigned (tap0)</option>
+	</select>
+		
+
+		<span class="help-block">Interface to capture packets on.</span>
+	</div>	<div class="col-sm-2">
+		
+			<select class="form-control match-selection" name="filter" id="filter">
+		<option value="29" selected>Custom Filter</option><option value="20">Everything</option><option value="21">Only Untagged</option><option value="22">Only Tagged</option>
+	</select>
+		
+
+		<span class="help-block">Filter preset.</span>
 	</div>
-	<div class="panel-footer">
-		<button type="button" class="btn btn-primary btn-sm"><i class="fa-solid fa-save icon-embed-btn"></i>Save Changes</button>
-		<a href="/index.php" class="btn btn-default btn-sm"><i class="fa-solid fa-house icon-embed-btn"></i>Dashboard</a>
+		
 	</div>
-</div>
+
+
+
+
 
 <?php include(__DIR__ . '/includes/foot.inc'); ?>
