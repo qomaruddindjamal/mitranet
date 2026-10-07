@@ -1,0 +1,36 @@
+#!/bin/bash
+VM_NAME="$1"
+CONFIG="/etc/mitranet/vms/${VM_NAME}.env"
+
+RAM_MB=1024
+VCPU=1
+PORT_FWD=8888
+ISO_FILE=""
+VNC_PORT=5900
+
+if [ -f "$CONFIG" ]; then
+    source "$CONFIG"
+fi
+
+DISK="/var/lib/mitranet/vms/${VM_NAME}/disk.qcow2"
+ARGS=(
+    -name "${VM_NAME}"
+    -m "${RAM_MB:-1024}"
+    -smp "${VCPU:-1}"
+    -display vnc=127.0.0.1:0
+    -drive "file=${DISK},if=virtio,format=qcow2"
+    -netdev "user,id=net0,hostfwd=tcp::${PORT_FWD:-8888}-:8888"
+    -device "virtio-net-pci,netdev=net0"
+)
+
+# Attach ISO if configured
+if [ -n "$ISO_FILE" ] && [ -f "$ISO_FILE" ]; then
+    ARGS+=( -cdrom "$ISO_FILE" -boot d )
+fi
+
+# Launch background websockify to expose noVNC on port 6080 if not already running
+if ! pgrep -f "websockify.*6080" >/dev/null; then
+    websockify -D --web /usr/share/novnc 6080 127.0.0.1:5900 &
+fi
+
+exec /usr/bin/qemu-system-x86_64 "${ARGS[@]}"

@@ -296,12 +296,34 @@ class MitraNetApi {
         return self::request('/diagnostics/command', 'POST', ['command' => $command, 'cwd' => $cwd]);
     }
 
-    public static function getKvmVms() {
+    public static function getKvmData() {
         $res = self::request('/services/kvm');
-        return $res['status'] === 200 ? ($res['data']['vms'] ?? []) : [];
+        return $res['status'] === 200 ? ($res['data'] ?? ['vms' => [], 'isos' => []]) : ['vms' => [], 'isos' => []];
+    }
+
+    public static function getKvmVms() {
+        $data = self::getKvmData();
+        return $data['vms'] ?? [];
+    }
+
+    public static function getKvmIsos() {
+        $data = self::getKvmData();
+        return $data['isos'] ?? [];
     }
 
     public static function vmAction($id, $action) {
         return self::request('/services/kvm/action', 'POST', ['id' => $id, 'action' => $action]);
+    }
+
+    public static function createVm($payload) {
+        return self::request('/services/kvm/create', 'POST', $payload);
+    }
+
+    public static function deleteVm($id) {
+        return self::request('/services/kvm/delete', 'POST', ['id' => $id]);
+    }
+
+    public static function deleteIso($filename) {
+        return self::request('/services/kvm/iso/delete', 'POST', ['filename' => $filename]);
     }
 }

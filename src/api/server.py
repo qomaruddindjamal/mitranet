@@ -784,6 +784,8 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                         vcpu = 1
                         ram_mb = 1024
                         port_fwd = 8888
+                        iso_file = ""
+                        vnc_port = 5900
                         if os.path.isfile(env_path):
                             try:
                                 with open(env_path, "r") as ef:
@@ -795,6 +797,10 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                                             vcpu = int(line.split("=", 1)[1])
                                         elif line.startswith("PORT_FWD="):
                                             port_fwd = int(line.split("=", 1)[1])
+                                        elif line.startswith("ISO_FILE="):
+                                            iso_file = line.split("=", 1)[1].strip()
+                                        elif line.startswith("VNC_PORT="):
+                                            vnc_port = int(line.split("=", 1)[1])
                             except Exception:
                                 pass
 
@@ -860,13 +866,33 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                             "disk_gb": disk_gb,
                             "disk_size_info": disk_actual_size,
                             "port_fwd": port_fwd,
+                            "iso": iso_file,
+                            "vnc_port": vnc_port,
                             "interface": "user-virtio",
                             "bridge": "user-nat",
                             "status": status,
                             "pid": pid,
                         })
 
-            self._send_json(200, {"vms": vms})
+            # Real ISO files list
+            isos = []
+            iso_dir = "/var/lib/mitranet/isos"
+            if os.path.isdir(iso_dir):
+                for f in sorted(os.listdir(iso_dir)):
+                    fpath = os.path.join(iso_dir, f)
+                    if os.path.isfile(fpath) and (f.endswith(".iso") or f.endswith(".img")):
+                        sz_bytes = os.path.getsize(fpath)
+                        sz_mb = round(sz_bytes / (1024 * 1024), 1)
+                        sz_str = f"{round(sz_mb/1024, 2)} GB" if sz_mb > 1024 else f"{sz_mb} MB"
+                        isos.append({
+                            "filename": f,
+                            "path": fpath,
+                            "size_bytes": sz_bytes,
+                            "size_str": sz_str,
+                            "mtime": os.path.getmtime(fpath)
+                        })
+
+            self._send_json(200, {"vms": vms, "isos": isos})
             return
 
         # 20. Packages List (Debian .deb package integration)
@@ -1742,6 +1768,115 @@ AllowedIPs = {allowed_ips}
                     self._send_json(500, {"error": f"Failed executing {action}: {res.stderr.strip()}"})
             except Exception as e:
                 self._send_json(500, {"error": f"Subprocess error: {e}"})
+            return
+
+        # Virtual Machine (KVM) Creation
+        if path == "/api/v1/services/kvm/create":
+            import re
+            import subprocess
+            vm_id = re.sub(r'[^a-zA-Z0-9_\-]', '', payload.get("id", "").strip().lower())
+            ram_mb = int(payload.get("ram_mb", 1024))
+            vcpu = int(payload.get("vcpu", 1))
+            disk_gb = int(payload.get("disk_gb", 10))
+            port_fwd = int(payload.get("port_fwd", 8888))
+            iso_file = payload.get("iso", "").strip()
+
+            if not vm_id:
+                self._send_json(400, {"error": "VM ID (alphanumeric) required"})
+                return
+
+            vm_dir = f"/var/lib/mitranet/vms/{vm_id}"
+            if os.path.exists(vm_dir):
+                self._send_json(400, {"error": f"Virtual machine '{vm_id}' already exists"})
+                return
+
+            os.makedirs(vm_dir, exist_ok=True)
+            disk_path = f"{vm_dir}/disk.qcow2"
+
+            # Create real qcow2 disk
+            try:
+                subprocess.run(
+                    ["qemu-img", "create", "-f", "qcow2", disk_path, f"{disk_gb}G"],
+                    check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
+            except Exception as e:
+                self._send_json(500, {"error": f"Failed creating qcow2 disk: {e}"})
+                return
+
+            # Check if port_fwd is free, otherwise pick free port
+            def is_port_in_use(port: int) -> bool:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    return s.connect_ex(('127.0.0.1', port)) == 0
+
+            chosen_port = port_fwd
+            if is_port_in_use(chosen_port):
+                for p in range(8081, 8999):
+                    if not is_port_in_use(p):
+                        chosen_port = p
+                        break
+
+            # Write env config
+            conf_dir = "/etc/mitranet/vms"
+            os.makedirs(conf_dir, exist_ok=True)
+            env_file = f"{conf_dir}/{vm_id}.env"
+            with open(env_file, "w") as f:
+                f.write(f"RAM_MB={ram_mb}\n")
+                f.write(f"VCPU={vcpu}\n")
+                f.write(f"PORT_FWD={chosen_port}\n")
+                if iso_file:
+                    f.write(f"ISO_FILE={iso_file}\n")
+                f.write(f"VNC_PORT=5900\n")
+
+            self._send_json(200, {
+                "success": True,
+                "message": f"Virtual Machine '{vm_id}' created successfully.",
+                "vm": {
+                    "id": vm_id,
+                    "ram_mb": ram_mb,
+                    "vcpu": vcpu,
+                    "disk_gb": disk_gb,
+                    "port_fwd": port_fwd,
+                    "iso": iso_file,
+                    "status": "STOPPED"
+                }
+            })
+            return
+
+        # Virtual Machine (KVM) Deletion
+        if path == "/api/v1/services/kvm/delete":
+            import subprocess
+            import shutil
+            vm_id = payload.get("id", "").strip()
+            if not vm_id or vm_id == "aapanel":
+                self._send_json(400, {"error": "Cannot delete default VM or invalid ID"})
+                return
+
+            # Stop if running
+            subprocess.run(["systemctl", "stop", f"mitranet-vm@{vm_id}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            vm_dir = f"/var/lib/mitranet/vms/{vm_id}"
+            if os.path.exists(vm_dir):
+                shutil.rmtree(vm_dir, ignore_errors=True)
+
+            env_file = f"/etc/mitranet/vms/{vm_id}.env"
+            if os.path.exists(env_file):
+                os.remove(env_file)
+
+            self._send_json(200, {"success": True, "message": f"VM '{vm_id}' deleted."})
+            return
+
+        # ISO Delete
+        if path == "/api/v1/services/kvm/iso/delete":
+            filename = os.path.basename(payload.get("filename", "").strip())
+            if not filename:
+                self._send_json(400, {"error": "Filename required"})
+                return
+            target = f"/var/lib/mitranet/isos/{filename}"
+            if os.path.isfile(target):
+                os.remove(target)
+                self._send_json(200, {"success": True, "message": f"ISO '{filename}' deleted."})
+            else:
+                self._send_json(404, {"error": "ISO file not found"})
             return
 
         self._send_json(404, {"error": "Endpoint not found"})
