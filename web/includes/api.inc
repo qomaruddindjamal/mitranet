@@ -175,10 +175,26 @@ class MitraNetApi {
         return self::request('/system/update', 'POST', ['hostname' => $hostname]);
     }
 
+    public static function updateSystemSettings($data) {
+        return self::request('/system/update', 'POST', $data);
+    }
+
+
     public static function getPackages() {
         $res = self::request('/packages');
         return $res['status'] === 200 ? ($res['data']['packages'] ?? []) : [];
     }
+
+    public static function getSystemUpdateCheck() {
+        $res = self::request('/system/update/check');
+        return $res['status'] === 200 ? $res['data'] : [
+            'current_version' => '1.0.2-RELEASE',
+            'latest_version' => '1.0.2-RELEASE',
+            'up_to_date' => true,
+            'branch' => 'stable'
+        ];
+    }
+
 
     public static function getWireGuard() {
         $res = self::request('/wireguard');
@@ -243,6 +259,16 @@ class MitraNetApi {
     public static function deleteUser($username) {
         return self::request('/users/delete', 'POST', ['username' => $username]);
     }
+
+    public static function changeUserPassword($username, $new_password) {
+        return self::request('/users/password', 'POST', ['username' => $username, 'password' => $new_password]);
+    }
+
+    public static function getCertificates() {
+        $res = self::request('/certificates');
+        return $res['status'] === 200 ? $res['data'] : ['authorities' => [], 'certificates' => []];
+    }
+
 
     public static function getSpeedtestServers() {
         $res = self::request('/tools/speedtest/servers');

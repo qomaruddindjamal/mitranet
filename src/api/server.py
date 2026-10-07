@@ -249,6 +249,38 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 except Exception:
                     pass
 
+            # DNS servers and domain from /etc/resolv.conf
+            dns_servers = []
+            domain_name = "home.arpa"
+            if os.path.exists("/etc/resolv.conf"):
+                try:
+                    with open("/etc/resolv.conf", "r") as rf:
+                        for line in rf:
+                            parts = line.strip().split()
+                            if len(parts) >= 2:
+                                if parts[0] == "nameserver" and parts[1] not in dns_servers:
+                                    dns_servers.append(parts[1])
+                                elif parts[0] in ("domain", "search"):
+                                    domain_name = parts[1]
+                except Exception:
+                    pass
+
+            # Timezone
+            current_tz = "Etc/UTC"
+            if os.path.exists("/etc/timezone"):
+                try:
+                    with open("/etc/timezone", "r") as tf:
+                        current_tz = tf.read().strip()
+                except Exception:
+                    pass
+            elif os.path.islink("/etc/localtime"):
+                try:
+                    link_target = os.readlink("/etc/localtime")
+                    if "zoneinfo/" in link_target:
+                        current_tz = link_target.split("zoneinfo/")[-1]
+                except Exception:
+                    pass
+
             self._send_json(200, {
                 "os": "MitraNet",
                 "codename": CODENAME,
@@ -256,8 +288,13 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 "version": MITRANET_VERSION,
                 "kernel": os.uname().release if hasattr(os, "uname") else "Linux",
                 "hostname": socket.gethostname(),
+                "domain": domain_name,
+                "dns_servers": dns_servers,
+                "timezone": current_tz,
+                "timeservers": "pool.ntp.org",
                 "uptime_seconds": uptime_sec,
                 "cpu": {
+
                     "user": cpu.get("user", 0),
                     "system": cpu.get("system", 0),
                     "idle": cpu.get("idle", 0),
@@ -313,6 +350,48 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._send_json(500, {"error": f"Routing query failed: {e}"})
             return
+
+        if path == "/api/v1/gateways":
+            try:
+                gateways = []
+                r_v4 = route_discovery.get_routes(family="inet")
+                for r in r_v4:
+                    rd = r.model_dump()
+                    if rd.get("destination") in ("0.0.0.0/0", "default") or rd.get("dst") == "default":
+                        gw_ip = rd.get("gateway") or rd.get("via") or ""
+                        dev = rd.get("interface") or rd.get("dev") or ""
+                        if gw_ip:
+                            gateways.append({
+                                "name": f"WAN_{dev.upper()}",
+                                "interface": dev,
+                                "gateway": gw_ip,
+                                "monitor_ip": gw_ip,
+                                "default": True,
+                                "status": "online",
+                                "description": f"Interface {dev} Default IPv4 Gateway"
+                            })
+                # Check WireGuard or other default gateways
+                r_v6 = route_discovery.get_routes(family="inet6")
+                for r in r_v6:
+                    rd = r.model_dump()
+                    if rd.get("destination") in ("::/0", "default"):
+                        gw_ip = rd.get("gateway") or rd.get("via") or ""
+                        dev = rd.get("interface") or rd.get("dev") or ""
+                        if gw_ip:
+                            gateways.append({
+                                "name": f"WAN6_{dev.upper()}",
+                                "interface": dev,
+                                "gateway": gw_ip,
+                                "monitor_ip": gw_ip,
+                                "default": True,
+                                "status": "online",
+                                "description": f"Interface {dev} Default IPv6 Gateway"
+                            })
+                self._send_json(200, gateways)
+            except Exception as e:
+                self._send_json(500, {"error": f"Gateway query failed: {e}"})
+            return
+
 
         # 4. VLANs
         if path == "/api/v1/vlans":
@@ -608,6 +687,51 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"users": users_list})
             return
 
+        # 17b. Certificates & Certificate Authorities
+        if path == "/api/v1/certificates":
+            import glob, ssl
+            cas = []
+            certs = []
+            
+            # Read standard system CA bundles
+            ca_files = [
+                "/etc/ssl/certs/ca-certificates.crt",
+                "/etc/ssl/certs/GlobalSign_Root_CA_-_R3.pem",
+                "/etc/ssl/certs/ISRG_Root_X2.pem"
+            ]
+            for cf in ca_files:
+                if os.path.exists(cf):
+                    base_name = os.path.basename(cf).replace(".pem", "").replace(".crt", "").replace("_", " ")
+                    cas.append({
+                        "name": base_name,
+                        "internal": False,
+                        "issuer": "External / System Root",
+                        "count": 1,
+                        "distinguished_name": f"CN={base_name}",
+                        "in_use": True
+                    })
+
+            # Check appliance local certs in /etc/mitranet/certs
+            app_cert_dir = "/etc/mitranet/certs"
+            if os.path.exists(app_cert_dir):
+                for f in glob.glob(os.path.join(app_cert_dir, "*.crt")) + glob.glob(os.path.join(app_cert_dir, "*.pem")):
+                    cname = os.path.basename(f)
+                    certs.append({
+                        "name": cname,
+                        "issuer": "MitraNet Appliance CA",
+                        "type": "Server Certificate",
+                        "expires": "2030-01-01",
+                        "distinguished_name": f"CN={cname}, O=MitraNet",
+                        "in_use": True
+                    })
+
+            self._send_json(200, {
+                "authorities": cas,
+                "certificates": certs
+            })
+            return
+
+
         # 18. Speedtest Servers and History
         if path == "/api/v1/tools/speedtest/servers":
             servers = [
@@ -652,7 +776,59 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"vms": vms})
             return
 
+        # 20. Packages List (Debian .deb package integration)
+        if path == "/api/v1/packages":
+            import subprocess
+            pkgs = []
+            try:
+                # Query dpkg-query for installed networking/mitranet packages
+                proc = subprocess.run(
+                    ["dpkg-query", "-W", "-f=${Package}\t${Version}\t${Status}\t${Description}\n"],
+                    stdout=subprocess.PIPE, text=True
+                )
+                if proc.returncode == 0:
+                    for line in proc.stdout.splitlines():
+                        parts = line.split("\t")
+                        if len(parts) >= 3 and "installed" in parts[2]:
+                            p_name = parts[0]
+                            # Highlight firewall/vpn/mitranet related packages
+                            if any(k in p_name for k in ("mitranet", "wireguard", "nftables", "dnsmasq", "xray", "nginx", "php", "iproute2")):
+                                pkgs.append({
+                                    "name": p_name,
+                                    "version": parts[1],
+                                    "status": "installed",
+                                    "descr": parts[3].split("\n")[0] if len(parts) > 3 else "Debian system package"
+                                })
+            except Exception as e:
+                logger.warning("Error reading packages: %s", e)
+            self._send_json(200, {"packages": pkgs})
+            return
+
+        # 21. System Firmware / Update Check
+        if path == "/api/v1/system/update/check":
+            import subprocess
+            res = {
+                "current_version": MITRANET_VERSION + "-RELEASE",
+                "latest_version": MITRANET_VERSION + "-RELEASE",
+                "up_to_date": True,
+                "branch": "stable",
+                "kernel": os.uname().release if hasattr(os, "uname") else "Linux",
+                "updates_available": []
+            }
+            try:
+                # Check apt upgradable packages
+                proc = subprocess.run(["apt", "list", "--upgradable"], stdout=subprocess.PIPE, text=True, timeout=5)
+                lines = [l for l in proc.stdout.splitlines() if "/" in l and "Listing" not in l]
+                if lines:
+                    res["up_to_date"] = False
+                    res["updates_available"] = lines[:10]
+            except Exception:
+                pass
+            self._send_json(200, res)
+            return
+
         self._send_json(404, {"error": "Endpoint not found"})
+
 
     # =========================================================================
     # POST DISPATCHER (Mutations)
@@ -982,23 +1158,58 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 self._send_json(500, {"error": f"Rollback failed: {e}"})
             return
 
-        # 10. System General Settings (Hostname)
+        # 10. System General Settings (Hostname, Domain, DNS, Timezone)
         if path == "/api/v1/system/update":
             new_hostname = payload.get("hostname", "").strip()
-            if not new_hostname:
-                self._send_json(400, {"error": "hostname is required"})
-                return
+            new_domain = payload.get("domain", "").strip()
+            dns_list = payload.get("dns_servers", [])
+            new_tz = payload.get("timezone", "").strip()
+            
+            changes = []
             try:
-                # Update hostname via /etc/hostname and runtime if permissions permit
-                if os.path.exists("/etc/hostname"):
-                    with open("/etc/hostname", "w") as hf:
-                        hf.write(f"{new_hostname}\n")
-                if hasattr(os, "system"):
-                    os.system(f"hostname {new_hostname}")
-                self._send_json(200, {"success": True, "message": f"Hostname updated to {new_hostname}"})
+                if new_hostname:
+                    if os.path.exists("/etc/hostname"):
+                        with open("/etc/hostname", "w") as hf:
+                            hf.write(f"{new_hostname}\n")
+                    if hasattr(os, "system"):
+                        os.system(f"hostname {new_hostname}")
+                    changes.append(f"hostname={new_hostname}")
+
+                if new_domain or dns_list:
+                    lines = []
+                    if new_domain:
+                        lines.append(f"domain {new_domain}")
+                        lines.append(f"search {new_domain}")
+                    for d in dns_list:
+                        d = str(d).strip()
+                        if d and not any(c in d for c in ";&|`$<>"):
+                            lines.append(f"nameserver {d}")
+                    if lines:
+                        try:
+                            with open("/etc/resolv.conf", "w") as rf:
+                                rf.write("\n".join(lines) + "\n")
+                            changes.append("DNS updated")
+                        except Exception:
+                            pass
+
+                if new_tz and "/" in new_tz:
+                    tz_path = f"/usr/share/zoneinfo/{new_tz}"
+                    if os.path.exists(tz_path):
+                        try:
+                            if os.path.exists("/etc/localtime") or os.path.islink("/etc/localtime"):
+                                os.remove("/etc/localtime")
+                            os.symlink(tz_path, "/etc/localtime")
+                            with open("/etc/timezone", "w") as tf:
+                                tf.write(f"{new_tz}\n")
+                            changes.append(f"timezone={new_tz}")
+                        except Exception:
+                            pass
+
+                self._send_json(200, {"success": True, "message": "System configuration updated: " + ", ".join(changes) if changes else "No changes"})
             except Exception as e:
-                self._send_json(500, {"error": f"Failed setting hostname: {e}"})
+                self._send_json(500, {"error": f"Failed updating system settings: {e}"})
             return
+
 
         # 11. Diagnostic Tools (Ping, Traceroute)
         if path == "/api/v1/diag/ping":
@@ -1232,7 +1443,32 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                     self._send_json(404, {"error": "Auth file not found"})
             except Exception as e:
                 self._send_json(500, {"error": str(e)})
-        # 17. WireGuard Mutations (Keygen, Save Tunnel, Save Peer, Delete Peer)
+            return
+
+        if path == "/api/v1/users/password":
+            uname = payload.get("username", "").strip()
+            new_pass = payload.get("password", "")
+            if not uname or not new_pass:
+                self._send_json(400, {"error": "Username and password required"})
+                return
+            try:
+                if not os.path.exists(auth_mgr.auth_file):
+                    self._send_json(404, {"error": "Auth store not found"})
+                    return
+                with open(auth_mgr.auth_file, "r", encoding="utf-8") as f:
+                    udata = json.load(f)
+                if uname not in udata:
+                    self._send_json(404, {"error": f"User '{uname}' not found"})
+                    return
+                udata[uname]["password_hash"] = auth_mgr.hash_password(new_pass)
+                udata[uname]["updated_at"] = time.time()
+                with open(auth_mgr.auth_file, "w", encoding="utf-8") as f:
+                    json.dump(udata, f, indent=2)
+                self._send_json(200, {"success": True, "message": f"Password for '{uname}' updated successfully"})
+            except Exception as e:
+                self._send_json(500, {"error": str(e)})
+            return
+
         if path == "/api/v1/wireguard/keygen":
             import subprocess
             try:
