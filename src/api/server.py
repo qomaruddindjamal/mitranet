@@ -959,8 +959,8 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                             "net_mode": net_mode,
                             "veth_iface": veth_iface,
                             "guest_ip": guest_ip,
-                            "interface": f"{veth_iface} (vEthernet)" if net_mode == "veth" else "user-virtio",
-                            "bridge": veth_iface if net_mode == "veth" else "user-nat",
+                            "interface": veth_iface if veth_iface else ("veth0" if net_mode == "veth" else "user-virtio"),
+                            "bridge": veth_iface if veth_iface else "default",
                             "status": status,
                             "pid": pid,
                         })

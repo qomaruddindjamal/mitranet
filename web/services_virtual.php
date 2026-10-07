@@ -88,6 +88,9 @@ $kvmData = MitraNetApi::getKvmData();
 $vms = $kvmData['vms'] ?? [];
 $isos = $kvmData['isos'] ?? [];
 $vethernets = MitraNetApi::getVethernets();
+$all_bridges = MitraNetApi::getBridges();
+$all_vlans = MitraNetApi::getVlans();
+$all_interfaces = MitraNetApi::getInterfaces();
 ?>
 
 <ul class="nav nav-pills">
@@ -158,20 +161,55 @@ $vethernets = MitraNetApi::getVethernets();
             </div>
 
             <div class="form-group">
-                <label class="col-sm-3 control-label">Network Mode & Interface:</label>
+                <label class="col-sm-3 control-label">Network Interface:</label>
                 <div class="col-sm-6">
-                    <select name="veth_iface" class="form-control" id="veth_iface_select">
+                    <select name="veth_iface" class="form-control" id="veth_iface_select" required>
                         <?php if (!empty($vethernets)): ?>
-                            <?php foreach ($vethernets as $ve): ?>
-                                <option value="<?=htmlspecialchars($ve['name'])?>">
-                                    <?=htmlspecialchars($ve['name'])?> (Gateway: <?=htmlspecialchars($ve['ip_cidr'] ?: '192.168.101.254/24')?>)
-                                </option>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <option value="veth0">veth0 (Default Virtual Ethernet: 192.168.101.254/24)</option>
+                            <optgroup label="vEthernet (Host-Only Subnet / NAT / VPS)">
+                                <?php foreach ($vethernets as $ve): ?>
+                                    <option value="<?=htmlspecialchars($ve['name'])?>">
+                                        <?=htmlspecialchars($ve['name'])?> (vEthernet Gateway: <?=htmlspecialchars($ve['ip_cidr'] ?: '192.168.101.254/24')?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </optgroup>
                         <?php endif; ?>
+
+                        <?php if (!empty($all_bridges)): ?>
+                            <optgroup label="Bridges (Layer-2 Shared LAN Segment)">
+                                <?php foreach ($all_bridges as $br): ?>
+                                    <option value="<?=htmlspecialchars($br['name'])?>">
+                                        <?=htmlspecialchars($br['name'])?> (Bridge - Members: <?=htmlspecialchars(implode(', ', $br['members'] ?? []))?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </optgroup>
+                        <?php endif; ?>
+
+                        <?php if (!empty($all_vlans)): ?>
+                            <optgroup label="802.1Q VLANs">
+                                <?php foreach ($all_vlans as $vl): ?>
+                                    <option value="<?=htmlspecialchars($vl['name'])?>">
+                                        <?=htmlspecialchars($vl['name'])?> (VLAN <?=htmlspecialchars($vl['tag'] ?? '')?> on <?=htmlspecialchars($vl['parent'] ?? '')?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </optgroup>
+                        <?php endif; ?>
+
+                        <optgroup label="Physical Network Interfaces (Direct / Baremetal PC)">
+                            <?php foreach ($all_interfaces as $iface): ?>
+                                <?php if ($iface['name'] !== 'lo' && !str_starts_with($iface['name'], 'veth') && !str_starts_with($iface['name'], 'tap')): ?>
+                                    <option value="<?=htmlspecialchars($iface['name'])?>">
+                                        <?=htmlspecialchars($iface['name'])?> (<?=htmlspecialchars($iface['type'] ?? 'ether')?><?=!empty($iface['ipv4_addresses']) ? ' - ' . htmlspecialchars(implode(', ', $iface['ipv4_addresses'])) : ''?>)
+                                    </option>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </optgroup>
                     </select>
-                    <span class="help-block">VM terhubung langsung ke virtual interface internal (TAP &rarr; Bridge vEthernet). Tidak mengganggu IP fisik atau WAN.</span>
+                    <span class="help-block">
+                        Pilih interface jaringan tujuan:
+                        <br>&bull; <strong>vEthernet</strong>: Subnet virtual internal terisolasi (cocok untuk VPS / NAT port forward).
+                        <br>&bull; <strong>Bridge</strong>: Menggabungkan VM langsung ke segmen IP yang sama dengan LAN fisik (satu subnet IP di PC baremetal).
+                        <br>&bull; <strong>VLAN / Physical</strong>: Menghubungkan langsung ke tag VLAN atau port ethernet fisik.
+                    </span>
                 </div>
             </div>
 

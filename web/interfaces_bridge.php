@@ -48,22 +48,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $bridges = MitraNetApi::getBridges();
 $all_ifaces = MitraNetApi::getInterfaces();
+$vlans = MitraNetApi::getVlans();
+$vethernets = MitraNetApi::getVethernets();
 
-// Filter candidate member interfaces: exclude loopback and bridge itself
-$candidate_ifaces = [];
+// Existing bridge names to exclude from being enslaved to another bridge
+$bridge_names = [];
+foreach ($bridges as $b_check) {
+    if (!empty($b_check['name'])) {
+        $bridge_names[] = $b_check['name'];
+    }
+}
+
+// Categorize candidate member interfaces
+$candidate_physical = [];
+$candidate_vlans = [];
+$candidate_veth = [];
+
 foreach ($all_ifaces as $if_item) {
     $if_name = $if_item['name'];
     if ($if_name === 'lo') continue;
-    // Exclude existing bridges from being members of another bridge
-    $is_existing_bridge = false;
-    foreach ($bridges as $b_check) {
-        if ($b_check['name'] === $if_name) {
-            $is_existing_bridge = true;
-            break;
-        }
-    }
-    if (!$is_existing_bridge) {
-        $candidate_ifaces[] = $if_item;
+    if (in_array($if_name, $bridge_names)) continue;
+    if (str_starts_with($if_name, 'tap')) continue;
+
+    if (str_starts_with($if_name, 'veth')) {
+        $candidate_veth[] = $if_item;
+    } elseif (str_contains($if_name, '.') || str_starts_with($if_name, 'vlan')) {
+        $candidate_vlans[] = $if_item;
+    } else {
+        $candidate_physical[] = $if_item;
     }
 }
 
@@ -136,9 +148,29 @@ if (!empty($err)) {
 				<label class="col-sm-2 control-label"><span class="element-required">*</span><?=gettext("Member Interface")?></label>
 				<div class="col-sm-10">
 					<select name="member" class="form-control" required>
-						<?php foreach ($candidate_ifaces as $i): ?>
-							<option value="<?=htmlspecialchars($i['name'])?>"><?=htmlspecialchars($i['name'])?> (<?=htmlspecialchars($i['type'] ?? 'ether')?>)</option>
-						<?php endforeach; ?>
+						<?php if (!empty($candidate_physical)): ?>
+							<optgroup label="<?=gettext("Physical Network Interfaces")?>">
+								<?php foreach ($candidate_physical as $i): ?>
+									<option value="<?=htmlspecialchars($i['name'])?>"><?=htmlspecialchars($i['name'])?> (<?=htmlspecialchars($i['type'] ?? 'ether')?>)</option>
+								<?php endforeach; ?>
+							</optgroup>
+						<?php endif; ?>
+
+						<?php if (!empty($candidate_vlans)): ?>
+							<optgroup label="<?=gettext("802.1Q VLAN Interfaces")?>">
+								<?php foreach ($candidate_vlans as $i): ?>
+									<option value="<?=htmlspecialchars($i['name'])?>"><?=htmlspecialchars($i['name'])?> (VLAN)</option>
+								<?php endforeach; ?>
+							</optgroup>
+						<?php endif; ?>
+
+						<?php if (!empty($candidate_veth)): ?>
+							<optgroup label="<?=gettext("Virtual Ethernet (vEthernet)")?>">
+								<?php foreach ($candidate_veth as $i): ?>
+									<option value="<?=htmlspecialchars($i['name'])?>"><?=htmlspecialchars($i['name'])?> (vEthernet)</option>
+								<?php endforeach; ?>
+							</optgroup>
+						<?php endif; ?>
 					</select>
 					<span class="help-block"><?=gettext("Interface jaringan fisik atau virtual yang akan digabungkan ke dalam bridge.")?></span>
 				</div>

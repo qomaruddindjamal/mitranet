@@ -1,0 +1,111 @@
+#!/bin/bash
+# ==============================================================================
+# MitraNet Universal KVM Virtual Machine Runner
+# Supports:
+# 1. Linux Bridge (br0, br-lan) -> Layer 2 Shared LAN
+# 2. vEthernet (veth0, veth1)   -> Layer 3 Isolated Routed Subnet / NAT (VPS)
+# 3. Physical NIC / VLAN (enp0s8, eth1.100) -> Layer 2 Macvtap Bridge
+# 4. SLIRP User Mode NAT        -> Fallback
+# ==============================================================================
+
+VM_NAME="$1"
+if [ -z "$VM_NAME" ]; then
+    echo "Usage: $0 <vm_name>"
+    exit 1
+fi
+
+CONFIG="/etc/mitranet/vms/${VM_NAME}.env"
+RAM_MB=1024
+VCPU=1
+PORT_FWD=8888
+ISO_FILE=""
+VNC_PORT=5900
+NET_MODE="veth"
+VETH_IFACE="veth0"
+GUEST_IP=""
+
+if [ -f "$CONFIG" ]; then
+    source "$CONFIG"
+fi
+
+DISK="/var/lib/mitranet/vms/${VM_NAME}/disk.qcow2"
+if [ ! -f "$DISK" ]; then
+    echo "Error: Disk image not found at $DISK"
+    exit 1
+fi
+
+ARGS=(
+    -name "${VM_NAME}"
+    -m "${RAM_MB:-1024}"
+    -smp "${VCPU:-1}"
+    -display vnc=127.0.0.1:0
+    -drive "file=${DISK},if=virtio,format=qcow2"
+)
+
+# ------------------------------------------------------------------------------
+# Network Setup
+# ------------------------------------------------------------------------------
+TARGET_IFACE="${VETH_IFACE:-veth0}"
+TAP_DEV="tap-${VM_NAME}"
+
+if [ -n "$TARGET_IFACE" ] && ip link show "$TARGET_IFACE" >/dev/null 2>&1; then
+    IFACE_TYPE=$(ip -d link show "$TARGET_IFACE" 2>/dev/null | grep -o 'type [a-z0-9_]*' | awk '{print $2}' | head -n1)
+
+    if [ "$IFACE_TYPE" = "bridge" ] || echo "$TARGET_IFACE" | grep -qE '^(br|veth)'; then
+        # Case A: Bridge or vEthernet device -> Attach standard TAP
+        ip link del "$TAP_DEV" >/dev/null 2>&1 || true
+        ip tuntap add dev "$TAP_DEV" mode tap
+        ip link set "$TAP_DEV" master "$TARGET_IFACE"
+        ip link set "$TAP_DEV" up
+
+        ARGS+=(
+            -netdev "tap,id=net0,ifname=${TAP_DEV},script=no,downscript=no"
+            -device "virtio-net-pci,netdev=net0"
+        )
+        trap 'ip link del "$TAP_DEV" >/dev/null 2>&1 || true' EXIT
+    else
+        # Case B: Physical Ethernet / VLAN Interface (e.g. enp0s8, eth1, vlan100)
+        # Use macvtap in bridge mode so VM shares Layer-2 broadcast with baremetal PC LAN
+        MVT_DEV="mvt-${VM_NAME}"
+        ip link del "$MVT_DEV" >/dev/null 2>&1 || true
+        ip link add link "$TARGET_IFACE" name "$MVT_DEV" type macvtap mode bridge
+        ip link set "$MVT_DEV" up
+
+        # Retrieve tap char device index
+        TAP_INDEX=$(cat "/sys/class/net/${MVT_DEV}/ifindex")
+        TAP_CHAR="/dev/tap${TAP_INDEX}"
+
+        if [ -c "$TAP_CHAR" ]; then
+            exec 3<>"$TAP_CHAR"
+            ARGS+=(
+                -netdev "tap,id=net0,fd=3"
+                -device "virtio-net-pci,netdev=net0"
+            )
+            trap 'exec 3>&-; ip link del "$MVT_DEV" >/dev/null 2>&1 || true' EXIT
+        else
+            # Fallback to standard TAP enslaved or user-mode
+            ARGS+=(
+                -netdev "user,id=net0,hostfwd=tcp::${PORT_FWD:-8888}-:8888"
+                -device "virtio-net-pci,netdev=net0"
+            )
+        fi
+    fi
+else
+    # Fallback: SLIRP user mode with port forwarding
+    ARGS+=(
+        -netdev "user,id=net0,hostfwd=tcp::${PORT_FWD:-8888}-:8888"
+        -device "virtio-net-pci,netdev=net0"
+    )
+fi
+
+# Attach ISO if specified
+if [ -n "$ISO_FILE" ] && [ -f "$ISO_FILE" ]; then
+    ARGS+=( -cdrom "$ISO_FILE" -boot d )
+fi
+
+# Ensure noVNC WebSocket proxy is running on port 6080
+if ! pgrep -f "websockify.*6080" >/dev/null; then
+    websockify -D --web /usr/share/novnc 6080 127.0.0.1:5900 &
+fi
+
+exec /usr/bin/qemu-system-x86_64 "${ARGS[@]}"
