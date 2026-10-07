@@ -15,9 +15,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     if ($action === 'create') {
         $name = trim($_POST['name'] ?? '');
-        $members = $_POST['members'] ?? [];
-        if (!is_array($members)) {
-            $members = array_filter(array_map('trim', explode(',', (string)$members)));
+        $member_val = $_POST['member'] ?? $_POST['members'] ?? '';
+        $members = [];
+        if (is_array($member_val)) {
+            $members = array_filter(array_map('trim', $member_val));
+        } elseif (!empty($member_val)) {
+            $members = array_filter(array_map('trim', explode(',', (string)$member_val)));
         }
         if ($name) {
             $res = MitraNetApi::request('/bridges/create', 'POST', [
@@ -130,22 +133,14 @@ if (!empty($err)) {
 				</div>
 			</div>
 			<div class="form-group">
-				<label class="col-sm-2 control-label"><span class="element-required">*</span><?=gettext("Member Interfaces")?></label>
+				<label class="col-sm-2 control-label"><span class="element-required">*</span><?=gettext("Member Interface")?></label>
 				<div class="col-sm-10">
-					<select name="members[]" class="form-control" multiple size="<?=min(max(count($candidate_ifaces), 3), 7)?>" required>
-						<?php if (empty($candidate_ifaces)): ?>
-							<option disabled><?=gettext("Tidak ada interface fisik/virtual yang tersedia")?></option>
-						<?php else: foreach ($candidate_ifaces as $cand): ?>
-							<?php
-							$ip_desc = !empty($cand['ipv4_addresses']) ? ' (' . implode(', ', $cand['ipv4_addresses']) . ')' : '';
-							$state_desc = !empty($cand['is_up']) ? ' [UP]' : ' [DOWN]';
-							?>
-							<option value="<?=htmlspecialchars($cand['name'])?>">
-								<?=htmlspecialchars(strtoupper($cand['name']))?> - <?=htmlspecialchars($cand['name'])?><?=$state_desc?><?=$ip_desc?> (<?=htmlspecialchars($cand['mac_address'] ?? 'N/A')?>)
-							</option>
-						<?php endforeach; endif; ?>
+					<select name="member" class="form-control" required>
+						<?php foreach ($candidate_ifaces as $i): ?>
+							<option value="<?=htmlspecialchars($i['name'])?>"><?=htmlspecialchars($i['name'])?> (<?=htmlspecialchars($i['type'] ?? 'ether')?>)</option>
+						<?php endforeach; ?>
 					</select>
-					<span class="help-block"><?=gettext("Pilih satu atau lebih interface untuk digabungkan ke bridge (tahan tombol Ctrl/Cmd untuk memilih lebih dari satu).")?></span>
+					<span class="help-block"><?=gettext("Interface jaringan fisik atau virtual yang akan digabungkan ke dalam bridge.")?></span>
 				</div>
 			</div>
 			<div class="form-group">
