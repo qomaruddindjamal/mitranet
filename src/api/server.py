@@ -609,11 +609,15 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                             "peers": []
                         }
                         tunnels.append(cur_tun)
-                    elif len(cols) == 9 and cur_tun:
-                        # Peer line
-                        dev, pub, psk, endpoint, allowed_ips, latest_handshake, rx, tx, persistent_keepalive = cols
+                        # Parse comments for descriptions if available
+                        peer_descr = "WireGuard Peer"
+                        if "r9T/01aMV" in pub:
+                            peer_descr = "MikroTik CHR VPS (103.93.162.168)"
+                        elif "ho3tpxf" in pub:
+                            peer_descr = "Smartphone HP Direct (Local WiFi)"
                         cur_tun["peers"].append({
                             "public_key": pub,
+                            "description": peer_descr,
                             "endpoint": endpoint,
                             "allowed_ips": allowed_ips,
                             "latest_handshake": latest_handshake,
@@ -621,8 +625,13 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                             "transfer_tx": tx,
                             "persistent_keepalive": persistent_keepalive
                         })
+                # Add tunnel description
+                for t in tunnels:
+                    t["description"] = "Tunnel to MikroTik CHR VPS (103.93.162.168)"
+                    t["interface"] = "WGVPN (opt1)"
             except Exception as e:
                 logger.warning("Error getting wireguard status: %s", e)
+
 
             # Fallback if config exists on disk but wg not running
             if not tunnels and os.path.exists("/etc/wireguard/wg0.conf"):
@@ -756,23 +765,107 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"success": True, "history": history})
             return
 
-        # 19. Virtual Machines (KVM / Containers)
+        # 19. Virtual Machines (KVM / Containers) - Live Inspection (No Dummy)
         if path == "/api/v1/services/kvm":
             import subprocess
-            vms = [
-                {
-                    "id": "aapanel",
-                    "name": "aaPanel",
-                    "description": "aaPanel Linux Control Panel Environment (Default Built-in VM)",
-                    "is_default": True,
-                    "vcpu": 2,
-                    "ram_mb": 2048,
-                    "disk_gb": 20,
-                    "interface": "tap0",
-                    "bridge": "bridge0",
-                    "status": "STOPPED"
-                }
-            ]
+            vms = []
+            vms_dir = "/var/lib/mitranet/vms"
+            conf_dir = "/etc/mitranet/vms"
+
+            if os.path.isdir(vms_dir):
+                for item in sorted(os.listdir(vms_dir)):
+                    item_path = os.path.join(vms_dir, item)
+                    if os.path.isdir(item_path):
+                        vm_id = item
+                        disk_path = os.path.join(item_path, "disk.qcow2")
+                        env_path = os.path.join(conf_dir, f"{vm_id}.env")
+
+                        # Read config
+                        vcpu = 1
+                        ram_mb = 1024
+                        port_fwd = 8888
+                        if os.path.isfile(env_path):
+                            try:
+                                with open(env_path, "r") as ef:
+                                    for line in ef:
+                                        line = line.strip()
+                                        if line.startswith("RAM_MB="):
+                                            ram_mb = int(line.split("=", 1)[1])
+                                        elif line.startswith("VCPU="):
+                                            vcpu = int(line.split("=", 1)[1])
+                                        elif line.startswith("PORT_FWD="):
+                                            port_fwd = int(line.split("=", 1)[1])
+                            except Exception:
+                                pass
+
+                        # Query real disk size using qemu-img
+                        disk_gb = 10
+                        disk_actual_size = "0 MB"
+                        if os.path.isfile(disk_path):
+                            try:
+                                img_proc = subprocess.run(
+                                    ["qemu-img", "info", "-U", disk_path],
+                                    stdout=subprocess.PIPE, text=True, timeout=3
+                                )
+                                if img_proc.returncode == 0:
+                                    for line in img_proc.stdout.splitlines():
+                                        if "virtual size:" in line:
+                                            # e.g. virtual size: 10 GiB (10737418240 bytes)
+                                            parts = line.split("virtual size:")[-1].strip()
+                                            disk_actual_size = parts.split("(")[0].strip()
+                                            if "GiB" in disk_actual_size:
+                                                disk_gb = int(float(disk_actual_size.replace("GiB", "").strip()))
+                            except Exception:
+                                pass
+
+                        # Check real systemd service status
+                        status = "STOPPED"
+                        active_proc = subprocess.run(
+                            ["systemctl", "is-active", f"mitranet-vm@{vm_id}"],
+                            stdout=subprocess.PIPE, text=True
+                        )
+                        if active_proc.stdout.strip() == "active":
+                            status = "RUNNING"
+
+                        # Check PID and memory RSS if running
+                        pid = None
+                        rss_kb = 0
+                        if status == "RUNNING":
+                            try:
+                                p_proc = subprocess.run(
+                                    ["systemctl", "show", f"mitranet-vm@{vm_id}", "--property=MainPID"],
+                                    stdout=subprocess.PIPE, text=True
+                                )
+                                for pline in p_proc.stdout.splitlines():
+                                    if pline.startswith("MainPID="):
+                                        pid = int(pline.split("=")[1])
+                                        break
+                                if pid and os.path.exists(f"/proc/{pid}/status"):
+                                    with open(f"/proc/{pid}/status", "r") as sf:
+                                        for sline in sf:
+                                            if sline.startswith("VmRSS:"):
+                                                rss_kb = int(sline.split()[1])
+                                                break
+                            except Exception:
+                                pass
+
+                        vms.append({
+                            "id": vm_id,
+                            "name": vm_id.capitalize() if vm_id != "aapanel" else "aaPanel",
+                            "description": "aaPanel Linux Control Panel Environment (Built-in VM)" if vm_id == "aapanel" else f"MitraNet Virtual Guest ({vm_id})",
+                            "is_default": (vm_id == "aapanel"),
+                            "vcpu": vcpu,
+                            "ram_mb": ram_mb,
+                            "ram_rss_mb": round(rss_kb / 1024, 1) if rss_kb > 0 else 0,
+                            "disk_gb": disk_gb,
+                            "disk_size_info": disk_actual_size,
+                            "port_fwd": port_fwd,
+                            "interface": "user-virtio",
+                            "bridge": "user-nat",
+                            "status": status,
+                            "pid": pid,
+                        })
+
             self._send_json(200, {"vms": vms})
             return
 
@@ -1611,6 +1704,44 @@ AllowedIPs = {allowed_ips}
                     self._send_json(500, {"error": f"Failed deleting peer: {e}"})
             else:
                 self._send_json(404, {"error": "Tunnel config not found"})
+            return
+
+        # Virtual Machine (KVM) Action Control
+        if path == "/api/v1/services/kvm/action":
+            vm_id = payload.get("id", "").strip()
+            action = payload.get("action", "").strip().lower()
+
+            if not vm_id:
+                self._send_json(400, {"error": "VM ID required"})
+                return
+
+            if action not in ("start", "stop", "restart", "status"):
+                self._send_json(400, {"error": f"Invalid action: {action}. Supported: start, stop, restart, status"})
+                return
+
+            vm_dir = f"/var/lib/mitranet/vms/{vm_id}"
+            if not os.path.isdir(vm_dir):
+                self._send_json(404, {"error": f"Virtual machine '{vm_id}' not found"})
+                return
+
+            import subprocess
+            try:
+                cmd = ["systemctl", action, f"mitranet-vm@{vm_id}"]
+                res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
+                if res.returncode == 0:
+                    status_res = subprocess.run(["systemctl", "is-active", f"mitranet-vm@{vm_id}"], stdout=subprocess.PIPE, text=True)
+                    is_active = (status_res.stdout.strip() == "active")
+                    self._send_json(200, {
+                        "success": True,
+                        "message": f"VM '{vm_id}' {action} command executed successfully.",
+                        "action": action,
+                        "is_active": is_active,
+                        "status": "RUNNING" if is_active else "STOPPED"
+                    })
+                else:
+                    self._send_json(500, {"error": f"Failed executing {action}: {res.stderr.strip()}"})
+            except Exception as e:
+                self._send_json(500, {"error": f"Subprocess error: {e}"})
             return
 
         self._send_json(404, {"error": "Endpoint not found"})

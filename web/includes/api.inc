@@ -300,4 +300,8 @@ class MitraNetApi {
         $res = self::request('/services/kvm');
         return $res['status'] === 200 ? ($res['data']['vms'] ?? []) : [];
     }
+
+    public static function vmAction($id, $action) {
+        return self::request('/services/kvm/action', 'POST', ['id' => $id, 'action' => $action]);
+    }
 }
