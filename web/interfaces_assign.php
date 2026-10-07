@@ -41,7 +41,7 @@ display_top_tabs($tab_array);
 				<tbody>
 				<?php foreach ($ifaces as $idx => $if): ?>
 					<tr>
-						<td><a href="interfaces.php?name=<?=urlencode($if['name'])?>"><strong><?=htmlspecialchars(strtoupper($if['name']))?></strong></a></td>
+						<td><a href="interfaces.php?if=<?=urlencode($if['name'])?>"><strong><?=htmlspecialchars(strtoupper($if['name']))?></strong></a></td>
 						<td><?=htmlspecialchars($if['name'])?> (<?=htmlspecialchars($if['type'] ?? 'ether')?>)</td>
 						<td><code><?=htmlspecialchars($if['mac_address'] ?? 'N/A')?></code></td>
 						<td>
@@ -52,7 +52,7 @@ display_top_tabs($tab_array);
 							<?php endif; ?>
 						</td>
 						<td>
-							<a href="interfaces.php?name=<?=urlencode($if['name'])?>" class="fa-solid fa-pencil" title="<?=gettext('Edit interface')?>"></a>
+							<a href="interfaces.php?if=<?=urlencode($if['name'])?>" class="fa-solid fa-pencil" title="<?=gettext('Edit interface')?>"></a>
 						</td>
 					</tr>
 				<?php endforeach; ?>

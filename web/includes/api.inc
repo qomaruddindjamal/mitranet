@@ -108,6 +108,27 @@ class MitraNetApi {
         return $res['status'] === 200 ? $res['data'] : [];
     }
 
+    public static function getInterface($name) {
+        $res = self::request('/interfaces/' . urlencode($name));
+        return $res['status'] === 200 ? $res['data'] : null;
+    }
+
+    public static function setInterfaceState($name, $state) {
+        return self::request('/interfaces/set-state', 'POST', ['name' => $name, 'state' => $state]);
+    }
+
+    public static function setInterfaceMtu($name, $mtu) {
+        return self::request('/interfaces/set-mtu', 'POST', ['name' => $name, 'mtu' => intval($mtu)]);
+    }
+
+    public static function addInterfaceAddress($name, $cidr) {
+        return self::request('/interfaces/address/add', 'POST', ['name' => $name, 'cidr' => $cidr]);
+    }
+
+    public static function removeInterfaceAddress($name, $cidr) {
+        return self::request('/interfaces/address/remove', 'POST', ['name' => $name, 'cidr' => $cidr]);
+    }
+
     public static function getRoutes() {
         $res = self::request('/routes');
         return $res['status'] === 200 ? $res['data'] : [];

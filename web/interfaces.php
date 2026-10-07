@@ -1,46 +1,98 @@
 <?php
 /*
- * interfaces.php - MitraNet Interface Details
- * Adapted from pfSense interfaces.php
+ * interfaces.php - MitraNet Interface Details & Configuration Editor
+ * Adapted from pfSense interfaces.php for Debian 13 (Trixie) Appliance
+ * Licensed under the Apache License, Version 2.0.
  */
 
-$pgtitle = array(gettext("Interfaces"), gettext("Interface Details"));
-$selected_menu = "interfaces";
-require_once(__DIR__ . '/includes/head.inc');
+require_once(__DIR__ . '/includes/api.inc');
 
 $msg = '';
 $err = '';
 
+// Support both ?if=<name> and ?name=<name>
+$target_if = $_GET['if'] ?? $_GET['name'] ?? '';
+
+// Handle POST actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
-    $ifname = $_POST['interface'] ?? '';
+    $ifname = trim($_POST['interface'] ?? '');
 
     if ($action === 'set_state' && !empty($ifname)) {
-        $state = $_POST['state'] ?? 'up';
-        $res = MitraNetApi::request('/interfaces/set-state', 'POST', [
-            'name' => $ifname,
-            'state' => $state
-        ]);
-        if ($res['status'] === 200) {
-            $msg = "Interface '$ifname' state set to " . strtoupper($state);
+        $state = strtolower($_POST['state'] ?? 'up');
+        $res = MitraNetApi::setInterfaceState($ifname, $state);
+        if (($res['status'] ?? 0) === 200 && ($res['data']['success'] ?? false)) {
+            $msg = "Interface '{$ifname}' berhasil diatur ke " . strtoupper($state);
         } else {
-            $err = $res['data']['error'] ?? 'Failed to update interface state';
+            $err = $res['data']['error'] ?? 'Gagal mengubah status interface.';
         }
-    } elseif ($action === 'set_mtu' && !empty($ifname)) {
-        $mtu = (int)($_POST['mtu'] ?? 1500);
-        $res = MitraNetApi::request('/interfaces/set-mtu', 'POST', [
-            'name' => $ifname,
-            'mtu' => $mtu
-        ]);
-        if ($res['status'] === 200) {
-            $msg = "Interface '$ifname' MTU set to $mtu";
+    } elseif ($action === 'save_interface' && !empty($ifname)) {
+        $state = !empty($_POST['enable']) ? 'up' : 'down';
+        $mtu = intval($_POST['mtu'] ?? 1500);
+        $new_ip = trim($_POST['ipaddr'] ?? '');
+        $new_subnet = intval($_POST['subnet'] ?? 24);
+
+        // 1. Set State
+        MitraNetApi::setInterfaceState($ifname, $state);
+
+        // 2. Set MTU
+        if ($mtu >= 576 && $mtu <= 9000) {
+            MitraNetApi::setInterfaceMtu($ifname, $mtu);
+        }
+
+        // 3. Update IP Address if specified
+        if (!empty($new_ip)) {
+            $cidr = "{$new_ip}/{$new_subnet}";
+            $add_res = MitraNetApi::addInterfaceAddress($ifname, $cidr);
+            if (($add_res['status'] ?? 0) === 200) {
+                $msg = "Konfigurasi interface '{$ifname}' ({$cidr}) berhasil disimpan dan diterapkan.";
+            } else {
+                $err_detail = $add_res['data']['error'] ?? '';
+                if (strpos($err_detail, 'already assigned') !== false) {
+                    $msg = "Konfigurasi interface '{$ifname}' berhasil diperbarui.";
+                } else {
+                    $msg = "Status & MTU interface '{$ifname}' diperbarui. " . $err_detail;
+                }
+            }
         } else {
-            $err = $res['data']['error'] ?? 'Failed to update MTU';
+            $msg = "Konfigurasi interface '{$ifname}' berhasil diperbarui.";
+        }
+        $target_if = $ifname;
+    } elseif ($action === 'remove_ip' && !empty($ifname)) {
+        $cidr = trim($_POST['cidr'] ?? '');
+        if (!empty($cidr)) {
+            $res = MitraNetApi::removeInterfaceAddress($ifname, $cidr);
+            if (($res['status'] ?? 0) === 200) {
+                $msg = "Alamat IP '{$cidr}' berhasil dihapus dari '{$ifname}'.";
+            } else {
+                $err = $res['data']['error'] ?? 'Gagal menghapus alamat IP.';
+            }
+        }
+        $target_if = $ifname;
+    }
+}
+
+// Fetch all interfaces
+$ifaces = MitraNetApi::getInterfaces();
+
+// Find single interface if selected
+$selected_iface = null;
+if (!empty($target_if)) {
+    foreach ($ifaces as $i) {
+        if (strtolower($i['name']) === strtolower($target_if)) {
+            $selected_iface = $i;
+            break;
         }
     }
 }
 
-$ifaces = MitraNetApi::getInterfaces();
+if ($selected_iface) {
+    $pgtitle = array(gettext("Interfaces"), strtoupper($selected_iface['name']));
+} else {
+    $pgtitle = array(gettext("Interfaces"), gettext("Interface Assignments"));
+}
+$selected_menu = "interfaces";
+require_once(__DIR__ . '/includes/head.inc');
 
 if (!empty($msg)) {
     print_info_box($msg, "success");
@@ -50,10 +102,125 @@ if (!empty($err)) {
 }
 ?>
 
+<?php if ($selected_iface): ?>
+<!-- SINGLE INTERFACE EDIT FORM (pfSense layout) -->
+<?php
+$is_up = !empty($selected_iface['is_up']);
+$current_ip = '';
+$current_subnet = 24;
+if (!empty($selected_iface['ipv4_addresses'][0])) {
+    $parts = explode('/', $selected_iface['ipv4_addresses'][0]);
+    $current_ip = $parts[0];
+    if (isset($parts[1])) {
+        $current_subnet = intval($parts[1]);
+    }
+}
+$is_protected = ($selected_iface['name'] === 'lo' || $selected_iface['name'] === 'enp0s3');
+?>
+
+<div class="panel panel-default">
+	<div class="panel-heading">
+		<h2 class="panel-title">
+			<i class="fa-solid fa-network-wired"></i>
+			<?=gettext("General Configuration")?>: <strong><?=htmlspecialchars(strtoupper($selected_iface['name']))?> (<?=htmlspecialchars($selected_iface['name'])?>)</strong>
+		</h2>
+	</div>
+	<div class="panel-body">
+		<form method="post" action="interfaces.php?if=<?=urlencode($selected_iface['name'])?>" class="form-horizontal">
+			<input type="hidden" name="action" value="save_interface">
+			<input type="hidden" name="interface" value="<?=htmlspecialchars($selected_iface['name'])?>">
+
+			<div class="form-group">
+				<label class="col-sm-3 control-label"><?=gettext("Enable")?></label>
+				<div class="col-sm-9">
+					<div class="checkbox">
+						<label>
+							<input type="checkbox" name="enable" value="yes" <?=$is_up ? 'checked' : ''?> <?=$is_protected ? 'onclick="return false;"' : ''?>>
+							<strong><?=gettext("Enable interface")?></strong>
+						</label>
+					</div>
+					<span class="help-block"><?=gettext("Aktifkan atau nonaktifkan link layer untuk interface jaringan ini.")?></span>
+				</div>
+			</div>
+
+			<div class="form-group">
+				<label class="col-sm-3 control-label"><?=gettext("Interface Identifier")?></label>
+				<div class="col-sm-6">
+					<input type="text" class="form-control" value="<?=htmlspecialchars($selected_iface['name'])?>" readonly>
+					<span class="help-block">Nama perangkat sistem kernel Linux.</span>
+				</div>
+			</div>
+
+			<div class="form-group">
+				<label class="col-sm-3 control-label"><?=gettext("MAC Address")?></label>
+				<div class="col-sm-6">
+					<input type="text" class="form-control" value="<?=htmlspecialchars($selected_iface['mac_address'] ?? 'N/A')?>" readonly>
+				</div>
+			</div>
+
+			<div class="form-group">
+				<label class="col-sm-3 control-label"><?=gettext("MTU (Maximum Transmission Unit)")?></label>
+				<div class="col-sm-3">
+					<input type="number" name="mtu" class="form-control" value="<?=htmlspecialchars($selected_iface['mtu'] ?? 1500)?>" min="576" max="9000">
+					<span class="help-block"><?=gettext("Standar ethernet: 1500 bytes.")?></span>
+				</div>
+			</div>
+
+			<hr>
+			<h4><i class="fa-solid fa-sliders"></i> <?=gettext("Static IPv4 Configuration")?></h4>
+
+			<div class="form-group">
+				<label class="col-sm-3 control-label"><?=gettext("IPv4 Address & Subnet")?></label>
+				<div class="col-sm-4">
+					<input type="text" name="ipaddr" class="form-control" placeholder="192.168.1.1" value="<?=htmlspecialchars($current_ip)?>">
+				</div>
+				<div class="col-sm-2">
+					<select name="subnet" class="form-control">
+						<?php for ($prefix = 32; $prefix >= 8; $prefix--): ?>
+							<option value="<?=$prefix?>" <?=$current_subnet == $prefix ? 'selected' : ''?>>/<?=$prefix?></option>
+						<?php endfor; ?>
+					</select>
+				</div>
+			</div>
+
+			<?php if (!empty($selected_iface['ipv4_addresses']) || !empty($selected_iface['ipv6_addresses'])): ?>
+			<div class="form-group">
+				<label class="col-sm-3 control-label"><?=gettext("Alamat IP Terpasang")?></label>
+				<div class="col-sm-9">
+					<?php foreach (($selected_iface['ipv4_addresses'] ?? []) as $a): ?>
+						<div style="margin-bottom: 5px;">
+							<span class="label label-info" style="font-size: 13px;"><?=htmlspecialchars($a)?></span>
+							<?php if (!$is_protected): ?>
+							<button type="submit" name="action" value="remove_ip" onclick="this.form.cidr.value='<?=htmlspecialchars($a)?>';" class="btn btn-xs btn-danger" style="margin-left: 5px;">Hapus IP</button>
+							<?php endif; ?>
+						</div>
+					<?php endforeach; ?>
+					<?php foreach (($selected_iface['ipv6_addresses'] ?? []) as $a6): ?>
+						<div style="margin-bottom: 5px;">
+							<span class="label label-default" style="font-size: 11px;"><?=htmlspecialchars($a6)?></span>
+						</div>
+					<?php endforeach; ?>
+					<input type="hidden" name="cidr" value="">
+				</div>
+			</div>
+			<?php endif; ?>
+
+			<div class="form-group">
+				<div class="col-sm-offset-3 col-sm-9">
+					<button type="submit" class="btn btn-primary"><i class="fa-solid fa-save icon-embed-btn"></i> <?=gettext("Save")?></button>
+					<a href="interfaces.php" class="btn btn-default" style="margin-left: 5px;"><?=gettext("Back to List")?></a>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+
+<?php else: ?>
+<!-- ALL INTERFACES OVERVIEW TABLE -->
 <div class="panel panel-default">
 	<div class="panel-heading"><h2 class="panel-title"><?=gettext("Interface Details & Configuration")?></h2></div>
 	<div class="panel-body">
-		<table class="table table-striped table-hover">
+		<table class="table table-striped table-hover table-condensed">
 			<thead>
 				<tr>
 					<th>Interface</th>
@@ -62,46 +229,54 @@ if (!empty($err)) {
 					<th>MAC Address</th>
 					<th>MTU</th>
 					<th>IP Addresses</th>
-					<th>RX (Bytes/Pkts)</th>
-					<th>TX (Bytes/Pkts)</th>
+					<th>Traffic (RX/TX)</th>
 					<th>Actions</th>
 				</tr>
 			</thead>
 			<tbody>
 				<?php if (empty($ifaces)): ?>
-					<tr><td colspan="9" class="text-center text-muted">No interfaces found</td></tr>
+					<tr><td colspan="8" class="text-center text-muted">No interfaces found</td></tr>
 				<?php else: foreach ($ifaces as $i): ?>
 					<tr>
-						<td><strong><?=htmlspecialchars($i['name'])?></strong></td>
 						<td>
-							<?php if ($i['is_up']): ?>
-								<span class="label label-success">UP</span>
+							<a href="interfaces.php?if=<?=urlencode($i['name'])?>">
+								<strong><i class="fa-solid fa-network-wired"></i> <?=htmlspecialchars(strtoupper($i['name']))?> (<?=htmlspecialchars($i['name'])?>)</strong>
+							</a>
+						</td>
+						<td>
+							<?php if (!empty($i['is_up'])): ?>
+								<span class="label label-success"><i class="fa-solid fa-arrow-up"></i> UP</span>
 							<?php else: ?>
-								<span class="label label-danger">DOWN</span>
+								<span class="label label-danger"><i class="fa-solid fa-arrow-down"></i> DOWN</span>
 							<?php endif; ?>
 						</td>
-						<td><span class="label label-default"><?=htmlspecialchars($i['type'] ?? 'ethernet')?></span></td>
+						<td><span class="label label-default"><?=htmlspecialchars($i['type'] ?? 'ether')?></span></td>
 						<td><code><?=htmlspecialchars($i['mac_address'] ?? '--')?></code></td>
 						<td><?=htmlspecialchars($i['mtu'] ?? 1500)?></td>
 						<td>
 							<?php
 							$ips = array_merge($i['ipv4_addresses'] ?? [], $i['ipv6_addresses'] ?? []);
-							echo empty($ips) ? '<span class="text-muted">None</span>' : htmlspecialchars(implode(', ', $ips));
+							if (empty($ips)) {
+								echo '<span class="text-muted">None</span>';
+							} else {
+								foreach ($ips as $ip_item) {
+									echo '<span class="label label-info" style="margin-right: 3px;">' . htmlspecialchars($ip_item) . '</span>';
+								}
+							}
 							?>
 						</td>
 						<td>
-							<?=number_format($i['traffic']['rx_bytes'] ?? 0)?> B<br>
-							<small class="text-muted"><?=number_format($i['traffic']['rx_packets'] ?? 0)?> pkts</small>
+							<small>RX: <?=number_format(($i['traffic']['rx_bytes'] ?? 0)/1024, 1)?> KB</small><br>
+							<small>TX: <?=number_format(($i['traffic']['tx_bytes'] ?? 0)/1024, 1)?> KB</small>
 						</td>
 						<td>
-							<?=number_format($i['traffic']['tx_bytes'] ?? 0)?> B<br>
-							<small class="text-muted"><?=number_format($i['traffic']['tx_packets'] ?? 0)?> pkts</small>
-						</td>
-						<td>
-							<form method="post" style="display:inline;">
+							<a href="interfaces.php?if=<?=urlencode($i['name'])?>" class="btn btn-xs btn-primary" title="<?=gettext('Configure Interface')?>">
+								<i class="fa-solid fa-pencil"></i> Edit
+							</a>
+							<form method="post" action="interfaces.php" style="display:inline; margin-left: 3px;">
 								<input type="hidden" name="action" value="set_state">
 								<input type="hidden" name="interface" value="<?=htmlspecialchars($i['name'])?>">
-								<?php if ($i['is_up']): ?>
+								<?php if (!empty($i['is_up'])): ?>
 									<input type="hidden" name="state" value="down">
 									<button type="submit" class="btn btn-xs btn-danger" <?=($i['name']==='lo' || $i['name']==='enp0s3')?'disabled title="Protected management interface"':''?>>Down</button>
 								<?php else: ?>
@@ -116,5 +291,6 @@ if (!empty($err)) {
 		</table>
 	</div>
 </div>
+<?php endif; ?>
 
 <?php require_once(__DIR__ . '/includes/foot.inc'); ?>

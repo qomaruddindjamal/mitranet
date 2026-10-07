@@ -82,7 +82,7 @@ $ifaces = MitraNetApi::getInterfaces();
 				</table>
 			</div>
 			<div class="panel-footer">
-				<a href="interfaces.php?name=<?=urlencode($if['name'])?>" class="btn btn-default btn-xs"><i class="fa fa-cog"></i> Configure Interface</a>
+				<a href="interfaces.php?if=<?=urlencode($if['name'])?>" class="btn btn-default btn-xs"><i class="fa fa-cog"></i> Configure Interface</a>
 			</div>
 		</div>
 	</div>
