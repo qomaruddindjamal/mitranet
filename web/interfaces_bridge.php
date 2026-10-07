@@ -48,6 +48,7 @@ $tab_array[] = array(gettext("VLANs"), false, "interfaces_vlan.php");
 $tab_array[] = array(gettext("Bridges"), true, "interfaces_bridge.php");
 $tab_array[] = array(gettext("LAGGs"), false, "interfaces_lagg.php");
 $tab_array[] = array(gettext("VRFs"), false, "interfaces_vrf.php");
+$tab_array[] = array(gettext("vEthernet (KVM)"), false, "interfaces_vethernet.php");
 display_top_tabs($tab_array);
 
 if (!empty($msg)) {

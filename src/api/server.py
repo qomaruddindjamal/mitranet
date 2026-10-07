@@ -324,19 +324,23 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             return
 
         if path.startswith("/api/v1/interfaces/"):
-            ifname = path.replace("/api/v1/interfaces/", "").strip()
-            try:
-                ifaces = iface_discovery.discover_interfaces()
-                found = next((i for i in ifaces if i.name == ifname), None)
-                if not found:
-                    self._send_json(404, {"error": f"Interface '{ifname}' not found"})
-                    return
-                d = found.model_dump()
-                d["traffic"] = SystemMetricsCollector.get_interface_traffic(ifname)
-                self._send_json(200, d)
-            except Exception as e:
-                self._send_json(500, {"error": str(e)})
-            return
+            if path == "/api/v1/interfaces/vethernet":
+                # Handled by vEthernet section below
+                pass
+            else:
+                ifname = path.replace("/api/v1/interfaces/", "").strip()
+                try:
+                    ifaces = iface_discovery.discover_interfaces()
+                    found = next((i for i in ifaces if i.name == ifname), None)
+                    if not found:
+                        self._send_json(404, {"error": f"Interface '{ifname}' not found"})
+                        return
+                    d = found.model_dump()
+                    d["traffic"] = SystemMetricsCollector.get_interface_traffic(ifname)
+                    self._send_json(200, d)
+                except Exception as e:
+                    self._send_json(500, {"error": str(e)})
+                return
 
         # 3. Routing
         if path == "/api/v1/routes":
@@ -765,6 +769,61 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"success": True, "history": history})
             return
 
+        # 18b. Virtual Ethernet (vEthernet / Host-Guest Subnets) - Live Inspection
+        if path == "/api/v1/interfaces/vethernet":
+            import subprocess
+            vethernets = []
+            conf_file = "/etc/mitranet/network/vethernet.json"
+            saved_configs = {}
+            if os.path.isfile(conf_file):
+                try:
+                    with open(conf_file, "r") as cf:
+                        saved_configs = json.load(cf)
+                except Exception:
+                    saved_configs = {}
+
+            # Query real system interfaces via ip -j addr
+            try:
+                ip_proc = subprocess.run(["ip", "-j", "addr", "show"], stdout=subprocess.PIPE, text=True)
+                if ip_proc.returncode == 0:
+                    data = json.loads(ip_proc.stdout)
+                    for iface in data:
+                        ifname = iface.get("ifname", "")
+                        # Include if it matches veth*, vnet*, or is saved in vethernet config
+                        if ifname.startswith("veth") or ifname.startswith("vnet") or ifname in saved_configs:
+                            addrs = []
+                            for addr_info in iface.get("addr_info", []):
+                                if addr_info.get("family") == "inet":
+                                    local_ip = addr_info.get("local")
+                                    prefixlen = addr_info.get("prefixlen")
+                                    addrs.append(f"{local_ip}/{prefixlen}")
+
+                            # Find members if bridge
+                            members = []
+                            try:
+                                br_proc = subprocess.run(["ip", "-j", "link", "show", "master", ifname], stdout=subprocess.PIPE, text=True)
+                                if br_proc.returncode == 0 and br_proc.stdout.strip():
+                                    for m in json.loads(br_proc.stdout):
+                                        members.append(m.get("ifname"))
+                            except Exception:
+                                pass
+
+                            cfg = saved_configs.get(ifname, {})
+                            vethernets.append({
+                                "name": ifname,
+                                "ip_cidr": addrs[0] if addrs else cfg.get("ip_cidr", ""),
+                                "description": cfg.get("description", "Virtual Ethernet Subnet"),
+                                "operstate": iface.get("operstate", "UNKNOWN"),
+                                "mac": iface.get("address", ""),
+                                "members": members,
+                                "status": "UP" if iface.get("operstate") in ("UP", "UNKNOWN") else "DOWN"
+                            })
+            except Exception as e:
+                logger.error(f"Error querying vethernets: {e}")
+
+            self._send_json(200, {"success": True, "vethernet": vethernets})
+            return
+
         # 19. Virtual Machines (KVM / Containers) - Live Inspection (No Dummy)
         if path == "/api/v1/services/kvm":
             import subprocess
@@ -786,6 +845,9 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                         port_fwd = 8888
                         iso_file = ""
                         vnc_port = 5900
+                        net_mode = "veth"
+                        veth_iface = "veth0"
+                        guest_ip = ""
                         if os.path.isfile(env_path):
                             try:
                                 with open(env_path, "r") as ef:
@@ -801,6 +863,12 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                                             iso_file = line.split("=", 1)[1].strip()
                                         elif line.startswith("VNC_PORT="):
                                             vnc_port = int(line.split("=", 1)[1])
+                                        elif line.startswith("NET_MODE="):
+                                            net_mode = line.split("=", 1)[1].strip()
+                                        elif line.startswith("VETH_IFACE="):
+                                            veth_iface = line.split("=", 1)[1].strip()
+                                        elif line.startswith("GUEST_IP="):
+                                            guest_ip = line.split("=", 1)[1].strip()
                             except Exception:
                                 pass
 
@@ -868,8 +936,11 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                             "port_fwd": port_fwd,
                             "iso": iso_file,
                             "vnc_port": vnc_port,
-                            "interface": "user-virtio",
-                            "bridge": "user-nat",
+                            "net_mode": net_mode,
+                            "veth_iface": veth_iface,
+                            "guest_ip": guest_ip,
+                            "interface": f"{veth_iface} (vEthernet)" if net_mode == "veth" else "user-virtio",
+                            "bridge": veth_iface if net_mode == "veth" else "user-nat",
                             "status": status,
                             "pid": pid,
                         })
@@ -1815,6 +1886,10 @@ AllowedIPs = {allowed_ips}
                         chosen_port = p
                         break
 
+            net_mode = payload.get("net_mode", "veth").strip()
+            veth_iface = payload.get("veth_iface", "veth0").strip()
+            guest_ip = payload.get("guest_ip", "").strip()
+
             # Write env config
             conf_dir = "/etc/mitranet/vms"
             os.makedirs(conf_dir, exist_ok=True)
@@ -1823,6 +1898,10 @@ AllowedIPs = {allowed_ips}
                 f.write(f"RAM_MB={ram_mb}\n")
                 f.write(f"VCPU={vcpu}\n")
                 f.write(f"PORT_FWD={chosen_port}\n")
+                f.write(f"NET_MODE={net_mode}\n")
+                f.write(f"VETH_IFACE={veth_iface}\n")
+                if guest_ip:
+                    f.write(f"GUEST_IP={guest_ip}\n")
                 if iso_file:
                     f.write(f"ISO_FILE={iso_file}\n")
                 f.write(f"VNC_PORT=5900\n")
@@ -1835,7 +1914,9 @@ AllowedIPs = {allowed_ips}
                     "ram_mb": ram_mb,
                     "vcpu": vcpu,
                     "disk_gb": disk_gb,
-                    "port_fwd": port_fwd,
+                    "port_fwd": chosen_port,
+                    "net_mode": net_mode,
+                    "veth_iface": veth_iface,
                     "iso": iso_file,
                     "status": "STOPPED"
                 }
@@ -1877,6 +1958,106 @@ AllowedIPs = {allowed_ips}
                 self._send_json(200, {"success": True, "message": f"ISO '{filename}' deleted."})
             else:
                 self._send_json(404, {"error": "ISO file not found"})
+            return
+
+        # 21. Virtual Ethernet (vEthernet) Creation
+        if path == "/api/v1/interfaces/vethernet/create":
+            import re
+            import subprocess
+            name = re.sub(r'[^a-zA-Z0-9_\-]', '', payload.get("name", "").strip().lower())
+            ip_cidr = payload.get("ip_cidr", "").strip()
+            desc = payload.get("description", "").strip()
+
+            if not name:
+                name = "veth0"
+
+            if not ip_cidr or "/" not in ip_cidr:
+                self._send_json(400, {"error": "Format IPv4/CIDR tidak valid (contoh: 192.168.101.254/24)"})
+                return
+
+            try:
+                # 1. Create Linux bridge device for virtual ethernet
+                # Check if interface already exists
+                check_proc = subprocess.run(["ip", "link", "show", name], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                if check_proc.returncode != 0:
+                    add_link = subprocess.run(["ip", "link", "add", name, "type", "bridge"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                    if add_link.returncode != 0:
+                        self._send_json(500, {"error": f"Gagal membuat bridge link: {add_link.stderr.strip()}"})
+                        return
+
+                # 2. Assign IP address
+                # Flush old IPs if any on this bridge
+                subprocess.run(["ip", "addr", "flush", "dev", name], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                add_ip = subprocess.run(["ip", "addr", "add", ip_cidr, "dev", name], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                if add_ip.returncode != 0:
+                    self._send_json(500, {"error": f"Gagal menambahkan IP: {add_ip.stderr.strip()}"})
+                    return
+
+                # 3. Bring interface UP
+                subprocess.run(["ip", "link", "set", name, "up"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                # 4. Enable IPv4 forwarding in kernel
+                subprocess.run(["sysctl", "-w", "net.ipv4.ip_forward=1"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                # 5. Persist to /etc/mitranet/network/vethernet.json
+                conf_dir = "/etc/mitranet/network"
+                os.makedirs(conf_dir, exist_ok=True)
+                conf_file = f"{conf_dir}/vethernet.json"
+                veth_db = {}
+                if os.path.isfile(conf_file):
+                    try:
+                        with open(conf_file, "r") as cf:
+                            veth_db = json.load(cf)
+                    except Exception:
+                        veth_db = {}
+
+                veth_db[name] = {
+                    "name": name,
+                    "ip_cidr": ip_cidr,
+                    "description": desc or f"Virtual Subnet for {name}",
+                    "created_at": time.time()
+                }
+                with open(conf_file, "w") as cf:
+                    json.dump(veth_db, cf, indent=2)
+
+                self._send_json(200, {
+                    "success": True,
+                    "message": f"vEthernet interface '{name}' ({ip_cidr}) berhasil dibuat dan diaktifkan.",
+                    "data": veth_db[name]
+                })
+            except Exception as e:
+                self._send_json(500, {"error": f"Eksekusi gagal: {e}"})
+            return
+
+        # 22. Virtual Ethernet (vEthernet) Deletion
+        if path == "/api/v1/interfaces/vethernet/delete":
+            import subprocess
+            name = payload.get("name", "").strip()
+            if not name:
+                self._send_json(400, {"error": "Interface name required"})
+                return
+
+            try:
+                # 1. Bring interface DOWN and delete link
+                subprocess.run(["ip", "link", "set", name, "down"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                subprocess.run(["ip", "link", "del", name], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                # 2. Update config file
+                conf_file = "/etc/mitranet/network/vethernet.json"
+                if os.path.isfile(conf_file):
+                    try:
+                        with open(conf_file, "r") as cf:
+                            veth_db = json.load(cf)
+                        if name in veth_db:
+                            del veth_db[name]
+                            with open(conf_file, "w") as cf:
+                                json.dump(veth_db, cf, indent=2)
+                    except Exception:
+                        pass
+
+                self._send_json(200, {"success": True, "message": f"vEthernet interface '{name}' berhasil dihapus."})
+            except Exception as e:
+                self._send_json(500, {"error": f"Gagal menghapus interface: {e}"})
             return
 
         self._send_json(404, {"error": "Endpoint not found"})

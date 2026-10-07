@@ -31,6 +31,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'vcpu' => intval($_POST['vcpu'] ?? 1),
             'disk_gb' => intval($_POST['disk_gb'] ?? 10),
             'port_fwd' => intval($_POST['port_fwd'] ?? 8080),
+            'net_mode' => trim($_POST['net_mode'] ?? 'veth'),
+            'veth_iface' => trim($_POST['veth_iface'] ?? 'veth0'),
+            'guest_ip' => trim($_POST['guest_ip'] ?? ''),
             'iso' => trim($_POST['iso'] ?? '')
         ];
         $res = MitraNetApi::createVm($payload);
@@ -84,6 +87,7 @@ require_once(__DIR__ . '/includes/head.inc');
 $kvmData = MitraNetApi::getKvmData();
 $vms = $kvmData['vms'] ?? [];
 $isos = $kvmData['isos'] ?? [];
+$vethernets = MitraNetApi::getVethernets();
 ?>
 
 <ul class="nav nav-pills">
@@ -154,13 +158,40 @@ $isos = $kvmData['isos'] ?? [];
             </div>
 
             <div class="form-group">
-                <label class="col-sm-3 control-label">Port Forwarding (Web Service):</label>
+                <label class="col-sm-3 control-label">Network Mode & Interface:</label>
+                <div class="col-sm-6">
+                    <select name="veth_iface" class="form-control" id="veth_iface_select">
+                        <?php if (!empty($vethernets)): ?>
+                            <?php foreach ($vethernets as $ve): ?>
+                                <option value="<?=htmlspecialchars($ve['name'])?>">
+                                    <?=htmlspecialchars($ve['name'])?> (Gateway: <?=htmlspecialchars($ve['ip_cidr'] ?: '192.168.101.254/24')?>)
+                                </option>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <option value="veth0">veth0 (Default Virtual Ethernet: 192.168.101.254/24)</option>
+                        <?php endif; ?>
+                    </select>
+                    <span class="help-block">VM terhubung langsung ke virtual interface internal (TAP &rarr; Bridge vEthernet). Tidak mengganggu IP fisik atau WAN.</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-sm-3 control-label">IP Address VM Guest (Opsional):</label>
+                <div class="col-sm-6">
+                    <input type="text" name="guest_ip" class="form-control" placeholder="192.168.101.2" value="192.168.101.2" />
+                    <span class="help-block">Alamat IP statis / DHCP yang akan diberikan pada sistem operasi di dalam VM (misal aaPanel).</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-sm-3 control-label">Port Forwarding (NAT dari WAN):</label>
                 <div class="col-sm-6">
                     <div class="input-group">
-                        <span class="input-group-addon">Host Port:</span>
-                        <input type="number" name="port_fwd" class="form-control" value="8080" />
-                        <span class="input-group-addon">&rarr; Guest Port 80/8888</span>
+                        <span class="input-group-addon">Host/WAN Port:</span>
+                        <input type="number" name="port_fwd" class="form-control" value="8888" />
+                        <span class="input-group-addon">&rarr; Guest aaPanel (8888)</span>
                     </div>
+                    <span class="help-block">Port akses dari luar (VPS Public IP) diteruskan ke port web panel VM.</span>
                 </div>
             </div>
 
@@ -356,6 +387,11 @@ $isos = $kvmData['isos'] ?? [];
                                 </td>
                                 <td>
                                     <div><i class="fa-solid fa-ethernet"></i> Net: <code><?=htmlspecialchars($vm['interface'])?></code></div>
+                                    <?php if (!empty($vm['guest_ip'])): ?>
+                                        <div style="font-size: 11px; margin-top: 2px;">
+                                            <span class="label label-success"><i class="fa-solid fa-desktop"></i> IP: <?=htmlspecialchars($vm['guest_ip'])?></span>
+                                        </div>
+                                    <?php endif; ?>
                                     <div style="font-size: 11px; margin-top: 2px;">
                                         <span class="label label-info"><i class="fa-solid fa-network-wired"></i> FWD: Port <?=htmlspecialchars($vm['port_fwd'] ?? 8888)?></span>
                                     </div>
