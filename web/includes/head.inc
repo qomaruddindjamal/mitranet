@@ -40,19 +40,20 @@ $tabtitle = $pagetitle . " - " . htmlspecialchars($system_url);
 
 // Build pfSense-standard navigation menus matching live pfSense 2.9 sidebar
 $system_menu = array(
-    array("Advanced", "/system_advanced.php"),
-    array("Certificates", "#"),
+    array("Advanced", "/system_advanced_admin.php"),
+    array("Certificates", "/system_camanager.php"),
     array("General Setup", "/system.php"),
-    array("High Availability", "#"),
+    array("High Availability", "/system_hasync.php"),
     array("Package Manager", "/pkg_mgr_installed.php"),
-    array("Register", "#"),
+    array("Register", "/system_register.php"),
     array("Routing", "/system_gateways.php"),
-    array("Setup Wizard", "#"),
-    array("Update", "#"),
-    array("User Manager", "#"),
-    array("User Password Manager", "#"),
+    array("Setup Wizard", "/wizard.php?xml=setup_wizard.xml"),
+    array("Update", "/pkg_mgr_install.php?id=firmware"),
+    array("User Manager", "/system_usermanager.php"),
+    array("User Password Manager", "/system_usermanager_passwordmg.php"),
     array("Logout (" . htmlspecialchars($_SESSION['username'] ?? 'admin') . ")", "/logout.php")
 );
+
 
 $interfaces_menu = array(
     array("Assignments", "/interfaces_assign.php"),
@@ -107,58 +108,59 @@ $vpn_menu = array(
 );
 
 $status_menu = array(
-    array("Captive Portal", "#"),
-    array("CARP (failover)", "#"),
+    array("Captive Portal", "/services_captiveportal.php"),
+    array("CARP (failover)", "/status_carp.php"),
     array("Dashboard", "/index.php"),
-    array("DHCP Leases", "#"),
-    array("DHCPv6 Leases", "#"),
-    array("DNS Resolver", "#"),
-    array("Filter Reload", "#"),
+    array("DHCP Leases", "/status_dhcp_leases.php"),
+    array("DHCPv6 Leases", "/status_dhcpv6_leases.php"),
+    array("DNS Resolver", "/status_unbound.php"),
+    array("Filter Reload", "/status_filter_reload.php?user=true"),
     array("Gateways", "/status_gateways.php"),
     array("Interfaces", "/status_interfaces.php"),
-    array("IPsec", "#"),
-    array("Monitoring", "#"),
-    array("NTP", "#"),
-    array("OpenVPN", "#"),
-    array("Queues", "#"),
-    array("Services", "#"),
+    array("IPsec", "/status_ipsec.php"),
+    array("Monitoring", "/status_monitoring.php"),
+    array("NTP", "/status_ntpd.php"),
+    array("OpenVPN", "/status_openvpn.php"),
+    array("Queues", "/status_queues.php"),
+    array("Services", "/status_services.php"),
     array("System Logs", "/status_logs.php"),
-    array("Traffic Graph", "#"),
-    array("UPnP IGD &amp; PCP", "#"),
+    array("Traffic Graph", "/status_graph.php"),
+    array("UPnP IGD &amp; PCP", "/status_upnp.php"),
     array("WireGuard", "/wg/status_wireguard.php")
 );
 
 $diagnostics_menu = array(
     array("ARP Table", "/diag_arp.php"),
-    array("Authentication", "#"),
+    array("Authentication", "/diag_authentication.php"),
     array("Backup &amp; Restore", "/diag_backup.php"),
-    array("Command Prompt", "#"),
-    array("DNS Lookup", "#"),
-    array("Edit File", "#"),
-    array("Factory Defaults", "#"),
-    array("Halt System", "#"),
-    array("Limiter Info", "#"),
-    array("NDP Table", "#"),
-    array("Packet Capture", "#"),
-    array("pfInfo", "#"),
-    array("pfTop", "#"),
+    array("Command Prompt", "/diag_command.php"),
+    array("DNS Lookup", "/diag_dns.php"),
+    array("Edit File", "/diag_edit.php"),
+    array("Factory Defaults", "/diag_defaults.php"),
+    array("Halt System", "/diag_halt.php"),
+    array("Limiter Info", "/diag_limiter_info.php"),
+    array("NDP Table", "/diag_ndp.php"),
+    array("Packet Capture", "/diag_packet_capture.php"),
+    array("pfInfo", "/diag_pf_info.php"),
+    array("pfTop", "/diag_pftop.php"),
     array("Ping", "/diag_ping.php"),
-    array("Reboot", "#"),
+    array("Reboot", "/diag_reboot.php"),
     array("Routes", "/diag_routes.php"),
-    array("S.M.A.R.T. Status", "#"),
-    array("Sockets", "#"),
+    array("S.M.A.R.T. Status", "/diag_smart.php"),
+    array("Sockets", "/diag_sockets.php"),
     array("States", "/diag_dump_states.php"),
-    array("States Summary", "#"),
-    array("System Activity", "#"),
-    array("Tables", "#"),
-    array("Terminal", "#"),
-    array("Test Port", "#"),
+    array("States Summary", "/diag_states_summary.php"),
+    array("System Activity", "/diag_system_activity.php"),
+    array("Tables", "/diag_tables.php"),
+    array("Terminal", "/diag_terminal.php"),
+    array("Test Port", "/diag_testport.php"),
     array("Traceroute", "/diag_traceroute.php")
 );
 
 $tools_menu = array(
-    array("Speedtest", "#")
+    array("Speedtest", "/tools_speedtest.php")
 );
+
 
 $help_menu = array(
     array("About this Page", "/help.php?page=" . urlencode(basename($_SERVER['SCRIPT_NAME'])), "_blank"),
@@ -173,11 +175,12 @@ $help_menu = array(
 
 $sidebar_structure = array(
     array('id' => 'system', 'name' => 'System', 'icon' => 'fa-gears', 'menu' => $system_menu),
+    array('id' => 'wifi', 'name' => 'Wifi', 'icon' => 'fa-wifi', 'url' => '/interfaces_wifi.php', 'direct' => true),
     array('id' => 'interfaces', 'name' => 'Interfaces', 'icon' => 'fa-network-wired', 'menu' => $interfaces_menu),
+    array('id' => 'wireguard', 'name' => 'WireGuard', 'icon' => 'fa-circle-nodes', 'url' => '/wg/vpn_wg_tunnels.php', 'direct' => true),
     array('id' => 'firewall', 'name' => 'Firewall', 'icon' => 'fa-shield-halved', 'menu' => $firewall_menu),
     array('id' => 'services', 'name' => 'Services', 'icon' => 'fa-cubes', 'menu' => $services_menu),
     array('id' => 'vpn', 'name' => 'VPN', 'icon' => 'fa-key', 'menu' => $vpn_menu),
-    array('id' => 'wireguard', 'name' => 'WireGuard', 'icon' => 'fa-circle-nodes', 'url' => '/wg/vpn_wg_tunnels.php', 'direct' => true),
     array('id' => 'xray', 'name' => 'Xray-core', 'icon' => 'fa-bolt', 'url' => '/vpn_xray.php', 'direct' => true),
     array('id' => 'kvm', 'name' => 'KVM', 'icon' => 'fa-server', 'url' => '/services_virtual.php', 'direct' => true),
     array('id' => 'diagnostics', 'name' => 'Diagnostics', 'icon' => 'fa-toolbox', 'menu' => $diagnostics_menu),
@@ -186,6 +189,7 @@ $sidebar_structure = array(
     array('id' => 'status', 'name' => 'Status', 'icon' => 'fa-chart-line', 'menu' => $status_menu),
     array('id' => 'help', 'name' => 'Help', 'icon' => 'fa-circle-question', 'menu' => $help_menu)
 );
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -265,20 +269,24 @@ $sidebar_structure = array(
 	</div>
 	<div class="sidebar-section-title">Navigation</div>
 	<ul class="sidebar-menu">
-	<?php foreach ($sidebar_structure as $s_item): ?>
+	<?php foreach ($sidebar_structure as $s_item): 
+		$is_act = (isset($selected_menu) && $selected_menu === $s_item['id']) || (isset($s_item['url']) && basename($_SERVER['SCRIPT_NAME']) === basename($s_item['url']));
+		$active_cls = $is_act ? ' active' : '';
+	?>
 		<?php if (!empty($s_item['direct'])): ?>
-			<li class="sidebar-item">
+			<li class="sidebar-item<?=$active_cls?>">
 				<a href="<?=htmlspecialchars($s_item['url'])?>" class="sidebar-link direct-link" title="<?=htmlspecialchars($s_item['name'])?>">
 					<i class="fa-solid <?=htmlspecialchars($s_item['icon'])?> sidebar-icon"></i>
 					<span class="sidebar-text"><?=htmlspecialchars($s_item['name'])?></span>
 				</a>
 			</li>
 		<?php else: ?>
-			<li class="sidebar-item">
+			<li class="sidebar-item<?=$active_cls?>">
 				<a href="#sub-<?=htmlspecialchars($s_item['id'])?>" class="sidebar-link" aria-expanded="false">
 					<i class="fa-solid <?=htmlspecialchars($s_item['icon'])?> sidebar-icon"></i>
 					<span class="sidebar-text"><?=htmlspecialchars($s_item['name'])?></span>
 					<i class="fa-solid fa-caret-right sidebar-arrow"></i>
+
 				</a>
 				<div id="sub-<?=htmlspecialchars($s_item['id'])?>" class="sidebar-flyout">
 					<div class="flyout-header">
