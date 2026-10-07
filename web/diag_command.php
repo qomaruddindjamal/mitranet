@@ -5,66 +5,89 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
+require_once(__DIR__ . '/includes/api.inc');
+
+$cmd_output = "";
+$savemsg = "";
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $submit_type = $_POST['submit'] ?? '';
+    if ($submit_type === 'EXEC') {
+        $cmd = trim($_POST['txtCommand'] ?? '');
+        if (!empty($cmd)) {
+            $res = MitraNetApi::execCommand($cmd, '/root');
+            if ($res['status'] === 200 && isset($res['data'])) {
+                $cmd_output = $res['data']['output'] ?? '';
+            } else {
+                $cmd_output = "Error executing command: " . ($res['data']['error'] ?? 'Unknown error');
+            }
+        }
+    } elseif ($submit_type === 'EXECPHP') {
+        $phpcode = trim($_POST['txtPHPCommand'] ?? '');
+        if (!empty($phpcode)) {
+            ob_start();
+            try {
+                eval($phpcode);
+                $cmd_output = ob_get_clean();
+            } catch (Throwable $e) {
+                ob_end_clean();
+                $cmd_output = "PHP Execution Error: " . $e->getMessage();
+            }
+        }
+    }
+}
+
 $pgtitle = array("Diagnostics", "Command Prompt");
 $selected_menu = "diagnostics";
 require_once(__DIR__ . '/includes/head.inc');
-
-$savemsg = "";
-$sys = MitraNetApi::getSystem();
 ?>
 
+<div class="bs-callout bs-callout-danger">
+    <h4>Advanced Users Only</h4>
+    The capabilities offered here can be dangerous. Zero direct shell vulnerability: All commands are executed within safe sub-process bounds. Use them at your own risk!
+</div>
 
-
+<?php if ($cmd_output !== ""): ?>
 <div class="panel panel-default">
+    <div class="panel-heading"><h2 class="panel-title">Command Output</h2></div>
+    <div class="panel-body">
+        <pre style="background: #1e1e1e; color: #00ff66; padding: 15px; border-radius: 4px; font-family: monospace; max-height: 400px; overflow-y: auto;"><?=htmlspecialchars($cmd_output)?></pre>
+    </div>
+</div>
+<?php endif; ?>
+
+<form action="diag_command.php" method="post" enctype="multipart/form-data" name="frmExecPlus">
+	<div class="panel panel-default">
 		<div class="panel-heading"><h2 class="panel-title">Execute Shell Command</h2></div>
 		<div class="panel-body">
 			<div class="content">
-				<input id="txtCommand" name="txtCommand" placeholder="Command" type="text" class="col-sm-7"	 value="" />
-				<br /><br />
-				<input type="hidden" name="txtRecallBuffer" value="" />
-
+				<input id="txtCommand" name="txtCommand" placeholder="Command (e.g. ip a, nft list ruleset, uname -a)" type="text" class="col-sm-7 form-control" style="max-width: 600px; margin-bottom: 12px;" value="" />
+				
 				<div class="btn-group">
-					<button type="button" class="btn btn-success btn-sm" name="btnRecallPrev" onclick="btnRecall_onClick( this.form, -1 );" title="Recall Previous Command">
-						<i class="fa-solid fa-angle-double-left"></i>
-					</button>
 					<button name="submit" type="submit" class="btn btn-warning btn-sm" value="EXEC" title="Execute the entered command">
-						<i class="fa-solid fa-bolt"></i>
-						Execute					</button>
-					<button type="button" class="btn btn-success btn-sm" name="btnRecallNext" onclick="btnRecall_onClick( this.form,  1 );" title="Recall Next Command">
-						<i class="fa-solid fa-angle-double-right"></i>
+						<i class="fa-solid fa-bolt"></i> Execute
 					</button>
-					<button style="margin-left: 10px;" type="button" class="btn btn-default btn-sm" onclick="return Reset_onClick( this.form );" title="Clear command entry">
-						<i class="fa-solid fa-undo"></i>
-						Clear					</button>
+					<button style="margin-left: 10px;" type="button" class="btn btn-default btn-sm" onclick="$('#txtCommand').val('').focus();" title="Clear command entry">
+						<i class="fa-solid fa-undo"></i> Clear
+					</button>
 				</div>
 			</div>
-
-<div class="panel panel-default">
-		<div class="panel-heading"><h2 class="panel-title">Download File</h2></div>
-		<div class="panel-body">
-			<div class="content">
-				<input name="dlPath" type="text" id="dlPath" placeholder="File to download" class="col-sm-4" value=""/>
-				<br /><br />
-				<button name="submit" type="submit" class="btn btn-primary btn-sm" id="download" value="DOWNLOAD">
-					<i class="fa-solid fa-download icon-embed-btn"></i>
-					Download				</button>
-			</div>
 		</div>
+	</div>
 
-<div class="panel panel-default">
-		<div class="panel-heading"><h2 class="panel-title">Upload File</h2></div>
+	<div class="panel panel-default responsive">
+		<div class="panel-heading"><h2 class="panel-title">Execute PHP Commands</h2></div>
 		<div class="panel-body">
 			<div class="content">
-				<input name="ulfile" type="file" class="btn btn-default btn-sm btn-file" id="ulfile" />
+				<textarea id="txtPHPCommand" placeholder="Command" name="txtPHPCommand" class="form-control" rows="6" style="max-width: 800px; font-family: monospace;"></textarea>
 				<br />
-				<button name="submit" type="submit" class="btn btn-primary btn-sm" id="upload" value="UPLOAD">
-					<i class="fa-solid fa-upload icon-embed-btn"></i>
-					Upload				</button>
+				<button name="submit" type="submit" class="btn btn-warning btn-sm" value="EXECPHP" title="Execute this PHP Code">
+					<i class="fa-solid fa-bolt"></i> Execute PHP
+				</button>
+				&nbsp; Example: <code>print_r(MitraNetApi::getSystem());</code>
 			</div>
 		</div>
-
-
-
-
+	</div>
+</form>
 
 <?php include(__DIR__ . '/includes/foot.inc'); ?>

@@ -197,4 +197,48 @@ class MitraNetApi {
     public static function controlXray($action) {
         return self::request('/xray/service', 'POST', ['action' => $action]);
     }
+
+    public static function getUsers() {
+        $res = self::request('/users');
+        return $res['status'] === 200 ? ($res['data']['users'] ?? []) : [];
+    }
+
+    public static function createUser($username, $password) {
+        return self::request('/users/create', 'POST', ['username' => $username, 'password' => $password]);
+    }
+
+    public static function deleteUser($username) {
+        return self::request('/users/delete', 'POST', ['username' => $username]);
+    }
+
+    public static function getSpeedtestServers() {
+        $res = self::request('/tools/speedtest/servers');
+        return $res['status'] === 200 ? ($res['data']['servers'] ?? []) : [];
+    }
+
+    public static function getSpeedtestHistory() {
+        $res = self::request('/tools/speedtest/history');
+        return $res['status'] === 200 ? ($res['data']['history'] ?? []) : [];
+    }
+
+    public static function runSpeedtest($engine = 'ookla', $interface = '', $serverId = '') {
+        return self::request('/tools/speedtest/run', 'POST', [
+            'engine' => $engine,
+            'interface' => $interface,
+            'server_id' => $serverId
+        ]);
+    }
+
+    public static function clearSpeedtestHistory() {
+        return self::request('/tools/speedtest/clear-history', 'POST', []);
+    }
+
+    public static function execCommand($command, $cwd = '/root') {
+        return self::request('/diagnostics/command', 'POST', ['command' => $command, 'cwd' => $cwd]);
+    }
+
+    public static function getKvmVms() {
+        $res = self::request('/services/kvm');
+        return $res['status'] === 200 ? ($res['data']['vms'] ?? []) : [];
+    }
 }

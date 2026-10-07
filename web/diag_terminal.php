@@ -5,211 +5,54 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
+require_once(__DIR__ . '/includes/api.inc');
+
+// Handle AJAX terminal execution
+if (isset($_REQUEST['ajax']) && $_REQUEST['ajax'] == '1') {
+    header('Content-Type: application/json');
+    $cmd = trim($_POST['cmd'] ?? '');
+    $cwd = trim($_POST['cwd'] ?? '/root');
+
+    if ($cmd === '') {
+        echo json_encode(['success' => true, 'output' => '', 'cwd' => $cwd]);
+        exit;
+    }
+
+    if ($cmd === 'clear') {
+        echo json_encode(['success' => true, 'output' => '__CLEAR__', 'cwd' => $cwd]);
+        exit;
+    }
+
+    $res = MitraNetApi::execCommand($cmd, $cwd);
+    if ($res['status'] === 200 && isset($res['data'])) {
+        echo json_encode([
+            'success' => $res['data']['success'] ?? false,
+            'output' => $res['data']['output'] ?? '',
+            'cwd' => $res['data']['cwd'] ?? $cwd
+        ]);
+    } else {
+        $err = $res['data']['error'] ?? 'Gagal mengeksekusi perintah pada shell Linux.';
+        echo json_encode(['success' => false, 'output' => "Error: {$err}\n", 'cwd' => $cwd]);
+    }
+    exit;
+}
+
 $pgtitle = array("DIRECT", "Terminal");
 $selected_menu = "direct";
 require_once(__DIR__ . '/includes/head.inc');
-
-$savemsg = "";
-$sys = MitraNetApi::getSystem();
 ?>
 
-
-
-<div id="notices" class="modal fade" role="dialog">
-
-	<div class="modal-dialog">
-
-		<div class="modal-content">
-
-			<div class="modal-header">
-
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-
-					<span aria-hidden="true">&times;</span>
-
-				</button>
-
-
-
-				<h3 class="modal-title" id="myModalLabel">Notices</h3>
-
-			</div>
-
-
-
-			<div class="modal-body">
-
-				<h4>Upgrade</h4>
-
-				<ul>
-
-					<li>
-
-						<b>
-
-						</b>
-
-						check_upgrade: &quot;&quot; returned error code 1						<i>@ 2026-10-07 09:09:03</i>
-
-					</li>
-
-					<li>
-
-						<b>
-
-						</b>
-
-						check_upgrade: &quot;&quot; returned error code 1						<i>@ 2026-10-07 09:43:12</i>
-
-					</li>
-
-				</ul>
-
-				<h4>PHP errors</h4>
-
-				<ul>
-
-					<li>
-
-						<b>
-
-						</b>
-
-						PHP ERROR: Type: 1, File: /usr/local/www/services_dhcp.php, Line: 1842, Message: Uncaught TypeError: count(): Argument #1 ($value) must be of type Countable|array, null given in /usr/local/www/services_dhcp.php:1842<br/>Stack trace:<br/>#0 {main}<br/>  thrown						<i>@ 2026-10-07 10:31:46</i>
-
-					</li>
-
-				</ul>
-
-			</div>
-
-
-
-			<div class="modal-footer">
-
-				<button type="button" class="btn btn-info" data-dismiss="modal"><i class="fa-solid fa-times icon-embed-btn"></i>Close</button>
-
-				<button type="button" id="clearallnotices" class="btn btn-primary"><i class="fa-regular fa-trash-can icon-embed-btn"></i>Mark All as Read</button>
-
-			</div>
-
-		</div>
-
-	</div>
-
-</div>
-
-
-
-<script type="text/javascript">
-
-//<![CDATA[
-
-	events.push(function() {
-
-	    $('#clearallnotices').click(function() {
-
-			ajaxRequest = $.ajax({
-
-				url: "/index.php",
-
-				type: "post",
-
-				data: { closenotice: "all"},
-
-				success: function() {
-
-					window.location = window.location.href;
-
-				},
-
-				failure: function() {
-
-					alert("Error clearing notices!");
-
-				}
-
-			});
-
-		});
-
-	});
-
-//]]>
-
-</script>
-
-
-
-
 <style>
-/* Sembunyikan semua alert bawaan, card breadcrumb, dan br bawaan pfSense */
-#pf-main-content > .alert,
-#pf-main-content > .alert-danger,
-#pf-main-content > .alert-warning,
-#pf-main-content > header,
-#pf-main-content > .header,
-#pf-main-content > br,
-.terminal-container ~ *,
-header.header {
-    display: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    height: 0 !important;
-    border: none !important;
-}
-
-/* Reset and Seamless Layout Alignment with Dark Sidebar */
+/* Reset and Seamless Layout Alignment */
 body {
     background-color: #0b0d11 !important;
-    overflow-x: hidden !important;
-}
-
-body:not(.sidebar-collapsed) #pf-main-content {
-    margin-left: var(--pf-sidebar-w) !important;
-    width: calc(100% - var(--pf-sidebar-w)) !important;
-    max-width: calc(100% - var(--pf-sidebar-w)) !important;
-    padding: 0 !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-}
-
-body.sidebar-collapsed #pf-main-content {
-    margin-left: var(--pf-sidebar-mini-w) !important;
-    width: calc(100% - var(--pf-sidebar-mini-w)) !important;
-    max-width: calc(100% - var(--pf-sidebar-mini-w)) !important;
-    padding: 0 !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-}
-
-#pf-main-content {
-    padding: 0 !important;
-    position: relative !important;
-    left: 0 !important;
-    top: 0 !important;
-    margin-right: 0 !important;
-    height: calc(100vh - var(--pf-header-h) - var(--pf-footer-h)) !important;
-    max-height: calc(100vh - var(--pf-header-h) - var(--pf-footer-h)) !important;
-    overflow: hidden !important;
-    background-color: #0b0d11 !important;
-    box-sizing: border-box !important;
-}
-
-@media (max-width: 991px) {
-    #pf-main-content,
-    body:not(.sidebar-collapsed) #pf-main-content,
-    body.sidebar-collapsed #pf-main-content {
-        margin-left: 0 !important;
-        width: 100% !important;
-        max-width: 100% !important;
-    }
 }
 
 /* Full Terminal Container */
 .terminal-container {
     width: 100%;
-    height: 100%;
+    min-height: 520px;
+    height: calc(100vh - 180px);
     display: flex;
     flex-direction: column;
     background-color: #0b0d11;
@@ -218,19 +61,26 @@ body.sidebar-collapsed #pf-main-content {
     font-size: 13.5px;
     line-height: 1.5;
     box-sizing: border-box;
+    border-radius: 6px;
+    border: 1px solid #21262d;
+    overflow: hidden;
+    margin-bottom: 20px;
 }
 
-/* Tabs Bar in Header */
+/* Console Header Bar */
+.terminal-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #161b22;
+    border-bottom: 1px solid #30363d;
+    padding: 6px 14px;
+}
+
 .terminal-tabs-wrapper {
     display: flex;
     align-items: center;
     gap: 6px;
-    height: 100%;
-    overflow-x: auto;
-}
-
-.terminal-tabs-wrapper::-webkit-scrollbar {
-    display: none;
 }
 
 .terminal-tab {
@@ -238,71 +88,12 @@ body.sidebar-collapsed #pf-main-content {
     align-items: center;
     gap: 7px;
     padding: 4px 11px;
-    background-color: #171b24;
-    color: #8c95a6;
-    font-size: 12px;
-    font-weight: 500;
-    border-radius: 4px;
-    border: 1px solid #242a38;
-    cursor: pointer;
-    transition: all 0.12s ease;
-    white-space: nowrap;
-    user-select: none;
-}
-
-.terminal-tab:hover {
-    background-color: #202634;
-    color: #e6edf3;
-    border-color: #313a4d;
-}
-
-.terminal-tab.active {
     background-color: #0b0d11;
     color: #58a6ff;
-    border-color: #283754;
+    font-size: 12px;
     font-weight: 600;
-}
-
-.terminal-tab .tab-icon {
-    font-size: 11px;
-    opacity: 0.9;
-}
-
-.terminal-tab .tab-close {
-    font-size: 14px;
-    color: #8c95a6;
-    margin-left: 2px;
-    border-radius: 50%;
-    padding: 0 3px;
-    line-height: 1;
-}
-
-.terminal-tab .tab-close:hover {
-    color: #f85149;
-    background-color: rgba(248, 81, 73, 0.2);
-}
-
-.btn-new-tab {
-    background-color: #1a2332;
-    color: #58a6ff;
-    border: 1px solid #283850;
-    padding: 4px 10px;
     border-radius: 4px;
-    font-size: 11.5px;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    transition: all 0.15s ease;
-    white-space: nowrap;
-    user-select: none;
-}
-
-.btn-new-tab:hover {
-    background-color: #223046;
-    color: #79c0ff;
-    border-color: #364e70;
+    border: 1px solid #283754;
 }
 
 .terminal-actions {
@@ -312,9 +103,9 @@ body.sidebar-collapsed #pf-main-content {
 }
 
 .term-btn {
-    background-color: #1c212c;
+    background-color: #21262d;
     color: #8b949e;
-    border: 1px solid #2d3546;
+    border: 1px solid #30363d;
     padding: 3px 9px;
     border-radius: 4px;
     font-size: 11.5px;
@@ -327,9 +118,8 @@ body.sidebar-collapsed #pf-main-content {
 }
 
 .term-btn:hover {
-    background-color: #272f3f;
+    background-color: #30363d;
     color: #f0f6fc;
-    border-color: #3f4c63;
 }
 
 /* Interactive Terminal Viewport */
@@ -344,15 +134,9 @@ body.sidebar-collapsed #pf-main-content {
 .terminal-viewport::-webkit-scrollbar {
     width: 8px;
 }
-.terminal-viewport::-webkit-scrollbar-track {
-    background: #0b0d11;
-}
 .terminal-viewport::-webkit-scrollbar-thumb {
     background: #21262d;
     border-radius: 4px;
-}
-.terminal-viewport::-webkit-scrollbar-thumb:hover {
-    background: #30363d;
 }
 
 /* Terminal Content Stream */
@@ -441,241 +225,88 @@ body.sidebar-collapsed #pf-main-content {
 </style>
 
 <div class="terminal-container" id="terminal-container">
-    <!-- Slim Modern Console Bar with Tabs -->
+    <!-- Slim Modern Console Bar -->
     <div class="terminal-header-bar">
-        <div class="terminal-tabs-wrapper" id="term-tabs-bar">
-            <!-- Tabs dynamically rendered here -->
-            <button type="button" class="btn-new-tab" id="btn-add-tab" title="Buka Terminal Baru">
-                <i class="fa-solid fa-plus"></i>
-                <span>New Terminal</span>
-            </button>
+        <div class="terminal-tabs-wrapper">
+            <div class="terminal-tab">
+                <i class="fa-solid fa-terminal"></i>
+                <span>root@mitranet: /root</span>
+            </div>
         </div>
         <div class="terminal-actions">
             <button type="button" class="term-btn" id="btn-font-dec" title="Kecilkan Font">A-</button>
             <button type="button" class="term-btn" id="btn-font-inc" title="Besarkan Font">A+</button>
             <button type="button" class="term-btn" id="btn-clear" title="Bersihkan Layar (Ctrl+L)">
-                <i class="fa-solid fa-eraser"></i> Clear            </button>
+                <i class="fa-solid fa-eraser"></i> Clear
+            </button>
             <button type="button" class="term-btn" id="btn-reset" title="Reset Konsol">
-                <i class="fa-solid fa-rotate-right"></i> Reset            </button>
+                <i class="fa-solid fa-rotate-right"></i> Reset
+            </button>
         </div>
     </div>
 
-    <!-- Interactive Terminal Screen (Inline Prompt) -->
+    <!-- Terminal Viewport Area -->
     <div class="terminal-viewport" id="term-viewport">
-        <div class="terminal-content" id="term-content"></div>
+        <div class="terminal-content" id="term-content">
+            <div style="color: #7ee787; font-weight: 600; margin-bottom: 8px;">MitraNet Rinjani 1.0.2 Management Shell (Debian 13 Trixie x86_64)</div>
+            <div style="color: #8b949e; margin-bottom: 12px;">Type any Linux / router command (ip, nft, systemctl, ping, uname, etc.) below and press Enter.</div>
+        </div>
 
         <div class="terminal-input-line" id="term-input-line">
-            <span class="term-prompt">
-                <span class="prompt-user">root@pfSense</span>:<span class="prompt-cwd" id="prompt-cwd">~</span><span class="prompt-char">&nbsp;#&nbsp;</span>
-            </span>
-            <div class="term-input-wrapper">
-                <input type="text" class="term-input" id="term-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+            <div class="term-prompt">
+                <span class="prompt-user">root@mitranet</span>:<span class="prompt-cwd" id="prompt-cwd">~</span><span class="prompt-char"># </span>
             </div>
-            <span class="term-spinner" id="term-spinner">
-                <i class="fa-solid fa-circle-notch fa-spin"></i>
-            </span>
+            <div class="term-input-wrapper">
+                <input type="text" class="term-input" id="term-input" autocomplete="off" spellcheck="false" autofocus />
+                <i class="fa-solid fa-spinner fa-spin term-spinner" id="term-spinner"></i>
+            </div>
         </div>
     </div>
 </div>
 
 <script type="text/javascript">
-//<![CDATA[
-events.push(function() {
-    var sessions = [];
-    var activeSessionId = null;
-    var nextSessionNum = 1;
-    var currentFontSize = 13.5;
+function initTerminal() {
+    var cwd = '/root';
+    var history = [];
+    var historyIdx = -1;
+    var fontSize = 13.5;
     var isExecuting = false;
-
-    function escapeHtml(text) {
-        if (!text) return "";
-        return text
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
-
-    // Convert ANSI color escape sequences to HTML spans
-    function ansiToHtml(text) {
-        var str = escapeHtml(text);
-        str = str.replace(/\033\[0?m/g, '</span>');
-        str = str.replace(/\033\[0?1m/g, '<span style="font-weight: bold;">');
-        str = str.replace(/\033\[31m/g, '<span style="color: #f85149;">');
-        str = str.replace(/\033\[32m/g, '<span style="color: #56d364;">');
-        str = str.replace(/\033\[33m/g, '<span style="color: #e3b341;">');
-        str = str.replace(/\033\[34m/g, '<span style="color: #58a6ff;">');
-        str = str.replace(/\033\[35m/g, '<span style="color: #bc8cff;">');
-        str = str.replace(/\033\[36m/g, '<span style="color: #39c5cf;">');
-        str = str.replace(/\033\[37m/g, '<span style="color: #f0f6fc;">');
-        str = str.replace(/\033\[90m/g, '<span style="color: #8b949e;">');
-        str = str.replace(/\033\[[0-9;]*[a-zA-Z]/g, '');
-        return str;
-    }
-
-    function getActiveSession() {
-        for (var i = 0; i < sessions.length; i++) {
-            if (sessions[i].id === activeSessionId) {
-                return sessions[i];
-            }
-        }
-        return sessions[0] || null;
-    }
-
-    function renderTabs() {
-        var $bar = $('#term-tabs-bar');
-        $bar.find('.terminal-tab').remove();
-
-        sessions.forEach(function(s) {
-            var activeClass = (s.id === activeSessionId) ? ' active' : '';
-            var closeBtn = (sessions.length > 1) ? '<span class="tab-close" title="Tutup Terminal">&times;</span>' : '';
-            var $tab = $(
-                '<div class="terminal-tab' + activeClass + '" data-id="' + s.id + '">' +
-                '  <i class="fa-solid fa-terminal tab-icon"></i>' +
-                '  <span class="tab-title">' + escapeHtml(s.name) + '</span>' +
-                closeBtn +
-                '</div>'
-            );
-
-            $tab.on('click', function(e) {
-                if ($(e.target).hasClass('tab-close')) return;
-                switchSession(s.id);
-            });
-
-            $tab.find('.tab-close').on('click', function(e) {
-                e.stopPropagation();
-                closeSession(s.id);
-            });
-
-            $('#btn-add-tab').before($tab);
-        });
-
-        updateView();
-    }
-
-    function updateView() {
-        var s = getActiveSession();
-        if (!s) return;
-
-        var displayCwd = (s.cwd === '/root') ? '~' : s.cwd;
-        $('#prompt-cwd').text(displayCwd);
-        $('#term-content').html(s.content);
-        scrollToBottom();
-        focusInput();
-    }
 
     function scrollToBottom() {
         var vp = document.getElementById('term-viewport');
-        if (vp) {
-            vp.scrollTop = vp.scrollHeight;
-        }
+        if (vp) vp.scrollTop = vp.scrollHeight;
     }
 
-    function focusInput() {
-        if (!isExecuting) {
-            $('#term-input').focus();
-        }
-    }
-
-    function createSession() {
-        var num = nextSessionNum++;
-        var newSession = {
-            id: 'term_' + Date.now() + '_' + num,
-            name: 'Terminal ' + num,
-            cwd: '/root',
-            history: [],
-            historyIdx: -1,
-            content: '' // Clean start without banner
-        };
-
-        sessions.push(newSession);
-        switchSession(newSession.id);
-    }
-
-    function switchSession(id) {
-        activeSessionId = id;
-        renderTabs();
-    }
-
-    function closeSession(id) {
-        if (sessions.length <= 1) {
-            var s = getActiveSession();
-            if (s) {
-                s.content = '';
-                s.cwd = '/root';
-                s.history = [];
-                s.historyIdx = -1;
-                updateView();
-            }
-            return;
-        }
-
-        var idx = -1;
-        for (var i = 0; i < sessions.length; i++) {
-            if (sessions[i].id === id) {
-                idx = i;
-                break;
-            }
-        }
-
-        if (idx !== -1) {
-            sessions.splice(idx, 1);
-            if (activeSessionId === id) {
-                var nextActive = sessions[Math.max(0, idx - 1)];
-                activeSessionId = nextActive.id;
-            }
-            renderTabs();
-        }
+    function escapeHtml(text) {
+        return $('<div>').text(text).html();
     }
 
     function executeCommand(cmd) {
-        var s = getActiveSession();
-        if (!s || isExecuting) return;
+        cmd = $.trim(cmd);
+        if (!cmd) return;
 
-        cmd = (cmd !== undefined) ? cmd.trim() : $('#term-input').val().trim();
+        history.push(cmd);
+        historyIdx = history.length;
 
-        if (cmd === '') {
-            var displayCwd = (s.cwd === '/root') ? '~' : s.cwd;
-            var echoLine = '<div class="term-history-entry">' +
-                           '  <span class="term-cmd-echo"><span class="prompt-user">root@pfSense</span>:<span class="prompt-cwd">' + escapeHtml(displayCwd) + '</span><span class="prompt-char"> # </span></span>' +
-                           '</div>';
-            s.content += echoLine;
-            $('#term-content').append(echoLine);
-            scrollToBottom();
-            focusInput();
-            return;
-        }
-
-        // Add to session history
-        if (s.history.length === 0 || s.history[s.history.length - 1] !== cmd) {
-            s.history.push(cmd);
-        }
-        s.historyIdx = s.history.length;
-
-        var displayCwd = (s.cwd === '/root') ? '~' : s.cwd;
-        var promptEcho = '<div class="term-history-entry">' +
-                         '  <span class="term-cmd-echo"><span class="prompt-user">root@pfSense</span>:<span class="prompt-cwd">' + escapeHtml(displayCwd) + '</span><span class="prompt-char"> # </span>' + escapeHtml(cmd) + '</span>' +
-                         '</div>';
-        s.content += promptEcho;
+        var displayCwd = (cwd === '/root') ? '~' : cwd;
+        var promptEcho = '<div class="term-history-entry"><span class="term-cmd-echo"><span class="prompt-user">root@mitranet</span>:<span class="prompt-cwd">' + escapeHtml(displayCwd) + '</span><span class="prompt-char"># </span>' + escapeHtml(cmd) + '</span></div>';
         $('#term-content').append(promptEcho);
         $('#term-input').val('');
         scrollToBottom();
 
         if (cmd === 'clear') {
-            s.content = '';
             $('#term-content').empty();
             scrollToBottom();
-            focusInput();
             return;
         }
 
         if (cmd === 'reset') {
-            s.content = '';
-            s.cwd = '/root';
-            s.history = [];
-            s.historyIdx = -1;
-            updateView();
+            $('#term-content').empty();
+            cwd = '/root';
+            $('#prompt-cwd').text('~');
+            history = [];
+            historyIdx = -1;
+            scrollToBottom();
             return;
         }
 
@@ -689,149 +320,101 @@ events.push(function() {
             dataType: 'json',
             data: {
                 ajax: '1',
-                action: 'exec',
                 cmd: cmd,
-                cwd: s.cwd
+                cwd: cwd
             },
             success: function(resp) {
                 isExecuting = false;
                 $('#term-spinner').hide();
-                $('#term-input').prop('disabled', false);
+                $('#term-input').prop('disabled', false).focus();
 
                 if (resp && resp.output === '__CLEAR__') {
-                    s.content = '';
                     $('#term-content').empty();
                 } else if (resp && resp.output) {
                     var cls = (!resp.success) ? 'term-cmd-output term-cmd-error' : 'term-cmd-output';
-                    var outHtml = '<span class="' + cls + '">' + ansiToHtml(resp.output) + '</span>';
-                    s.content += outHtml;
+                    var outHtml = '<span class="' + cls + '">' + escapeHtml(resp.output) + '</span>';
                     $('#term-content').append(outHtml);
                 }
 
                 if (resp && resp.cwd) {
-                    s.cwd = resp.cwd;
-                    var newDisplay = (s.cwd === '/root') ? '~' : s.cwd;
+                    cwd = resp.cwd;
+                    var newDisplay = (cwd === '/root') ? '~' : cwd;
                     $('#prompt-cwd').text(newDisplay);
                 }
 
                 scrollToBottom();
-                focusInput();
             },
             error: function(xhr, status, err) {
                 isExecuting = false;
                 $('#term-spinner').hide();
-                $('#term-input').prop('disabled', false);
-                var errHtml = '<span class="term-cmd-output term-cmd-error">Error connecting to FreeBSD shell backend: ' + escapeHtml(err || status) + "\n</span>";
-                s.content += errHtml;
+                $('#term-input').prop('disabled', false).focus();
+                var errHtml = '<span class="term-cmd-output term-cmd-error">Error: ' + escapeHtml(err || status) + "\n</span>";
                 $('#term-content').append(errHtml);
                 scrollToBottom();
-                focusInput();
             }
         });
     }
 
-    // Input Keydown Handling
     $('#term-input').on('keydown', function(e) {
-        var s = getActiveSession();
-        if (!s) return;
-
         if (e.key === 'Enter') {
             e.preventDefault();
             executeCommand($(this).val());
         } else if (e.key === 'ArrowUp') {
             e.preventDefault();
-            if (s.history.length > 0) {
-                if (s.historyIdx > 0) {
-                    s.historyIdx--;
-                }
-                $(this).val(s.history[s.historyIdx] || '');
+            if (history.length > 0) {
+                if (historyIdx > 0) historyIdx--;
+                $(this).val(history[historyIdx] || '');
             }
         } else if (e.key === 'ArrowDown') {
             e.preventDefault();
-            if (s.history.length > 0) {
-                if (s.historyIdx < s.history.length - 1) {
+            if (history.length > 0) {
+                if (historyIdx < history.length - 1) {
                     historyIdx++;
-                    $(this).val(s.history[s.historyIdx] || '');
+                    $(this).val(history[historyIdx] || '');
                 } else {
-                    s.historyIdx = s.history.length;
+                    historyIdx = history.length;
                     $(this).val('');
                 }
             }
         } else if (e.ctrlKey && e.key === 'l') {
             e.preventDefault();
-            s.content = '';
             $('#term-content').empty();
             scrollToBottom();
-        } else if (e.ctrlKey && e.key === 'c') {
-            e.preventDefault();
-            var displayCwd = (s.cwd === '/root') ? '~' : s.cwd;
-            var cancelLine = '<div class="term-history-entry"><span class="term-cmd-echo"><span class="prompt-user">root@pfSense</span>:<span class="prompt-cwd">' + escapeHtml(displayCwd) + '</span><span class="prompt-char"> # </span>' + escapeHtml($(this).val()) + '^C</span></div>';
-            s.content += cancelLine;
-            $('#term-content').append(cancelLine);
-            $(this).val('');
-            scrollToBottom();
         }
     });
 
-    // Clicking anywhere in viewport focuses input
-    $('#term-viewport').on('click', function(e) {
-        if (!window.getSelection().toString()) {
-            focusInput();
-        }
-    });
-
-    // Header Actions
-    $('#btn-add-tab').on('click', function() {
-        createSession();
+    $('#term-viewport').on('click', function() {
+        $('#term-input').focus();
     });
 
     $('#btn-clear').on('click', function() {
-        var s = getActiveSession();
-        if (s) {
-            s.content = '';
-            $('#term-content').empty();
-            scrollToBottom();
-            focusInput();
-        }
+        $('#term-content').empty();
+        $('#term-input').focus();
     });
 
     $('#btn-reset').on('click', function() {
-        var s = getActiveSession();
-        if (s) {
-            s.content = '';
-            s.cwd = '/root';
-            s.history = [];
-            s.historyIdx = -1;
-            updateView();
-        }
+        $('#term-content').empty();
+        cwd = '/root';
+        $('#prompt-cwd').text('~');
+        $('#term-input').val('').focus();
     });
 
     $('#btn-font-inc').on('click', function() {
-        if (currentFontSize < 20) {
-            currentFontSize += 1;
-            $('#terminal-container').css('font-size', currentFontSize + 'px');
-            scrollToBottom();
+        if (fontSize < 20) {
+            fontSize += 1.5;
+            $('#terminal-container').css('font-size', fontSize + 'px');
         }
     });
 
     $('#btn-font-dec').on('click', function() {
-        if (currentFontSize > 11) {
-            currentFontSize -= 1;
-            $('#terminal-container').css('font-size', currentFontSize + 'px');
-            scrollToBottom();
+        if (fontSize > 10) {
+            fontSize -= 1.5;
+            $('#terminal-container').css('font-size', fontSize + 'px');
         }
     });
+}
 
-    // Start with Terminal 1
-    createSession();
-});
-//]]>
+$(document).ready(initTerminal);
 </script>
-
-	</div>
-
-
-
-
 
 <?php include(__DIR__ . '/includes/foot.inc'); ?>
