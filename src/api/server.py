@@ -2120,7 +2120,42 @@ AllowedIPs = {allowed_ips}
                 # 4. Enable IPv4 forwarding in kernel
                 subprocess.run(["sysctl", "-w", "net.ipv4.ip_forward=1"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-                # 5. Persist to /etc/mitranet/network/vethernet.json
+                # 5. Automatically configure dnsmasq DHCP & NAT for vEthernet
+                try:
+                    import ipaddress
+                    net_obj = ipaddress.ip_network(ip_cidr, strict=False)
+                    host_list = list(net_obj.hosts())
+                    if len(host_list) >= 10:
+                        dhcp_start = str(host_list[5])
+                        dhcp_end = str(host_list[-5])
+                        router_ip = ip_cidr.split("/")[0]
+
+                        # Write dnsmasq config for this vethernet interface
+                        dnsmasq_conf = (
+                            f"interface={name}\n"
+                            f"bind-interfaces\n"
+                            f"dhcp-range={name},{dhcp_start},{dhcp_end},255.255.255.0,12h\n"
+                            f"dhcp-option={name},option:router,{router_ip}\n"
+                            f"dhcp-option={name},option:dns-server,{router_ip},8.8.8.8,1.1.1.1\n"
+                        )
+                        dnsmasq_file = f"/etc/dnsmasq.d/vethernet_{name}.conf"
+                        with open(dnsmasq_file, "w") as df:
+                            df.write(dnsmasq_conf)
+                        # Reload / restart dnsmasq
+                        subprocess.run(["systemctl", "restart", "dnsmasq"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                        # Configure iptables NAT MASQUERADE for this subnet so guest VM gets internet access
+                        subprocess.run([
+                            "iptables", "-t", "nat", "-C", "POSTROUTING", "-s", str(net_obj), "!", "-o", name, "-j", "MASQUERADE"
+                        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                        # If rule does not exist, add it
+                        subprocess.run([
+                            "iptables", "-t", "nat", "-A", "POSTROUTING", "-s", str(net_obj), "!", "-o", name, "-j", "MASQUERADE"
+                        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                except Exception as de:
+                    logger.warning("Could not setup dnsmasq DHCP for vEthernet %s: %s", name, de)
+
+                # 6. Persist to /etc/mitranet/network/vethernet.json
                 conf_dir = "/etc/mitranet/network"
                 os.makedirs(conf_dir, exist_ok=True)
                 conf_file = f"{conf_dir}/vethernet.json"

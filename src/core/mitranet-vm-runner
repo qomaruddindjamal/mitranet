@@ -53,6 +53,13 @@ if [ -n "$TARGET_IFACE" ] && ip link show "$TARGET_IFACE" >/dev/null 2>&1; then
 
     if [ "$IFACE_TYPE" = "bridge" ] || echo "$TARGET_IFACE" | grep -qE '^(br|veth)'; then
         # Case A: Bridge or vEthernet device -> Attach standard TAP
+        # Disable STP forward delay so DHCP packets are passed immediately without 30s delay
+        ip link set "$TARGET_IFACE" up
+        if [ -d "/sys/class/net/${TARGET_IFACE}/bridge" ]; then
+            echo 0 > "/sys/class/net/${TARGET_IFACE}/bridge/forward_delay" 2>/dev/null || true
+            echo 0 > "/sys/class/net/${TARGET_IFACE}/bridge/stp_state" 2>/dev/null || true
+        fi
+
         ip link del "$TAP_DEV" >/dev/null 2>&1 || true
         ip tuntap add dev "$TAP_DEV" mode tap
         ip link set "$TAP_DEV" master "$TARGET_IFACE"
