@@ -49,6 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'id' => trim($_POST['vm_id'] ?? ''),
             'ram_mb' => intval($_POST['ram_mb'] ?? 1024),
             'vcpu' => intval($_POST['vcpu'] ?? 1),
+            'disk_gb' => intval($_POST['disk_gb'] ?? 10),
             'port_fwd' => intval($_POST['port_fwd'] ?? 8888),
             'net_mode' => trim($_POST['net_mode'] ?? 'veth'),
             'veth_iface' => trim($_POST['veth_iface'] ?? 'veth0'),
@@ -362,6 +363,20 @@ foreach ($vms as $v) {
                         </select>
                     </div>
                 </div>
+
+                <div class="form-group">
+                    <label class="col-sm-3 control-label"><span class="element-required">*</span>Ukuran Virtual Disk (qcow2):</label>
+                    <div class="col-sm-6">
+                        <div class="input-group">
+                            <input type="number" name="disk_gb" class="form-control" value="<?=htmlspecialchars($aapanelVm['disk_gb'] ?? 10)?>" min="5" max="500" />
+                            <span class="input-group-addon">GB</span>
+                        </div>
+                        <span class="help-block">
+                            Ukuran saat ini: <strong><?=htmlspecialchars($aapanelVm['disk_gb'] ?? 10)?> GB</strong> (Format qcow2 dinamis di <code>/var/lib/mitranet/vms/aapanel/disk.qcow2</code>). Anda dapat memperbesar kapasitas disk kapan saja.
+                        </span>
+                    </div>
+                </div>
+
 
                 <div class="form-group">
                     <label class="col-sm-3 control-label"><span class="element-required">*</span>Network Interface (Koneksi Jaringan):</label>

@@ -2049,7 +2049,36 @@ AllowedIPs = {allowed_ips}
             if "iso" in payload:
                 iso_file = str(payload["iso"]).strip()
 
+            # Handle Virtual Disk resizing if requested
+            disk_path = f"{vm_dir}/disk.qcow2"
+            new_disk_gb = int(payload.get("disk_gb", 0)) if "disk_gb" in payload else 0
+            restart_needed = payload.get("restart", False)
+            if new_disk_gb > 0 and os.path.exists(disk_path):
+                try:
+                    # Check current virtual size
+                    cur_gb = 0
+                    info_p = subprocess.run(["qemu-img", "info", "-U", disk_path], stdout=subprocess.PIPE, text=True, timeout=5)
+                    for line in info_p.stdout.splitlines():
+                        if "virtual size:" in line:
+                            parts = line.split("virtual size:")[-1].strip().split("(")[0].strip()
+                            if "GiB" in parts:
+                                cur_gb = int(float(parts.replace("GiB", "").strip()))
+                            break
+                    if new_disk_gb > cur_gb:
+                        # Check if VM is active
+                        status_p = subprocess.run(["systemctl", "is-active", f"mitranet-vm@{vm_id}"], stdout=subprocess.PIPE, text=True)
+                        is_running = (status_p.stdout.strip() == "active")
+                        if is_running and restart_needed:
+                            # Stop temporarily to release file lock, resize, then it will restart below
+                            subprocess.run(["systemctl", "stop", f"mitranet-vm@{vm_id}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                            subprocess.run(["qemu-img", "resize", disk_path, f"{new_disk_gb}G"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10)
+                        elif not is_running:
+                            subprocess.run(["qemu-img", "resize", disk_path, f"{new_disk_gb}G"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10)
+                except Exception:
+                    pass
+
             os.makedirs(conf_dir, exist_ok=True)
+
             with open(env_file, "w") as f:
                 f.write(f"RAM_MB={ram_mb}\n")
                 f.write(f"VCPU={vcpu}\n")
