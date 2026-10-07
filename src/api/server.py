@@ -409,11 +409,28 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 self._send_json(500, {"error": f"VLAN query failed: {e}"})
             return
 
-        # 5. Bridges
+        # 5. Bridges (exclude vEthernet / KVM guest subnets)
         if path == "/api/v1/bridges":
             try:
-                bridges = bridge_service.discover_bridges()
-                self._send_json(200, [b.model_dump() for b in bridges])
+                # Load saved vethernet names so they are not treated as standard bridges
+                veth_names = set()
+                conf_file = "/etc/mitranet/network/vethernet.json"
+                if os.path.isfile(conf_file):
+                    try:
+                        with open(conf_file, "r") as cf:
+                            veth_db = json.load(cf)
+                            veth_names = set(veth_db.keys())
+                    except Exception:
+                        pass
+
+                raw_bridges = bridge_service.discover_bridges()
+                # A bridge is a dedicated user-created bridge if it is NOT a vethernet device
+                std_bridges = []
+                for b in raw_bridges:
+                    b_name = b.name
+                    if b_name not in veth_names and not b_name.startswith("veth"):
+                        std_bridges.append(b.model_dump())
+                self._send_json(200, std_bridges)
             except Exception as e:
                 self._send_json(500, {"error": f"Bridge query failed: {e}"})
             return
