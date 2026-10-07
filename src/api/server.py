@@ -317,6 +317,8 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                     d = i.model_dump()
                     traffic = SystemMetricsCollector.get_interface_traffic(i.name)
                     d["traffic"] = traffic
+                    # is_up is True if administratively UP or link operational UP
+                    d["is_up"] = (d.get("admin_state") == "UP" or "UP" in d.get("flags", []) or d.get("oper_state") == "UP")
                     result.append(d)
                 self._send_json(200, result)
             except Exception as e:
@@ -337,6 +339,7 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                         return
                     d = found.model_dump()
                     d["traffic"] = SystemMetricsCollector.get_interface_traffic(ifname)
+                    d["is_up"] = (d.get("admin_state") == "UP" or "UP" in d.get("flags", []) or d.get("oper_state") == "UP")
                     self._send_json(200, d)
                 except Exception as e:
                     self._send_json(500, {"error": str(e)})

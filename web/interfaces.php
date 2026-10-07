@@ -138,8 +138,17 @@ $is_protected = ($selected_iface['name'] === 'lo' || $selected_iface['name'] ===
 							<input type="checkbox" name="enable" value="yes" <?=$is_up ? 'checked' : ''?> <?=$is_protected ? 'onclick="return false;"' : ''?>>
 							<strong><?=gettext("Enable interface")?></strong>
 						</label>
+						<?php if ($is_up): ?>
+							<?php if (strtoupper($selected_iface['oper_state'] ?? '') === 'UP'): ?>
+								<span class="label label-success" style="margin-left: 10px;"><i class="fa-solid fa-arrow-up"></i> UP / Link Active</span>
+							<?php else: ?>
+								<span class="label label-warning" style="margin-left: 10px;" title="Interface aktif secara administratif di kernel, menunggu VM/kabel tersambung"><i class="fa-solid fa-plug"></i> READY (Admin UP, No Carrier)</span>
+							<?php endif; ?>
+						<?php else: ?>
+							<span class="label label-danger" style="margin-left: 10px;"><i class="fa-solid fa-arrow-down"></i> DISABLED / DOWN</span>
+						<?php endif; ?>
 					</div>
-					<span class="help-block"><?=gettext("Aktifkan atau nonaktifkan link layer untuk interface jaringan ini.")?></span>
+					<span class="help-block"><?=gettext("Aktifkan atau nonaktifkan link layer (Administrative State) untuk interface jaringan ini di kernel Linux.")?></span>
 				</div>
 			</div>
 
@@ -245,7 +254,11 @@ $is_protected = ($selected_iface['name'] === 'lo' || $selected_iface['name'] ===
 						</td>
 						<td>
 							<?php if (!empty($i['is_up'])): ?>
-								<span class="label label-success"><i class="fa-solid fa-arrow-up"></i> UP</span>
+								<?php if (strtoupper($i['oper_state'] ?? '') === 'UP'): ?>
+									<span class="label label-success" title="Link Active"><i class="fa-solid fa-arrow-up"></i> UP</span>
+								<?php else: ?>
+									<span class="label label-warning" title="Admin UP, No Carrier / Virtual"><i class="fa-solid fa-plug"></i> NO-CARRIER</span>
+								<?php endif; ?>
 							<?php else: ?>
 								<span class="label label-danger"><i class="fa-solid fa-arrow-down"></i> DOWN</span>
 							<?php endif; ?>

@@ -21,10 +21,14 @@ $ifaces = MitraNetApi::getInterfaces();
 			<div class="panel-heading">
 				<h3 class="panel-title">
 					<i class="fa fa-ethernet"></i> <strong><?=htmlspecialchars($if['name'])?></strong>
-					<?php if ($if['operstate'] === 'up'): ?>
-						<span class="label label-success pull-right">UP</span>
+					<?php if (!empty($if['is_up'])): ?>
+						<?php if (strtoupper($if['oper_state'] ?? '') === 'UP'): ?>
+							<span class="label label-success pull-right"><i class="fa fa-arrow-up"></i> UP</span>
+						<?php else: ?>
+							<span class="label label-warning pull-right" title="Admin UP, No Carrier"><i class="fa fa-plug"></i> NO-CARRIER</span>
+						<?php endif; ?>
 					<?php else: ?>
-						<span class="label label-danger pull-right">DOWN</span>
+						<span class="label label-danger pull-right"><i class="fa fa-arrow-down"></i> DOWN</span>
 					<?php endif; ?>
 				</h3>
 			</div>
@@ -33,10 +37,14 @@ $ifaces = MitraNetApi::getInterfaces();
 					<tr>
 						<th style="width: 35%;">Status:</th>
 						<td>
-							<?php if ($if['is_up']): ?>
-								<span class="text-success"><i class="fa fa-arrow-up"></i> Running / Admin UP</span>
+							<?php if (!empty($if['is_up'])): ?>
+								<?php if (strtoupper($if['oper_state'] ?? '') === 'UP'): ?>
+									<span class="text-success"><i class="fa fa-check-circle"></i> <strong>UP</strong> (Link Active & Carrier Connected)</span>
+								<?php else: ?>
+									<span class="text-warning"><i class="fa fa-info-circle"></i> <strong>READY / NO-CARRIER</strong> (Admin UP, Siap / Menunggu VM terhubung)</span>
+								<?php endif; ?>
 							<?php else: ?>
-								<span class="text-danger"><i class="fa fa-arrow-down"></i> Admin DOWN</span>
+								<span class="text-danger"><i class="fa fa-times-circle"></i> <strong>DISABLED / DOWN</strong></span>
 							<?php endif; ?>
 						</td>
 					</tr>
