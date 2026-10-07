@@ -189,6 +189,39 @@ class MitraNetApi {
         return self::request('/wireguard/service', 'POST', ['action' => $action]);
     }
 
+    public static function generateWireGuardKeys() {
+        return self::request('/wireguard/keygen', 'POST', []);
+    }
+
+    public static function saveWireGuardTunnel($name, $address, $listen_port, $private_key, $descr = '') {
+        return self::request('/wireguard/tunnel/save', 'POST', [
+            'name' => $name,
+            'address' => $address,
+            'listen_port' => $listen_port,
+            'private_key' => $private_key,
+            'descr' => $descr
+        ]);
+    }
+
+    public static function saveWireGuardPeer($tunnel, $pubkey, $allowed_ips, $endpoint = '', $keepalive = '25', $preshared = '', $descr = '') {
+        return self::request('/wireguard/peer/save', 'POST', [
+            'tunnel' => $tunnel,
+            'public_key' => $pubkey,
+            'allowed_ips' => $allowed_ips,
+            'endpoint' => $endpoint,
+            'keepalive' => $keepalive,
+            'preshared_key' => $preshared,
+            'descr' => $descr
+        ]);
+    }
+
+    public static function deleteWireGuardPeer($tunnel, $pubkey) {
+        return self::request('/wireguard/peer/delete', 'POST', [
+            'tunnel' => $tunnel,
+            'public_key' => $pubkey
+        ]);
+    }
+
     public static function getXray() {
         $res = self::request('/xray');
         return $res['status'] === 200 ? $res['data'] : ['running' => false, 'version' => '', 'config' => []];

@@ -1232,6 +1232,149 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                     self._send_json(404, {"error": "Auth file not found"})
             except Exception as e:
                 self._send_json(500, {"error": str(e)})
+        # 17. WireGuard Mutations (Keygen, Save Tunnel, Save Peer, Delete Peer)
+        if path == "/api/v1/wireguard/keygen":
+            import subprocess
+            try:
+                proc = subprocess.run(["wg", "genkey"], stdout=subprocess.PIPE, text=True, check=True)
+                privkey = proc.stdout.strip()
+                proc2 = subprocess.run(["wg", "pubkey"], input=privkey, stdout=subprocess.PIPE, text=True, check=True)
+                pubkey = proc2.stdout.strip()
+                self._send_json(200, {"success": True, "private_key": privkey, "public_key": pubkey})
+            except Exception as e:
+                self._send_json(500, {"error": f"Failed generating keys: {e}"})
+            return
+
+        if path == "/api/v1/wireguard/tunnel/save":
+            name = payload.get("name", "wg0").strip()
+            address = payload.get("address", "10.10.99.1/24").strip()
+            listen_port = payload.get("listen_port", "51820").strip()
+            privkey = payload.get("private_key", "").strip()
+            descr = payload.get("descr", "MitraNet WireGuard Tunnel")
+
+            if not privkey:
+                self._send_json(400, {"error": "Private key is required"})
+                return
+
+            conf_path = f"/etc/wireguard/{name}.conf"
+            # Read existing peers to preserve them
+            existing_peers = []
+            if os.path.exists(conf_path):
+                try:
+                    with open(conf_path, "r") as cf:
+                        lines = cf.read().split("[Peer]")
+                        for pblock in lines[1:]:
+                            existing_peers.append("[Peer]" + pblock)
+                except Exception:
+                    pass
+
+            try:
+                new_conf = f"""[Interface]
+# {descr}
+Address = {address}
+ListenPort = {listen_port}
+PrivateKey = {privkey}
+
+"""
+                for pb in existing_peers:
+                    new_conf += pb.strip() + "\n\n"
+
+                os.makedirs("/etc/wireguard", exist_ok=True)
+                with open(conf_path, "w") as cf:
+                    cf.write(new_conf.strip() + "\n")
+
+                # Reload or sync with running tunnel
+                import subprocess
+                subprocess.run(["systemctl", "restart", f"wg-quick@{name}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                self._send_json(200, {"success": True, "message": f"Tunnel {name} saved and restarted successfully"})
+            except Exception as e:
+                self._send_json(500, {"error": f"Failed saving tunnel: {e}"})
+            return
+
+        if path == "/api/v1/wireguard/peer/save":
+            tun = payload.get("tunnel", "wg0").strip()
+            descr = payload.get("descr", "WireGuard Peer")
+            pubkey = payload.get("public_key", "").strip()
+            endpoint = payload.get("endpoint", "").strip()
+            allowed_ips = payload.get("allowed_ips", "10.10.99.2/32").strip()
+            preshared_key = payload.get("preshared_key", "").strip()
+            keepalive = payload.get("keepalive", "25").strip()
+
+            if not pubkey or not allowed_ips:
+                self._send_json(400, {"error": "Public key and Allowed IPs are required"})
+                return
+
+            conf_path = f"/etc/wireguard/{tun}.conf"
+            if not os.path.exists(conf_path):
+                self._send_json(404, {"error": f"Tunnel configuration {conf_path} does not exist"})
+                return
+
+            try:
+                # Append or update peer
+                peer_block = f"""
+[Peer]
+# Peer: {descr}
+PublicKey = {pubkey}
+AllowedIPs = {allowed_ips}
+"""
+                if endpoint and endpoint != "Dynamic" and endpoint != "(none)":
+                    peer_block += f"Endpoint = {endpoint}\n"
+                if preshared_key:
+                    peer_block += f"PresharedKey = {preshared_key}\n"
+                if keepalive and keepalive != "off":
+                    peer_block += f"PersistentKeepalive = {keepalive}\n"
+
+                with open(conf_path, "r") as cf:
+                    content = cf.read()
+
+                # If peer pubkey already in file, replace its block; else append
+                if pubkey in content:
+                    blocks = content.split("[Peer]")
+                    new_blocks = [blocks[0]]
+                    for b in blocks[1:]:
+                        if pubkey not in b:
+                            new_blocks.append("[Peer]" + b)
+                    new_blocks.append(peer_block.strip() + "\n")
+                    new_content = "".join(new_blocks)
+                else:
+                    new_content = content.strip() + "\n" + peer_block.strip() + "\n"
+
+                with open(conf_path, "w") as cf:
+                    cf.write(new_content.strip() + "\n")
+
+                import subprocess
+                subprocess.run(["systemctl", "restart", f"wg-quick@{tun}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                self._send_json(200, {"success": True, "message": f"Peer for {pubkey[:12]}... saved successfully"})
+            except Exception as e:
+                self._send_json(500, {"error": f"Failed saving peer: {e}"})
+            return
+
+        if path == "/api/v1/wireguard/peer/delete":
+            tun = payload.get("tunnel", "wg0").strip()
+            pubkey = payload.get("public_key", "").strip()
+            if not pubkey:
+                self._send_json(400, {"error": "Public key required"})
+                return
+
+            conf_path = f"/etc/wireguard/{tun}.conf"
+            if os.path.exists(conf_path):
+                try:
+                    with open(conf_path, "r") as cf:
+                        content = cf.read()
+                    blocks = content.split("[Peer]")
+                    new_blocks = [blocks[0]]
+                    for b in blocks[1:]:
+                        if pubkey not in b:
+                            new_blocks.append("[Peer]" + b)
+                    with open(conf_path, "w") as cf:
+                        cf.write("".join(new_blocks).strip() + "\n")
+                    import subprocess
+                    subprocess.run(["systemctl", "restart", f"wg-quick@{tun}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    self._send_json(200, {"success": True, "message": "Peer deleted"})
+                except Exception as e:
+                    self._send_json(500, {"error": f"Failed deleting peer: {e}"})
+            else:
+                self._send_json(404, {"error": "Tunnel config not found"})
             return
 
         self._send_json(404, {"error": "Endpoint not found"})

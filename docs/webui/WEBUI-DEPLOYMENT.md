@@ -23,7 +23,7 @@ KillMode=process
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
-ReadWritePaths=/etc/mitranet /var/lib/mitranet /var/log /run /tmp
+ReadWritePaths=/etc/mitranet /etc/wireguard /var/lib/mitranet /var/log /run /tmp
 ProtectHome=true
 
 [Install]
