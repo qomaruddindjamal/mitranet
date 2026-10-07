@@ -1,0 +1,562 @@
+[
+  {
+    "orig_name": "acme",
+    "orig_version": "1.3.2",
+    "description": "Automated Certificate Management Environment, for automated use of LetsEncrypt certificates. Package Dependencies: &nbsp; php85-8.5.7 &emsp; &nbsp; php85-ftp-8.5.7 &emsp; &nbsp; pecl-ssh2-1.3.1 &emsp; &nbsp; socat-1.8.1.1 &emsp;",
+    "deb_package": "certbot, acme-tiny, python3-acme",
+    "service": "cron/certbot.timer",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "ANDwatch",
+    "orig_version": "2.1_3",
+    "description": "ANDwatch is a daemon for monitoring ARP and Neighbor Discovery activity, keeping track of IP to Ethernet address mappings, and providing notifications when the mappings change. Package Dependencies: &nbsp; andwatch-2.4.0 &emsp;",
+    "deb_package": "arpwatch, ndpmon",
+    "service": "arpwatch.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "apcupsd",
+    "orig_version": "0.3.92_12",
+    "description": "\"apcupsd\" can be used for controlling all APC UPS models It can monitor and log the current power and battery status, perform automatic shutdown, and can run in network mode in order to power down other hosts on a LAN Package Dependencies: &nbsp; apcupsd-3.14.14_6 &emsp;",
+    "deb_package": "apcupsd",
+    "service": "apcupsd.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "arping",
+    "orig_version": "1.2.2_7",
+    "description": "Broadcasts a who-has ARP packet on the network and prints answers. Package Dependencies: &nbsp; arping-2.25 &emsp;",
+    "deb_package": "iputils-arping, arping",
+    "service": "cli",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "arpwatch",
+    "orig_version": "0.2.5",
+    "description": "This package contains tools that monitors ethernet activity and maintains a database of ethernet/ip address pairings. It also reports certain changes via email. Package Dependencies: &nbsp; arpwatch-3.9 &emsp;",
+    "deb_package": "arpwatch",
+    "service": "arpwatch.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "Avahi",
+    "orig_version": "2.2_10",
+    "description": "Avahi is a system which facilitates host and service discovery in local networks via mDNS (Multicast DNS) and DNS-SD (DNS Service Discovery). This package allows mDNS/DNS-SD protocols to work across multiple LAN segments. mDNS/DNS-SD is known in Apple circles as \"Bonjour\" and is part of the Zeroconf suite of protocols. Package Dependencies: &nbsp; avahi-app-0.8_6 &emsp; &nbsp; nss_mdns-0.14.1.20200624_1 &emsp;",
+    "deb_package": "avahi-daemon",
+    "service": "avahi-daemon.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "Backup",
+    "orig_version": "0.7",
+    "description": "Tool to Backup and Restore files and directories.",
+    "deb_package": "mitranet-backup, tar, rsync",
+    "service": "systemd",
+    "status": "Builtin MitraNet"
+  },
+  {
+    "orig_name": "bandwidthd",
+    "orig_version": "0.7.11",
+    "description": "BandwidthD tracks usage of TCP/IP network subnets and builds html files with graphs to display utilization. Charts are built by individual IPs, and by default display utilization over 2 day, 8 day, 40 day, and 400 day periods. Furthermore, each IP address's utilization can be logged out in CDF format, or to a backend database server. HTTP, TCP, UDP, ICMP, VPN, and P2P traffic are color coded. Package Dependencies: &nbsp; bandwidthd-2.0.1_12 &emsp;",
+    "deb_package": "bandwidthd",
+    "service": "bandwidthd.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "bind",
+    "orig_version": "9.20_8",
+    "description": "pfSense GUI for BIND DNS server Package Dependencies: &nbsp; bind920-9.20.23 &emsp;",
+    "deb_package": "bind9, bind9-utils",
+    "service": "named.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "cellular",
+    "orig_version": "1.2.8",
+    "description": "pfSense GUI for Cellular Cards Currently it supports certain Huawei models, Simcom and Quectel EC25. Package Dependencies: &nbsp; py-pyserial-3.5_4 &emsp; &nbsp; python311-3.11.15_3 &emsp;",
+    "deb_package": "modemmanager, libqmi-utils, libmbim-utils",
+    "service": "ModemManager.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "collectd",
+    "orig_version": "1.1",
+    "description": "collectd is a small daemon written in C for performance. It reads various system & network statistics and can forward them to another collectd server for storage. Package Dependencies: &nbsp; collectd5-5.12.0_24 &emsp;",
+    "deb_package": "collectd, collectd-core",
+    "service": "collectd.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "Cron",
+    "orig_version": "0.3.8_8",
+    "description": "The cron utility is used to manage commands on a schedule.",
+    "deb_package": "cron",
+    "service": "cron.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "darkstat",
+    "orig_version": "3.1.6",
+    "description": "darkstat is a network statistics gatherer. It's a packet sniffer that runs as a background process on a cable/DSL router, gathers all sorts of statistics about network usage, and serves them over HTTP. Package Dependencies: &nbsp; darkstat-3.0.721_1 &emsp;",
+    "deb_package": "darkstat",
+    "service": "darkstat.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "Filer",
+    "orig_version": "0.62.2",
+    "description": "Allows you to create and overwrite files from the GUI.",
+    "deb_package": "mitranet-core (REST file editor)",
+    "service": "webui",
+    "status": "Builtin MitraNet"
+  },
+  {
+    "orig_name": "freeradius3",
+    "orig_version": "0.16.4_1",
+    "description": "A free implementation of the RADIUS protocol. Supports MySQL, PostgreSQL, LDAP, Kerberos. Package Dependencies: &nbsp; bash-5.3.15 &emsp; &nbsp; freeradius3-3.2.10 &emsp; &nbsp; python311-3.11.15_3 &emsp;",
+    "deb_package": "freeradius, freeradius-utils",
+    "service": "freeradius.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "frr",
+    "orig_version": "2.1.3_3",
+    "description": "FRR routing daemon for BGP, OSPF, and OSPF6 Conflicts with Quagga OSPF and OpenBGPD. These packages cannot be installed at the same time. Package Dependencies: &nbsp; frr10-10.7.1 &emsp; &nbsp; frr10-pythontools-10.7.1 &emsp;",
+    "deb_package": "frr, frr-pythontools",
+    "service": "frr.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "FTP_Client_Proxy",
+    "orig_version": "0.3_12",
+    "description": "Basic FTP Client Proxy using ftp-proxy from FreeBSD.",
+    "deb_package": "frox, ftp-proxy",
+    "service": "systemd",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "haproxy",
+    "orig_version": "0.65.7",
+    "description": "The Reliable, High Performance TCP/HTTP(S) Load Balancer. This package implements the TCP, HTTP and HTTPS balancing features from haproxy. Supports ACLs for smart backend switching. Package Dependencies: &nbsp; haproxy-3.2.19 &emsp;",
+    "deb_package": "haproxy",
+    "service": "haproxy.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "haproxy-devel",
+    "orig_version": "0.66.7",
+    "description": "The Reliable, High Performance TCP/HTTP(S) Load Balancer. This package implements the TCP, HTTP and HTTPS balancing features from haproxy. Supports ACLs for smart backend switching. Package Dependencies: &nbsp; haproxy-devel-3.3.d10 &emsp;",
+    "deb_package": "haproxy",
+    "service": "haproxy.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "iperf",
+    "orig_version": "3.0.6",
+    "description": "Iperf is a tool for testing network throughput, loss, and jitter. Package Dependencies: &nbsp; iperf3-3.21 &emsp;",
+    "deb_package": "iperf, iperf3",
+    "service": "iperf3.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "LADVD",
+    "orig_version": "1.2.2_7",
+    "description": "Send and decode link layer advertisements. Support for LLDP (Link Layer Discovery Protocol), CDP (Cisco Discovery Protocol), EDP (Extreme Discovery Protocol) and NDP (Nortel Discovery Protocol). Package Dependencies: &nbsp; ladvd-1.1.4 &emsp;",
+    "deb_package": "ladvd, lldpd",
+    "service": "ladvd.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "LCDproc",
+    "orig_version": "0.12.4",
+    "description": "LCD display driver. Package Dependencies: &nbsp; lcdproc-0.5.9_1 &emsp;",
+    "deb_package": "lcdproc",
+    "service": "LCDd.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "Lightsquid",
+    "orig_version": "3.0.11",
+    "description": "LightSquid is a high performance web proxy reporting tool. Includes proxy realtime statistics (SQStat). Requires Squid package. Package Dependencies: &nbsp; lightsquid-1.8_5 &emsp; &nbsp; lighttpd-1.4.83 &emsp;",
+    "deb_package": "lightsquid",
+    "service": "apache2/php",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "lldpd",
+    "orig_version": "0.9.13",
+    "description": "lldpd provies support for the 802.1ab Link Layer Discovery Protocol (LLDP), as well as support for several proprietary discovery protocols including Cisco Discovery Protocol (CDP), Extreme Discovery Protocol (EDP), Foundry Discovery Protocol (FDP), and Nortel Discovery Protocol (NDP / SONMP). Package Dependencies: &nbsp; lldpd-1.0.21 &emsp;",
+    "deb_package": "lldpd",
+    "service": "lldpd.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "mailreport",
+    "orig_version": "3.6.4_7",
+    "description": "Allows you to setup periodic e-mail reports containing command output, and log file contents",
+    "deb_package": "bsd-mailx, msmtp, postfix",
+    "service": "cron",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "mcast-bridge",
+    "orig_version": "1.4",
+    "description": "Multicast Bridge is a daemon for forwarding UDP multicast data between network interfaces, supporting both IPv4 and IPv6. It supports statically configured forwarding, and dynamic interest-based forwarding using IGMP and MLD. Package Dependencies: &nbsp; mcast-bridge-1.7.0 &emsp;",
+    "deb_package": "smcroute, pimd",
+    "service": "smcroute.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "mDNS-Bridge",
+    "orig_version": "3.0",
+    "description": "mDNS Bridge is a daemon for sharing Multicast DNS (mDNS) information across multiple network interfaces. This allows local DNS Service Discovery (DNS-SD) across multiple network segments, which is commonly used for sharing network print services, audio/video streaming, home automation, etc. Package Dependencies: &nbsp; mdns-bridge-3.0.0 &emsp;",
+    "deb_package": "avahi-daemon (reflector)",
+    "service": "avahi-daemon.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "mtr-nox11",
+    "orig_version": "0.85.6_6",
+    "description": "Enhanced traceroute replacement. mtr combines the functionality of the traceroute and ping programs in a single network diagnostic tool. Package Dependencies: &nbsp; mtr-0.96 &emsp;",
+    "deb_package": "mtr-tiny",
+    "service": "cli",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "net-snmp",
+    "orig_version": "0.1.6",
+    "description": "A GUI for the NET-SNMP Daemon. Package Dependencies: &nbsp; net-snmp-5.9.5.2,1 &emsp;",
+    "deb_package": "snmpd, snmp",
+    "service": "snmpd.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "Netgate_Firmware_Upgrade",
+    "orig_version": "0.47.3",
+    "description": "Provide a mechanism to update firmware of Netgate hardware Package Dependencies: &nbsp; flashrom-1.6.0_1 &emsp; &nbsp; libuuid-2.42.1 &emsp;",
+    "deb_package": "mitranet-update, apt",
+    "service": "systemd",
+    "status": "Builtin MitraNet"
+  },
+  {
+    "orig_name": "nmap",
+    "orig_version": "1.4.4_12",
+    "description": "Nmap is a utility for network exploration or security auditing. It supports ping scanning (determine which hosts are up), many port scanning techniques (determine what services the hosts are offering), version detection (determine what application/service is running on a port), and TCP/IP fingerprinting (remote host OS or device identification). It also offers flexible target and port specification, decoy/stealth scanning, SunRPC scanning, and more. Package Dependencies: &nbsp; nmap-7.99_1 &emsp;",
+    "deb_package": "nmap",
+    "service": "cli",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "node_exporter",
+    "orig_version": "0.18.1_8",
+    "description": "Prometheus exporter for machine metrics Package Dependencies: &nbsp; node_exporter-1.11.0_3 &emsp; &nbsp; python311-3.11.15_3 &emsp;",
+    "deb_package": "prometheus-node-exporter",
+    "service": "prometheus-node-exporter.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "Notes",
+    "orig_version": "0.2.9_6",
+    "description": "Track things you want to note for this system.",
+    "deb_package": "mitranet-core",
+    "service": "webui",
+    "status": "Builtin MitraNet"
+  },
+  {
+    "orig_name": "nrpe",
+    "orig_version": "4.3.1_2",
+    "description": "pfSense software package GUI for Nagios NRPE nrpe is used to execute Nagios plugins on remote hosts and report the results to the main Nagios server. From the Nagios homepage: Allows you to execute \"local\" plugins (like check_disk, check_procs, etc.) on remote hosts. The check_nrpe plugin is called from Nagios and actually makes the plugin requests to the remote host. Requires that nrpe be running on the remote host (either as a standalone daemon or as a service under inetd). Package Dependencies: &nbsp; nrpe-4.1.3 &emsp;",
+    "deb_package": "nagios-nrpe-server",
+    "service": "nagios-nrpe-server.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "ntopng",
+    "orig_version": "6.2.0_7",
+    "description": "ntopng (replaces ntop) is a network probe that shows network usage in a way similar to what top does for processes. In interactive mode, it displays the network status on the user's terminal. In Web mode it acts as a Web server, creating an HTML dump of the network status. It sports a NetFlow/sFlow emitter/collector, an HTTP-based client interface for creating ntop-centric monitoring applications, and RRD for persistently storing traffic statistics. Package Dependencies: &nbsp; gdbm-1.26 &emsp; &nbsp; graphviz-15.0.0_1 &emsp; &nbsp; libmaxminddb-1.13.3 &emsp; &nbsp; ntopng-6.6.d20260604,1 &emsp; &nbsp; redis-8.8.0 &emsp; &nbsp; webfonts-0.30_14 &emsp;",
+    "deb_package": "ntopng, ntopng-data",
+    "service": "ntopng.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "nut",
+    "orig_version": "2.8.2_9",
+    "description": "Network UPS Tools provides support for monitoring of Uninterruptible Power Supplies. It supports UPS units attached locally via USB or serial, and remote units via the SNMP protocol, the APCUPSD protocol or the NUT protocol. Package Dependencies: &nbsp; nut-2.8.5_1 &emsp;",
+    "deb_package": "nut, nut-server, nut-client",
+    "service": "nut-server.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "Open-VM-Tools",
+    "orig_version": "10.1.0_8,1",
+    "description": "VMware Tools is a suite of utilities that enhances the performance of the virtual machine's guest operating system and improves management of the virtual machine. Package Dependencies: &nbsp; open-vm-tools-13.1.0,2 &emsp;",
+    "deb_package": "open-vm-tools",
+    "service": "open-vm-tools.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "openvpn-client-export",
+    "orig_version": "1.9.13",
+    "description": "Exports pre-configured OpenVPN Client configurations directly from pfSense software. Package Dependencies: &nbsp; 7-zip-26.01 &emsp; &nbsp; openvpn-2.7.5 &emsp; &nbsp; openvpn-client-export-2.7.4 &emsp; &nbsp; zip-3.0_5 &emsp;",
+    "deb_package": "openvpn, easy-rsa",
+    "service": "webui",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "pfBlockerNG",
+    "orig_version": "3.2.17_1",
+    "description": "Manage IPv4/v6 List Sources into 'Deny, Permit or Match' formats. GeoIP database by MaxMind Inc. (GeoLite2 Free version). De-Duplication, Suppression, and Reputation enhancements. Provision to download from diverse List formats. Advanced Integration for Proofpoint ET IQRisk IP Reputation Threat Sources. Domain Name (DNSBL) blocking via Unbound DNS Resolver. Package Dependencies: &nbsp; gnugrep-3.12 &emsp; &nbsp; grepcidr-2.0_1 &emsp; &nbsp; iprange-2.0.0_1 &emsp; &nbsp; jq-1.8.1 &emsp; &nbsp; libmaxminddb-1.13.3 &emsp; &nbsp; lighttpd-1.4.83 &emsp; &nbsp; php85-8.5.7 &emsp; &nbsp; php85-intl-8.5.7 &emsp; &nbsp; py-maxminddb-2.8.2 &emsp; &nbsp; py-sqlite3-3.11.15_10 &emsp; &nbsp; python311-3.11.15_3 &emsp; &nbsp; rsync-3.4.4 &emsp;",
+    "deb_package": "dnsmasq/unbound blocklists, nftables sets, ipset",
+    "service": "mitranet-firewall",
+    "status": "Builtin MitraNet"
+  },
+  {
+    "orig_name": "pfBlockerNG-devel",
+    "orig_version": "3.2.17_1",
+    "description": "pfBlockerNG-devel is the Next Generation of pfBlockerNG. Manage IPv4/v6 List Sources into 'Deny, Permit or Match' formats. GeoIP database by MaxMind Inc. (GeoLite2 Free version). De-Duplication, Suppression, and Reputation enhancements. Provision to download from diverse List formats. Advanced Integration for Proofpoint ET IQRisk IP Reputation Threat Sources. Domain Name (DNSBL) blocking via Unbound DNS Resolver. Package Dependencies: &nbsp; gnugrep-3.12 &emsp; &nbsp; grepcidr-2.0_1 &emsp; &nbsp; iprange-2.0.0_1 &emsp; &nbsp; jq-1.8.1 &emsp; &nbsp; libmaxminddb-1.13.3 &emsp; &nbsp; lighttpd-1.4.83 &emsp; &nbsp; php85-8.5.7 &emsp; &nbsp; php85-intl-8.5.7 &emsp; &nbsp; py-maxminddb-2.8.2 &emsp; &nbsp; py-sqlite3-3.11.15_10 &emsp; &nbsp; python311-3.11.15_3 &emsp; &nbsp; rsync-3.4.4 &emsp;",
+    "deb_package": "dnsmasq/unbound blocklists, nftables sets, ipset",
+    "service": "mitranet-firewall",
+    "status": "Builtin MitraNet"
+  },
+  {
+    "orig_name": "pimd",
+    "orig_version": "0.0.3_9",
+    "description": "PIMD Multicast Routing. Lightweight, stand-alone implementation of Protocol Independent Multicast-Sparse Mode. Conflicts with Quagga OSPF. These packages cannot be installed at the same time. Package Dependencies: &nbsp; pimd-2.3.2b_1 &emsp;",
+    "deb_package": "pimd",
+    "service": "pimd.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "RRD_Summary",
+    "orig_version": "2.2.2",
+    "description": "RRD Summary Page, which will give estimated month-over-month traffic passed In/Out during the specified period.",
+    "deb_package": "rrdtool, librrds-perl",
+    "service": "webui",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "Service_Watchdog",
+    "orig_version": "1.8.7_7",
+    "description": "Monitors for stopped services and restarts them.",
+    "deb_package": "monit, systemd watchdog",
+    "service": "systemd",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "Shellcmd",
+    "orig_version": "1.0.7",
+    "description": "The shellcmd utility is used to manage commands on system startup.",
+    "deb_package": "systemd, /etc/rc.local, cron @reboot",
+    "service": "systemd",
+    "status": "Builtin MitraNet"
+  },
+  {
+    "orig_name": "siproxd",
+    "orig_version": "1.1.8_1",
+    "description": "Proxy for handling NAT of multiple SIP devices to a single public IP. Package Dependencies: &nbsp; siproxd-0.8.4 &emsp;",
+    "deb_package": "siproxd",
+    "service": "siproxd.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "snmptt",
+    "orig_version": "1.0.3",
+    "description": "SNMPTT (SNMP Trap Translator) is an SNMP trap handler written in Perl for use with the Net-SNMP. Easy to setup and use. Package Dependencies: &nbsp; snmptt-1.5_1 &emsp;",
+    "deb_package": "snmptt",
+    "service": "snmptt.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "snort",
+    "orig_version": "4.1.10",
+    "description": "Snort is an open source network intrusion prevention and detection system (IDS/IPS). Combining the benefits of signature, protocol, and anomaly-based inspection. Package Dependencies: &nbsp; snort-2.9.20_9 &emsp;",
+    "deb_package": "snort, snort-rules-default",
+    "service": "snort.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "softflowd",
+    "orig_version": "1.2.6_4",
+    "description": "Softflowd is flow-based network traffic analyser capable of Cisco NetFlow data export. Softflowd semi-statefully tracks traffic flows recorded by listening on a network interface or by reading a packet capture file. These flows may be reported via NetFlow to a collecting host or summarised within softflowd itself. Softflowd supports Netflow versions 1, 5, 9 and 10 (IPFIX) and is fully IPv6-capable - it can track IPv6 flows and send export datagrams via IPv6. It also supports export to multicast groups, allowing for redundant flow collectors. Package Dependencies: &nbsp; softflowd-1.0.0_1 &emsp;",
+    "deb_package": "softflowd",
+    "service": "softflowd.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "squid",
+    "orig_version": "0.5.11",
+    "description": "High performance web proxy cache (3.5 branch). It combines Squid as a proxy server with its capabilities of acting as a HTTP / HTTPS reverse proxy. It includes an Exchange-Web-Access (OWA) Assistant, SSL filtering and antivirus integration via C-ICAP. Package Dependencies: &nbsp; c-icap-modules-0.5.7_1 &emsp; &nbsp; squid-7.4 &emsp; &nbsp; squid_radius_auth-1.10 &emsp; &nbsp; squidclamav-7.3_2 &emsp;",
+    "deb_package": "squid",
+    "service": "squid.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "squidGuard",
+    "orig_version": "1.16.30",
+    "description": "High performance web proxy URL filter. Package Dependencies: &nbsp; pfSense-pkg-squid-0.5.11 &emsp; &nbsp; squidguard-1.4_15 &emsp;",
+    "deb_package": "squidguard",
+    "service": "squid.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "Status_Traffic_Totals",
+    "orig_version": "2.3.5_3",
+    "description": "Traffic Totals page under the Status menu, which will give a total amount of traffic passed In/Out over the period of hours, days, and months. Uses vnStat for data collection. Package Dependencies: &nbsp; vnstat-2.13 &emsp;",
+    "deb_package": "vnstat, vnstati",
+    "service": "vnstat.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "stunnel",
+    "orig_version": "5.52.2_1",
+    "description": "SSL encryption wrapper between remote client and local or remote servers. Package Dependencies: &nbsp; stunnel-5.78,1 &emsp;",
+    "deb_package": "stunnel4",
+    "service": "stunnel4.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "sudo",
+    "orig_version": "0.3.4",
+    "description": "sudo allows delegation of privileges to users in the shell so commands can be run as other users, such as root. Package Dependencies: &nbsp; sudo-1.9.17p2_2 &emsp;",
+    "deb_package": "sudo",
+    "service": "cli",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "suricata",
+    "orig_version": "7.0.9_1",
+    "description": "High Performance Network IDS, IPS and Security Monitoring engine by OISF. Package Dependencies: &nbsp; suricata-8.0.5_1 &emsp;",
+    "deb_package": "suricata",
+    "service": "suricata.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "syslog-ng",
+    "orig_version": "1.16.5",
+    "description": "Syslog-ng syslog server. This service is not intended to replace the default pfSense syslog server but rather acts as an independent syslog server. Package Dependencies: &nbsp; logrotate-3.22.0 &emsp; &nbsp; syslog-ng-4.11.0_2 &emsp;",
+    "deb_package": "syslog-ng, syslog-ng-core",
+    "service": "syslog-ng.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "System_Patches",
+    "orig_version": "2.3.5_1",
+    "description": "A package to apply and maintain custom and recommended system patches.",
+    "deb_package": "patch, dpkg, git",
+    "service": "cli",
+    "status": "Builtin MitraNet"
+  },
+  {
+    "orig_name": "Tailscale",
+    "orig_version": "0.1.10",
+    "description": "Tailscale is a mesh VPN alternative, based on WireGuard, that connects your computers, databases, and services together securely without any proxies. Package Dependencies: &nbsp; tailscale-1.98.5_1 &emsp;",
+    "deb_package": "tailscale",
+    "service": "tailscaled.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "Telegraf",
+    "orig_version": "0.9.3",
+    "description": "Telegraf is an agent written in Go for collecting, processing, aggregating, and writing metrics. Package Dependencies: &nbsp; telegraf-1.39.0 &emsp;",
+    "deb_package": "telegraf",
+    "service": "telegraf.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "tftpd",
+    "orig_version": "0.2",
+    "description": "tftpd installs and runs a TFTP server. We use the versatile tftp-hpa server. Package Dependencies: &nbsp; tftp-hpa-5.2_3 &emsp;",
+    "deb_package": "tftpd-hpa",
+    "service": "tftpd-hpa.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "tinc",
+    "orig_version": "1.0.39",
+    "description": "tinc is a Virtual Private Network (VPN) daemon that uses tunnelling and encryption to create a secure private network between hosts on the Internet. Because the tunnel appears to the IP level network code as a normal network device, there is no need to adapt any existing software. This tunnelling allows VPN sites to share information with each other over the Internet without exposing any information to others. A single tinc daemon can accept more than one connection at a time, thus making it possible to create larger virtual networks, because some limitations are circumvented. Instead of most other VPN implementations, tinc encapsulates each network packet in its own UDP packet, instead of encapsulating all into one TCP or even PPP over TCP stream. This results in lower latencies, less overhead, and in general better responsiveness and throughput. LICENSE: GPL3 or later with execption to link with OpenSSL Package Dependencies: &nbsp; tinc-1.0.37 &emsp;",
+    "deb_package": "tinc",
+    "service": "tinc.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "udpbroadcastrelay",
+    "orig_version": "1.2.8",
+    "description": "A GUI for UDP Broadcast Relay. This program listens for UDP broadcast packets and retransmits on additional interfaces. Package Dependencies: &nbsp; udpbroadcastrelay-1.1 &emsp;",
+    "deb_package": "udp-broadcast-relay-linux, bcrelay",
+    "service": "systemd",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "WireGuard",
+    "orig_version": "0.2.13_4",
+    "description": "WireGuard(R) is an extremely simple yet fast and modern VPN that utilizes state-of-the-art cryptography. It aims to be faster, simpler, leaner, and more useful than IPSec, while avoiding the massive headache. It intends to be considerably more performant than OpenVPN. WireGuard is designed as a general purpose VPN for running on embedded interfaces and super computers alike, fit for many different circumstances. Initially released for the Linux kernel, it is now cross-platform and widely deployable. It is currently under heavy development, but already it might be regarded as the most secure, easiest to use, and simplest VPN solution in the industry.",
+    "deb_package": "wireguard, wireguard-tools",
+    "service": "wg-quick@wg0.service",
+    "status": "ACTIVE & RUNNING (.deb)"
+  },
+  {
+    "orig_name": "zabbix-agent6",
+    "orig_version": "1.1_1",
+    "description": "Zabbix agent is deployed on a monitoring target to actively monitor local resources and applications (hard drives, memory, processor statistics etc). The agent gathers operational information locally and reports data to Zabbix server for further processing. In case of failures (such as a hard disk running full or a crashed service process), Zabbix server can actively alert the administrators of the particular machine that reported the failure. Zabbix is an enterprise-class open source distributed monitoring solution. Package Dependencies: &nbsp; zabbix6-agent-6.0.46 &emsp;",
+    "deb_package": "zabbix-agent, zabbix-agent2",
+    "service": "zabbix-agent.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "zabbix-agent7",
+    "orig_version": "1.1_1",
+    "description": "Zabbix agent is deployed on a monitoring target to actively monitor local resources and applications (hard drives, memory, processor statistics etc). The agent gathers operational information locally and reports data to Zabbix server for further processing. In case of failures (such as a hard disk running full or a crashed service process), Zabbix server can actively alert the administrators of the particular machine that reported the failure. Zabbix is an enterprise-class open source distributed monitoring solution. Package Dependencies: &nbsp; zabbix7-agent-7.0.27 &emsp;",
+    "deb_package": "zabbix-agent, zabbix-agent2",
+    "service": "zabbix-agent.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "zabbix-agent74",
+    "orig_version": "1.1_1",
+    "description": "Zabbix agent is deployed on a monitoring target to actively monitor local resources and applications (hard drives, memory, processor statistics etc). The agent gathers operational information locally and reports data to Zabbix server for further processing. In case of failures (such as a hard disk running full or a crashed service process), Zabbix server can actively alert the administrators of the particular machine that reported the failure. Zabbix is an enterprise-class open source distributed monitoring solution. Package Dependencies: &nbsp; zabbix74-agent-7.4.11 &emsp;",
+    "deb_package": "zabbix-agent, zabbix-agent2",
+    "service": "zabbix-agent.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "zabbix-proxy6",
+    "orig_version": "1.1_1",
+    "description": "A Zabbix proxy can collect performance and availability data on behalf of the Zabbix server. This way, a proxy can take on itself some of the load of collecting data and offload the Zabbix server. Also, using a proxy is the easiest way of implementing centralized and distributed monitoring, when all agents and proxies report to one Zabbix server and all data is collected centrally. Zabbix is an enterprise-class open source distributed monitoring solution. Package Dependencies: &nbsp; zabbix6-proxy-6.0.46 &emsp;",
+    "deb_package": "zabbix-proxy-sqlite3",
+    "service": "zabbix-proxy.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "zabbix-proxy7",
+    "orig_version": "1.1_1",
+    "description": "A Zabbix proxy can collect performance and availability data on behalf of the Zabbix server. This way, a proxy can take on itself some of the load of collecting data and offload the Zabbix server. Also, using a proxy is the easiest way of implementing centralized and distributed monitoring, when all agents and proxies report to one Zabbix server and all data is collected centrally. Zabbix is an enterprise-class open source distributed monitoring solution. Package Dependencies: &nbsp; zabbix7-proxy-7.0.27 &emsp;",
+    "deb_package": "zabbix-proxy-sqlite3",
+    "service": "zabbix-proxy.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "zabbix-proxy74",
+    "orig_version": "1.1_1",
+    "description": "A Zabbix proxy can collect performance and availability data on behalf of the Zabbix server. This way, a proxy can take on itself some of the load of collecting data and offload the Zabbix server. Also, using a proxy is the easiest way of implementing centralized and distributed monitoring, when all agents and proxies report to one Zabbix server and all data is collected centrally. Zabbix is an enterprise-class open source distributed monitoring solution. Package Dependencies: &nbsp; zabbix74-proxy-7.4.11 &emsp;",
+    "deb_package": "zabbix-proxy-sqlite3",
+    "service": "zabbix-proxy.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "zeek",
+    "orig_version": "3.0.7",
+    "description": "Zeek (formerly Bro) is a passive, open-source network traffic analyzer. It detects specific attacks, including those defined by signatures or events, as well as unusual activity. Package Dependencies: &nbsp; zeek-8.0.8 &emsp;",
+    "deb_package": "zeek, zeek-core",
+    "service": "zeek.service",
+    "status": "Available in Debian"
+  },
+  {
+    "orig_name": "xray-pfsense",
+    "orig_version": "1.8.24",
+    "description": "Xray-core multi-protocol proxy (VLESS Reality/Vision, VMess, Trojan, Shadowsocks, TUN)",
+    "deb_package": "xray-core (Linux amd64)",
+    "service": "xray.service",
+    "status": "ACTIVE & RUNNING (Linux amd64)"
+  }
+]

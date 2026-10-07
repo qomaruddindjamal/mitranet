@@ -1,0 +1,432 @@
+[
+  {
+    "type": "menu",
+    "name": "System",
+    "icon": "fa-solid fa-gears sidebar-icon",
+    "submenus": [
+      {
+        "name": "Advanced",
+        "url": "/system_advanced_admin.php"
+      },
+      {
+        "name": "Certificates",
+        "url": "/system_camanager.php"
+      },
+      {
+        "name": "General Setup",
+        "url": "/system.php"
+      },
+      {
+        "name": "High Availability",
+        "url": "/system_hasync.php"
+      },
+      {
+        "name": "Package Manager",
+        "url": "/pkg_mgr_installed.php"
+      },
+      {
+        "name": "Register",
+        "url": "/system_register.php"
+      },
+      {
+        "name": "Routing",
+        "url": "/system_gateways.php"
+      },
+      {
+        "name": "Setup Wizard",
+        "url": "/wizard.php?xml=setup_wizard.xml"
+      },
+      {
+        "name": "Update",
+        "url": "/pkg_mgr_install.php?id=firmware"
+      },
+      {
+        "name": "User Manager",
+        "url": "/system_usermanager.php"
+      },
+      {
+        "name": "User Password Manager",
+        "url": "/system_usermanager_passwordmg.php"
+      },
+      {
+        "name": "Logout (admin)",
+        "url": "/index.php?logout"
+      }
+    ]
+  },
+  {
+    "type": "direct",
+    "name": "Wifi",
+    "url": "/interfaces_wifi.php",
+    "icon": "fa-solid fa-wifi sidebar-icon"
+  },
+  {
+    "type": "menu",
+    "name": "Interfaces",
+    "icon": "fa-solid fa-network-wired sidebar-icon",
+    "submenus": [
+      {
+        "name": "Assignments",
+        "url": "/interfaces_assign.php"
+      },
+      {
+        "name": "WAN",
+        "url": "/interfaces.php?if=wan"
+      },
+      {
+        "name": "LAN",
+        "url": "/interfaces.php?if=lan"
+      },
+      {
+        "name": "WGVPN",
+        "url": "/interfaces.php?if=opt1"
+      }
+    ]
+  },
+  {
+    "type": "direct",
+    "name": "WireGuard",
+    "url": "/wg/vpn_wg_tunnels.php",
+    "icon": ""
+  },
+  {
+    "type": "menu",
+    "name": "Firewall",
+    "icon": "fa-solid fa-shield-halved sidebar-icon",
+    "submenus": [
+      {
+        "name": "Aliases",
+        "url": "/firewall_aliases.php"
+      },
+      {
+        "name": "NAT",
+        "url": "/firewall_nat.php"
+      },
+      {
+        "name": "Rules",
+        "url": "/firewall_rules.php"
+      },
+      {
+        "name": "Schedules",
+        "url": "/firewall_schedule.php"
+      },
+      {
+        "name": "Traffic Shaper",
+        "url": "/firewall_shaper.php"
+      },
+      {
+        "name": "Virtual IPs",
+        "url": "/firewall_virtual_ip.php"
+      }
+    ]
+  },
+  {
+    "type": "menu",
+    "name": "Services",
+    "icon": "fa-solid fa-cubes sidebar-icon",
+    "submenus": [
+      {
+        "name": "Auto Config Backup",
+        "url": "/services_acb_settings.php"
+      },
+      {
+        "name": "Captive Portal",
+        "url": "/services_captiveportal.php"
+      },
+      {
+        "name": "DHCP Relay",
+        "url": "/services_dhcp_relay.php"
+      },
+      {
+        "name": "DHCP Server",
+        "url": "/services_dhcp_settings.php"
+      },
+      {
+        "name": "DHCPv6 Relay",
+        "url": "/services_dhcpv6_relay.php"
+      },
+      {
+        "name": "DHCPv6 Server",
+        "url": "/services_dhcpv6_settings.php"
+      },
+      {
+        "name": "DNS Forwarder",
+        "url": "/services_dnsmasq.php"
+      },
+      {
+        "name": "DNS Resolver",
+        "url": "/services_unbound.php"
+      },
+      {
+        "name": "Dynamic DNS",
+        "url": "/services_dyndns.php"
+      },
+      {
+        "name": "IGMP Proxy",
+        "url": "/services_igmpproxy.php"
+      },
+      {
+        "name": "NTP",
+        "url": "/services_ntpd.php"
+      },
+      {
+        "name": "PPPoE Server",
+        "url": "/services_pppoe.php"
+      },
+      {
+        "name": "Router Advertisement",
+        "url": "/services_radvd.php"
+      },
+      {
+        "name": "SNMP",
+        "url": "/services_snmp.php"
+      },
+      {
+        "name": "UPnP IGD &amp; PCP",
+        "url": "/pkg_edit.php?xml=miniupnpd.xml"
+      },
+      {
+        "name": "Wake-on-LAN",
+        "url": "/services_wol.php"
+      }
+    ]
+  },
+  {
+    "type": "menu",
+    "name": "VPN",
+    "icon": "fa-solid fa-key sidebar-icon",
+    "submenus": [
+      {
+        "name": "IPsec",
+        "url": "/vpn_ipsec.php"
+      },
+      {
+        "name": "L2TP",
+        "url": "/vpn_l2tp.php"
+      },
+      {
+        "name": "OpenVPN",
+        "url": "/vpn_openvpn_server.php"
+      },
+      {
+        "name": "Xray-core",
+        "url": "/vpn_xray.php"
+      }
+    ]
+  },
+  {
+    "type": "direct",
+    "name": "KVM",
+    "url": "/services_virtual.php",
+    "icon": "fa-solid fa-server sidebar-icon"
+  },
+  {
+    "type": "menu",
+    "name": "Diagnostics",
+    "icon": "fa-solid fa-toolbox sidebar-icon",
+    "submenus": [
+      {
+        "name": "ARP Table",
+        "url": "/diag_arp.php"
+      },
+      {
+        "name": "Authentication",
+        "url": "/diag_authentication.php"
+      },
+      {
+        "name": "Backup &amp; Restore",
+        "url": "/diag_backup.php"
+      },
+      {
+        "name": "Command Prompt",
+        "url": "/diag_command.php"
+      },
+      {
+        "name": "DNS Lookup",
+        "url": "/diag_dns.php"
+      },
+      {
+        "name": "Edit File",
+        "url": "/diag_edit.php"
+      },
+      {
+        "name": "Factory Defaults",
+        "url": "/diag_defaults.php"
+      },
+      {
+        "name": "Halt System",
+        "url": "/diag_halt.php"
+      },
+      {
+        "name": "Limiter Info",
+        "url": "/diag_limiter_info.php"
+      },
+      {
+        "name": "NDP Table",
+        "url": "/diag_ndp.php"
+      },
+      {
+        "name": "Packet Capture",
+        "url": "/diag_packet_capture.php"
+      },
+      {
+        "name": "pfInfo",
+        "url": "/diag_pf_info.php"
+      },
+      {
+        "name": "pfTop",
+        "url": "/diag_pftop.php"
+      },
+      {
+        "name": "Ping",
+        "url": "/diag_ping.php"
+      },
+      {
+        "name": "Reboot",
+        "url": "/diag_reboot.php"
+      },
+      {
+        "name": "Routes",
+        "url": "/diag_routes.php"
+      },
+      {
+        "name": "S.M.A.R.T. Status",
+        "url": "/diag_smart.php"
+      },
+      {
+        "name": "Sockets",
+        "url": "/diag_sockets.php"
+      },
+      {
+        "name": "States",
+        "url": "/diag_dump_states.php"
+      },
+      {
+        "name": "States Summary",
+        "url": "/diag_states_summary.php"
+      },
+      {
+        "name": "System Activity",
+        "url": "/diag_system_activity.php"
+      },
+      {
+        "name": "Tables",
+        "url": "/diag_tables.php"
+      },
+      {
+        "name": "Terminal",
+        "url": "/diag_terminal.php"
+      },
+      {
+        "name": "Test Port",
+        "url": "/diag_testport.php"
+      },
+      {
+        "name": "Traceroute",
+        "url": "/diag_traceroute.php"
+      }
+    ]
+  },
+  {
+    "type": "direct",
+    "name": "Terminal",
+    "url": "/diag_terminal.php",
+    "icon": "fa-solid fa-terminal sidebar-icon"
+  },
+  {
+    "type": "menu",
+    "name": "Tools",
+    "icon": "fa-solid fa-screwdriver-wrench sidebar-icon",
+    "submenus": [
+      {
+        "name": "Speedtest",
+        "url": "/tools_speedtest.php"
+      }
+    ]
+  },
+  {
+    "type": "menu",
+    "name": "Status",
+    "icon": "fa-solid fa-chart-line sidebar-icon",
+    "submenus": [
+      {
+        "name": "Captive Portal",
+        "url": "/status_captiveportal.php"
+      },
+      {
+        "name": "CARP (failover)",
+        "url": "/status_carp.php"
+      },
+      {
+        "name": "Dashboard",
+        "url": "/index.php"
+      },
+      {
+        "name": "DHCP Leases",
+        "url": "/status_dhcp_leases.php"
+      },
+      {
+        "name": "DHCPv6 Leases",
+        "url": "/status_dhcpv6_leases.php"
+      },
+      {
+        "name": "DNS Resolver",
+        "url": "/status_unbound.php"
+      },
+      {
+        "name": "Filter Reload",
+        "url": "/status_filter_reload.php?user=true"
+      },
+      {
+        "name": "Gateways",
+        "url": "/status_gateways.php"
+      },
+      {
+        "name": "Interfaces",
+        "url": "/status_interfaces.php"
+      },
+      {
+        "name": "IPsec",
+        "url": "/status_ipsec.php"
+      },
+      {
+        "name": "Monitoring",
+        "url": "/status_monitoring.php"
+      },
+      {
+        "name": "NTP",
+        "url": "/status_ntpd.php"
+      },
+      {
+        "name": "OpenVPN",
+        "url": "/status_openvpn.php"
+      },
+      {
+        "name": "Queues",
+        "url": "/status_queues.php"
+      },
+      {
+        "name": "Services",
+        "url": "/status_services.php"
+      },
+      {
+        "name": "System Logs",
+        "url": "/status_logs.php"
+      },
+      {
+        "name": "Traffic Graph",
+        "url": "/status_graph.php"
+      },
+      {
+        "name": "UPnP IGD &amp; PCP",
+        "url": "/status_upnp.php"
+      }
+    ]
+  },
+  {
+    "type": "menu",
+    "name": "Help",
+    "icon": "fa-solid fa-circle-question sidebar-icon",
+    "submenus": []
+  }
+]
