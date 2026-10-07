@@ -257,16 +257,32 @@ $isos = $kvmData['isos'] ?? [];
 </div>
 
 <?php elseif ($tab === 'console'): ?>
-<!-- LIVE VNC CONSOLE (noVNC) -->
+<!-- LIVE VNC CONSOLE (noVNC HTML5) -->
 <div class="panel panel-default" style="margin-top: 15px;">
-    <div class="panel-heading" style="display: flex; justify-content: space-between; align-items: center;">
-        <h2 class="panel-title"><i class="fa-solid fa-desktop"></i> Live VNC Web Console (QEMU Guest Monitor)</h2>
-        <a href="http://192.168.56.101:6080/vnc.html?host=192.168.56.101&port=6080" target="_blank" class="btn btn-xs btn-primary">
-            <i class="fa-solid fa-up-right-from-square"></i> Buka Fullscreen Tab
-        </a>
+    <div class="panel-heading" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <h2 class="panel-title"><i class="fa-solid fa-desktop"></i> Remote Console: Web noVNC (HTML5 Remote Desktop)</h2>
+        <div>
+            <a href="http://192.168.56.101:6080/vnc.html?host=192.168.56.101&port=6080&autoconnect=true&resize=scale" target="_blank" class="btn btn-sm btn-primary">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Buka Layar Penuh di Tab Baru
+            </a>
+            <a href="services_virtual.php" class="btn btn-sm btn-default" style="margin-left: 5px;">
+                <i class="fa-solid fa-arrow-left"></i> Kembali ke Daftar VM
+            </a>
+        </div>
     </div>
-    <div class="panel-body" style="padding: 0; background: #000; text-align: center;">
-        <iframe src="http://192.168.56.101:6080/vnc.html?host=192.168.56.101&port=6080&autoconnect=true&resize=scale" style="width: 100%; height: 600px; border: none;"></iframe>
+    <div class="panel-body" style="padding: 10px 15px; background: #222; color: #fff;">
+        <div style="font-size: 13px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <span class="label label-success"><i class="fa-solid fa-signal"></i> noVNC Port 6080 Active</span>
+                <span style="margin-left: 10px; color: #bbb;">Klik di dalam layar monitor untuk mengarahkan keyboard & mouse ke sistem operasi VM.</span>
+            </div>
+            <div>
+                <span style="color: #aaa; font-size: 11px;">Server: <code>192.168.56.101:6080</code> (WebSocket Proxy)</span>
+            </div>
+        </div>
+        <div style="border: 2px solid #444; border-radius: 4px; overflow: hidden; background: #000; text-align: center;">
+            <iframe src="http://192.168.56.101:6080/vnc.html?host=192.168.56.101&port=6080&autoconnect=true&resize=scale" style="width: 100%; height: 620px; border: none; display: block;"></iframe>
+        </div>
     </div>
 </div>
 
