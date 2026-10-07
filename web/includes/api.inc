@@ -352,6 +352,18 @@ class MitraNetApi {
         return self::request('/services/kvm/iso/delete', 'POST', ['filename' => $filename]);
     }
 
+    public static function ejectIso($vm_id, $delete_file = true) {
+        return self::request('/services/kvm/eject-iso', 'POST', [
+            'id' => $vm_id,
+            'delete_file' => $delete_file
+        ]);
+    }
+
+    public static function cleanUnusedIsos() {
+        return self::request('/services/kvm/iso/clean-unused', 'POST', []);
+    }
+
+
     public static function getVethernets() {
         $res = self::request('/interfaces/vethernet');
         return $res['status'] === 200 ? ($res['data']['vethernet'] ?? []) : [];

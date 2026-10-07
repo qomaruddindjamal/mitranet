@@ -98,8 +98,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $err_msg = "Tidak ada file ISO yang dipilih.";
         }
         $tab = 'images';
+    } elseif ($act === 'eject_iso') {
+        $vm_id = trim($_POST['vm_id'] ?? '');
+        $del_file = !empty($_POST['delete_file']);
+        $res = MitraNetApi::ejectIso($vm_id, $del_file);
+        if (($res['status'] ?? 0) === 200 && ($res['data']['success'] ?? false)) {
+            $savemsg = htmlspecialchars($res['data']['message'] ?? "ISO berhasil dilepas dari VM.");
+        } else {
+            $err_msg = htmlspecialchars($res['data']['error'] ?? "Gagal melepas ISO.");
+        }
+    } elseif ($act === 'clean_unused_isos') {
+        $res = MitraNetApi::cleanUnusedIsos();
+        if (($res['status'] ?? 0) === 200 && ($res['data']['success'] ?? false)) {
+            $savemsg = htmlspecialchars($res['data']['message'] ?? "Pembersihan ISO berhasil.");
+        } else {
+            $err_msg = htmlspecialchars($res['data']['error'] ?? "Gagal membersihkan ISO.");
+        }
+        $tab = 'images';
     }
 }
+
 
 $pgtitle = array("DIRECT", "KVM");
 $selected_menu = "direct";
@@ -493,8 +511,8 @@ foreach ($vms as $v) {
         <h2 class="panel-title"><i class="fa-solid fa-compact-disc"></i> ISO & Disk Images Repository</h2>
     </div>
     <div class="panel-body">
-        <div class="well well-sm">
-            <form method="post" action="services_virtual.php" enctype="multipart/form-data" class="form-inline">
+        <div class="well well-sm" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <form method="post" action="services_virtual.php" enctype="multipart/form-data" class="form-inline" style="margin: 0;">
                 <input type="hidden" name="act" value="upload_iso" />
                 <div class="form-group">
                     <label>Unggah File ISO Baru:</label>
@@ -504,19 +522,28 @@ foreach ($vms as $v) {
                     <i class="fa-solid fa-upload"></i> Upload ISO
                 </button>
             </form>
-            <div style="font-size: 11px; color: #777; margin-top: 6px;">
-                Direktori penyimpanan: <code>/var/lib/mitranet/isos/</code>
+            <div>
+                <form method="post" action="services_virtual.php" style="display: inline-block; margin: 0;" onsubmit="return confirm('Bersihkan seluruh file ISO yang tidak sedang digunakan oleh Virtual Machine? Tindakan ini akan membebaskan ruang disk.');">
+                    <input type="hidden" name="act" value="clean_unused_isos" />
+                    <button type="submit" class="btn btn-warning" title="Hapus seluruh ISO yang tidak sedang dipakai boot oleh VM manapun">
+                        <i class="fa-solid fa-broom"></i> Bersihkan ISO Tak Terpakai
+                    </button>
+                </form>
             </div>
+        </div>
+        <div style="font-size: 11px; color: #777; margin-top: -10px; margin-bottom: 15px;">
+            Direktori repositori: <code>/var/lib/mitranet/isos/</code>
         </div>
 
         <div class="table-responsive">
             <table class="table table-striped table-hover table-condensed">
                 <thead>
                     <tr>
-                        <th style="width: 40%;">Nama File ISO</th>
-                        <th style="width: 25%;">Ukuran File</th>
-                        <th style="width: 20%;">Tanggal Modifikasi</th>
-                        <th style="width: 15%; text-align: right;">Aksi</th>
+                        <th style="width: 35%;">Nama File ISO</th>
+                        <th style="width: 15%;">Ukuran File</th>
+                        <th style="width: 25%;">Status Penggunaan (VM)</th>
+                        <th style="width: 15%;">Tanggal Modifikasi</th>
+                        <th style="width: 10%; text-align: right;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -528,9 +555,16 @@ foreach ($vms as $v) {
                                     <div style="font-size: 11px; color: #888;">Path: <code><?=htmlspecialchars($iso['path'])?></code></div>
                                 </td>
                                 <td><span class="badge" style="background-color: #337ab7;"><?=htmlspecialchars($iso['size_str'])?></span></td>
+                                <td>
+                                    <?php if (!empty($iso['is_used'])): ?>
+                                        <span class="label label-info"><i class="fa-solid fa-link"></i> Dipakai oleh: <?=htmlspecialchars(implode(', ', $iso['used_by']))?></span>
+                                    <?php else: ?>
+                                        <span class="label label-default" style="background-color: #777;"><i class="fa-solid fa-circle-check"></i> Tidak Digunakan (Bisa Dihapus)</span>
+                                    <?php endif; ?>
+                                </td>
                                 <td><?=date('Y-m-d H:i:s', $iso['mtime'])?></td>
                                 <td style="text-align: right;">
-                                    <form method="post" action="services_virtual.php" style="display: inline-block;" onsubmit="return confirm('Hapus file ISO ini?');">
+                                    <form method="post" action="services_virtual.php" style="display: inline-block;" onsubmit="return confirm('Hapus file ISO ini dari penyimpanan?');">
                                         <input type="hidden" name="act" value="delete_iso" />
                                         <input type="hidden" name="filename" value="<?=htmlspecialchars($iso['filename'])?>" />
                                         <button type="submit" class="btn btn-xs btn-danger" title="Hapus ISO">
@@ -542,7 +576,7 @@ foreach ($vms as $v) {
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="4" class="text-center" style="padding: 20px; color: #888;">
+                            <td colspan="5" class="text-center" style="padding: 20px; color: #888;">
                                 <em>Belum ada ISO image di <code>/var/lib/mitranet/isos</code>.</em>
                             </td>
                         </tr>
@@ -550,6 +584,7 @@ foreach ($vms as $v) {
                 </tbody>
             </table>
         </div>
+
     </div>
 </div>
 
@@ -567,7 +602,36 @@ foreach ($vms as $v) {
             </a>
         </div>
     </div>
+    <?php
+    // Detect if any running VM currently has an ISO attached
+    $vms_with_iso = [];
+    foreach ($vms as $v) {
+        if (!empty($v['iso'])) {
+            $vms_with_iso[] = $v;
+        }
+    }
+    ?>
+    <?php if (!empty($vms_with_iso)): ?>
+        <div style="background: #2a3b4c; border-bottom: 1px solid #1a2733; padding: 8px 15px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <div style="color: #cee5fd; font-size: 12px;">
+                <i class="fa-solid fa-compact-disc"></i> <strong>Instalasi Selesai?</strong> Lepas media instalasi CD-ROM agar VM langsung boot dari virtual disk qcow2:
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <?php foreach ($vms_with_iso as $vi): ?>
+                    <form method="post" action="services_virtual.php" style="display: inline-block; margin: 0;" onsubmit="return confirm('Instalasi VM <?=htmlspecialchars($vi['name'])?> telah selesai? Eject ISO dan hapus file installer dari disk?');">
+                        <input type="hidden" name="act" value="eject_iso" />
+                        <input type="hidden" name="vm_id" value="<?=htmlspecialchars($vi['id'])?>" />
+                        <input type="hidden" name="delete_file" value="1" />
+                        <button type="submit" class="btn btn-xs btn-success" style="font-weight: bold;">
+                            <i class="fa-solid fa-eject"></i> Selesai Instalasi <?=htmlspecialchars($vi['name'])?> (Eject & Hapus ISO)
+                        </button>
+                    </form>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
     <div class="panel-body" style="padding: 10px 15px; background: #222; color: #fff;">
+
         <div style="font-size: 13px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <span class="label label-success"><i class="fa-solid fa-signal"></i> noVNC Port 6080 Active</span>
@@ -711,6 +775,17 @@ foreach ($vms as $v) {
                                             <i class="fa-solid fa-sliders"></i> Config
                                         </a>
                                     <?php endif; ?>
+                                    <?php if (!empty($vm['iso'])): ?>
+                                        <form method="post" action="services_virtual.php" style="display: inline-block; margin-left: 3px;" onsubmit="return confirm('Instalasi selesai? Eject CD-ROM dan hapus file installer ISO dari disk?');">
+                                            <input type="hidden" name="act" value="eject_iso" />
+                                            <input type="hidden" name="vm_id" value="<?=htmlspecialchars($vm['id'])?>" />
+                                            <input type="hidden" name="delete_file" value="1" />
+                                            <button type="submit" class="btn btn-xs btn-success" style="font-weight: bold;" title="Selesai Instalasi: Eject CD-ROM dan Hapus File ISO untuk menghemat ruang disk">
+                                                <i class="fa-solid fa-eject"></i> Eject & Bersihkan
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
+
                                     <?php if (empty($vm['is_default'])): ?>
                                         <form method="post" action="services_virtual.php" style="display: inline-block; margin-left: 3px;" onsubmit="return confirm('Hapus VM ini beserta disk virtualnya?');">
                                             <input type="hidden" name="act" value="delete_vm" />

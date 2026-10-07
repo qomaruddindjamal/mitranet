@@ -1004,7 +1004,7 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                             "pid": pid,
                         })
 
-            # Real ISO files list
+            # Real ISO files list with Active VM Usage Detection
             isos = []
             iso_dir = "/var/lib/mitranet/isos"
             if os.path.isdir(iso_dir):
@@ -1014,16 +1014,26 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                         sz_bytes = os.path.getsize(fpath)
                         sz_mb = round(sz_bytes / (1024 * 1024), 1)
                         sz_str = f"{round(sz_mb/1024, 2)} GB" if sz_mb > 1024 else f"{sz_mb} MB"
+
+                        # Check if any VM is currently using this ISO
+                        used_by = []
+                        for vm in vms:
+                            if vm.get("iso") == fpath or vm.get("iso") == f:
+                                used_by.append(vm["name"])
+
                         isos.append({
                             "filename": f,
                             "path": fpath,
                             "size_bytes": sz_bytes,
                             "size_str": sz_str,
+                            "used_by": used_by,
+                            "is_used": len(used_by) > 0,
                             "mtime": os.path.getmtime(fpath)
                         })
 
             self._send_json(200, {"vms": vms, "isos": isos})
             return
+
 
         # 20. Packages List (Debian .deb package integration)
         if path == "/api/v1/packages":
@@ -2148,6 +2158,93 @@ AllowedIPs = {allowed_ips}
             else:
                 self._send_json(404, {"error": "ISO file not found"})
             return
+
+        # 1-Click Eject & Clean ISO from VM after installation
+        if path == "/api/v1/services/kvm/eject-iso":
+            vm_id = payload.get("id", "").strip()
+            delete_iso_file = payload.get("delete_file", True)
+            if not vm_id:
+                self._send_json(400, {"error": "VM ID required"})
+                return
+
+            env_file = f"/etc/mitranet/vms/{vm_id}.env"
+            old_iso = ""
+            if os.path.isfile(env_file):
+                lines = []
+                with open(env_file, "r") as ef:
+                    for line in ef:
+                        if line.startswith("ISO_FILE="):
+                            old_iso = line.split("=", 1)[1].strip()
+                            continue
+                        lines.append(line)
+                with open(env_file, "w") as ef:
+                    ef.writelines(lines)
+
+            # Restart VM if running so it boots from HDD
+            import subprocess
+            status_p = subprocess.run(["systemctl", "is-active", f"mitranet-vm@{vm_id}"], stdout=subprocess.PIPE, text=True)
+            if status_p.stdout.strip() == "active":
+                subprocess.run(["systemctl", "restart", f"mitranet-vm@{vm_id}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            freed_msg = ""
+            if delete_iso_file and old_iso and os.path.isfile(old_iso):
+                try:
+                    iso_sz = round(os.path.getsize(old_iso) / (1024 * 1024 * 1024), 2)
+                    os.remove(old_iso)
+                    freed_msg = f" File ISO berhasil dihapus dan membebaskan {iso_sz} GB disk!"
+                except Exception as e:
+                    freed_msg = f" (Catatan: File ISO tidak dapat dihapus: {str(e)})"
+
+            self._send_json(200, {
+                "success": True,
+                "message": f"ISO berhasil dilepas dari VM '{vm_id}'. VM sekarang boot langsung dari Virtual Disk.{freed_msg}"
+            })
+            return
+
+        # Clean all unused ISOs
+        if path == "/api/v1/services/kvm/iso/clean-unused":
+            iso_dir = "/var/lib/mitranet/isos"
+            conf_dir = "/etc/mitranet/vms"
+            active_isos = set()
+            if os.path.isdir(conf_dir):
+                for f in os.listdir(conf_dir):
+                    if f.endswith(".env"):
+                        try:
+                            with open(os.path.join(conf_dir, f), "r") as ef:
+                                for line in ef:
+                                    if line.startswith("ISO_FILE="):
+                                        val = line.split("=", 1)[1].strip()
+                                        if val:
+                                            active_isos.add(val)
+                                            active_isos.add(os.path.basename(val))
+                        except Exception:
+                            pass
+
+            deleted_count = 0
+            freed_bytes = 0
+            if os.path.isdir(iso_dir):
+                for f in os.listdir(iso_dir):
+                    fpath = os.path.join(iso_dir, f)
+                    if os.path.isfile(fpath) and (f.endswith(".iso") or f.endswith(".img")):
+                        if fpath not in active_isos and f not in active_isos:
+                            try:
+                                sz = os.path.getsize(fpath)
+                                os.remove(fpath)
+                                freed_bytes += sz
+                                deleted_count += 1
+                            except Exception:
+                                pass
+
+            freed_mb = round(freed_bytes / (1024 * 1024), 1)
+            freed_str = f"{round(freed_mb/1024, 2)} GB" if freed_mb > 1024 else f"{freed_mb} MB"
+            self._send_json(200, {
+                "success": True,
+                "deleted_count": deleted_count,
+                "freed_str": freed_str,
+                "message": f"Berhasil membersihkan {deleted_count} ISO tak terpakai dan membebaskan {freed_str} ruang penyimpanan."
+            })
+            return
+
 
         # 21. Virtual Ethernet (vEthernet) Creation
         if path == "/api/v1/interfaces/vethernet/create":
