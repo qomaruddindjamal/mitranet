@@ -2207,35 +2207,82 @@ header.header .breadcrumb {
 /* ==========================================================================
    MITRANET FULL-HEIGHT & FLUSH CARD SYSTEM (col-12 full-width & full-height)
    Cards extend directly under the header down flush to right above the footer
+   No space on left, right, top, bottom. Scroll is contained INSIDE the card.
    ========================================================================== */
 
-#pf-main-content {
-    padding-top: 6px !important;
-    padding-bottom: 6px !important;
+html, body {
+    height: 100% !important;
+    overflow-x: hidden !important;
+}
+
+body {
+    padding-top: var(--pf-header-h) !important;
+    padding-bottom: var(--pf-footer-h) !important;
+    box-sizing: border-box !important;
+}
+
+#pf-main-content,
+body:not(.sidebar-collapsed) #pf-main-content {
+    margin-left: var(--pf-sidebar-w) !important;
+    width: calc(100% - var(--pf-sidebar-w)) !important;
+    max-width: calc(100% - var(--pf-sidebar-w)) !important;
+    height: calc(100vh - var(--pf-header-h) - var(--pf-footer-h)) !important;
     min-height: calc(100vh - var(--pf-header-h) - var(--pf-footer-h)) !important;
+    max-height: calc(100vh - var(--pf-header-h) - var(--pf-footer-h)) !important;
+    padding: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    box-sizing: border-box !important;
     display: flex !important;
     flex-direction: column !important;
+    overflow: hidden !important;
+}
+
+body.sidebar-collapsed #pf-main-content {
+    margin-left: var(--pf-sidebar-mini-w) !important;
+    width: calc(100% - var(--pf-sidebar-mini-w)) !important;
+    max-width: calc(100% - var(--pf-sidebar-mini-w)) !important;
+    height: calc(100vh - var(--pf-header-h) - var(--pf-footer-h)) !important;
+    min-height: calc(100vh - var(--pf-header-h) - var(--pf-footer-h)) !important;
+    max-height: calc(100vh - var(--pf-header-h) - var(--pf-footer-h)) !important;
+    padding: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+@media (max-width: 991px) {
+    #pf-main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
 }
 
 /* Full container-fluid stretch */
-#pf-main-content .container-fluid {
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    padding-top: 0 !important;
-    flex: 1 1 auto !important;
+#pf-main-content > .container-fluid {
+    padding: 0 !important;
+    margin: 0 !important;
+    flex: 1 1 100% !important;
     display: flex !important;
     flex-direction: column !important;
     width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
 }
 
-/* Full-height Card Window for WiFi / Interfaces / Panels */
+/* Full-height Card Window for WiFi / Interfaces / Panels (Zero outer margins, flush borders) */
 .winbox-window {
-    flex: 1 1 auto !important;
+    flex: 1 1 100% !important;
     display: flex !important;
     flex-direction: column !important;
-    margin-bottom: 0 !important;
-    border-radius: 4px !important;
-    min-height: calc(100vh - var(--pf-header-h) - var(--pf-footer-h) - 16px) !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    border-bottom: 1px solid #7ba0cd !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
 }
 
 .winbox-grid-container {
@@ -2243,7 +2290,9 @@ header.header .breadcrumb {
     display: flex !important;
     flex-direction: column !important;
     background: #ffffff !important;
-    min-height: calc(100vh - var(--pf-header-h) - var(--pf-footer-h) - 100px) !important;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    height: 100% !important;
 }
 
 .winbox-grid-container table {
@@ -2252,16 +2301,19 @@ header.header .breadcrumb {
 
 .winbox-statusbar {
     margin-top: auto !important;
+    flex-shrink: 0 !important;
 }
 
 /* Full 12 cards & panels stretch flush */
 .panel-full-height {
-    min-height: calc(100vh - var(--pf-header-h) - var(--pf-footer-h) - 20px) !important;
+    height: 100% !important;
     display: flex !important;
     flex-direction: column !important;
-    margin-bottom: 4px !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
 }
 
 .panel-full-height > .panel-body {
     flex: 1 1 auto !important;
+    overflow-y: auto !important;
 }

@@ -41,13 +41,16 @@ $current_tab = $_GET['tab'] ?? 'wifi';
 /* WinBox / RouterOS exact tab & toolbar styling */
 .winbox-window {
     background: #d8e5f2;
-    border: 1px solid #7ba0cd;
-    border-radius: 4px;
+    border: none;
+    border-radius: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     font-size: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-    margin-bottom: 25px;
+    margin: 0;
+    flex: 1 1 100%;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
+    height: 100%;
 }
 
 /* Header bar with WiFi title and Tabs */
@@ -176,7 +179,9 @@ $current_tab = $_GET['tab'] ?? 'wifi';
 .winbox-grid-container {
     background: #ffffff;
     overflow-x: auto;
-    min-height: 240px;
+    overflow-y: auto;
+    flex: 1 1 auto;
+    height: 100%;
 }
 
 .winbox-grid {
