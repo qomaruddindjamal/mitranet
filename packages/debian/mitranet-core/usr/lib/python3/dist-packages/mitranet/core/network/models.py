@@ -35,6 +35,9 @@ class NetworkInterfaceState(BaseModel):
     statistics: InterfaceStatistics = Field(default_factory=InterfaceStatistics)
     parent_device: Optional[str] = Field(default=None, description="Parent interface if VLAN or slave")
     vlan_id: Optional[int] = Field(default=None, ge=1, le=4094, description="VLAN ID if 802.1Q subinterface")
+    altname: Optional[str] = Field(default=None, description="Standard MitraNet port alias, e.g. eth1, sfp1, wlan1-2.4")
+    port_label: Optional[str] = Field(default=None, description="User-friendly port hardware label")
+    is_sfp: bool = Field(default=False, description="Whether port is SFP/SFP+/QSFP optical/fiber port")
 
 
 class RouteState(BaseModel):

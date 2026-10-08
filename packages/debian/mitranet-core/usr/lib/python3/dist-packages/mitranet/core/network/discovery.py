@@ -117,6 +117,92 @@ class InterfaceDiscoveryService:
             )
             interfaces.append(iface_model)
 
+        # -------------------------------------------------------------
+        # MitraNet Alias & Port Label Classification:
+        # 1. Optical/Fiber SFP/SFP+/QSFP -> sfp1, sfp2, ...
+        # 2. Standard Ethernet (enp*, eth*, etc.) -> eth1, eth2, ...
+        # 3. Wireless (WLAN) with 2.4GHz / 5GHz detection -> wlan1-2.4, wlan2-5.8
+        # -------------------------------------------------------------
+        import os, subprocess, re
+
+        def _is_sfp_port(name: str) -> bool:
+            try:
+                drv_path = f"/sys/class/net/{name}/device/driver"
+                if os.path.islink(drv_path):
+                    drv = os.path.basename(os.readlink(drv_path)).lower()
+                    if any(x in drv for x in ["ixgbe", "i40e", "ice", "mlx4", "mlx5", "bnxt", "qede", "sfp"]):
+                        return True
+                if os.path.exists(f"/sys/class/net/{name}/phy") or os.path.exists(f"/sys/class/net/{name}/device/sfp"):
+                    return True
+            except Exception:
+                pass
+            return False
+
+        def _detect_wlan_band(name: str) -> str:
+            try:
+                res = subprocess.run(["iw", "dev", name, "info"], capture_output=True, text=True, timeout=2)
+                phy_match = re.search(r"wiphy\s+(\d+)", res.stdout)
+                phy_id = phy_match.group(1) if phy_match else "0"
+                
+                info_res = subprocess.run(["iw", f"phy{phy_id}", "info"], capture_output=True, text=True, timeout=2)
+                has_24 = bool(re.search(r"24\d\d\s+MHz", info_res.stdout))
+                has_5 = bool(re.search(r"5\d\d\d\s+MHz", info_res.stdout))
+                
+                if has_24 and not has_5:
+                    return "2.4"
+                if has_5 and not has_24:
+                    return "5.8"
+                if has_5 and has_24:
+                    return "Dual-Band"
+            except Exception:
+                pass
+            return ""
+
+        sfp_idx = 1
+        eth_idx = 1
+        wlan_list = []
+
+        for iface in interfaces:
+            if iface.name == "lo" or iface.type in ["loopback", "bridge", "vlan"]:
+                continue
+            if iface.name.startswith(("tap-", "veth", "wg")):
+                continue
+
+            if iface.type == "wlan" or iface.name.startswith(("wlan", "wlp", "wls", "ath", "ra")):
+                wlan_list.append(iface)
+                continue
+
+            if _is_sfp_port(iface.name):
+                iface.is_sfp = True
+                iface.altname = f"sfp{sfp_idx}"
+                iface.port_label = f"SFP Port {sfp_idx}"
+                sfp_idx += 1
+            elif iface.type == "ether" or iface.name.startswith(("en", "eth")):
+                iface.altname = f"eth{eth_idx}"
+                iface.port_label = f"LAN/WAN Port {eth_idx}"
+                eth_idx += 1
+
+        if len(wlan_list) == 1:
+            w = wlan_list[0]
+            band = _detect_wlan_band(w.name)
+            suffix = f"-{band}" if band and band != "Dual-Band" else ""
+            w.altname = f"wlan1{suffix}"
+            w.port_label = f"Wireless 1 ({band or '802.11'})"
+        elif len(wlan_list) >= 2:
+            assigned_idx = 1
+            for w in wlan_list:
+                band = _detect_wlan_band(w.name)
+                if band == "2.4":
+                    w.altname = "wlan1-2.4"
+                    w.port_label = "Wireless 1 (2.4 GHz)"
+                elif band in ["5.8", "5"]:
+                    w.altname = "wlan2-5.8"
+                    w.port_label = "Wireless 2 (5.8 GHz)"
+                else:
+                    w.altname = f"wlan{assigned_idx}"
+                    w.port_label = f"Wireless {assigned_idx}"
+                    assigned_idx += 1
+
         logger.debug("Discovered %d network interfaces", len(interfaces))
         return interfaces
 

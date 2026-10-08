@@ -113,7 +113,16 @@ if (!empty($err)) {
 					<tr>
 						<td>
 							<a href="interfaces.php?if=<?=urlencode($i['name'])?>">
-								<strong><i class="fa-solid fa-network-wired"></i> <?=htmlspecialchars(strtoupper($i['name']))?> (<?=htmlspecialchars($i['name'])?>)</strong>
+								<strong><i class="fa-solid <?=!empty($i['is_sfp']) ? 'fa-bolt text-warning' : 'fa-network-wired text-primary'?>"></i> 
+								<?php if (!empty($i['altname'])): ?>
+									<?=htmlspecialchars(strtoupper($i['altname']))?> <small class="text-muted">(<?=htmlspecialchars($i['name'])?>)</small>
+									<?php if (!empty($i['is_sfp'])): ?>
+										<span class="badge" style="background-color: #f39c12; font-size: 10px; margin-left: 4px;">SFP/Optical</span>
+									<?php endif; ?>
+								<?php else: ?>
+									<?=htmlspecialchars(strtoupper($i['name']))?>
+								<?php endif; ?>
+								</strong>
 							</a>
 						</td>
 						<td>
