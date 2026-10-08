@@ -61,7 +61,7 @@ if (!empty($err)) {
 }
 ?>
 
-<div class="panel panel-default">
+<div class="panel panel-default panel-mitranet">
 	<div class="panel-heading">
 		<h2 class="panel-title"><?=gettext("Virtual Ethernet (vEthernet) Subnets")?></h2>
 	</div>

@@ -2600,41 +2600,260 @@ body.sidebar-collapsed #pf-main-content {
 }
 
 /* Unified panel styling under top tabs */
-.panel-mitranet {
+.panel-mitranet,
+.panel.panel-default,
+.nav-tabs ~ .panel-default,
+.nav-pills ~ .panel-default {
     margin-top: 0 !important;
     border: 1px solid #8faecf !important;
-    border-top: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
     background: #ffffff !important;
 }
 
-.panel-mitranet > .panel-heading {
+.nav-tabs ~ .panel-default,
+.nav-pills ~ .panel-default,
+.panel-mitranet {
+    border-top: none !important;
+}
+
+.panel-mitranet > .panel-heading,
+.panel.panel-default > .panel-heading,
+.nav-tabs ~ .panel-default > .panel-heading,
+.nav-pills ~ .panel-default > .panel-heading {
     background: #eef4f9 !important;
     background: linear-gradient(to bottom, #f6f9fc 0%, #e5eef6 100%) !important;
     border-bottom: 1px solid #c5d7e8 !important;
     color: #1e395b !important;
     padding: 6px 12px !important;
+    border-radius: 0 !important;
 }
 
-.panel-mitranet > .panel-heading .panel-title {
+.panel-mitranet > .panel-heading .panel-title,
+.panel.panel-default > .panel-heading .panel-title,
+.nav-tabs ~ .panel-default > .panel-heading .panel-title,
+.nav-pills ~ .panel-default > .panel-heading .panel-title {
     font-size: 12px !important;
     font-weight: 700 !important;
+    color: #1e395b !important;
     margin: 0 !important;
 }
 
-.panel-mitranet > .panel-body {
+.panel-mitranet > .panel-body,
+.panel.panel-default > .panel-body,
+.nav-tabs ~ .panel-default > .panel-body,
+.nav-pills ~ .panel-default > .panel-body {
     padding: 0 !important;
 }
 
-.panel-mitranet table {
+.panel-mitranet table,
+.panel.panel-default table,
+.nav-tabs ~ .panel-default table,
+.nav-pills ~ .panel-default table {
     margin-bottom: 0 !important;
     font-size: 11px !important;
 }
 
-.panel-mitranet thead tr {
+.panel-mitranet thead tr,
+.panel.panel-default thead tr,
+.nav-tabs ~ .panel-default thead tr,
+.nav-pills ~ .panel-default thead tr {
     background: linear-gradient(to bottom, #e9f2fa 0%, #d8e5f2 100%) !important;
     color: #1e3c5f !important;
 }
+
+.panel-mitranet thead th,
+.panel.panel-default thead th,
+.nav-tabs ~ .panel-default thead th,
+.nav-pills ~ .panel-default thead th {
+    border-bottom: 1px solid #abc1da !important;
+    font-weight: 700 !important;
+    padding: 6px 10px !important;
+    white-space: nowrap !important;
+}
+
+.panel-mitranet tbody td,
+.panel.panel-default tbody td,
+.nav-tabs ~ .panel-default tbody td,
+.nav-pills ~ .panel-default tbody td {
+    padding: 6px 10px !important;
+    vertical-align: middle !important;
+    border-bottom: 1px solid #eef2f6 !important;
+}
+
+/* Harmonized Bootstrap Nav Tabs and Pills across all MitraNet Web UI pages */
+.nav-tabs {
+    border-bottom: 1px solid #8faecf !important;
+    margin-bottom: 0 !important;
+    background: #c3d9ef !important;
+    background: linear-gradient(to bottom, #dbe8f5 0%, #c4dbf0 100%) !important;
+    padding: 4px 6px 0 6px !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 2px !important;
+}
+
+.nav-tabs > li {
+    margin-bottom: 0 !important;
+    float: none !important;
+}
+
+.nav-tabs > li > a {
+    display: inline-block !important;
+    padding: 4px 10px !important;
+    font-size: 11px !important;
+    color: #2c496e !important;
+    text-decoration: none !important;
+    border: 1px solid transparent !important;
+    border-bottom: none !important;
+    border-top-left-radius: 3px !important;
+    border-top-right-radius: 3px !important;
+    white-space: nowrap !important;
+    margin-right: 0 !important;
+    line-height: normal !important;
+    background: transparent !important;
+    transition: background 0.15s, color 0.15s !important;
+}
+
+.nav-tabs > li > a:hover,
+.nav-tabs > li > a:focus {
+    background: #e4edf7 !important;
+    color: #0b315b !important;
+    border-color: transparent !important;
+}
+
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a:hover,
+.nav-tabs > li.active > a:focus {
+    background: #ffffff !important;
+    border-color: #8faecf #8faecf transparent !important;
+    border-bottom: 1px solid #ffffff !important;
+    margin-bottom: -1px !important;
+    font-weight: 700 !important;
+    color: #0c335e !important;
+    box-shadow: 0 -1px 2px rgba(0,0,0,0.04) !important;
+}
+
+.nav-pills {
+    border-bottom: 1px solid #8faecf !important;
+    margin-bottom: 0 !important;
+    background: #c3d9ef !important;
+    background: linear-gradient(to bottom, #dbe8f5 0%, #c4dbf0 100%) !important;
+    padding: 4px 6px 0 6px !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 2px !important;
+}
+
+.nav-pills > li {
+    margin-bottom: 0 !important;
+    float: none !important;
+}
+
+.nav-pills > li > a {
+    display: inline-block !important;
+    padding: 4px 10px !important;
+    font-size: 11px !important;
+    color: #2c496e !important;
+    text-decoration: none !important;
+    border: 1px solid transparent !important;
+    border-bottom: none !important;
+    border-top-left-radius: 3px !important;
+    border-top-right-radius: 3px !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    white-space: nowrap !important;
+    line-height: normal !important;
+    background: transparent !important;
+    transition: background 0.15s, color 0.15s !important;
+}
+
+.nav-pills > li > a:hover,
+.nav-pills > li > a:focus {
+    background: #e4edf7 !important;
+    color: #0b315b !important;
+}
+
+.nav-pills > li.active > a,
+.nav-pills > li.active > a:hover,
+.nav-pills > li.active > a:focus {
+    background: #ffffff !important;
+    border-color: #8faecf #8faecf transparent !important;
+    border-bottom: 1px solid #ffffff !important;
+    margin-bottom: -1px !important;
+    font-weight: 700 !important;
+    color: #0c335e !important;
+    box-shadow: 0 -1px 2px rgba(0,0,0,0.04) !important;
+}
+
+/* Dedicated Helper Classes for Clean MitraNet Pages */
+.mitranet-page-container {
+    padding: 0 !important;
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.mitranet-title-badge .fa-caret-down {
+    font-size: 9px !important;
+    color: #555555 !important;
+}
+
+.mitranet-search-wrapper {
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+}
+
+.mitranet-search-wrapper > .fa-magnifying-glass {
+    position: absolute !important;
+    left: 6px !important;
+    font-size: 10px !important;
+    color: #738a9c !important;
+}
+
+.mitranet-search-wrapper > input#grid-search {
+    padding: 2px 5px 2px 22px !important;
+    font-size: 11px !important;
+    height: 22px !important;
+    border: 1px solid #9cb5cf !important;
+    border-radius: 3px !important;
+    width: 140px !important;
+}
+
+/* Grid Table Specific Column Helpers */
+.col-flag { width: 24px !important; }
+.col-name { min-width: 140px !important; }
+.col-name .fa-caret-up { font-size: 9px !important; color: #555555 !important; }
+.col-type { min-width: 90px !important; }
+.col-mtu { min-width: 80px !important; }
+.col-l2mtu { min-width: 70px !important; }
+.col-arp { min-width: 60px !important; }
+.col-cap { min-width: 60px !important; }
+.col-mode { min-width: 90px !important; }
+.col-ssid { min-width: 120px !important; }
+.col-band { min-width: 90px !important; }
+.col-ch { min-width: 90px !important; }
+.col-freq { min-width: 90px !important; }
+.col-pass { min-width: 100px !important; }
+.col-mpass { min-width: 110px !important; }
+.col-cchan { min-width: 110px !important; }
+.col-tx { min-width: 70px !important; }
+.col-menu { width: 20px !important; }
+
+.badge-wlan {
+    background: #2563eb !important;
+    font-size: 10px !important;
+    font-weight: normal !important;
+}
+
+.text-subname {
+    font-size: 10px !important;
+}
+
+.mb-0 {
+    margin-bottom: 0 !important;
+}
+
 
 

@@ -4,7 +4,7 @@
  * Adapted from pfSense interfaces/vrf
  */
 
-$pgtitle = "Interfaces: VRF";
+$pgtitle = array(gettext("Interfaces"), gettext("VRFs"));
 $selected_menu = "interfaces";
 require_once(__DIR__ . '/includes/head.inc');
 
@@ -41,64 +41,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $vrfs = MitraNetApi::getVrfs();
+
+$tab_array = array();
+$tab_array[] = array(gettext("Interface Assignments"), false, "interfaces_assign.php");
+$tab_array[] = array(gettext("VLANs"), false, "interfaces_vlan.php");
+$tab_array[] = array(gettext("Bridges"), false, "interfaces_bridge.php");
+$tab_array[] = array(gettext("LAGGs"), false, "interfaces_lagg.php");
+$tab_array[] = array(gettext("VRFs"), true, "interfaces_vrf.php");
+$tab_array[] = array(gettext("vEthernet (KVM)"), false, "interfaces_vethernet.php");
+display_top_tabs($tab_array);
+
+if (!empty($msg)) {
+    print_info_box($msg, "success");
+}
+if (!empty($err)) {
+    print_info_box($err, "danger");
+}
 ?>
 
-<h2>VRF Routing Domains</h2>
-
-<?php if (!empty($msg)): ?>
-	<div class="alert alert-success"><?=htmlspecialchars($msg)?></div>
-<?php endif; ?>
-<?php if (!empty($err)): ?>
-	<div class="alert alert-danger"><?=htmlspecialchars($err)?></div>
-<?php endif; ?>
+<div class="panel panel-default panel-mitranet">
+	<div class="panel-heading"><h2 class="panel-title"><?=gettext("Active VRF Instances")?></h2></div>
+	<div class="panel-body">
+		<div class="table-responsive">
+			<table class="table table-striped table-hover table-condensed">
+				<thead>
+					<tr>
+						<th><?=gettext("VRF Name")?></th>
+						<th><?=gettext("Routing Table ID")?></th>
+						<th><?=gettext("Bound Interfaces")?></th>
+						<th><?=gettext("Actions")?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php if (empty($vrfs)): ?>
+						<tr><td colspan="4" class="text-center text-muted"><?=gettext("No VRF instances configured")?></td></tr>
+					<?php else: foreach ($vrfs as $v): ?>
+						<tr>
+							<td><strong><?=htmlspecialchars($v['name'])?></strong></td>
+							<td><span class="label label-info"><?=htmlspecialchars($v['table_id'])?></span></td>
+							<td><?=htmlspecialchars(implode(', ', $v['interfaces'] ?? []))?></td>
+							<td>
+								<form method="post" style="display:inline;">
+									<input type="hidden" name="action" value="delete">
+									<input type="hidden" name="name" value="<?=htmlspecialchars($v['name'])?>">
+									<button type="submit" class="btn btn-xs btn-danger" title="<?=gettext('Delete VRF')?>"><i class="fa-solid fa-trash-can"></i></button>
+								</form>
+							</td>
+						</tr>
+					<?php endforeach; endif; ?>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
 
 <div class="panel panel-default">
-	<div class="panel-heading"><h3 class="panel-title">Active VRF Instances</h3></div>
+	<div class="panel-heading"><h2 class="panel-title"><?=gettext("Create VRF Instance")?></h2></div>
 	<div class="panel-body">
-		<table class="table table-striped table-hover">
-			<thead>
-				<tr>
-					<th>VRF Name</th>
-					<th>Routing Table ID</th>
-					<th>Bound Interfaces</th>
-					<th>Action</th>
-				</tr>
-			</thead>
-			<tbody>
-				<?php if (empty($vrfs)): ?>
-					<tr><td colspan="4" class="text-center text-muted">No VRF instances configured</td></tr>
-				<?php else: foreach ($vrfs as $v): ?>
-					<tr>
-						<td><strong><?=htmlspecialchars($v['name'])?></strong></td>
-						<td><span class="label label-info"><?=htmlspecialchars($v['table_id'])?></span></td>
-						<td><?=htmlspecialchars(implode(', ', $v['interfaces'] ?? []))?></td>
-						<td>
-							<form method="post" style="display:inline;">
-								<input type="hidden" name="action" value="delete">
-								<input type="hidden" name="name" value="<?=htmlspecialchars($v['name'])?>">
-								<button type="submit" class="btn btn-xs btn-danger"><i class="fa fa-trash"></i></button>
-							</form>
-						</td>
-					</tr>
-				<?php endforeach; endif; ?>
-			</tbody>
-		</table>
-
-		<hr>
-		<h4>Create VRF Instance</h4>
-		<form method="post" class="form-inline">
+		<form method="post" class="form-horizontal">
 			<input type="hidden" name="action" value="create">
 			<div class="form-group">
-				<label>VRF Name</label>
-				<input type="text" name="name" class="form-control" placeholder="vrf_cust1" required>
+				<label class="col-sm-2 control-label"><span class="element-required">*</span><?=gettext("VRF Name")?></label>
+				<div class="col-sm-10">
+					<input type="text" name="name" class="form-control" placeholder="vrf_cust1" required>
+					<span class="help-block"><?=gettext("Unique routing domain identifier.")?></span>
+				</div>
 			</div>
 			<div class="form-group">
-				<label>Table ID</label>
-				<input type="number" name="table" class="form-control" min="1" max="1000" placeholder="100" required>
+				<label class="col-sm-2 control-label"><span class="element-required">*</span><?=gettext("Routing Table ID")?></label>
+				<div class="col-sm-10">
+					<input type="number" name="table" class="form-control" min="1" max="1000" placeholder="100" required>
+					<span class="help-block"><?=gettext("Linux kernel routing table identifier (1-1000).")?></span>
+				</div>
 			</div>
-			<button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i> Create VRF</button>
+			<div class="form-group">
+				<div class="col-sm-offset-2 col-sm-10">
+					<button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus icon-embed-btn"></i><?=gettext("Create VRF")?></button>
+				</div>
+			</div>
 		</form>
 	</div>
 </div>
 
 <?php require_once(__DIR__ . '/includes/foot.inc'); ?>
+

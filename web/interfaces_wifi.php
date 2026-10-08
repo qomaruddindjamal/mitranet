@@ -1,7 +1,7 @@
 <?php
 /*
  * interfaces_wifi.php - MitraNet Wireless / WiFi Management
- * Designed with modern RouterOS / WinBox / pfSense Tabbed Interface
+ * Designed with modern MitraNet Enterprise Tabbed Interface
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -37,7 +37,7 @@ $has_wifi = !empty($wifi_interfaces);
 $current_tab = $_GET['tab'] ?? 'wifi';
 ?>
 
-<div class="container-fluid" style="padding: 0; flex: 1 1 auto; display: flex; flex-direction: column;">
+<div class="container-fluid mitranet-page-container">
 
     <!-- MITRANET APPLIANCE WIRELESS CONTAINER -->
     <div class="mitranet-window">
@@ -46,7 +46,7 @@ $current_tab = $_GET['tab'] ?? 'wifi';
         <div class="mitranet-header">
             <div class="mitranet-title-badge">
                 <i class="fa-solid fa-wifi"></i> WiFi
-                <i class="fa-solid fa-caret-down" style="font-size: 9px; color: #555;"></i>
+                <i class="fa-solid fa-caret-down"></i>
             </div>
             <ul class="mitranet-tabs">
                 <li class="<?=($current_tab === 'wifi') ? 'active' : ''?>">
@@ -114,10 +114,9 @@ $current_tab = $_GET['tab'] ?? 'wifi';
                 </button>
             </div>
             <div class="mitranet-toolbar-right">
-                <div style="position: relative; display: inline-flex; align-items: center;">
-                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 6px; font-size: 10px; color: #738a9c;"></i>
-                    <input type="text" id="grid-search" placeholder="Find" onkeyup="filterGrid(this.value)" 
-                           style="padding: 2px 5px 2px 22px; font-size: 11px; height: 22px; border: 1px solid #9cb5cf; border-radius: 3px; width: 140px;">
+                <div class="mitranet-search-wrapper">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="grid-search" placeholder="Find" onkeyup="filterGrid(this.value)">
                 </div>
                 <button type="button" class="mitranet-btn" onclick="toggleFilter()" title="Advanced Filter">
                     <i class="fa-solid fa-filter text-muted"></i> Filter
@@ -133,23 +132,23 @@ $current_tab = $_GET['tab'] ?? 'wifi';
             <table class="mitranet-grid" id="wifi-grid-table">
                 <thead>
                     <tr>
-                        <th style="width: 24px; text-align: center;"><i class="fa-regular fa-flag"></i></th>
-                        <th class="sortable" style="min-width: 140px;">Name <i class="fa-solid fa-caret-up" style="font-size: 9px; color: #555;"></i></th>
-                        <th class="sortable" style="min-width: 90px;">Type</th>
-                        <th class="sortable" style="min-width: 80px;">Actual MTU</th>
-                        <th class="sortable" style="min-width: 70px;">L2 MTU</th>
-                        <th class="sortable" style="min-width: 60px;">ARP</th>
-                        <th class="sortable" style="min-width: 60px;">CAP</th>
-                        <th class="sortable" style="min-width: 90px;">Mode</th>
-                        <th class="sortable" style="min-width: 120px;">SSID</th>
-                        <th class="sortable" style="min-width: 90px;">Band</th>
-                        <th class="sortable" style="min-width: 90px;">Channel ...</th>
-                        <th class="sortable" style="min-width: 90px;">Frequency</th>
-                        <th class="sortable" style="min-width: 100px;">Passphrase</th>
-                        <th class="sortable" style="min-width: 110px;">Multi Passph...</th>
-                        <th class="sortable" style="min-width: 110px;">Current Chan...</th>
-                        <th class="sortable" style="min-width: 70px;">Tx</th>
-                        <th style="width: 20px; text-align: center;"><i class="fa-solid fa-bars"></i></th>
+                        <th class="text-center col-flag"><i class="fa-regular fa-flag"></i></th>
+                        <th class="sortable col-name">Name <i class="fa-solid fa-caret-up"></i></th>
+                        <th class="sortable col-type">Type</th>
+                        <th class="sortable col-mtu">Actual MTU</th>
+                        <th class="sortable col-l2mtu">L2 MTU</th>
+                        <th class="sortable col-arp">ARP</th>
+                        <th class="sortable col-cap">CAP</th>
+                        <th class="sortable col-mode">Mode</th>
+                        <th class="sortable col-ssid">SSID</th>
+                        <th class="sortable col-band">Band</th>
+                        <th class="sortable col-ch">Channel ...</th>
+                        <th class="sortable col-freq">Frequency</th>
+                        <th class="sortable col-pass">Passphrase</th>
+                        <th class="sortable col-mpass">Multi Passph...</th>
+                        <th class="sortable col-cchan">Current Chan...</th>
+                        <th class="sortable col-tx">Tx</th>
+                        <th class="text-center col-menu"><i class="fa-solid fa-bars"></i></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -163,7 +162,7 @@ $current_tab = $_GET['tab'] ?? 'wifi';
                         elseif (strpos($w_name, '5.8') !== false || strpos($w_name, '5') !== false) $band = "5GHz-a/n/ac/ax";
                     ?>
                     <tr onclick="selectRow(this, '<?=htmlspecialchars($w['name'])?>')">
-                        <td style="text-align: center;">
+                        <td class="text-center">
                             <?php if ($is_up): ?>
                                 <i class="fa-solid fa-check text-success" title="Running"></i>
                             <?php else: ?>
@@ -172,9 +171,9 @@ $current_tab = $_GET['tab'] ?? 'wifi';
                         </td>
                         <td>
                             <strong><?=htmlspecialchars(strtoupper($w_name))?></strong>
-                            <span class="text-muted" style="font-size: 10px;">(<?=htmlspecialchars($w['name'])?>)</span>
+                            <span class="text-muted text-subname">(<?=htmlspecialchars($w['name'])?>)</span>
                         </td>
-                        <td><span class="badge" style="background: #2563eb; font-size: 10px; font-weight: normal;"><?=htmlspecialchars($w['type'] ?? 'wlan')?></span></td>
+                        <td><span class="badge badge-wlan"><?=htmlspecialchars($w['type'] ?? 'wlan')?></span></td>
                         <td><?=htmlspecialchars($w['mtu'] ?? 1500)?></td>
                         <td>1500</td>
                         <td>enabled</td>
@@ -188,7 +187,7 @@ $current_tab = $_GET['tab'] ?? 'wifi';
                         <td>no</td>
                         <td><?=htmlspecialchars($is_up ? '2412/20/gn' : 'disabled')?></td>
                         <td>100</td>
-                        <td style="text-align: center;"><i class="fa-solid fa-ellipsis-vertical text-muted"></i></td>
+                        <td class="text-center"><i class="fa-solid fa-ellipsis-vertical text-muted"></i></td>
                     </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -213,16 +212,16 @@ $current_tab = $_GET['tab'] ?? 'wifi';
 <!-- MODAL: ADD / NEW INTERFACE CONFIGURATION -->
 <div id="modal-new-wifi" class="modal fade" role="dialog">
     <div class="modal-dialog modal-md">
-        <div class="modal-content" style="border-radius: 4px;">
-            <div class="modal-header" style="background: #e6eef6; border-bottom: 1px solid #b7cde3; padding: 10px 15px;">
+        <div class="modal-content">
+            <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title" style="font-size: 14px; font-weight: 700; color: #1e3c5f;">
+                <h4 class="modal-title">
                     <i class="fa-solid fa-wifi text-primary"></i> New Wireless Interface
                 </h4>
             </div>
-            <div class="modal-body" style="font-size: 12px;">
+            <div class="modal-body">
                 <?php if (!$has_wifi): ?>
-                    <div class="alert alert-warning" style="margin-bottom: 0;">
+                    <div class="alert alert-warning mb-0">
                         <i class="fa-solid fa-triangle-exclamation"></i>
                         <strong>Tidak Ada Radio Fisik:</strong> Tidak ada adapter Wi-Fi fisik yang dapat dikonfigurasi saat ini. Silakan sambungkan USB Wi-Fi adapter atau kartu PCIe nirkabel ke mesin ini.
                     </div>
@@ -252,7 +251,7 @@ $current_tab = $_GET['tab'] ?? 'wifi';
                     </div>
                 <?php endif; ?>
             </div>
-            <div class="modal-footer" style="background: #f7fafc; padding: 8px 15px;">
+            <div class="modal-footer">
                 <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cancel</button>
                 <?php if ($has_wifi): ?>
                     <button type="button" class="btn btn-sm btn-primary">Apply &amp; Create</button>
