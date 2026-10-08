@@ -120,6 +120,47 @@ class FirewallRule(BaseModel):
 
 
 
+class NatType(str, Enum):
+    PORT_FORWARD = "port_forward"  # DNAT
+    OUTBOUND = "outbound"          # SNAT / Masquerade
+    ONE_TO_ONE = "one_to_one"      # 1:1 NAT (DNAT + SNAT)
+
+
+class NatRule(BaseModel):
+    """
+    NAT Rule definition for native Linux nftables.
+    Supports Port Forward (DNAT), Outbound (SNAT/Masquerade), and 1:1 NAT.
+    """
+    id: str = Field(..., description="Unique NAT rule identifier")
+    enabled: bool = Field(default=True, description="Whether rule is enabled")
+    nat_type: NatType = Field(default=NatType.PORT_FORWARD, description="NAT type: port_forward, outbound, one_to_one")
+    description: str = Field(default="", description="Rule description")
+    interface: str = Field(default="any", description="Ingress interface for DNAT, or Egress interface for SNAT")
+    protocol: FirewallProtocol = Field(default=FirewallProtocol.TCP, description="Protocol: tcp, udp, tcp_udp, any")
+    
+    # Matching criteria
+    src_ip: str = Field(default="any", description="Source IP, subnet, or 'any'")
+    src_port: Optional[str] = Field(default=None, description="Source port or 'any'")
+    dst_ip: str = Field(default="any", description="Original destination / external IP or 'any'")
+    dst_port: Optional[str] = Field(default=None, description="Original destination / external port or port range")
+    
+    # Target translation criteria
+    target_ip: Optional[str] = Field(default=None, description="Internal target IP for DNAT, or Translated IP for SNAT")
+    target_port: Optional[str] = Field(default=None, description="Internal target port for DNAT")
+    masquerade: bool = Field(default=False, description="Use masquerade for outbound dynamic SNAT")
+    priority: int = Field(default=100, ge=1, le=65535, description="Rule evaluation priority")
+
+    @field_validator("id")
+    @classmethod
+    def validate_id(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("NAT rule ID cannot be empty")
+        if any(c in v for c in ";;|&`$()\\\"'\n\r\t "):
+            raise ValueError(f"NAT rule ID contains invalid or dangerous characters: {v}")
+        return v
+
+
 class FirewallPolicy(BaseModel):
     """Default policy configuration for standard base chains."""
     input_default: FirewallAction = Field(default=FirewallAction.DROP, description="Default verdict for input chain")
@@ -140,6 +181,7 @@ class FirewallTableConfig(BaseModel):
     policy: FirewallPolicy = Field(default_factory=FirewallPolicy, description="Default security policies")
     zones: Dict[str, FirewallZone] = Field(default_factory=dict, description="Configured security zones")
     rules: List[FirewallRule] = Field(default_factory=list, description="Firewall rule ordered list")
+    nat_rules: List[NatRule] = Field(default_factory=list, description="NAT rule ordered list (Port Forward, Outbound, 1:1)")
 
 
 class FirewallRuleCounter(BaseModel):

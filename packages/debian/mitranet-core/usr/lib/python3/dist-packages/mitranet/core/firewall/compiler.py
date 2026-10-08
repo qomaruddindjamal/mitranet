@@ -25,6 +25,8 @@ from mitranet.core.firewall.models import (
     FirewallProtocol,
     FirewallDirection,
     FirewallConntrackState,
+    NatRule,
+    NatType,
 )
 from mitranet.core.firewall.errors import FirewallCompilationError
 
@@ -216,8 +218,113 @@ class NftablesCompiler:
                 lines.append(f"        {rule_str}")
 
         lines.append("    }")
+        lines.append("")
+
+        # 4. NAT chains: prerouting & postrouting (if NAT rules exist or table is inet)
+        nat_rules = [r for r in config.nat_rules if r.enabled]
+        prerouting_rules = [r for r in nat_rules if r.nat_type in (NatType.PORT_FORWARD, NatType.ONE_TO_ONE)]
+        postrouting_rules = [r for r in nat_rules if r.nat_type in (NatType.OUTBOUND, NatType.ONE_TO_ONE)]
+
+        if prerouting_rules or postrouting_rules:
+            lines.append("    chain prerouting {")
+            lines.append("        type nat hook prerouting priority dstnat; policy accept;")
+            for r in sorted(prerouting_rules, key=lambda x: x.priority):
+                rule_str = cls.compile_nat_rule(r, "prerouting")
+                if rule_str:
+                    lines.append(f"        {rule_str}")
+            lines.append("    }")
+            lines.append("")
+
+            lines.append("    chain postrouting {")
+            lines.append("        type nat hook postrouting priority srcnat; policy accept;")
+            for r in sorted(postrouting_rules, key=lambda x: x.priority):
+                rule_str = cls.compile_nat_rule(r, "postrouting")
+                if rule_str:
+                    lines.append(f"        {rule_str}")
+            lines.append("    }")
+            lines.append("")
 
         lines.append("}")
         lines.append("")
 
         return "\n".join(lines)
+
+    @classmethod
+    def compile_nat_rule(cls, rule: NatRule, chain: str) -> str:
+        """Compiles a single NatRule into a valid nftables rule."""
+        tokens: List[str] = []
+
+        if chain == "prerouting":
+            # DNAT / Port Forward
+            if rule.interface and rule.interface != "any":
+                tokens.append(f'iifname "{rule.interface}"')
+
+            # Source match
+            if rule.src_ip and rule.src_ip != "any":
+                family = "ip6" if ":" in rule.src_ip else "ip"
+                tokens.append(f"{family} saddr {rule.src_ip}")
+
+            # Original Destination match
+            if rule.dst_ip and rule.dst_ip != "any":
+                family = "ip6" if ":" in rule.dst_ip else "ip"
+                tokens.append(f"{family} daddr {rule.dst_ip}")
+
+            # Protocol & Port
+            proto = rule.protocol.value
+            if proto in ("tcp", "udp"):
+                tokens.append(proto)
+                if rule.dst_port:
+                    tokens.append(f"dport {rule.dst_port}")
+            elif proto == "tcp_udp":
+                tokens.append("meta l4proto { tcp, udp }")
+                if rule.dst_port:
+                    tokens.append(f"th dport {rule.dst_port}")
+            elif rule.dst_port:
+                tokens.append(f"dport {rule.dst_port}")
+
+            # Counter
+            tokens.append("counter")
+
+            # Translation verdict: dnat ip to target_ip:target_port
+            target = rule.target_ip or ""
+            family = "ip6" if ":" in target else "ip"
+            if rule.target_port:
+                tokens.append(f"dnat {family} to {target}:{rule.target_port}")
+            else:
+                tokens.append(f"dnat {family} to {target}")
+
+            tokens.append(f'comment "mitranet:nat:dnat:{rule.id}"')
+
+        elif chain == "postrouting":
+            # SNAT / Outbound Masquerade
+            if rule.interface and rule.interface != "any":
+                tokens.append(f'oifname "{rule.interface}"')
+
+            # Source subnet match
+            if rule.src_ip and rule.src_ip != "any":
+                family = "ip6" if ":" in rule.src_ip else "ip"
+                tokens.append(f"{family} saddr {rule.src_ip}")
+
+            # Destination match
+            if rule.dst_ip and rule.dst_ip != "any":
+                family = "ip6" if ":" in rule.dst_ip else "ip"
+                tokens.append(f"{family} daddr {rule.dst_ip}")
+
+            # Protocol
+            proto = rule.protocol.value
+            if proto in ("tcp", "udp"):
+                tokens.append(proto)
+            elif proto == "tcp_udp":
+                tokens.append("meta l4proto { tcp, udp }")
+
+            tokens.append("counter")
+
+            if rule.masquerade or not rule.target_ip:
+                tokens.append("masquerade")
+            else:
+                family = "ip6" if ":" in rule.target_ip else "ip"
+                tokens.append(f"snat {family} to {rule.target_ip}")
+
+            tokens.append(f'comment "mitranet:nat:snat:{rule.id}"')
+
+        return " ".join(tokens)

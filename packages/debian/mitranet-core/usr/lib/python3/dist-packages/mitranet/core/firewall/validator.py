@@ -15,6 +15,8 @@ from mitranet.core.firewall.models import (
     FirewallProtocol,
     FirewallAction,
     FirewallDirection,
+    NatRule,
+    NatType,
 )
 from mitranet.core.firewall.errors import (
     FirewallValidationError,
@@ -240,7 +242,45 @@ class FirewallValidator:
             seen_ids.add(rule.id)
             cls.validate_rule(rule, known_interfaces=known_interfaces, known_zones=known_zones)
 
+        # Validate NAT rules & detect duplicate IDs
+        for nat_rule in config.nat_rules:
+            if nat_rule.id in seen_ids:
+                raise FirewallValidationError(f"Duplicate rule/NAT ID detected: '{nat_rule.id}'")
+            seen_ids.add(nat_rule.id)
+            cls.validate_nat_rule(nat_rule, known_interfaces=known_interfaces)
+
         # Validate Anti-Lockout
         cls.validate_anti_lockout(config)
 
         return []
+
+    @classmethod
+    def validate_nat_rule(cls, rule: NatRule, known_interfaces: Optional[Set[str]] = None) -> None:
+        """Validates semantic and safety constraints for a single NAT rule."""
+        cls.validate_injection_safety(rule.id, "NAT rule id")
+        if not IDENTIFIER_PATTERN.match(rule.id):
+            raise FirewallValidationError(f"Invalid characters in NAT rule ID: '{rule.id}'")
+
+        if rule.interface != "any":
+            cls.validate_interface(rule.interface, known_interfaces)
+
+        # Validate IPs
+        if rule.src_ip != "any":
+            cls.validate_ip_or_cidr(rule.src_ip, FirewallFamily.INET)
+        if rule.dst_ip != "any":
+            cls.validate_ip_or_cidr(rule.dst_ip, FirewallFamily.INET)
+        if rule.target_ip:
+            cls.validate_ip_or_cidr(rule.target_ip, FirewallFamily.INET)
+
+        # Validate Ports
+        if rule.src_port and rule.src_port != "any":
+            cls.validate_port_spec(rule.src_port)
+        if rule.dst_port and rule.dst_port != "any":
+            cls.validate_port_spec(rule.dst_port)
+        if rule.target_port and rule.target_port != "any":
+            cls.validate_port_spec(rule.target_port)
+
+        # Specific requirements per type
+        if rule.nat_type == NatType.PORT_FORWARD:
+            if not rule.target_ip:
+                raise FirewallValidationError(f"Port Forward rule '{rule.id}' requires target_ip")
