@@ -1344,7 +1344,22 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                             "mtime": os.path.getmtime(fpath)
                         })
 
-            self._send_json(200, {"vms": vms, "isos": isos})
+            # Read KVM subsystem master enabled state
+            kvm_service_file = "/etc/mitranet/kvm_service.json"
+            kvm_enabled = False
+            if os.path.isfile(kvm_service_file):
+                try:
+                    with open(kvm_service_file, "r") as kf:
+                        k_data = json.load(kf)
+                        kvm_enabled = bool(k_data.get("enabled", False))
+                except Exception:
+                    pass
+
+            self._send_json(200, {
+                "enabled": kvm_enabled,
+                "vms": vms,
+                "isos": isos
+            })
             return
 
 
@@ -2331,6 +2346,32 @@ PrivateKey = {priv_key}
                 self._send_json(404, {"error": "Tunnel config not found"})
             return
 
+        # Master KVM Subsystem Toggle (Enable/Disable Service)
+        if path == "/api/v1/services/kvm/toggle":
+            enabled = bool(payload.get("enabled", False))
+            kvm_service_file = "/etc/mitranet/kvm_service.json"
+            try:
+                os.makedirs(os.path.dirname(kvm_service_file), exist_ok=True)
+                with open(kvm_service_file, "w") as kf:
+                    json.dump({"enabled": enabled, "updated_at": int(time.time())}, kf, indent=2)
+
+                # If disabled, ensure any running VMs and proxies are stopped to save resources
+                import subprocess
+                if not enabled:
+                    try:
+                        subprocess.run(["systemctl", "stop", "mitranet-vm@aapanel", "aapanel-proxy"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    except Exception:
+                        pass
+
+                self._send_json(200, {
+                    "success": True,
+                    "enabled": enabled,
+                    "message": "KVM Subsystem Service berhasil " + ("diaktifkan." if enabled else "dinonaktifkan.")
+                })
+            except Exception as e:
+                self._send_json(500, {"error": f"Failed toggling KVM service: {e}"})
+            return
+
         # Virtual Machine (KVM) Action Control
         if path == "/api/v1/services/kvm/action":
             vm_id = payload.get("id", "").strip()
@@ -2353,6 +2394,11 @@ PrivateKey = {priv_key}
             try:
                 cmd = ["systemctl", action, f"mitranet-vm@{vm_id}"]
                 res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
+                if vm_id == "aapanel":
+                    try:
+                        subprocess.run(["systemctl", action, "aapanel-proxy"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    except Exception:
+                        pass
                 if res.returncode == 0:
                     status_res = subprocess.run(["systemctl", "is-active", f"mitranet-vm@{vm_id}"], stdout=subprocess.PIPE, text=True)
                     is_active = (status_res.stdout.strip() == "active")

@@ -23,7 +23,7 @@
 			<div class="footer-right">
 				<span class="footer-copyright">&copy; ESF 2004 - 2026</span>
 				<span class="footer-sep">&bull;</span>
-				<a target="_blank" href="https://pfsense.org/license" class="footer-link">View License</a>
+				<a target="_blank" href="https://github.com/qomaruddindjamal/mitranet" class="footer-link">View License</a>
 				<a id="tpr" href="#" title="Top of page" class="footer-back-top"><i class="fa-solid fa-chevron-up"></i></a>
 			</div>
 		</div>
