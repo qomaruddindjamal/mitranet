@@ -1,0 +1,2267 @@
+/*
+ * mitranet.css - Unified Enterprise Theme for MitraNet Linux Appliance
+ * Merges core Bootstrap styling with modern sidebar and full-height card layout
+ */
+@import url("/vendor/bootstrap/css/bootstrap.min.css");
+@import url("/css/fonts/roboto.css");
+@import url("/vendor/jquery-ui/jquery-ui-1.13.2.min.css");
+
+/*
+ * pfSense.css
+ *
+ * part of pfSense (https://www.pfsense.org)
+ * Copyright (c) 2016 Electric Sheep Fencing
+ * Copyright (c) 2016-2026 Rubicon Communications, LLC (Netgate)
+ * All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    margin-bottom: 80px;
+    background-color: #F5F5F5;
+    font-family: 'Roboto', sans-serif;
+}
+
+body.no-menu #jumbotron {
+    padding: 100px 0;
+    background-image: linear-gradient(to bottom,#3c3c3c 0,#222 100%)
+}
+
+body.no-menu {
+    padding-top: 70px;
+}
+
+body.no-menu #jumbotron {
+    margin-top: 75px;
+}
+
+body#index .icons {
+    float: right;
+}
+
+a:hover {
+    text-decoration: none;
+}
+
+*:not(.fa-stack) > a.fa-solid, *:not(.fa-stack) > i.fa-solid, *:not(.fa-stack) > a.fa-regular, *:not(.fa-stack) > i.fa-regular, *:not(.fa-stack) > a.fa-brands, *:not(.fa-stack) > i.fa-brands {
+    font-size: 18px;
+}
+
+h1 a:link, h1 a:visited {
+    color: #000000;
+    text-decoration: none !important;
+}
+
+h1 a:hover, h1 a:active {
+    color: #000000;
+    text-decoration: none !important;
+}
+
+/* Zero-width optional linebreaks can help the browser to linebreak at 'good' places.
+   Unfortunately the two most compatible options aren't consistently supported.
+   "\00200B" or #8203; is part of unicode and widely implemented; and <wbr> is widely
+   supported even on old browsers but not IE<5.5 and IE>7.
+   https://stackoverflow.com/a/23759279 suggests a neat "80%" solution for broad
+   compatibility pre-HTML5 - use <wbr> and automatically insert #&8203; after it. Should
+   be invisible, facilitates neat line breaking when manual control is desired. */
+wbr:after {
+    content: "\00200B";
+}
+
+.container.fixed {
+    padding-top: 60px;
+}
+
+.ui-sortable-handle {
+    cursor: move;
+}
+
+.ui-widget {
+    font-family: Roboto, sans-serif;
+}
+
+.table-striped>tbody>tr.disabled:nth-of-type(odd) {
+    background-color: rgba(249, 249, 249, .5);
+    color: rgba(51,51,51,.5);
+}
+
+.table-striped>tbody>tr.disabled:nth-of-type(even) {
+    background-color: rgba(255, 255, 255, .5);
+    color: rgba(51,51,51,.5);
+}
+
+.table-hover>tbody>tr.disabled:hover {
+    background-color: rgba(245, 245, 245, .5);
+}
+
+tr.disabled i.fa-solid, tr.disabled i.fa-regular, tr.disabled i.fa-brands {
+    opacity: .5;
+}
+
+tr.disabled a {
+    opacity: .5;
+}
+tr.disabled a:not(".btn") {
+    color: rgba(51, 122, 183, .5)
+}
+
+.contains-table table {
+    border: 1px solid #ddd;
+}
+
+/** Content structure */
+.table-responsive {
+    clear: both;
+    margin-bottom: 0px;
+}
+
+/* navigation */
+.navbar {
+    margin-bottom: 10px;
+}
+
+.navbar-inverse {
+    background-color: #212121;
+}
+
+.navbar-brand > img {
+    /* reduce logo size */
+    max-width: 127px;
+    max-height: 36px;
+    width: auto;
+    height: auto;
+}
+
+.navbar-brand svg#logo {
+    width: 105px;
+}
+
+.logo-st0, .logo-st1, .logo-st2, .logo-st3, .logo-st4, .logo-st5 {
+    fill:#FFFFFF;
+}
+
+.navbar-brand {
+    padding: 5px 10px 0 10px;
+    line-height: .3em;
+}
+
+.nav>li>a {
+    padding: 8px 16px;
+    border-bottom: none;
+    border-radius: 6px;
+    color: #475569;
+}
+
+.nav>li>a:focus, .nav>li>a:hover {
+    border-bottom: none;
+    background-color: #f1f5f9;
+    color: #0f172a;
+}
+
+.nav-pills>li.active>a, .nav-pills>li.active>a:focus, .nav li.open>a, .nav li.open>a:focus, .nav-pills>li.active>a:hover {
+    border-bottom: none;
+    color: #ffffff;
+    background: #0284c7;
+}
+
+.navbar-inverse .navbar-nav >li>a {
+    border-bottom: none;
+    color: #BDBDBD;
+}
+
+.nav-tabs>li>a {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.nav-tabs>li.active>a, .nav-tabs>li.active>a:focus, .nav-tabs>li.active>a:hover, .nav-tabs>li>a:hover {
+    border: none;
+    background-color: #0284c7;
+    border-bottom: none;
+    color: #ffffff;
+    box-shadow: none;
+}
+
+.nav-tabs {
+    border-bottom: none;
+    margin-bottom: 20px;
+}
+
+.nav-pills {
+    margin-bottom: 20px;
+}
+
+.dropdown-menu-fixed {
+    max-height: calc(98vh - 35px);
+    overflow-y: auto;
+}
+
+.dropdown-menu>li>a {
+    padding: 5px 20px;
+}
+
+.navbar-right>li>a {
+    padding: 14px 15px 10px 15px;
+}
+/* end navigation */
+
+.alert {
+    border-radius: 0;
+    box-shadow: 0px 1px 10px rgba(0,0,0,0.1);
+}
+
+.panel {
+    margin-bottom: 10px;
+    border-radius: 0;
+    box-shadow: 0px 3px 7px rgba(0,0,0,.1);
+}
+
+.panel-default>.panel-heading {
+    color: #fff;
+    background-color: #424242;
+    letter-spacing: 1px;
+}
+
+.panel-heading {
+    padding: 5px 15px;
+    border-radius: 0;
+}
+
+.panel-heading a:link, .panel-heading a:visited {
+    color: white;
+}
+
+.panel-title {
+    font-size: 16px;
+}
+
+.panel-body {
+    padding: 0px;
+}
+
+#login .panel-heading {
+    padding: 10px 15px
+}
+
+.content {
+    padding: 10px;
+}
+
+.form-horizontal {
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
+.form-horizontal .checkbox {
+    padding: 3px 16px;
+}
+
+.form-control {
+    height: 24px;
+    padding: 0 6px;
+    margin-bottom: 5px;
+}
+
+.form-control option {
+    padding: inherit;
+}
+
+/* location of bottom right drag icon on resizable elements */
+.ui-resizable-se {
+	bottom: 2px;
+	right: 46px;
+}
+
+#login .form-control {
+    height: 34px;
+}
+
+#login .form-group {
+    border: none;
+}
+
+.form-group {
+    margin: 0;
+    padding: 7px 5px 5px 5px;
+    border-bottom: 1px solid #E0E0E0;
+}
+
+.form-group:last-child {
+    border-bottom: none;
+}
+
+.form-listitem {
+	border-top: 3px solid #E0E0E0;
+}
+.form-listitem:first-child {
+	border-top: none;
+}
+
+.input-group-addon {
+    padding: 0 12px;
+}
+
+.table {
+    margin-bottom: 0px;
+}
+/*This is parsed by IE10+ only. Need this to stop empty tables from collapsing */
+@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+ .table {
+	  margin-bottom:1px !important;
+  }
+ }
+
+.table>tbody>tr>td {
+    padding: 6px 4px 6px 10px;
+}
+
+/* active table row */
+.table>tbody>tr.active>td, .table>tbody>tr.active>th, .table>tbody>tr>td.active, .table>tbody>tr>th.active, .table>tfoot>tr.active>td, .table>tfoot>tr.active>th, .table>tfoot>tr>td.active, .table>tfoot>tr>th.active, .table>thead>tr.active>td, .table>thead>tr.active>th, .table>thead>tr>td.active, .table>thead>tr>th.active {
+    background-color: #BDBDBD;
+}
+
+/* active table row on hover */
+.table-hover>tbody>tr.active:hover>td, .table-hover>tbody>tr.active:hover>th, .table-hover>tbody>tr:hover>.active, .table-hover>tbody>tr>td.active:hover, .table-hover>tbody>tr>th.active:hover {
+    background-color: #BDBDBD;
+}
+
+/* Break DUID string in the prefixes table. */
+.statusdhcpv6prefixes tbody>tr>td:nth-of-type(5) {
+    word-wrap: break-word;
+    word-break: break-all;
+}
+
+/* prevent icon columns from wrapping */
+#leaselist tr>td:first-child, #leaselist tr>td:last-child {
+	white-space: nowrap;
+}
+
+.popover {
+    max-width: none;
+}
+
+.help-block {
+    margin-bottom: 0;
+}
+
+.action-buttons {
+    text-align: right;
+    margin-top: 10px;
+    margin-bottom: 20px;
+}
+
+/** Form validation */
+.input-errors ul {
+    margin-top: 20px;
+}
+
+/** Page header with title and breadcrumb */
+.header {
+    position: relative;
+    margin: 10px 0 20px 0;
+    box-shadow: 0px 1px 10px rgba(0,0,0,.3);
+    margin-bottom: 10px;
+    background-color: #E0E0E0;
+}
+
+.header .context-links {
+    position: absolute;
+    right: 15px;
+    top: 15px;
+}
+
+.header .context-links li {
+    float: left;
+    display: inline;
+    margin-left: 10px;
+}
+
+.breadcrumb {
+    background-color: #E0E0E0;
+    font-size: 22px;
+}
+
+.breadcrumb>li+li:before {
+    color: #B71C1C;
+}
+
+ul.context-links li a {
+    color: #B71C1C;
+}
+
+/** Form tweaks */
+form .btn + .btn {
+    margin-left: 5px;
+}
+
+.input-group-inbetween {
+    border-left: 0;
+}
+
+.user-duplication .controls {
+    margin-top: 10px;
+}
+
+.checkbox.multi label {
+    display: block;
+}
+
+.checkbox.multi .btn {
+    margin-top: 5px;
+}
+
+.col-sm-10 .form-control {
+    width: calc(50% - 15px);
+}
+
+@media (max-width: 991px) {
+    .col-sm-10 .form-control {
+        width: 100%;
+    }
+}
+
+.inputselectcombo {
+    margin-bottom: 0!important;
+}
+div.inputselectcombo {
+    display: table;
+    font-size: 0px;
+}
+div.inputselectcombo select {
+    display: table-cell;
+    width: auto;
+    max-width: 95px;
+    margin-bottom: 0!important;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+div.inputselectcombo span {
+    display: table-cell;
+    width: 100%;
+}
+div.inputselectcombo span input {
+    display: table-cell;
+    width: 100%;
+    margin-bottom: 0!important;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.no-separator {
+    border-bottom: 0!important;
+}
+
+/** Page footer */
+.footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    background-color: #212121;
+    padding-top: 10px;
+    text-align: center;
+}
+
+footer a {
+    color: #ffffff;
+}
+
+
+/** Homepage / dashboard */
+[id^="widgets-col"] {
+    min-height: 300px;
+}
+
+.widget .panel-heading {
+    background-color: #757575;
+}
+
+#widgetSequence {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    padding: 20px 0;
+    width: 100%;
+    z-index: 100;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.6);
+    border-top: 1px solid #ddd;
+}
+
+/** Styling for jQuery autocomplete widget */
+.ui-autocomplete {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    float: left;
+    display: none;
+    min-width: 160px;
+    padding: 4px 0;
+    margin: 0 0 10px 25px;
+    list-style: none;
+    background-color: #ffffff;
+    border-color: #ccc;
+    border-color: rgba(0, 0, 0, 0.2);
+    border-style: solid;
+    border-width: 1px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    -moz-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    -webkit-background-clip: padding-box;
+    -moz-background-clip: padding;
+    background-clip: padding-box;
+    *border-right-width: 2px;
+    *border-bottom-width: 2px;
+}
+
+/** Disable the autocomplete helper text */
+.ui-helper-hidden-accessible {
+    border: 0;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+}
+
+/** Override the bootstrap progress bar margins */
+.progress {
+    margin-bottom: 0px;
+    height: 14px;
+}
+
+#wizard .progress {
+    margin-bottom: 10px;
+}
+
+.progress-bar {
+    background-color: #B71C1C;
+}
+
+.progress-bar.progress-bar-success {
+    background-color: #4CAF50;
+}
+
+.progress-bar.progress-bar-warning {
+    background-color: #FBC02D;
+}
+
+.progress-bar.progress-bar-danger {
+    background-color: #B71C1C;
+}
+
+.panel-body.collapse.in {
+    overflow-x: auto;
+}
+
+/** start common colors */
+.alert-warning {
+    color: #FF6F00;
+    background-color: #FFFDE7;
+    border-color: #FFECB3;
+    border-top: 5px solid #FFD600;
+}
+
+.alert-success {
+    color: #1B5E20;
+    background-color: #E8F5E9;
+    border-color: #DCEDC8;
+    border-top: 5px solid #1B5E20;
+}
+
+.alert-info {
+    color: #01579B;
+    background-color: #E1F5FE;
+    border-color: #B2EBF2;
+    border-top: 5px solid #01579B;
+}
+
+.bg-primary {
+    color: #000;
+    background-color: #009688;
+}
+
+.bg-info {
+    color: #01579B;
+    background-color: #B3E5FC;
+}
+
+.bg-danger {
+    color: #000;
+    background-color: #EF9A9A;
+}
+
+.bg-warning {
+    color: #000;
+    background-color: #FFF9C4;
+}
+
+.bg-success {
+    color: #1B5E20;
+    background-color: #C8E6C9;
+}
+
+.btn-success {
+    background-color: #43A047;
+}
+
+.btn-danger {
+    background-color: #B71C1C;
+}
+
+.btn-primary {
+    background-color: #1976D2;
+}
+
+.text-warning {
+    color: #F57F17;
+}
+
+.text-success {
+    color: #4CAF50;
+}
+
+.text-danger {
+    color: #B71C1C;
+}
+/** end common colors */
+
+.table-hover>tbody>tr.hover-success:hover {
+    color: #000;
+    background-color: #A5D6A7;
+}
+
+.table-hover>tbody>tr.hover-danger:hover {
+    color: #000;
+    background-color: #EF9A9A;
+}
+
+.table-hover>tbody>tr.hover-warning:hover {
+    color: #000;
+    background-color: #FFF9C4;
+}
+
+/** icons are often used with onclick actions, so we need the cursor to change to a pointer */
+.icon-pointer
+{
+    cursor: pointer;
+}
+
+.icon-embed-btn
+{
+    font-size: 15px;
+    vertical-align: middle;
+    color: white;
+    padding-right: 22px;
+    padding-bottom: 17px;
+    margin-top: -0.125em;
+    width: 14px;
+    height: 14px;
+    pointer-events: none;
+}
+
+/* Used when you need an icon to act as a submit button **/
+.button-icon
+{
+    color: #337AB7;
+    background: none;
+    border: 0px;
+}
+
+.btn
+{
+    padding-right: 4px;
+    padding-left: 4px;
+}
+
+.btn-group .btn {
+    margin-right: 5px;
+}
+
+.btn-group .btn:last-child {
+    margin-right: 0px;
+}
+
+.list-group {
+    margin-bottom: 0;
+}
+
+/* icons in the dashboard panel headings should pull-right **/
+.widget-heading-icon
+{
+    display: block;
+    float: right;
+}
+
+.widget-heading-icon .fa-solid, .widget-heading-icon i.fa-regular, .widget-heading-icon i.fa-brands {
+    color: #fff;
+}
+
+.widget-heading-icon .fa-solid:hover {
+    color: #e0e0e0;
+}
+
+/* All pfSense textareas benefit from using a fixed width font **/
+textarea
+{
+    font-family: monospace;
+    font-size: 12px;
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+}
+
+/*
+ * CSS for Standard tree layout
+ * Copyright (c) 2005 SilverStripe Limited
+ * Feel free to use this on your websites, but please leave this message in the fies
+ * http://www.silverstripe.com/blog
+ */
+
+ul.tree{
+    width: auto;
+    padding-left: 0px;
+    margin-left: 0px;
+}
+
+ul.tree img{
+    border: none;
+}
+
+ul.tree, ul.tree ul {
+    padding-left: 0;
+}
+
+ul.tree ul {
+    margin-left: 16px;
+
+}
+
+ul.tree li.closed ul {
+    display: none;
+}
+
+ul.tree li {
+    list-style: none;
+    background: url(../../vendor/tree/i-repeater.gif) 0 0 repeat-y;
+    display: block;
+    width: auto;
+}
+
+ul.tree li.last {
+    list-style: none;
+    background-image: none;
+}
+
+/* Span-A: I/L/I glyphs */
+ul.tree span.a {
+    background: url(../../vendor/tree/t.gif) 0 50% no-repeat;
+    display: block;
+}
+
+ul.tree span.a.last {
+    background: url(../../vendor/tree/l.gif) 0 50% no-repeat;
+}
+
+/* Span-B: Plus/Minus icon */
+ul.tree span.b {
+
+}
+
+ul.tree span.a.children span.b {
+    background: url(../../vendor/tree/minus.gif) 0 50% no-repeat;
+    cursor: pointer;
+}
+
+ul.tree li.closed span.a.children span.b {
+    background: url(../../vendor/tree/plus.gif) 0 50% no-repeat;
+    cursor: pointer;
+}
+
+/* Span-C: Spacing and extending tree line below the icon */
+ul.tree span.c {
+    margin-left: 16px;
+}
+
+ul.tree span.a.children span.c {
+    background: url(../../vendor/tree/i-bottom.gif) 0 50% no-repeat;
+}
+
+ul.tree span.a.spanClosed span.c {
+    background-image: none;
+}
+
+/* Anchor tag: Page icon */
+ul.tree a  {
+    white-space: nowrap;
+    overflow: hidden;
+    padding: 3px 0px 3px 18px;
+    line-height: 16px;
+    background: url(../../vendor/tree/page-file.png) 0 0 no-repeat;
+}
+
+ul.tree span.a.children a {
+    background-image: url(../../vendor/tree/page-openfoldericon.png);
+}
+
+ul.tree span.a.children.spanClosed a {
+    background-image: url(../../vendor/tree/page-foldericon.png);
+}
+
+/* Unformatted tree */
+ul.tree.unformatted li {
+    background-image: none;
+    padding-left: 16px;
+}
+
+ul.tree.unformatted li li {
+    background-image: none;
+    padding-left: 0px;
+}
+
+/* Divs, by default store vertically aligned data */
+
+ul.tree li div {
+    float: right;
+    clear: right;
+    height: 1em;
+    margin-top: -26px;
+}
+
+/* As inside DIVs should be treated normally */
+ul.tree div a  {
+    padding: 0;
+    background-image: none;
+    min-height: auto;
+    height: auto;
+}
+
+ul.tree li .over{
+    background-color: pink;
+}
+
+/*
+ * End of CSS for Standard tree layout
+ */
+
+table[data-sortable].sortable-theme-bootstrap {
+    font-family: Roboto, sans-serif;
+}
+
+table[data-sortable].sortable-theme-bootstrap thead th {
+    white-space: nowrap;
+}
+
+@media (max-width: 1199px) {
+    .nav>li>a {
+        padding: 14px 9px 10px 9px;
+    }
+}
+
+@media (max-width: 991px) {
+    /* change top navbar from horizontal to vertical */
+    .navbar-header {
+        float: none;
+    }
+    .navbar-toggle {
+        display: block;
+    }
+    .navbar-collapse {
+        border-top: 1px solid transparent;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .navbar-collapse.collapse {
+        display: none!important;
+    }
+    .navbar-nav {
+        float: none!important;
+        margin: 7.5px -15px;
+    }
+    .navbar-nav>li {
+        float: none;
+    }
+    .navbar-nav>li>a {
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+    .navbar-text {
+        float: none;
+        margin: 15px 0;
+    }
+    /* since 3.1.0 */
+    .navbar-collapse.collapse.in {
+        display: block!important;
+    }
+    .collapsing {
+        overflow: hidden!important;
+    }
+    .navbar-fixed-bottom .navbar-collapse, .navbar-fixed-top .navbar-collapse {
+        max-height: none !important;
+    }
+}
+
+@media (max-width: 767px) {
+    .header {
+        margin-bottom: 5px;
+    }
+
+    .breadcrumb {
+        font-size: 14px;
+        padding: 15px;
+        width: 50%;
+    }
+
+    .breadcrumb li:not(:last-child), .breadcrumb>li+li:before {
+        display: none;
+    }
+}
+
+/** Override text-warning with something less red. */
+.text-warning {
+    color: #ffcc00;
+}
+
+/**Suppress href links when printing */
+a[href]:after {
+    content: normal;
+}
+
+/** Text color for diff display when comparing configs */
+.diff-text {
+    color: #000000;
+}
+
+/** Eliminate overflow in available widgets, log filter, and manage log panels. (cause of scroll bar) */
+#widget-available_panel-body>.content>.row,
+#filter-panel_panel-body>.form-group,
+#manage-log-panel_panel-body>.form-group,
+#monitoring-settings-panel_panel-body>.form-group,
+/** optionally prevent more globally by using the class hierarchy */
+.panel-body.collapse.in>.content>.row,
+.panel-body.collapse.in>.form-group
+{
+    margin-right: 0px;
+}
+
+/* Callouts */
+.bs-callout {
+    padding: 10px 15px;
+    margin: 20px 0;
+    border: 2px solid #eee;
+    border-left-width: 5px;
+    border-radius: 3px;
+    font-size: 13px;
+}
+
+.bs-callout h4 {
+    margin-top: 0;
+    margin-bottom: 5px;
+}
+
+.bs-callout p:last-child {
+    margin-bottom: 0;
+}
+
+.bs-callout code {
+    border-radius: 3px;
+}
+
+.bs-callout+.bs-callout {
+    margin-top: -5px;
+}
+
+/* Callout contextual classes */
+.bs-callout-default {
+    border-left-color: #777;
+}
+
+.bs-callout-default h4 {
+    color: #777;
+}
+
+.bs-callout-danger {
+    border-left-color: #d9534f;
+}
+
+.bs-callout-danger h4 {
+    color: #d9534f;
+}
+
+.bs-callout-warning {
+    border-left-color: #f0ad4e;
+}
+
+.bs-callout-warning h4 {
+    color: #f0ad4e;
+}
+
+.bs-callout-info {
+    border-left-color: #01579B;
+}
+
+.bs-callout-info h4 {
+    color: #01579B;
+}
+
+/* Disable 300 ms click delay so event handlers are effective. */
+/* Makes posible for non-touch compatible features to work; e.g. double tap rule to edit. */
+body{
+    touch-action: manipulation;
+}
+
+/* D3 Styles */
+
+svg {
+    display: block;
+}
+
+.d3-chart, .d3-chart svg {
+    margin: 0px;
+    padding: 10px 0;
+    height: 445px;
+    width: 100%;
+}
+
+.traffic-widget-chart, .traffic-widget-chart svg {
+    padding: 0;
+    height: 250px;
+}
+
+.traffic-widget-chart:not(:last-child) {
+    border-bottom: 2px solid #ccc;
+}
+
+.nvtooltip > h3 {
+    font-size: 14px;
+}
+
+/* Experimental styles to correct vertical alignment in forms */
+.col-sm-10 {
+    padding-top: 7px;
+}
+
+.chkboxlbl {
+    padding-top: 4px;
+}
+
+.colspanth {
+    background-color: #eeeeee;
+}
+
+/* Required input elements have a title that begins with "*". This causes
+Group.class.php to add <span class="element-required" to the title, which
+can then be used to style required input here. Example below uses a custom
+text underline, but text-color, background, font etc. could also be used */
+.element-required {
+    box-shadow: inset 0 0px 0 white, inset 0 -1px 0 black
+}
+
+/* =======================================================
+   SIDEBAR & LAYOUT STYLES
+   ======================================================= */
+
+/* ==========================================================================
+   pfSense Modern & Elegant MikroTik-Style Drop-Right Layout & Fixed Footer
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. GLOBAL DESIGN TOKENS
+   -------------------------------------------------------------------------- */
+:root {
+    --pf-bg-main: #f4f6f9;
+    --pf-header-bg: #1e222b;
+    --pf-header-border: #282d37;
+    --pf-sidebar-bg: #181b20;
+    --pf-sidebar-border: #252a35;
+    --pf-panel-bg: #1e222b;
+    --pf-panel-border: #2d3341;
+    --pf-accent-blue: #337ab7;
+    --pf-accent-hover: #4da3ff;
+    --pf-text-menu: #a4adbd;
+    --pf-text-sub: #b4bccb;
+    --pf-text-title: #6e788b;
+    --pf-sidebar-w: 220px;
+    --pf-sidebar-mini-w: 56px;
+    --pf-header-h: 50px;
+    --pf-footer-h: 38px;
+}
+
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    padding-top: var(--pf-header-h) !important;
+    padding-bottom: calc(var(--pf-footer-h) + 16px) !important;
+    background-color: var(--pf-bg-main) !important;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    color: #1e293b;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* --------------------------------------------------------------------------
+   2. TOP HEADER NAVBAR (#topmenu)
+   -------------------------------------------------------------------------- */
+#topmenu {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    z-index: 1030 !important;
+    height: var(--pf-header-h) !important;
+    min-height: var(--pf-header-h) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    border-bottom: 1px solid var(--pf-header-border) !important;
+    background-color: var(--pf-header-bg) !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18) !important;
+}
+
+/* Disable Bootstrap 3 table clearfix pseudo-elements on header */
+#topmenu::before,
+#topmenu::after,
+#topmenu .header-inner::before,
+#topmenu .header-inner::after,
+#topmenu .container-fluid::before,
+#topmenu .container-fluid::after {
+    display: none !important;
+    content: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+#topmenu .header-inner,
+#topmenu .container-fluid {
+    width: 100% !important;
+    height: var(--pf-header-h) !important;
+    padding: 0 18px 0 0 !important; /* Zero left padding so brand area starts exactly at x=0 */
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    box-sizing: border-box !important;
+}
+
+#topmenu .header-left,
+#topmenu .navbar-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    float: none !important;
+    height: 100% !important;
+}
+
+/* Brand Area: Matches sidebar width (220px) starting from x=0 for exact vertical alignment with sidebar */
+#topmenu .header-brand-area {
+    width: var(--pf-sidebar-w) !important;
+    min-width: var(--pf-sidebar-w) !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+    background-color: var(--pf-sidebar-bg) !important;
+    border-right: 1px solid var(--pf-sidebar-border) !important;
+    box-sizing: border-box !important;
+    flex-shrink: 0 !important;
+    transition: width 0.18s ease, min-width 0.18s ease !important;
+}
+
+body.sidebar-collapsed #topmenu .header-brand-area {
+    width: var(--pf-sidebar-mini-w) !important;
+    min-width: var(--pf-sidebar-mini-w) !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    justify-content: center !important;
+}
+
+/* Brand Logo */
+#topmenu .navbar-brand {
+    float: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: 28px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    line-height: normal !important;
+    text-decoration: none !important;
+}
+
+#topmenu .navbar-brand svg#logo {
+    height: 24px !important;
+    width: auto !important;
+    max-width: 95px !important;
+    display: block !important;
+}
+
+body.sidebar-collapsed #topmenu .navbar-brand svg#logo {
+    max-width: 32px !important;
+    overflow: hidden !important;
+}
+
+/* Nav Actions Container (Hamburger + Home button right after the sidebar separator line) */
+#topmenu .header-nav-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding-left: 14px !important;
+    height: 100% !important;
+    flex-shrink: 0 !important;
+}
+
+/* Hamburger Toggle Button */
+#sidebar-toggle-btn {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #cbd5e1 !important;
+    font-size: 13px !important;
+    width: 32px !important;
+    height: 28px !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+    border-radius: 5px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+}
+
+#sidebar-toggle-btn:hover,
+#sidebar-toggle-btn:focus {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    outline: none !important;
+}
+
+/* Header Home Button (Right behind hamburger) */
+.header-home-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    color: #cbd5e1 !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    padding: 0 12px !important;
+    height: 28px !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 5px !important;
+    text-decoration: none !important;
+    transition: all 0.15s ease !important;
+    box-sizing: border-box !important;
+    line-height: 26px !important;
+    flex-shrink: 0 !important;
+}
+
+.header-home-btn i {
+    color: #38bdf8 !important;
+    font-size: 12px !important;
+}
+
+.header-home-btn:hover,
+.header-home-btn:focus {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.14) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    text-decoration: none !important;
+}
+
+@media (max-width: 991px) {
+    #topmenu .header-brand-area {
+        width: auto !important;
+        min-width: 0 !important;
+        border-right: none !important;
+        padding-left: 0 !important;
+        padding-right: 8px !important;
+    }
+    #topmenu .header-nav-actions {
+        padding-left: 8px !important;
+        gap: 8px !important;
+    }
+}
+
+/* Header Right Utilities */
+#topmenu .header-right-nav {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    list-style: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    float: none !important;
+    height: 100% !important;
+}
+
+#topmenu .header-host-info {
+    color: #8c95a6 !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 4px 10px !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 4px !important;
+}
+
+#topmenu .header-host-info i {
+    color: #4da3ff !important;
+    font-size: 12px !important;
+}
+
+#topmenu .header-btn-link {
+    color: #8c95a6 !important;
+    font-size: 15px !important;
+    padding: 6px 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    border-radius: 4px !important;
+    transition: all 0.12s ease !important;
+    text-decoration: none !important;
+}
+
+#topmenu .header-btn-link:hover {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. LEFT SIDEBAR NAVIGATION (#pf-sidebar) - MIKROTIK STYLE
+   -------------------------------------------------------------------------- */
+#pf-sidebar {
+    position: fixed;
+    top: var(--pf-header-h);
+    bottom: 0 !important; /* Full height to eliminate any bottom-left corner gap */
+    left: 0;
+    width: var(--pf-sidebar-w);
+    background-color: var(--pf-sidebar-bg);
+    z-index: 1025;
+    border-right: 1px solid var(--pf-sidebar-border);
+    transition: width 0.18s ease;
+}
+
+@media (min-width: 992px) {
+    #pf-sidebar {
+        overflow-y: visible !important;
+        overflow-x: visible !important;
+    }
+}
+
+/* Mobile Drawer Header */
+.sidebar-header-box {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--pf-sidebar-border);
+    background-color: #121418;
+}
+
+.sidebar-brand-title {
+    color: #ffffff;
+    font-size: 13.5px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar-close-btn {
+    background: transparent;
+    border: none;
+    color: #94a0b2;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 8px;
+}
+
+.sidebar-close-btn:hover {
+    color: #ffffff;
+}
+
+.sidebar-section-title {
+    padding: 12px 16px 4px 16px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.9px;
+    text-transform: uppercase;
+    color: var(--pf-text-title);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.sidebar-menu {
+    list-style: none;
+    margin: 0;
+    padding: 4px 0 16px 0;
+}
+
+/* MikroTik Row Item */
+.sidebar-item {
+    position: relative;
+    margin: 1px 6px;
+    border-radius: 4px;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    height: 36px;
+    padding: 0 10px 0 12px;
+    color: var(--pf-text-menu);
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none !important;
+    transition: all 0.1s ease;
+    border-radius: 4px;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+    user-select: none;
+}
+
+.sidebar-link:hover,
+.sidebar-link:focus {
+    color: #ffffff;
+    background-color: #222733;
+}
+
+.sidebar-icon {
+    width: 18px;
+    font-size: 13.5px;
+    margin-right: 10px;
+    text-align: center;
+    color: #7b8596;
+    transition: color 0.1s ease;
+    flex-shrink: 0;
+}
+
+.sidebar-link:hover .sidebar-icon,
+.sidebar-item.active .sidebar-icon,
+.sidebar-item.open .sidebar-icon,
+.sidebar-item.pinned .sidebar-icon {
+    color: #4da3ff;
+}
+
+.sidebar-icon-wg {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    vertical-align: middle;
+    flex-shrink: 0;
+    color: #c92a2a;
+    transition: color 0.15s ease, transform 0.15s ease;
+}
+.sidebar-icon-wg svg {
+    width: 16px;
+    height: 16px;
+}
+.sidebar-link:hover .sidebar-icon-wg,
+.sidebar-item.active .sidebar-icon-wg {
+    color: #ff5252;
+    transform: scale(1.1);
+}
+
+.sidebar-text {
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* MikroTik right caret */
+.sidebar-arrow {
+    font-size: 11px;
+    color: #5d6778;
+    transition: color 0.1s ease, transform 0.12s ease;
+    margin-left: 6px;
+    flex-shrink: 0;
+}
+
+.sidebar-link:hover .sidebar-arrow,
+.sidebar-item.open .sidebar-arrow,
+.sidebar-item.pinned .sidebar-arrow {
+    color: #ffffff;
+}
+
+/* Active or Pinned State (MikroTik style) */
+.sidebar-item.active > .sidebar-link {
+    color: #ffffff;
+    background-color: #262c3a;
+    border-left: 3px solid var(--pf-accent-blue);
+    font-weight: 600;
+}
+
+.sidebar-item.open > .sidebar-link,
+.sidebar-item.pinned > .sidebar-link {
+    color: #ffffff;
+    background-color: #262c3a;
+}
+
+/* --------------------------------------------------------------------------
+   4. MIKROTIK DROP-RIGHT SUBMENU PANEL (DESKTOP)
+   -------------------------------------------------------------------------- */
+@media (min-width: 992px) {
+    .sidebar-flyout {
+        position: fixed;
+        width: 220px;
+        background-color: var(--pf-panel-bg);
+        border: 1px solid var(--pf-panel-border);
+        border-left: 2px solid var(--pf-accent-blue);
+        border-radius: 0 6px 6px 0;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.25);
+        display: none;
+        z-index: 99999 !important;
+        max-height: calc(100vh - var(--pf-header-h) - var(--pf-footer-h) - 10px);
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    /* Hover bridge */
+    .sidebar-flyout::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: -12px;
+        width: 12px;
+    }
+
+    /* Flyout Header */
+    .flyout-header {
+        padding: 7px 14px;
+        background-color: #161920;
+        border-bottom: 1px solid #282e3b;
+        color: var(--pf-text-title);
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .flyout-header i {
+        color: var(--pf-accent-blue);
+        font-size: 11px;
+    }
+
+    /* Submenu rows */
+    .sidebar-submenu {
+        list-style: none;
+        padding: 3px 0;
+        margin: 0;
+    }
+
+    .sidebar-submenu li {
+        margin: 0;
+    }
+
+    .sidebar-submenu li a {
+        display: block;
+        height: 30px;
+        line-height: 30px;
+        padding: 0 14px;
+        color: var(--pf-text-sub);
+        font-size: 12.5px;
+        font-weight: 400;
+        text-decoration: none !important;
+        transition: background 0.08s ease, color 0.08s ease;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* MikroTik signature blue hover */
+    .sidebar-submenu li a:hover {
+        color: #ffffff !important;
+        background-color: var(--pf-accent-blue) !important;
+    }
+
+    .sidebar-submenu li.active a {
+        color: #ffffff;
+        background-color: #272d3b;
+        border-left: 2px solid var(--pf-accent-blue);
+        font-weight: 600;
+    }
+
+    .sidebar-submenu .divider {
+        height: 1px;
+        margin: 3px 0;
+        background-color: rgba(255, 255, 255, 0.06);
+    }
+
+    /* Desktop Collapsed Mini-Sidebar */
+    body.sidebar-collapsed #pf-sidebar {
+        width: var(--pf-sidebar-mini-w);
+    }
+
+    body.sidebar-collapsed .sidebar-text,
+    body.sidebar-collapsed .sidebar-arrow,
+    body.sidebar-collapsed .sidebar-section-title {
+        display: none !important;
+    }
+
+    body.sidebar-collapsed .sidebar-item {
+        margin: 1px 3px;
+    }
+
+    body.sidebar-collapsed .sidebar-link {
+        padding: 0;
+        justify-content: center;
+    }
+
+    body.sidebar-collapsed .sidebar-icon {
+        margin-right: 0;
+        font-size: 15px;
+    }
+
+    /* Desktop content margins - specifically targeting main content container */
+    #pf-main-content,
+    body:not(.sidebar-collapsed) #pf-main-content {
+        margin-left: var(--pf-sidebar-w) !important;
+        width: calc(100% - var(--pf-sidebar-w)) !important;
+        max-width: calc(100% - var(--pf-sidebar-w)) !important;
+        padding: 18px 24px !important;
+        box-sizing: border-box !important;
+        transition: margin-left 0.18s ease, width 0.18s ease;
+    }
+
+    body.sidebar-collapsed #pf-main-content {
+        margin-left: var(--pf-sidebar-mini-w) !important;
+        width: calc(100% - var(--pf-sidebar-mini-w)) !important;
+        max-width: calc(100% - var(--pf-sidebar-mini-w)) !important;
+        padding: 18px 24px !important;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   5. FIXED FOOTER (.footer) - ELEGANT & MODERN
+   -------------------------------------------------------------------------- */
+.footer {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: var(--pf-footer-h) !important;
+    min-height: var(--pf-footer-h) !important;
+    max-height: var(--pf-footer-h) !important;
+    margin: 0 !important;
+    padding: 0 20px !important;
+    background-color: #14171c !important;
+    border-top: 1px solid var(--pf-sidebar-border) !important;
+    z-index: 1020 !important;
+    box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.2) !important;
+    display: flex !important;
+    align-items: center !important;
+    box-sizing: border-box !important;
+}
+
+@media (min-width: 992px) {
+    body:not(.sidebar-collapsed) .footer {
+        left: var(--pf-sidebar-w) !important;
+        width: calc(100% - var(--pf-sidebar-w)) !important;
+        transition: left 0.18s ease, width 0.18s ease;
+    }
+    body.sidebar-collapsed .footer {
+        left: var(--pf-sidebar-mini-w) !important;
+        width: calc(100% - var(--pf-sidebar-mini-w)) !important;
+    }
+}
+
+@media (max-width: 991px) {
+    .footer {
+        left: 0 !important;
+        width: 100% !important;
+        padding: 0 14px !important;
+    }
+}
+
+/* Disable any Bootstrap clearfix pseudo-elements on footer */
+.footer::before,
+.footer::after,
+.footer-inner::before,
+.footer-inner::after,
+.footer .container::before,
+.footer .container::after {
+    display: none !important;
+    content: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+.footer-inner {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    line-height: normal !important;
+    font-size: 11.5px !important;
+    box-sizing: border-box !important;
+}
+
+.footer-left {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-wrap: nowrap !important;
+    white-space: nowrap !important;
+}
+
+.footer-brand {
+    color: #e2e8f0 !important;
+    font-weight: 600 !important;
+    font-size: 12px !important;
+    letter-spacing: 0.2px !important;
+}
+
+.footer-badge {
+    background-color: rgba(56, 189, 248, 0.1) !important;
+    color: #38bdf8 !important;
+    border: 1px solid rgba(56, 189, 248, 0.25) !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    padding: 1px 7px !important;
+    border-radius: 10px !important;
+    line-height: 14px !important;
+    letter-spacing: 0.3px !important;
+    display: inline-block !important;
+    text-transform: uppercase !important;
+}
+
+.footer-text {
+    color: #7b8596 !important;
+    font-size: 11.5px !important;
+}
+
+.footer-right {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-wrap: nowrap !important;
+    white-space: nowrap !important;
+    color: #7b8596 !important;
+    font-size: 11.5px !important;
+}
+
+.footer-copyright {
+    color: #7b8596 !important;
+}
+
+.footer-sep {
+    color: #3b4252 !important;
+    font-size: 8px !important;
+}
+
+.footer-link {
+    color: #8c95a6 !important;
+    text-decoration: none !important;
+    transition: color 0.12s ease !important;
+}
+
+.footer-link:hover {
+    color: #38bdf8 !important;
+    text-decoration: underline !important;
+}
+
+.footer-back-top {
+    color: #7b8596 !important;
+    font-size: 11px !important;
+    padding: 3px 6px !important;
+    border-radius: 4px !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    text-decoration: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.12s ease !important;
+    margin-left: 4px !important;
+}
+
+.footer-back-top:hover {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+@media (max-width: 768px) {
+    .footer-text {
+        display: none !important;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   6. MOBILE RESPONSIVE (< 992px)
+   -------------------------------------------------------------------------- */
+#sidebar-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.55);
+    z-index: 1020;
+    backdrop-filter: blur(2px);
+    transition: opacity 0.2s ease;
+}
+
+@media (max-width: 991px) {
+    #pf-sidebar {
+        transform: translate3d(-100%, 0, 0);
+        width: 270px;
+        max-width: 82vw;
+        bottom: 0;
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.45);
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        transition: transform 0.22s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    body.sidebar-mobile-open #pf-sidebar {
+        transform: translate3d(0, 0, 0);
+    }
+
+    body.sidebar-mobile-open #sidebar-backdrop {
+        display: block;
+    }
+
+    .sidebar-header-box {
+        display: flex;
+    }
+
+    .sidebar-flyout {
+        display: none;
+        position: static !important;
+        width: 100% !important;
+        background-color: #121418;
+        border: none;
+        box-shadow: none;
+        border-radius: 0;
+        max-height: none;
+        overflow: visible;
+    }
+
+    .flyout-header {
+        display: none;
+    }
+
+    .sidebar-item.open > .sidebar-flyout {
+        display: block;
+    }
+
+    .sidebar-item.open > .sidebar-link .sidebar-arrow {
+        transform: rotate(90deg);
+        color: #ffffff;
+    }
+
+    .sidebar-link {
+        min-height: 44px;
+        height: 44px;
+        padding: 0 16px;
+        font-size: 13.5px;
+    }
+
+    .sidebar-submenu {
+        list-style: none;
+        padding: 2px 0 6px 0;
+        margin: 0;
+    }
+
+    .sidebar-submenu li a {
+        display: block;
+        min-height: 40px;
+        line-height: 40px;
+        padding: 0 16px 0 44px;
+        color: #949eb0;
+        font-size: 13px;
+        text-decoration: none !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+    }
+
+    .sidebar-submenu li a:hover,
+    .sidebar-submenu li a:active {
+        color: #ffffff;
+        background-color: rgba(255, 255, 255, 0.06);
+    }
+
+    .sidebar-submenu li.active a {
+        color: #ffffff;
+        background-color: #242a38;
+        font-weight: 500;
+    }
+
+    #pf-main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 14px 12px !important;
+        box-sizing: border-box !important;
+    }
+
+    .header-host-info {
+        display: none !important;
+    }
+
+    .form-control,
+    select.form-control,
+    input[type="text"].form-control,
+    input[type="password"].form-control {
+        min-height: 38px !important;
+        height: 38px !important;
+        font-size: 14.5px !important;
+        padding: 6px 10px !important;
+        width: 100% !important;
+    }
+
+    .col-sm-10 .form-control {
+        width: 100% !important;
+    }
+
+    .btn {
+        min-height: 38px !important;
+        padding: 8px 14px !important;
+        font-size: 14px !important;
+    }
+
+    .action-buttons .btn {
+        margin-bottom: 6px;
+    }
+
+    .breadcrumb {
+        font-size: 14px !important;
+        padding: 8px 12px !important;
+    }
+
+    .table-responsive,
+    .contains-table {
+        width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        border: 1px solid #e2e8f0 !important;
+        margin-bottom: 14px !important;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   7. MODERN & ELEGANT CARDS, TABLES, FORMS
+   -------------------------------------------------------------------------- */
+/* Modern Panel / Card */
+.panel {
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+    margin-bottom: 18px !important;
+    overflow: hidden !important;
+    background-color: #ffffff !important;
+}
+
+.panel-default > .panel-heading {
+    background-color: #1e222b !important;
+    color: #ffffff !important;
+    border-color: #1e222b !important;
+    padding: 10px 16px !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    border-radius: 7px 7px 0 0 !important;
+}
+
+.panel-title {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.2px !important;
+}
+
+.panel-body {
+    padding: 16px !important;
+}
+
+/* Modern Tables */
+.table {
+    margin-bottom: 0 !important;
+    border-collapse: collapse !important;
+}
+
+.table > thead > tr > th {
+    background-color: #f8fafc !important;
+    color: #475569 !important;
+    font-weight: 600 !important;
+    font-size: 12px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding: 10px 14px !important;
+}
+
+.table > tbody > tr > td {
+    padding: 10px 14px !important;
+    border-top: 1px solid #f1f5f9 !important;
+    color: #334155 !important;
+    font-size: 13px !important;
+    vertical-align: middle !important;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: #fbfcfd !important;
+}
+
+.table-hover > tbody > tr:hover {
+    background-color: #f1f5f9 !important;
+}
+
+/* Modern Form Controls */
+.form-control,
+select.form-control {
+    height: 34px !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 5px !important;
+    padding: 6px 10px !important;
+    font-size: 13.5px !important;
+    color: #1e293b !important;
+    background-color: #ffffff !important;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.form-control:focus {
+    border-color: #337ab7 !important;
+    box-shadow: 0 0 0 3px rgba(51, 122, 183, 0.15) !important;
+    outline: none !important;
+}
+
+/* Modern Buttons */
+.btn {
+    border-radius: 5px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    padding: 7px 14px !important;
+    transition: all 0.12s ease !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Breadcrumbs & Header Bar Removed */
+.breadcrumb,
+.header,
+header.header,
+header.header .breadcrumb {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+}
+
+/* Modern Alerts */
+.alert {
+    border-radius: 6px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    padding: 12px 16px !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. MODERN ENTERPRISE TAB NAVIGATION (.nav-tabs & .nav-pills)
+   -------------------------------------------------------------------------- */
+.nav-tabs,
+.nav-pills {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 6px !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    padding: 6px 8px !important;
+    margin-top: 2px !important;
+    margin-bottom: 22px !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    list-style: none !important;
+}
+
+/* Remove default Bootstrap floats and margins */
+.nav-tabs > li,
+.nav-pills > li {
+    float: none !important;
+    display: inline-flex !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+}
+
+/* Modern Tab Pill Link */
+.nav-tabs > li > a,
+.nav-pills > li > a {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-size: 13.5px !important;
+    font-weight: 500 !important;
+    color: #475569 !important;
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    border-radius: 6px !important;
+    padding: 7px 15px !important;
+    margin: 0 !important;
+    line-height: 1.4 !important;
+    text-decoration: none !important;
+    transition: all 0.16s ease !important;
+    cursor: pointer !important;
+}
+
+/* Inactive Tab Icon Color */
+.nav-tabs > li:not(.active) > a i,
+.nav-pills > li:not(.active) > a i {
+    color: #64748b !important;
+    transition: color 0.16s ease !important;
+}
+
+/* Hover & Focus State */
+.nav-tabs > li > a:hover,
+.nav-pills > li > a:hover,
+.nav-tabs > li > a:focus,
+.nav-pills > li > a:focus {
+    color: #0f172a !important;
+    background-color: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    text-decoration: none !important;
+}
+
+.nav-tabs > li:not(.active) > a:hover i,
+.nav-pills > li:not(.active) > a:hover i {
+    color: #0284c7 !important;
+}
+
+/* Active State - Vibrant Sleek Gradient */
+.nav-tabs > li.active > a,
+.nav-pills > li.active > a,
+.nav-tabs > li.active > a:hover,
+.nav-pills > li.active > a:hover,
+.nav-tabs > li.active > a:focus,
+.nav-pills > li.active > a:focus {
+    color: #ffffff !important;
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+    border-color: #0284c7 !important;
+    border-bottom: 1px solid #0284c7 !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 4px rgba(2, 132, 199, 0.28) !important;
+}
+
+/* Active State Icons & Subtext */
+.nav-tabs > li.active > a i,
+.nav-pills > li.active > a i,
+.nav-tabs > li.active > a .text-info,
+.nav-pills > li.active > a .text-info,
+.nav-tabs > li.active > a span,
+.nav-pills > li.active > a span {
+    color: #ffffff !important;
+}
+
+/* Disabled State */
+.nav-tabs > li.disabled > a,
+.nav-pills > li.disabled > a {
+    color: #94a3b8 !important;
+    background: transparent !important;
+    border-color: transparent !important;
+    cursor: not-allowed !important;
+}
+
+
+
+/* ==========================================================================
+   MITRANET FULL-HEIGHT & FLUSH CARD SYSTEM (col-12 full-width & full-height)
+   Cards extend directly under the header down flush to right above the footer
+   ========================================================================== */
+
+#pf-main-content {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+    min-height: calc(100vh - var(--pf-header-h) - var(--pf-footer-h)) !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* Full container-fluid stretch */
+#pf-main-content .container-fluid {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: 0 !important;
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+}
+
+/* Full-height Card Window for WiFi / Interfaces / Panels */
+.winbox-window {
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    margin-bottom: 0 !important;
+    border-radius: 4px !important;
+    min-height: calc(100vh - var(--pf-header-h) - var(--pf-footer-h) - 16px) !important;
+}
+
+.winbox-grid-container {
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: #ffffff !important;
+    min-height: calc(100vh - var(--pf-header-h) - var(--pf-footer-h) - 100px) !important;
+}
+
+.winbox-grid-container table {
+    margin-bottom: 0 !important;
+}
+
+.winbox-statusbar {
+    margin-top: auto !important;
+}
+
+/* Full 12 cards & panels stretch flush */
+.panel-full-height {
+    min-height: calc(100vh - var(--pf-header-h) - var(--pf-footer-h) - 20px) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    margin-bottom: 4px !important;
+}
+
+.panel-full-height > .panel-body {
+    flex: 1 1 auto !important;
+}

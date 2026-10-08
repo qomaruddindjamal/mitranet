@@ -249,7 +249,7 @@ $current_tab = $_GET['tab'] ?? 'wifi';
 }
 </style>
 
-<div class="container-fluid" style="padding-top: 10px;">
+<div class="container-fluid" style="padding: 0; flex: 1 1 auto; display: flex; flex-direction: column;">
 
     <!-- WINBOX / ROUTEROS EXACT INTERFACE CONTAINER -->
     <div class="winbox-window">

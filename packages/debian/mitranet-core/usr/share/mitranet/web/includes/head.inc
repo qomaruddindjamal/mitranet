@@ -199,8 +199,7 @@ $sidebar_structure = array(
 
 	<link rel="stylesheet" href="/vendor/font-awesome/css/all.min.css">
 	<link rel="stylesheet" href="/vendor/sortable/sortable-theme-bootstrap.css">
-	<link rel="stylesheet" href="/css/pfSense.css">
-	<link rel="stylesheet" href="/css/sidebar-layout.css">
+	<link rel="stylesheet" href="/css/mitranet.css">
 
 	<title><?=$tabtitle?></title>
 </head>
