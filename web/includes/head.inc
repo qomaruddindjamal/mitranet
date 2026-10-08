@@ -103,9 +103,7 @@ $services_menu = array(
 $vpn_menu = array(
     array("IPsec", "#"),
     array("L2TP", "#"),
-    array("OpenVPN", "#"),
-    array("WireGuard", "/wg/vpn_wg_tunnels.php"),
-    array("Xray-core", "/vpn_xray.php")
+    array("OpenVPN", "#")
 );
 
 $status_menu = array(
@@ -312,31 +310,3 @@ $sidebar_structure = array(
 </aside>
 
 <div id="pf-main-content" class="container static">
-	<header class="header">
-		<?php
-		if (isset($pglinks)) {
-			echo genhtmltitle($pgtitle, $pglinks);
-		} else {
-			echo genhtmltitle(isset($pgtitle) ? $pgtitle : $pagetitle);
-		}
-		?>
-		<ul class="context-links">
-			<?php if (basename($_SERVER['SCRIPT_NAME']) === 'index.php'): ?>
-			<li>
-				<a href="#" title="Save dashboard layout" id="btnstore" class="invisible">
-					<i class="fa-solid fa-save icon-pointer"></i>
-				</a>
-			</li>
-			<li>
-				<a onclick="$('#widget-available').toggle(360);" title="Available widgets">
-					<i class="fa-solid fa-plus icon-pointer"></i>
-				</a>
-			</li>
-			<?php endif; ?>
-			<li>
-				<a href="/help.php?page=<?=urlencode(basename($_SERVER['SCRIPT_NAME']))?>" target="_blank" title="Help for items on this page">
-					<i class="fa-solid fa-question-circle"></i>
-				</a>
-			</li>
-		</ul>
-	</header>

@@ -222,28 +222,42 @@ class MitraNetApi {
         return $res['status'] === 200 ? $res['data'] : ['running' => false, 'tunnels' => []];
     }
 
-    public static function controlWireGuard($action) {
-        return self::request('/wireguard/service', 'POST', ['action' => $action]);
+    public static function controlWireGuard($action, $tunnel = 'wg0') {
+        return self::request('/wireguard/service', 'POST', ['action' => $action, 'tunnel' => $tunnel]);
+    }
+
+    public static function controlSystemService($service, $action) {
+        return self::request('/system/service', 'POST', ['service' => $service, 'action' => $action]);
     }
 
     public static function generateWireGuardKeys() {
         return self::request('/wireguard/keygen', 'POST', []);
     }
 
-    public static function saveWireGuardTunnel($name, $address, $listen_port, $private_key, $descr = '') {
+    public static function saveWireGuardTunnel($name, $address, $listen_port, $private_key, $descr = '', $mode = 'server') {
         return self::request('/wireguard/tunnel/save', 'POST', [
             'name' => $name,
             'address' => $address,
             'listen_port' => $listen_port,
             'private_key' => $private_key,
-            'descr' => $descr
+            'descr' => $descr,
+            'mode' => $mode
         ]);
     }
 
-    public static function saveWireGuardPeer($tunnel, $pubkey, $allowed_ips, $endpoint = '', $keepalive = '25', $preshared = '', $descr = '') {
+    public static function deleteWireGuardTunnel($name) {
+        return self::request('/wireguard/tunnel/delete', 'POST', [
+            'name' => $name
+        ]);
+    }
+
+    public static function saveWireGuardPeer($tunnel, $pubkey, $allowed_ips, $endpoint = '', $keepalive = '25', $preshared = '', $descr = '', $old_pubkey = '', $client_privkey = '', $client_dns = '') {
         return self::request('/wireguard/peer/save', 'POST', [
             'tunnel' => $tunnel,
             'public_key' => $pubkey,
+            'old_public_key' => $old_pubkey,
+            'client_private_key' => $client_privkey,
+            'client_dns' => $client_dns,
             'allowed_ips' => $allowed_ips,
             'endpoint' => $endpoint,
             'keepalive' => $keepalive,
@@ -257,6 +271,14 @@ class MitraNetApi {
             'tunnel' => $tunnel,
             'public_key' => $pubkey
         ]);
+    }
+
+    public static function getWireGuardClientConfig($tunnel, $pubkey, $endpoint = '') {
+        $url = '/wireguard/client-config?tunnel=' . urlencode($tunnel) . '&peer=' . urlencode($pubkey);
+        if ($endpoint) {
+            $url .= '&endpoint=' . urlencode($endpoint);
+        }
+        return self::request($url, 'GET');
     }
 
     public static function getXray() {

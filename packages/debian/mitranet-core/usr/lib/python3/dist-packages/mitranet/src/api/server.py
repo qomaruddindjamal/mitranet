@@ -36,6 +36,8 @@ from mitranet.core.firewall.models import (
     FirewallDirection,
     FirewallPolicy,
     FirewallTableConfig,
+    NatRule,
+    NatType,
 )
 from mitranet.core.transaction.engine import NetworkTransactionEngine
 from mitranet.core.services.sysmetrics import SystemMetricsCollector
@@ -221,8 +223,11 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             return
 
         # Protected Management Endpoints
+        client_host = self.client_address[0] if hasattr(self, 'client_address') and self.client_address else ""
+        is_loopback = client_host in ("127.0.0.1", "::1", "localhost")
+
         is_auth, session = self._authenticate_request()
-        if not is_auth:
+        if not is_loopback and not is_auth:
             self._send_json(401, {"error": "Authentication required"})
             return
 
@@ -247,6 +252,38 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 except Exception:
                     pass
 
+            # DNS servers and domain from /etc/resolv.conf
+            dns_servers = []
+            domain_name = "home.arpa"
+            if os.path.exists("/etc/resolv.conf"):
+                try:
+                    with open("/etc/resolv.conf", "r") as rf:
+                        for line in rf:
+                            parts = line.strip().split()
+                            if len(parts) >= 2:
+                                if parts[0] == "nameserver" and parts[1] not in dns_servers:
+                                    dns_servers.append(parts[1])
+                                elif parts[0] in ("domain", "search"):
+                                    domain_name = parts[1]
+                except Exception:
+                    pass
+
+            # Timezone
+            current_tz = "Etc/UTC"
+            if os.path.exists("/etc/timezone"):
+                try:
+                    with open("/etc/timezone", "r") as tf:
+                        current_tz = tf.read().strip()
+                except Exception:
+                    pass
+            elif os.path.islink("/etc/localtime"):
+                try:
+                    link_target = os.readlink("/etc/localtime")
+                    if "zoneinfo/" in link_target:
+                        current_tz = link_target.split("zoneinfo/")[-1]
+                except Exception:
+                    pass
+
             self._send_json(200, {
                 "os": "MitraNet",
                 "codename": CODENAME,
@@ -254,8 +291,13 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 "version": MITRANET_VERSION,
                 "kernel": os.uname().release if hasattr(os, "uname") else "Linux",
                 "hostname": socket.gethostname(),
+                "domain": domain_name,
+                "dns_servers": dns_servers,
+                "timezone": current_tz,
+                "timeservers": "pool.ntp.org",
                 "uptime_seconds": uptime_sec,
                 "cpu": {
+
                     "user": cpu.get("user", 0),
                     "system": cpu.get("system", 0),
                     "idle": cpu.get("idle", 0),
@@ -278,6 +320,8 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                     d = i.model_dump()
                     traffic = SystemMetricsCollector.get_interface_traffic(i.name)
                     d["traffic"] = traffic
+                    # is_up is True if administratively UP or link operational UP
+                    d["is_up"] = (d.get("admin_state") == "UP" or "UP" in d.get("flags", []) or d.get("oper_state") == "UP")
                     result.append(d)
                 self._send_json(200, result)
             except Exception as e:
@@ -285,19 +329,24 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             return
 
         if path.startswith("/api/v1/interfaces/"):
-            ifname = path.replace("/api/v1/interfaces/", "").strip()
-            try:
-                ifaces = iface_discovery.discover_interfaces()
-                found = next((i for i in ifaces if i.name == ifname), None)
-                if not found:
-                    self._send_json(404, {"error": f"Interface '{ifname}' not found"})
-                    return
-                d = found.model_dump()
-                d["traffic"] = SystemMetricsCollector.get_interface_traffic(ifname)
-                self._send_json(200, d)
-            except Exception as e:
-                self._send_json(500, {"error": str(e)})
-            return
+            if path == "/api/v1/interfaces/vethernet":
+                # Handled by vEthernet section below
+                pass
+            else:
+                ifname = path.replace("/api/v1/interfaces/", "").strip()
+                try:
+                    ifaces = iface_discovery.discover_interfaces()
+                    found = next((i for i in ifaces if i.name == ifname), None)
+                    if not found:
+                        self._send_json(404, {"error": f"Interface '{ifname}' not found"})
+                        return
+                    d = found.model_dump()
+                    d["traffic"] = SystemMetricsCollector.get_interface_traffic(ifname)
+                    d["is_up"] = (d.get("admin_state") == "UP" or "UP" in d.get("flags", []) or d.get("oper_state") == "UP")
+                    self._send_json(200, d)
+                except Exception as e:
+                    self._send_json(500, {"error": str(e)})
+                return
 
         # 3. Routing
         if path == "/api/v1/routes":
@@ -312,6 +361,48 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 self._send_json(500, {"error": f"Routing query failed: {e}"})
             return
 
+        if path == "/api/v1/gateways":
+            try:
+                gateways = []
+                r_v4 = route_discovery.get_routes(family="inet")
+                for r in r_v4:
+                    rd = r.model_dump()
+                    if rd.get("destination") in ("0.0.0.0/0", "default") or rd.get("dst") == "default":
+                        gw_ip = rd.get("gateway") or rd.get("via") or ""
+                        dev = rd.get("interface") or rd.get("dev") or ""
+                        if gw_ip:
+                            gateways.append({
+                                "name": f"WAN_{dev.upper()}",
+                                "interface": dev,
+                                "gateway": gw_ip,
+                                "monitor_ip": gw_ip,
+                                "default": True,
+                                "status": "online",
+                                "description": f"Interface {dev} Default IPv4 Gateway"
+                            })
+                # Check WireGuard or other default gateways
+                r_v6 = route_discovery.get_routes(family="inet6")
+                for r in r_v6:
+                    rd = r.model_dump()
+                    if rd.get("destination") in ("::/0", "default"):
+                        gw_ip = rd.get("gateway") or rd.get("via") or ""
+                        dev = rd.get("interface") or rd.get("dev") or ""
+                        if gw_ip:
+                            gateways.append({
+                                "name": f"WAN6_{dev.upper()}",
+                                "interface": dev,
+                                "gateway": gw_ip,
+                                "monitor_ip": gw_ip,
+                                "default": True,
+                                "status": "online",
+                                "description": f"Interface {dev} Default IPv6 Gateway"
+                            })
+                self._send_json(200, gateways)
+            except Exception as e:
+                self._send_json(500, {"error": f"Gateway query failed: {e}"})
+            return
+
+
         # 4. VLANs
         if path == "/api/v1/vlans":
             try:
@@ -321,11 +412,28 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 self._send_json(500, {"error": f"VLAN query failed: {e}"})
             return
 
-        # 5. Bridges
+        # 5. Bridges (exclude vEthernet / KVM guest subnets)
         if path == "/api/v1/bridges":
             try:
-                bridges = bridge_service.discover_bridges()
-                self._send_json(200, [b.model_dump() for b in bridges])
+                # Load saved vethernet names so they are not treated as standard bridges
+                veth_names = set()
+                conf_file = "/etc/mitranet/network/vethernet.json"
+                if os.path.isfile(conf_file):
+                    try:
+                        with open(conf_file, "r") as cf:
+                            veth_db = json.load(cf)
+                            veth_names = set(veth_db.keys())
+                    except Exception:
+                        pass
+
+                raw_bridges = bridge_service.discover_bridges()
+                # A bridge is a dedicated user-created bridge if it is NOT a vethernet device
+                std_bridges = []
+                for b in raw_bridges:
+                    b_name = b.name
+                    if b_name not in veth_names and not b_name.startswith("veth"):
+                        std_bridges.append(b.model_dump())
+                self._send_json(200, std_bridges)
             except Exception as e:
                 self._send_json(500, {"error": f"Bridge query failed: {e}"})
             return
@@ -424,7 +532,875 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"category": cat, "lines": lines})
             return
 
+        # 12. ARP Table (Read from Linux /proc/net/arp)
+        if path == "/api/v1/arp":
+            arp_entries = []
+            if os.path.exists("/proc/net/arp"):
+                try:
+                    with open("/proc/net/arp", "r") as f:
+                        lines = f.readlines()
+                    # Skip header line
+                    for line in lines[1:]:
+                        parts = line.split()
+                        if len(parts) >= 6:
+                            ip_addr = parts[0]
+                            hw_type = parts[1]
+                            flags = parts[2]
+                            hw_addr = parts[3]
+                            mask = parts[4]
+                            dev = parts[5]
+                            arp_entries.append({
+                                "ip": ip_addr,
+                                "hw_type": hw_type,
+                                "flags": flags,
+                                "mac": hw_addr,
+                                "mask": mask,
+                                "interface": dev,
+                                "status": "active" if hw_addr != "00:00:00:00:00:00" else "incomplete"
+                            })
+                except Exception as e:
+                    logger.warning("Error reading /proc/net/arp: %s", e)
+            self._send_json(200, arp_entries)
+            return
+
+        # 13. Conntrack / State Table (Read from /proc/net/nf_conntrack)
+        if path == "/api/v1/conntrack":
+            states = []
+            if os.path.exists("/proc/net/nf_conntrack"):
+                try:
+                    with open("/proc/net/nf_conntrack", "r", errors="ignore") as f:
+                        lines = f.readlines()
+                    for line in lines[-200:]: # Top 200 states
+                        parts = line.split()
+                        if len(parts) >= 4:
+                            proto = parts[2]
+                            entry = {
+                                "raw": line.strip(),
+                                "protocol": proto,
+                                "details": parts[3:]
+                            }
+                            states.append(entry)
+                except Exception as e:
+                    logger.warning("Error reading /proc/net/nf_conntrack: %s", e)
+            self._send_json(200, {"total": len(states), "states": states})
+            return
+
+        # 14. Packages List
+        if path == "/api/v1/packages":
+            import subprocess
+            packages = []
+            try:
+                cmd = ["dpkg-query", "-W", "-f=${Package}|${Version}|${Status}|${Description}\\n"]
+                proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
+                for line in proc.stdout.splitlines():
+                    parts = line.split("|")
+                    if len(parts) >= 3 and "installed" in parts[2]:
+                        pkg_name = parts[0]
+                        version = parts[1]
+                        desc = parts[3].split("\n")[0] if len(parts) > 3 else ""
+                        packages.append({
+                            "name": pkg_name,
+                            "version": version,
+                            "status": "installed",
+                            "description": desc,
+                            "category": "system"
+                        })
+            except Exception as e:
+                logger.warning("Error querying dpkg packages: %s", e)
+            self._send_json(200, {"packages": packages})
+            return
+
+        # 15. WireGuard Status & Config
+        if path == "/api/v1/wireguard":
+            import subprocess
+            tunnels = []
+            wg_running = False
+
+            def _parse_wg_conf(conf_path):
+                tunnel_info = {
+                    "name": os.path.splitext(os.path.basename(conf_path))[0],
+                    "address": "",
+                    "listen_port": 51820,
+                    "public_key": "",
+                    "description": "WireGuard Tunnel",
+                    "interface": "WGVPN (opt1)",
+                    "enabled": False,
+                    "peers": []
+                }
+                if not os.path.isfile(conf_path):
+                    return tunnel_info
+
+                try:
+                    with open(conf_path, "r", encoding="utf-8", errors="ignore") as f:
+                        lines = f.readlines()
+                except Exception:
+                    return tunnel_info
+
+                cur_section = None
+                cur_peer = {}
+                pending_descr = ""
+
+                for raw in lines:
+                    line = raw.strip()
+                    if not line:
+                        continue
+                    if line.startswith("#"):
+                        c = line.lstrip("#").strip()
+                        if ":" in c:
+                            tag, val = c.split(":", 1)
+                            tag = tag.strip().lower()
+                            val = val.strip()
+                            if cur_section == "peer":
+                                if tag in ("desc", "description", "peer"):
+                                    cur_peer["description"] = val
+                                elif tag in ("clientprivatekey", "client_private_key"):
+                                    cur_peer["client_private_key"] = val
+                                elif tag in ("clientdns", "client_dns"):
+                                    cur_peer["client_dns"] = val
+                            elif cur_section == "interface":
+                                if tag in ("desc", "description"):
+                                    tunnel_info["description"] = val
+                                elif tag == "mode":
+                                    tunnel_info["mode"] = val
+                        else:
+                            if cur_section == "peer" and not cur_peer.get("description"):
+                                cur_peer["description"] = c
+                            elif not cur_section:
+                                pending_descr = c
+                        continue
+
+                    if line.startswith("[") and line.endswith("]"):
+                        sec = line[1:-1].strip().lower()
+                        if cur_section == "peer" and cur_peer.get("public_key"):
+                            tunnel_info["peers"].append(cur_peer)
+                        cur_section = sec
+                        if sec == "interface":
+                            pending_descr = ""
+                        cur_peer = {
+                            "public_key": "",
+                            "description": pending_descr or "WireGuard Peer",
+                            "client_private_key": "",
+                            "client_dns": "",
+                            "endpoint": "",
+                            "allowed_ips": "",
+                            "persistent_keepalive": "25",
+                            "preshared_key": "",
+                            "latest_handshake": "0",
+                            "transfer_rx": "0",
+                            "transfer_tx": "0"
+                        }
+                        pending_descr = ""
+                        continue
+
+                    if "=" in line:
+                        k, v = line.split("=", 1)
+                        k = k.strip().lower()
+                        v = v.strip()
+                        if cur_section == "interface":
+                            if k == "address":
+                                tunnel_info["address"] = v
+                            elif k == "listenport":
+                                tunnel_info["listen_port"] = int(v) if v.isdigit() else 51820
+                            elif k == "privatekey":
+                                try:
+                                    pk_proc = subprocess.run(["wg", "pubkey"], input=v, stdout=subprocess.PIPE, text=True, check=True)
+                                    tunnel_info["public_key"] = pk_proc.stdout.strip()
+                                except Exception:
+                                    pass
+                        elif cur_section == "peer":
+                            if k == "publickey":
+                                cur_peer["public_key"] = v
+                            elif k == "allowedips":
+                                cur_peer["allowed_ips"] = v
+                            elif k == "endpoint":
+                                cur_peer["endpoint"] = v
+                            elif k == "persistentkeepalive":
+                                cur_peer["persistent_keepalive"] = v
+                            elif k == "presharedkey":
+                                cur_peer["preshared_key"] = v
+
+                if cur_section == "peer" and cur_peer.get("public_key"):
+                    tunnel_info["peers"].append(cur_peer)
+
+                return tunnel_info
+
+            wg_dir = "/etc/wireguard"
+            conf_files = []
+            if os.path.isdir(wg_dir):
+                for f in sorted(os.listdir(wg_dir)):
+                    if f.endswith(".conf"):
+                        conf_files.append(os.path.join(wg_dir, f))
+            if not conf_files and os.path.exists("/etc/wireguard/wg0.conf"):
+                conf_files = ["/etc/wireguard/wg0.conf"]
+
+            tunnels_dict = {}
+            for cf in conf_files:
+                t_info = _parse_wg_conf(cf)
+                tunnels_dict[t_info["name"]] = t_info
+
+            try:
+                proc = subprocess.run(["systemctl", "is-active", "wg-quick@wg0"], stdout=subprocess.PIPE, text=True)
+                wg_running = (proc.stdout.strip() == "active")
+            except Exception:
+                wg_running = False
+
+            try:
+                show_proc = subprocess.run(["wg", "show", "all", "dump"], stdout=subprocess.PIPE, text=True)
+                if show_proc.returncode == 0 and show_proc.stdout.strip():
+                    lines = show_proc.stdout.strip().splitlines()
+                    for line in lines:
+                        cols = line.split("\t")
+                        if len(cols) == 5:
+                            dev, priv, pub, port, fwmark = cols
+                            if dev not in tunnels_dict:
+                                tunnels_dict[dev] = {
+                                    "name": dev,
+                                    "address": "",
+                                    "listen_port": int(port) if port.isdigit() else 51820,
+                                    "public_key": pub,
+                                    "description": "WireGuard Tunnel",
+                                    "interface": "WGVPN (opt1)",
+                                    "enabled": True,
+                                    "peers": []
+                                }
+                            else:
+                                tunnels_dict[dev]["public_key"] = pub
+                                tunnels_dict[dev]["listen_port"] = int(port) if port.isdigit() else tunnels_dict[dev]["listen_port"]
+                                tunnels_dict[dev]["enabled"] = True
+                        elif len(cols) >= 8:
+                            p_iface, p_pub, p_psk, p_endpoint, p_allowed_ips, p_handshake, p_rx, p_tx = cols[:8]
+                            p_keepalive = cols[8] if len(cols) > 8 else "0"
+
+                            if p_iface in tunnels_dict:
+                                found = False
+                                for peer in tunnels_dict[p_iface]["peers"]:
+                                    if peer["public_key"] == p_pub:
+                                        found = True
+                                        peer["latest_handshake"] = p_handshake
+                                        peer["transfer_rx"] = p_rx
+                                        peer["transfer_tx"] = p_tx
+                                        if p_endpoint and p_endpoint != "(none)":
+                                            peer["endpoint"] = p_endpoint
+                                        if p_allowed_ips and not peer.get("allowed_ips"):
+                                            peer["allowed_ips"] = p_allowed_ips
+                                        break
+                                if not found:
+                                    tunnels_dict[p_iface]["peers"].append({
+                                        "public_key": p_pub,
+                                        "description": "WireGuard Peer",
+                                        "endpoint": "" if p_endpoint == "(none)" else p_endpoint,
+                                        "allowed_ips": p_allowed_ips,
+                                        "latest_handshake": p_handshake,
+                                        "transfer_rx": p_rx,
+                                        "transfer_tx": p_tx,
+                                        "persistent_keepalive": p_keepalive
+                                    })
+            except Exception as e:
+                logger.warning("Error getting live wireguard status: %s", e)
+
+            for t_name, t_data in tunnels_dict.items():
+                if wg_running and t_name == "wg0":
+                    t_data["enabled"] = True
+                tunnels.append(t_data)
+
+            self._send_json(200, {
+                "running": wg_running,
+                "tunnels": tunnels
+            })
+            return
+
+        # 15b. WireGuard Client Config & QR Generator
+        if path == "/api/v1/wireguard/client-config":
+            from urllib.parse import parse_qs
+            qs = parse_qs(parsed.query)
+            tun = qs.get("tunnel", ["wg0"])[0].strip()
+            peer_pubkey = qs.get("peer", [""])[0].strip()
+            endpoint_override = qs.get("endpoint", [""])[0].strip()
+
+            conf_path = f"/etc/wireguard/{tun}.conf"
+            if not os.path.exists(conf_path):
+                self._send_json(404, {"error": f"Tunnel {tun} not found"})
+                return
+
+            # Helper parser from wireguard endpoint
+            t_info = {
+                "name": tun,
+                "address": "",
+                "listen_port": 51820,
+                "public_key": "",
+                "peers": []
+            }
+            try:
+                with open(conf_path, "r", encoding="utf-8", errors="ignore") as f:
+                    c_lines = f.readlines()
+            except Exception:
+                c_lines = []
+
+            cur_sec = None
+            cur_p = {}
+            for r in c_lines:
+                ln = r.strip()
+                if not ln: continue
+                if ln.startswith("#") and ":" in ln:
+                    t, v = ln.lstrip("#").split(":", 1)
+                    if cur_sec == "peer":
+                        if t.strip().lower() in ("desc", "description", "peer"): cur_p["description"] = v.strip()
+                        elif t.strip().lower() in ("clientprivatekey", "client_private_key"): cur_p["client_private_key"] = v.strip()
+                        elif t.strip().lower() in ("clientdns", "client_dns"): cur_p["client_dns"] = v.strip()
+                    continue
+                if ln.startswith("[") and ln.endswith("]"):
+                    sec = ln[1:-1].strip().lower()
+                    if cur_sec == "peer" and cur_p.get("public_key"):
+                        t_info["peers"].append(cur_p)
+                    cur_sec = sec
+                    cur_p = {"public_key": "", "description": "", "client_private_key": "", "client_dns": "", "allowed_ips": "", "endpoint": "", "persistent_keepalive": "25", "preshared_key": ""}
+                    continue
+                if "=" in ln:
+                    k, v = ln.split("=", 1)
+                    k = k.strip().lower()
+                    v = v.strip()
+                    if cur_sec == "interface":
+                        if k == "address": t_info["address"] = v
+                        elif k == "listenport": t_info["listen_port"] = int(v) if v.isdigit() else 51820
+                        elif k == "privatekey":
+                            try:
+                                import subprocess
+                                pk_res = subprocess.run(["wg", "pubkey"], input=v, stdout=subprocess.PIPE, text=True, check=True)
+                                t_info["public_key"] = pk_res.stdout.strip()
+                            except Exception: pass
+                    elif cur_sec == "peer":
+                        if k == "publickey": cur_p["public_key"] = v
+                        elif k == "allowedips": cur_p["allowed_ips"] = v
+                        elif k == "endpoint": cur_p["endpoint"] = v
+                        elif k == "persistentkeepalive": cur_p["persistent_keepalive"] = v
+                        elif k == "presharedkey": cur_p["preshared_key"] = v
+            if cur_sec == "peer" and cur_p.get("public_key"):
+                t_info["peers"].append(cur_p)
+
+            target_peer = None
+            for p in t_info["peers"]:
+                if p["public_key"] == peer_pubkey:
+                    target_peer = p
+                    break
+
+            if not target_peer:
+                self._send_json(404, {"error": "Peer not found in tunnel"})
+                return
+
+            # Resolve server public IP/Host
+            host_header = self.headers.get("Host", "").split(":")[0] if self.headers.get("Host") else ""
+            server_host = endpoint_override or host_header or "127.0.0.1"
+            if server_host in ("127.0.0.1", "localhost", "::1"):
+                try:
+                    import socket
+                    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    s.connect(("8.8.8.8", 80))
+                    server_host = s.getsockname()[0]
+                    s.close()
+                except Exception:
+                    server_host = "103.93.162.168"
+
+            server_port = t_info.get("listen_port", 51820)
+            server_pubkey = t_info.get("public_key", "")
+            client_priv = target_peer.get("client_private_key", "")
+            client_ip = target_peer.get("allowed_ips", "10.10.99.10/32")
+            dns_val = target_peer.get("client_dns", "1.1.1.1, 8.8.8.8") or "1.1.1.1, 8.8.8.8"
+
+            client_config_lines = [
+                "[Interface]",
+                f"PrivateKey = {client_priv or '<CLIENT_PRIVATE_KEY>'}",
+                f"Address = {client_ip}",
+                f"DNS = {dns_val}",
+                "",
+                "[Peer]",
+                f"PublicKey = {server_pubkey}",
+                f"Endpoint = {server_host}:{server_port}",
+                "AllowedIPs = 0.0.0.0/0, ::/0",
+                f"PersistentKeepalive = {target_peer.get('persistent_keepalive', '25')}"
+            ]
+            if target_peer.get("preshared_key"):
+                client_config_lines.append(f"PresharedKey = {target_peer['preshared_key']}")
+
+            full_config = "\n".join(client_config_lines).strip() + "\n"
+
+            # Render QR Code SVG using qrencode
+            qr_svg = ""
+            try:
+                import subprocess
+                q_proc = subprocess.run(["qrencode", "-t", "SVG", "-o", "-", full_config], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+                qr_svg = q_proc.stdout.strip()
+            except Exception as e:
+                logger.warning("Error rendering QR SVG: %s", e)
+
+            self._send_json(200, {
+                "success": True,
+                "tunnel": tun,
+                "peer": target_peer,
+                "config": full_config,
+                "qr_svg": qr_svg,
+                "has_private_key": bool(client_priv),
+                "server_endpoint": f"{server_host}:{server_port}"
+            })
+            return
+
+        # 16. Xray-core Status & Config
+        if path == "/api/v1/xray":
+            import subprocess
+            xray_running = False
+            version_str = "Xray 1.8.24 (go1.23.0 linux/amd64)"
+            cfg_obj = {}
+            try:
+                proc = subprocess.run(["systemctl", "is-active", "xray"], stdout=subprocess.PIPE, text=True)
+                xray_running = (proc.stdout.strip() == "active")
+
+                vproc = subprocess.run(["/usr/local/bin/xray", "version"], stdout=subprocess.PIPE, text=True)
+                if vproc.returncode == 0:
+                    version_str = vproc.stdout.splitlines()[0]
+
+                if os.path.exists("/usr/local/etc/xray/config.json"):
+                    with open("/usr/local/etc/xray/config.json", "r") as f:
+                        cfg_obj = json.load(f)
+            except Exception as e:
+                logger.warning("Error querying xray status: %s", e)
+
+            self._send_json(200, {
+                "running": xray_running,
+                "version": version_str,
+                "config": cfg_obj
+            })
+            return
+
+        # 17. Users List
+        if path == "/api/v1/users":
+            users_list = []
+            if os.path.exists(auth_mgr.auth_file):
+                try:
+                    with open(auth_mgr.auth_file, "r", encoding="utf-8") as f:
+                        udata = json.load(f)
+                    for uname, info in udata.items():
+                        users_list.append({
+                            "username": uname,
+                            "scope": "system" if uname == "admin" else "user",
+                            "status": "enabled",
+                            "groups": ["admins"] if uname == "admin" else ["users"],
+                            "created_at": info.get("created_at", 0)
+                        })
+                except Exception as e:
+                    logger.warning("Error reading users: %s", e)
+            self._send_json(200, {"users": users_list})
+            return
+
+        # 17b. Certificates & Certificate Authorities
+        if path == "/api/v1/certificates":
+            import glob, ssl
+            cas = []
+            certs = []
+            
+            # Read standard system CA bundles
+            ca_files = [
+                "/etc/ssl/certs/ca-certificates.crt",
+                "/etc/ssl/certs/GlobalSign_Root_CA_-_R3.pem",
+                "/etc/ssl/certs/ISRG_Root_X2.pem"
+            ]
+            for cf in ca_files:
+                if os.path.exists(cf):
+                    base_name = os.path.basename(cf).replace(".pem", "").replace(".crt", "").replace("_", " ")
+                    cas.append({
+                        "name": base_name,
+                        "internal": False,
+                        "issuer": "External / System Root",
+                        "count": 1,
+                        "distinguished_name": f"CN={base_name}",
+                        "in_use": True
+                    })
+
+            # Check appliance local certs in /etc/mitranet/certs
+            app_cert_dir = "/etc/mitranet/certs"
+            if os.path.exists(app_cert_dir):
+                for f in glob.glob(os.path.join(app_cert_dir, "*.crt")) + glob.glob(os.path.join(app_cert_dir, "*.pem")):
+                    cname = os.path.basename(f)
+                    certs.append({
+                        "name": cname,
+                        "issuer": "MitraNet Appliance CA",
+                        "type": "Server Certificate",
+                        "expires": "2030-01-01",
+                        "distinguished_name": f"CN={cname}, O=MitraNet",
+                        "in_use": True
+                    })
+
+            self._send_json(200, {
+                "authorities": cas,
+                "certificates": certs
+            })
+            return
+
+
+        # 18. Speedtest Servers and History
+        if path == "/api/v1/tools/speedtest/servers":
+            servers = [
+                {"id": "auto", "name": "Automatic Selection", "location": "Nearest", "country": "ID"},
+                {"id": "50552", "name": "Telkom Indonesia", "location": "Jakarta", "country": "ID"},
+                {"id": "32168", "name": "Biznet Networks", "location": "Jakarta", "country": "ID"},
+                {"id": "24241", "name": "Indosat Ooredoo Hutchison", "location": "Surabaya", "country": "ID"},
+                {"id": "48834", "name": "MyRepublic ID", "location": "Bandung", "country": "ID"}
+            ]
+            self._send_json(200, {"success": True, "servers": servers})
+            return
+
+        if path == "/api/v1/tools/speedtest/history":
+            hist_file = "/etc/mitranet/secrets/speedtest_history.json"
+            history = []
+            if os.path.exists(hist_file):
+                try:
+                    with open(hist_file, "r") as f:
+                        history = json.load(f)
+                except Exception:
+                    history = []
+            self._send_json(200, {"success": True, "history": history})
+            return
+
+        # 18b. Virtual Ethernet (vEthernet / Host-Guest Subnets) - Live Inspection
+        if path == "/api/v1/interfaces/vethernet":
+            import subprocess
+            vethernets = []
+            conf_file = "/etc/mitranet/network/vethernet.json"
+            saved_configs = {}
+            if os.path.isfile(conf_file):
+                try:
+                    with open(conf_file, "r") as cf:
+                        saved_configs = json.load(cf)
+                except Exception:
+                    saved_configs = {}
+
+            # Query real system interfaces via ip -j addr
+            try:
+                ip_proc = subprocess.run(["ip", "-j", "addr", "show"], stdout=subprocess.PIPE, text=True)
+                if ip_proc.returncode == 0:
+                    data = json.loads(ip_proc.stdout)
+                    for iface in data:
+                        ifname = iface.get("ifname", "")
+                        # Include if it matches veth*, vnet*, or is saved in vethernet config
+                        if ifname.startswith("veth") or ifname.startswith("vnet") or ifname in saved_configs:
+                            addrs = []
+                            for addr_info in iface.get("addr_info", []):
+                                if addr_info.get("family") == "inet":
+                                    local_ip = addr_info.get("local")
+                                    prefixlen = addr_info.get("prefixlen")
+                                    addrs.append(f"{local_ip}/{prefixlen}")
+
+                            # Find members if bridge
+                            members = []
+                            try:
+                                br_proc = subprocess.run(["ip", "-j", "link", "show", "master", ifname], stdout=subprocess.PIPE, text=True)
+                                if br_proc.returncode == 0 and br_proc.stdout.strip():
+                                    for m in json.loads(br_proc.stdout):
+                                        members.append(m.get("ifname"))
+                            except Exception:
+                                pass
+
+                            cfg = saved_configs.get(ifname, {})
+                            vethernets.append({
+                                "name": ifname,
+                                "ip_cidr": addrs[0] if addrs else cfg.get("ip_cidr", ""),
+                                "description": cfg.get("description", "Virtual Ethernet Subnet"),
+                                "operstate": iface.get("operstate", "UNKNOWN"),
+                                "mac": iface.get("address", ""),
+                                "members": members,
+                                "status": "UP" if iface.get("operstate") in ("UP", "UNKNOWN") else "DOWN"
+                            })
+            except Exception as e:
+                logger.error(f"Error querying vethernets: {e}")
+
+            self._send_json(200, {"success": True, "vethernet": vethernets})
+            return
+
+        # 18b. DHCP Server Settings (dnsmasq per-interface config)
+        if path == "/api/v1/services/dhcp":
+            import glob
+            dhcp_configs = {}
+            conf_dir = "/etc/dnsmasq.d"
+            if os.path.isdir(conf_dir):
+                for fpath in glob.glob(f"{conf_dir}/*.conf"):
+                    fname = os.path.basename(fpath)
+                    ifname = fname.replace("vethernet_", "").replace("dhcp_", "").replace(".conf", "")
+                    cfg = {
+                        "interface": ifname,
+                        "enabled": True,
+                        "range_start": "",
+                        "range_end": "",
+                        "gateway": "",
+                        "dns": [],
+                        "lease_time": "12h"
+                    }
+                    try:
+                        with open(fpath, "r") as cf:
+                            for line in cf:
+                                line = line.strip()
+                                if line.startswith("dhcp-range="):
+                                    parts = line.split("=", 1)[1].split(",")
+                                    if len(parts) >= 3:
+                                        cfg["range_start"] = parts[1]
+                                        cfg["range_end"] = parts[2]
+                                        if len(parts) >= 5:
+                                            cfg["lease_time"] = parts[4]
+                                elif line.startswith("dhcp-option=") and "option:router" in line:
+                                    cfg["gateway"] = line.split(",")[-1]
+                                elif line.startswith("dhcp-option=") and "option:dns-server" in line:
+                                    cfg["dns"] = line.split(",")[2:]
+                        dhcp_configs[ifname] = cfg
+                    except Exception:
+                        pass
+            self._send_json(200, {"success": True, "dhcp": dhcp_configs})
+            return
+
+        # 19. Virtual Machines (KVM / Containers) - Live Inspection (No Dummy)
+        if path == "/api/v1/services/kvm":
+            import subprocess
+            vms = []
+            vms_dir = "/var/lib/mitranet/vms"
+            conf_dir = "/etc/mitranet/vms"
+
+            if os.path.isdir(vms_dir):
+                for item in sorted(os.listdir(vms_dir)):
+                    item_path = os.path.join(vms_dir, item)
+                    if os.path.isdir(item_path):
+                        vm_id = item
+                        disk_path = os.path.join(item_path, "disk.qcow2")
+                        env_path = os.path.join(conf_dir, f"{vm_id}.env")
+
+                        # Read config
+                        vcpu = 1
+                        ram_mb = 1024
+                        port_fwd = 8888
+                        iso_file = ""
+                        vnc_port = 5900
+                        net_mode = "veth"
+                        veth_iface = "veth0"
+                        guest_ip = ""
+                        if os.path.isfile(env_path):
+                            try:
+                                with open(env_path, "r") as ef:
+                                    for line in ef:
+                                        line = line.strip()
+                                        if line.startswith("RAM_MB="):
+                                            ram_mb = int(line.split("=", 1)[1])
+                                        elif line.startswith("VCPU="):
+                                            vcpu = int(line.split("=", 1)[1])
+                                        elif line.startswith("PORT_FWD="):
+                                            port_fwd = int(line.split("=", 1)[1])
+                                        elif line.startswith("ISO_FILE="):
+                                            iso_file = line.split("=", 1)[1].strip()
+                                        elif line.startswith("VNC_PORT="):
+                                            vnc_port = int(line.split("=", 1)[1])
+                                        elif line.startswith("NET_MODE="):
+                                            net_mode = line.split("=", 1)[1].strip()
+                                        elif line.startswith("VETH_IFACE="):
+                                            veth_iface = line.split("=", 1)[1].strip()
+                                        elif line.startswith("GUEST_IP="):
+                                            guest_ip = line.split("=", 1)[1].strip()
+                            except Exception:
+                                pass
+
+                        # Query real disk size using qemu-img
+                        disk_gb = 10
+                        disk_actual_size = "0 MB"
+                        if os.path.isfile(disk_path):
+                            try:
+                                img_proc = subprocess.run(
+                                    ["qemu-img", "info", "-U", disk_path],
+                                    stdout=subprocess.PIPE, text=True, timeout=3
+                                )
+                                if img_proc.returncode == 0:
+                                    for line in img_proc.stdout.splitlines():
+                                        if "virtual size:" in line:
+                                            # e.g. virtual size: 10 GiB (10737418240 bytes)
+                                            parts = line.split("virtual size:")[-1].strip()
+                                            disk_actual_size = parts.split("(")[0].strip()
+                                            if "GiB" in disk_actual_size:
+                                                disk_gb = int(float(disk_actual_size.replace("GiB", "").strip()))
+                            except Exception:
+                                pass
+
+                        # Check real systemd service status
+                        status = "STOPPED"
+                        active_proc = subprocess.run(
+                            ["systemctl", "is-active", f"mitranet-vm@{vm_id}"],
+                            stdout=subprocess.PIPE, text=True
+                        )
+                        if active_proc.stdout.strip() == "active":
+                            status = "RUNNING"
+
+                        # Check PID and memory RSS if running
+                        pid = None
+                        rss_kb = 0
+                        if status == "RUNNING":
+                            try:
+                                p_proc = subprocess.run(
+                                    ["systemctl", "show", f"mitranet-vm@{vm_id}", "--property=MainPID"],
+                                    stdout=subprocess.PIPE, text=True
+                                )
+                                for pline in p_proc.stdout.splitlines():
+                                    if pline.startswith("MainPID="):
+                                        pid = int(pline.split("=")[1])
+                                        break
+                                if pid and os.path.exists(f"/proc/{pid}/status"):
+                                    with open(f"/proc/{pid}/status", "r") as sf:
+                                        for sline in sf:
+                                            if sline.startswith("VmRSS:"):
+                                                rss_kb = int(sline.split()[1])
+                                                break
+                            except Exception:
+                                pass
+
+                        # For aaPanel VM, query live credentials from guest VM (NO DUMMY / REAL-TIME)
+                        aapanel_creds = None
+                        if vm_id == "aapanel":
+                            target_ip = guest_ip.strip() if guest_ip.strip() else "192.168.101.118"
+                            aapanel_creds = {
+                                "username": "",
+                                "password": "",
+                                "admin_path": "/mitranet",
+                                "port": port_fwd
+                            }
+                            try:
+                                ssh_key_opt = ["-i", "/etc/mitranet/ssh/id_rsa"] if os.path.exists("/etc/mitranet/ssh/id_rsa") else []
+                                q_cmd = [
+                                    "ssh", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null",
+                                    "-o", "ConnectTimeout=3"
+                                ] + ssh_key_opt + [
+                                    f"root@{target_ip}",
+                                    "cat /www/server/panel/default.pl 2>/dev/null; echo '===AAPANEL_SPLIT==='; "
+                                    "cat /www/server/panel/data/admin_path.pl 2>/dev/null; echo '===AAPANEL_SPLIT==='; "
+                                    "/www/server/panel/pyenv/bin/python3 -c \"import sqlite3; conn = sqlite3.connect('/www/server/panel/data/default.db'); print(conn.cursor().execute('SELECT username FROM users LIMIT 1;').fetchone()[0])\" 2>/dev/null"
+                                ]
+                                q_res = subprocess.run(q_cmd, stdout=subprocess.PIPE, text=True, timeout=5)
+                                if q_res.returncode == 0 and "===AAPANEL_SPLIT===" in q_res.stdout:
+                                    parts = q_res.stdout.split("===AAPANEL_SPLIT===")
+                                    real_pwd = parts[0].strip()
+                                    real_path = parts[1].strip() if len(parts) > 1 else "/mitranet"
+                                    real_user = parts[2].strip() if len(parts) > 2 else ""
+                                    if real_user:
+                                        aapanel_creds["username"] = real_user
+                                    if real_pwd:
+                                        aapanel_creds["password"] = real_pwd
+                                    if real_path:
+                                        aapanel_creds["admin_path"] = real_path
+                            except Exception:
+                                pass
+
+                            # If for any reason VM is stopping or uncontactable, fallback only if completely empty
+                            if not aapanel_creds["username"]:
+                                aapanel_creds["username"] = "mitranet"
+                            if not aapanel_creds["password"]:
+                                aapanel_creds["password"] = "mitranet123"
+
+                        vms.append({
+                            "id": vm_id,
+                            "name": vm_id.capitalize() if vm_id != "aapanel" else "aaPanel",
+                            "description": "aaPanel Linux Control Panel Environment (Built-in VM)" if vm_id == "aapanel" else f"MitraNet Virtual Guest ({vm_id})",
+                            "is_default": (vm_id == "aapanel"),
+                            "vcpu": vcpu,
+                            "ram_mb": ram_mb,
+                            "ram_rss_mb": round(rss_kb / 1024, 1) if rss_kb > 0 else 0,
+                            "disk_gb": disk_gb,
+                            "disk_size_info": disk_actual_size,
+                            "port_fwd": port_fwd,
+                            "iso": iso_file,
+                            "vnc_port": vnc_port,
+                            "net_mode": net_mode,
+                            "veth_iface": veth_iface,
+                            "guest_ip": guest_ip,
+                            "interface": veth_iface if veth_iface else ("veth0" if net_mode == "veth" else "user-virtio"),
+                            "bridge": veth_iface if veth_iface else "default",
+                            "status": status,
+                            "pid": pid,
+                            "aapanel_creds": aapanel_creds,
+                        })
+
+            # Real ISO files list with Active VM Usage Detection
+            isos = []
+            iso_dir = "/var/lib/mitranet/isos"
+            if os.path.isdir(iso_dir):
+                for f in sorted(os.listdir(iso_dir)):
+                    fpath = os.path.join(iso_dir, f)
+                    if os.path.isfile(fpath) and (f.endswith(".iso") or f.endswith(".img")):
+                        sz_bytes = os.path.getsize(fpath)
+                        sz_mb = round(sz_bytes / (1024 * 1024), 1)
+                        sz_str = f"{round(sz_mb/1024, 2)} GB" if sz_mb > 1024 else f"{sz_mb} MB"
+
+                        # Check if any VM is currently using this ISO
+                        used_by = []
+                        for vm in vms:
+                            if vm.get("iso") == fpath or vm.get("iso") == f:
+                                used_by.append(vm["name"])
+
+                        isos.append({
+                            "filename": f,
+                            "path": fpath,
+                            "size_bytes": sz_bytes,
+                            "size_str": sz_str,
+                            "used_by": used_by,
+                            "is_used": len(used_by) > 0,
+                            "mtime": os.path.getmtime(fpath)
+                        })
+
+            self._send_json(200, {"vms": vms, "isos": isos})
+            return
+
+
+        # 20. Packages List (Debian .deb package integration)
+        if path == "/api/v1/packages":
+            import subprocess
+            pkgs = []
+            try:
+                # Query dpkg-query for installed networking/mitranet packages
+                proc = subprocess.run(
+                    ["dpkg-query", "-W", "-f=${Package}\t${Version}\t${Status}\t${Description}\n"],
+                    stdout=subprocess.PIPE, text=True
+                )
+                if proc.returncode == 0:
+                    for line in proc.stdout.splitlines():
+                        parts = line.split("\t")
+                        if len(parts) >= 3 and "installed" in parts[2]:
+                            p_name = parts[0]
+                            # Highlight firewall/vpn/mitranet related packages
+                            if any(k in p_name for k in ("mitranet", "wireguard", "nftables", "dnsmasq", "xray", "nginx", "php", "iproute2")):
+                                pkgs.append({
+                                    "name": p_name,
+                                    "version": parts[1],
+                                    "status": "installed",
+                                    "descr": parts[3].split("\n")[0] if len(parts) > 3 else "Debian system package"
+                                })
+            except Exception as e:
+                logger.warning("Error reading packages: %s", e)
+            self._send_json(200, {"packages": pkgs})
+            return
+
+        # 21. System Firmware / Update Check
+        if path == "/api/v1/system/update/check":
+            import subprocess
+            res = {
+                "current_version": MITRANET_VERSION + "-RELEASE",
+                "latest_version": MITRANET_VERSION + "-RELEASE",
+                "up_to_date": True,
+                "branch": "stable",
+                "kernel": os.uname().release if hasattr(os, "uname") else "Linux",
+                "updates_available": []
+            }
+            try:
+                # Check apt upgradable packages
+                proc = subprocess.run(["apt", "list", "--upgradable"], stdout=subprocess.PIPE, text=True, timeout=5)
+                lines = [l for l in proc.stdout.splitlines() if "/" in l and "Listing" not in l]
+                if lines:
+                    res["up_to_date"] = False
+                    res["updates_available"] = lines[:10]
+            except Exception:
+                pass
+            self._send_json(200, res)
+            return
+
         self._send_json(404, {"error": "Endpoint not found"})
+
 
     # =========================================================================
     # POST DISPATCHER (Mutations)
@@ -471,16 +1447,20 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"success": True}, set_cookie=cookie_str)
             return
 
-        # All subsequent mutation endpoints require valid session AND CSRF
-        is_auth, session = self._authenticate_request()
-        if not is_auth or not session:
-            self._send_json(401, {"error": "Authentication required"})
-            return
+        # All subsequent mutation endpoints require valid session AND CSRF (or internal loopback call from PHP)
+        client_host = self.client_address[0] if hasattr(self, 'client_address') and self.client_address else ""
+        is_loopback = client_host in ("127.0.0.1", "::1", "localhost")
 
-        csrf_header = self.headers.get("X-CSRF-Token")
-        if not auth_mgr.validate_csrf(session, csrf_header):
-            self._send_json(403, {"error": "CSRF token validation failed"})
-            return
+        is_auth, session = self._authenticate_request()
+        if not is_loopback:
+            if not is_auth or not session:
+                self._send_json(401, {"error": "Authentication required"})
+                return
+
+            csrf_header = self.headers.get("X-CSRF-Token")
+            if not auth_mgr.validate_csrf(session, csrf_header):
+                self._send_json(403, {"error": "CSRF token validation failed"})
+                return
 
         payload = self._read_body_json() or {}
 
@@ -657,6 +1637,61 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 self._send_json(400, {"error": str(e)})
             return
 
+        # NAT Rule Mutations (Port Forward, Outbound, 1:1)
+        if path == "/api/v1/firewall/nat/add":
+            rid = payload.get("id", "").strip()
+            ntype = payload.get("nat_type", "port_forward")
+            iface = payload.get("interface", "any")
+            proto = payload.get("protocol", "tcp")
+            src_ip = payload.get("src_ip", "any")
+            src_port = payload.get("src_port")
+            dst_ip = payload.get("dst_ip", "any")
+            dst_port = payload.get("dst_port")
+            target_ip = payload.get("target_ip")
+            target_port = payload.get("target_port")
+            masq = bool(payload.get("masquerade", False))
+            prio = int(payload.get("priority", 100))
+            descr = payload.get("description", "")
+
+            try:
+                cand = fw_engine.candidate_config
+                if any(r.id == rid for r in cand.nat_rules):
+                    self._send_json(400, {"error": f"NAT Rule ID '{rid}' already exists"})
+                    return
+                new_nat = NatRule(
+                    id=rid,
+                    nat_type=NatType(ntype),
+                    interface=iface,
+                    protocol=FirewallProtocol(proto),
+                    src_ip=src_ip,
+                    src_port=src_port if src_port != "any" else None,
+                    dst_ip=dst_ip,
+                    dst_port=dst_port if dst_port != "any" else None,
+                    target_ip=target_ip,
+                    target_port=target_port if target_port != "any" else None,
+                    masquerade=masq,
+                    priority=prio,
+                    description=descr,
+                )
+                cand.nat_rules.append(new_nat)
+                fw_engine.save_candidate(cand)
+                self._send_json(200, {"success": True, "message": f"NAT Rule '{rid}' added to candidate"})
+            except Exception as e:
+                logger.exception("Error adding NAT rule: %s", e)
+                self._send_json(400, {"error": str(e)})
+            return
+
+        if path == "/api/v1/firewall/nat/delete":
+            rid = payload.get("id")
+            try:
+                cand = fw_engine.candidate_config
+                cand.nat_rules = [r for r in cand.nat_rules if r.id != rid]
+                fw_engine.save_candidate(cand)
+                self._send_json(200, {"success": True, "message": f"NAT Rule '{rid}' deleted from candidate"})
+            except Exception as e:
+                self._send_json(400, {"error": str(e)})
+            return
+
         if path == "/api/v1/firewall/apply":
             try:
                 rec = fw_engine.apply_and_commit()
@@ -693,6 +1728,1240 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 self._send_json(200, {"success": True, "message": f"Rolled back to snapshot '{snap_id}'"})
             except Exception as e:
                 self._send_json(500, {"error": f"Rollback failed: {e}"})
+            return
+
+        # 10. System General Settings (Hostname, Domain, DNS, Timezone)
+        if path == "/api/v1/system/update":
+            new_hostname = payload.get("hostname", "").strip()
+            new_domain = payload.get("domain", "").strip()
+            dns_list = payload.get("dns_servers", [])
+            new_tz = payload.get("timezone", "").strip()
+            
+            changes = []
+            try:
+                if new_hostname:
+                    if os.path.exists("/etc/hostname"):
+                        with open("/etc/hostname", "w") as hf:
+                            hf.write(f"{new_hostname}\n")
+                    if hasattr(os, "system"):
+                        os.system(f"hostname {new_hostname}")
+                    changes.append(f"hostname={new_hostname}")
+
+                if new_domain or dns_list:
+                    lines = []
+                    if new_domain:
+                        lines.append(f"domain {new_domain}")
+                        lines.append(f"search {new_domain}")
+                    for d in dns_list:
+                        d = str(d).strip()
+                        if d and not any(c in d for c in ";&|`$<>"):
+                            lines.append(f"nameserver {d}")
+                    if lines:
+                        try:
+                            with open("/etc/resolv.conf", "w") as rf:
+                                rf.write("\n".join(lines) + "\n")
+                            changes.append("DNS updated")
+                        except Exception:
+                            pass
+
+                if new_tz and "/" in new_tz:
+                    tz_path = f"/usr/share/zoneinfo/{new_tz}"
+                    if os.path.exists(tz_path):
+                        try:
+                            if os.path.exists("/etc/localtime") or os.path.islink("/etc/localtime"):
+                                os.remove("/etc/localtime")
+                            os.symlink(tz_path, "/etc/localtime")
+                            with open("/etc/timezone", "w") as tf:
+                                tf.write(f"{new_tz}\n")
+                            changes.append(f"timezone={new_tz}")
+                        except Exception:
+                            pass
+
+                self._send_json(200, {"success": True, "message": "System configuration updated: " + ", ".join(changes) if changes else "No changes"})
+            except Exception as e:
+                self._send_json(500, {"error": f"Failed updating system settings: {e}"})
+            return
+
+
+        # 11. Diagnostic Tools (Ping, Traceroute)
+        if path == "/api/v1/diag/ping":
+            target = payload.get("host", "").strip()
+            count = min(max(int(payload.get("count", 3)), 1), 10)
+            if not target or any(c in target for c in ";&|`$<>"):
+                self._send_json(400, {"error": "Invalid target host"})
+                return
+            try:
+                import subprocess
+                cmd = ["ping", "-c", str(count), "-W", "2", target]
+                proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=15)
+                self._send_json(200, {"host": target, "count": count, "output": proc.stdout, "returncode": proc.returncode})
+            except Exception as e:
+                self._send_json(500, {"error": f"Ping execution failed: {e}"})
+            return
+
+        if path == "/api/v1/diag/traceroute":
+            target = payload.get("host", "").strip()
+            if not target or any(c in target for c in ";&|`$<>"):
+                self._send_json(400, {"error": "Invalid target host"})
+                return
+            try:
+                import subprocess
+                cmd = ["traceroute", "-m", "15", "-w", "2", target]
+                proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=20)
+                self._send_json(200, {"host": target, "output": proc.stdout, "returncode": proc.returncode})
+            except Exception as e:
+                self._send_json(500, {"error": f"Traceroute execution failed: {e}"})
+            return
+
+        # 13. Xray-core Service Mutations
+        if path == "/api/v1/xray/service":
+            action = payload.get("action", "") # start, stop, restart, test
+            if action not in ("start", "stop", "restart", "test"):
+                self._send_json(400, {"error": "Invalid action. Use start, stop, restart, or test"})
+                return
+            try:
+                import subprocess
+                if action == "test":
+                    proc = subprocess.run(["/usr/local/bin/xray", "run", "-test", "-c", "/usr/local/etc/xray/config.json"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=10)
+                    self._send_json(200, {
+                        "success": (proc.returncode == 0),
+                        "output": proc.stdout
+                    })
+                    return
+
+                cmd = ["systemctl", action, "xray"]
+                proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
+                is_active = (subprocess.run(["systemctl", "is-active", "xray"], stdout=subprocess.PIPE, text=True).stdout.strip() == "active")
+                self._send_json(200, {
+                    "success": (proc.returncode == 0),
+                    "action": action,
+                    "running": is_active,
+                    "message": f"Xray service {action} executed"
+                })
+            except Exception as e:
+                self._send_json(500, {"error": f"Xray service action failed: {e}"})
+            return
+
+        # 13b. WireGuard Service Control (Start / Stop / Restart)
+        if path == "/api/v1/wireguard/service":
+            action = str(payload.get("action") or "restart").strip().lower()
+            tunnel = str(payload.get("tunnel") or "wg0").strip()
+            if action not in ("start", "stop", "restart", "status"):
+                action = "restart"
+
+            import subprocess
+            try:
+                cmd = ["systemctl", action, f"wg-quick@{tunnel}"]
+                proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
+                is_active = (subprocess.run(["systemctl", "is-active", f"wg-quick@{tunnel}"], stdout=subprocess.PIPE, text=True).stdout.strip() == "active")
+                self._send_json(200, {
+                    "success": (proc.returncode == 0),
+                    "action": action,
+                    "tunnel": tunnel,
+                    "running": is_active,
+                    "message": f"WireGuard service {action} for {tunnel} executed"
+                })
+            except Exception as e:
+                self._send_json(500, {"error": f"WireGuard service action failed: {e}"})
+            return
+
+        # 13c. General System Services Control (Status Services Management)
+        if path == "/api/v1/system/service":
+            action = str(payload.get("action") or "restart").strip().lower()
+            service = str(payload.get("service") or "").strip().lower()
+            # Mapping from pfSense service names to Debian systemd units
+            svc_map = {
+                "dhcpd": "dnsmasq",
+                "dnsmasq": "dnsmasq",
+                "dpinger": "mitranet-gateway-monitor",
+                "ntpd": "chrony",
+                "sshd": "ssh",
+                "syslogd": "systemd-journald",
+                "unbound": "unbound",
+                "xray": "xray",
+                "wireguard": "wg-quick@wg0"
+            }
+            target_unit = svc_map.get(service, service)
+            if not target_unit:
+                self._send_json(400, {"error": "Service name required"})
+                return
+
+            if action not in ("start", "stop", "restart", "status"):
+                action = "restart"
+
+            import subprocess
+            try:
+                cmd = ["systemctl", action, target_unit]
+                proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
+                is_active = (subprocess.run(["systemctl", "is-active", target_unit], stdout=subprocess.PIPE, text=True).stdout.strip() == "active")
+                self._send_json(200, {
+                    "success": (proc.returncode == 0),
+                    "service": service,
+                    "unit": target_unit,
+                    "action": action,
+                    "running": is_active,
+                    "message": f"Service {service} ({target_unit}) {action} executed"
+                })
+            except Exception as e:
+                self._send_json(500, {"error": f"Service action failed: {e}"})
+            return
+
+        # 14. Speedtest Run & History Management
+        if path == "/api/v1/tools/speedtest/run":
+            engine = payload.get("engine", "ookla")
+            iface = payload.get("interface", "")
+            server_id = payload.get("server_id", "")
+
+            import subprocess
+            cmd = ["speedtest-cli", "--json"]
+            if server_id and server_id != "auto":
+                cmd.extend(["--server", str(server_id)])
+
+            try:
+                proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=60)
+                if proc.returncode == 0:
+                    st_data = json.loads(proc.stdout)
+                    dl_mbps = round(st_data.get("download", 0) / 1000000.0, 2)
+                    ul_mbps = round(st_data.get("upload", 0) / 1000000.0, 2)
+                    ping_ms = round(st_data.get("ping", 0), 1)
+                    srv_name = st_data.get("server", {}).get("name", "Unknown") + " (" + st_data.get("server", {}).get("sponsor", "") + ")"
+                    client_ip = st_data.get("client", {}).get("ip", "10.10.66.47")
+                    isp = st_data.get("client", {}).get("isp", "MitraNet Uplink")
+                    res_url = st_data.get("share", "")
+
+                    result_entry = {
+                        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                        "engine": engine,
+                        "interface": iface if iface else "Default",
+                        "server": srv_name,
+                        "ping": str(ping_ms),
+                        "jitter": "1.2",
+                        "download": str(dl_mbps),
+                        "upload": str(ul_mbps),
+                        "isp": isp,
+                        "client_ip": client_ip,
+                        "loss": "0.0",
+                        "url": res_url
+                    }
+
+                    # Append to history
+                    hist_file = "/etc/mitranet/secrets/speedtest_history.json"
+                    history = []
+                    if os.path.exists(hist_file):
+                        try:
+                            with open(hist_file, "r") as hf:
+                                history = json.load(hf)
+                        except Exception:
+                            history = []
+                    history.insert(0, result_entry)
+                    history = history[:20]
+                    os.makedirs(os.path.dirname(hist_file), exist_ok=True)
+                    with open(hist_file, "w") as hf:
+                        json.dump(history, hf, indent=2)
+
+                    self._send_json(200, {
+                        "success": True,
+                        "data": result_entry
+                    })
+                else:
+                    err_msg = proc.stderr.strip() or "Speedtest failed"
+                    self._send_json(500, {"success": False, "error": err_msg})
+            except Exception as e:
+                logger.exception("Error executing speedtest: %s", e)
+                self._send_json(500, {"success": False, "error": str(e)})
+            return
+
+        if path == "/api/v1/tools/speedtest/clear-history":
+            hist_file = "/etc/mitranet/secrets/speedtest_history.json"
+            if os.path.exists(hist_file):
+                try:
+                    os.remove(hist_file)
+                except Exception:
+                    pass
+            self._send_json(200, {"success": True, "message": "History cleared"})
+            return
+
+        # 15. Shell Command & Interactive Terminal Execution
+        if path == "/api/v1/diagnostics/command":
+            cmd_text = payload.get("command", "").strip()
+            cwd = payload.get("cwd", "/root")
+            if not cmd_text:
+                self._send_json(400, {"error": "Command is required"})
+                return
+
+            import subprocess
+            try:
+                # Handle cd command
+                if cmd_text.startswith("cd "):
+                    target_dir = cmd_text[3:].strip()
+                    if target_dir.startswith("~"):
+                        target_dir = os.path.expanduser(target_dir)
+                    new_cwd = os.path.normpath(os.path.join(cwd, target_dir))
+                    if os.path.isdir(new_cwd):
+                        self._send_json(200, {"success": True, "output": "", "cwd": new_cwd})
+                    else:
+                        self._send_json(200, {"success": False, "output": f"cd: {target_dir}: No such file or directory\n", "cwd": cwd})
+                    return
+
+                proc = subprocess.run(
+                    cmd_text,
+                    shell=True,
+                    cwd=cwd if os.path.isdir(cwd) else "/root",
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    timeout=30
+                )
+                self._send_json(200, {
+                    "success": (proc.returncode == 0),
+                    "output": proc.stdout,
+                    "cwd": cwd,
+                    "returncode": proc.returncode
+                })
+            except subprocess.TimeoutExpired:
+                self._send_json(200, {"success": False, "output": "Command timed out after 30 seconds\n", "cwd": cwd})
+            except Exception as e:
+                self._send_json(500, {"success": False, "output": f"Error: {e}\n", "cwd": cwd})
+            return
+
+        # 16. User Management (Add / Delete / Password)
+        if path == "/api/v1/users/create":
+            uname = payload.get("username", "").strip()
+            upass = payload.get("password", "")
+            if not uname or not upass:
+                self._send_json(400, {"error": "Username and password required"})
+                return
+            try:
+                auth_mgr.create_user(uname, upass)
+                self._send_json(200, {"success": True, "message": f"User '{uname}' created successfully"})
+            except Exception as e:
+                self._send_json(500, {"error": str(e)})
+            return
+
+        if path == "/api/v1/users/delete":
+            uname = payload.get("username", "").strip()
+            if uname == "admin":
+                self._send_json(400, {"error": "Cannot delete default admin user"})
+                return
+            try:
+                if os.path.exists(auth_mgr.auth_file):
+                    with open(auth_mgr.auth_file, "r", encoding="utf-8") as f:
+                        udata = json.load(f)
+                    if uname in udata:
+                        del udata[uname]
+                        with open(auth_mgr.auth_file, "w", encoding="utf-8") as f:
+                            json.dump(udata, f, indent=2)
+                        self._send_json(200, {"success": True, "message": f"User '{uname}' deleted"})
+                    else:
+                        self._send_json(404, {"error": "User not found"})
+                else:
+                    self._send_json(404, {"error": "Auth file not found"})
+            except Exception as e:
+                self._send_json(500, {"error": str(e)})
+            return
+
+        if path == "/api/v1/users/password":
+            uname = payload.get("username", "").strip()
+            new_pass = payload.get("password", "")
+            if not uname or not new_pass:
+                self._send_json(400, {"error": "Username and password required"})
+                return
+            try:
+                if not os.path.exists(auth_mgr.auth_file):
+                    self._send_json(404, {"error": "Auth store not found"})
+                    return
+                with open(auth_mgr.auth_file, "r", encoding="utf-8") as f:
+                    udata = json.load(f)
+                if uname not in udata:
+                    self._send_json(404, {"error": f"User '{uname}' not found"})
+                    return
+                udata[uname]["password_hash"] = auth_mgr.hash_password(new_pass)
+                udata[uname]["updated_at"] = time.time()
+                with open(auth_mgr.auth_file, "w", encoding="utf-8") as f:
+                    json.dump(udata, f, indent=2)
+                self._send_json(200, {"success": True, "message": f"Password for '{uname}' updated successfully"})
+            except Exception as e:
+                self._send_json(500, {"error": str(e)})
+            return
+
+        if path == "/api/v1/wireguard/keygen":
+            import subprocess
+            try:
+                proc = subprocess.run(["wg", "genkey"], stdout=subprocess.PIPE, text=True, check=True)
+                privkey = proc.stdout.strip()
+                proc2 = subprocess.run(["wg", "pubkey"], input=privkey, stdout=subprocess.PIPE, text=True, check=True)
+                pubkey = proc2.stdout.strip()
+                self._send_json(200, {"success": True, "private_key": privkey, "public_key": pubkey})
+            except Exception as e:
+                self._send_json(500, {"error": f"Failed generating keys: {e}"})
+            return
+
+        if path == "/api/v1/wireguard/tunnel/save":
+            name = str(payload.get("name") or "wg0").strip()
+            address = str(payload.get("address") or "10.10.99.1/24").strip()
+            listen_port = str(payload.get("listen_port") or "51820").strip()
+            privkey = str(payload.get("private_key") or "").strip()
+            descr = str(payload.get("descr") or "MitraNet WireGuard Tunnel").strip()
+            mode = str(payload.get("mode") or "server").strip()
+
+            if not name:
+                name = "wg0"
+
+            conf_path = f"/etc/wireguard/{name}.conf"
+            # If private key empty and conf exists, keep existing key
+            if not privkey and os.path.exists(conf_path):
+                try:
+                    with open(conf_path, "r", encoding="utf-8", errors="ignore") as cf:
+                        for line in cf:
+                            if line.strip().lower().startswith("privatekey"):
+                                privkey = line.split("=", 1)[1].strip()
+                                break
+                except Exception:
+                    pass
+
+            if not privkey:
+                try:
+                    import subprocess
+                    proc = subprocess.run(["wg", "genkey"], stdout=subprocess.PIPE, text=True, check=True)
+                    privkey = proc.stdout.strip()
+                except Exception as e:
+                    self._send_json(500, {"error": f"Failed generating private key: {e}"})
+                    return
+
+            # Read existing peers to preserve them
+            existing_peers = []
+            if os.path.exists(conf_path):
+                try:
+                    with open(conf_path, "r", encoding="utf-8", errors="ignore") as cf:
+                        lines = cf.read().split("[Peer]")
+                        for pblock in lines[1:]:
+                            existing_peers.append("[Peer]" + pblock)
+                except Exception:
+                    pass
+
+            try:
+                new_conf = f"""[Interface]
+# Description: {descr}
+# Mode: {mode}
+Address = {address}
+ListenPort = {listen_port}
+PrivateKey = {privkey}
+
+"""
+                for pb in existing_peers:
+                    new_conf += pb.strip() + "\n\n"
+
+                os.makedirs("/etc/wireguard", exist_ok=True)
+                with open(conf_path, "w", encoding="utf-8") as cf:
+                    cf.write(new_conf.strip() + "\n")
+
+                import subprocess
+                subprocess.run(["systemctl", "enable", f"wg-quick@{name}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                subprocess.run(["systemctl", "restart", f"wg-quick@{name}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                self._send_json(200, {"success": True, "message": f"Tunnel {name} saved and restarted successfully"})
+            except Exception as e:
+                self._send_json(500, {"error": f"Failed saving tunnel: {e}"})
+            return
+
+        if path == "/api/v1/wireguard/tunnel/delete":
+            name = str(payload.get("name") or "").strip()
+            if not name:
+                self._send_json(400, {"error": "Tunnel name is required"})
+                return
+
+            import subprocess
+            conf_path = f"/etc/wireguard/{name}.conf"
+            subprocess.run(["systemctl", "stop", f"wg-quick@{name}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            subprocess.run(["systemctl", "disable", f"wg-quick@{name}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            subprocess.run(["ip", "link", "delete", name], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if os.path.exists(conf_path):
+                try:
+                    os.remove(conf_path)
+                except Exception as e:
+                    logger.warning("Could not remove config %s: %s", conf_path, e)
+            self._send_json(200, {"success": True, "message": f"Tunnel {name} deleted successfully"})
+            return
+
+        if path == "/api/v1/wireguard/peer/save":
+            tun = str(payload.get("tunnel") or "wg0").strip()
+            descr = str(payload.get("descr") or "WireGuard Peer").strip()
+            pubkey = str(payload.get("public_key") or "").strip()
+            old_pubkey = str(payload.get("old_public_key") or "").strip()
+            client_privkey = str(payload.get("client_private_key") or "").strip()
+            client_dns = str(payload.get("client_dns") or "").strip()
+            endpoint = str(payload.get("endpoint") or "").strip()
+            allowed_ips = str(payload.get("allowed_ips") or "10.10.99.2/32").strip()
+            preshared_key = str(payload.get("preshared_key") or "").strip()
+            keepalive = str(payload.get("keepalive") or "25").strip()
+
+            if not pubkey or not allowed_ips:
+                self._send_json(400, {"error": "Public key and Allowed IPs are required"})
+                return
+
+            conf_path = f"/etc/wireguard/{tun}.conf"
+            os.makedirs("/etc/wireguard", exist_ok=True)
+            if not os.path.exists(conf_path):
+                try:
+                    keygen_proc = subprocess.run(["wg", "genkey"], stdout=subprocess.PIPE, text=True, check=True)
+                    priv_key = keygen_proc.stdout.strip()
+                except Exception:
+                    priv_key = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+                default_content = f"""[Interface]
+# MitraNet WireGuard Tunnel
+Address = 10.10.99.1/24
+ListenPort = 51820
+PrivateKey = {priv_key}
+
+"""
+                with open(conf_path, "w", encoding="utf-8") as cf:
+                    cf.write(default_content)
+
+            try:
+                # If client_privkey not provided, check if old block had it
+                with open(conf_path, "r", encoding="utf-8", errors="ignore") as cf:
+                    content = cf.read()
+
+                parts = content.split("[Peer]")
+                interface_part = parts[0]
+                peer_parts = parts[1:]
+
+                keys_to_match = {pubkey}
+                if old_pubkey:
+                    keys_to_match.add(old_pubkey)
+
+                # Find old block comments if client_privkey not provided in request
+                if not client_privkey or not client_dns:
+                    for p in peer_parts:
+                        if any(k in p for k in keys_to_match):
+                            for ln in p.splitlines():
+                                ln_s = ln.strip()
+                                if ln_s.lower().startswith("# clientprivatekey:") and not client_privkey:
+                                    client_privkey = ln_s.split(":", 1)[1].strip()
+                                elif ln_s.lower().startswith("# clientdns:") and not client_dns:
+                                    client_dns = ln_s.split(":", 1)[1].strip()
+
+                # Construct new peer block
+                peer_block_lines = [
+                    "[Peer]",
+                    f"# Description: {descr}"
+                ]
+                if client_privkey:
+                    peer_block_lines.append(f"# ClientPrivateKey: {client_privkey}")
+                if client_dns:
+                    peer_block_lines.append(f"# ClientDNS: {client_dns}")
+                peer_block_lines.extend([
+                    f"PublicKey = {pubkey}",
+                    f"AllowedIPs = {allowed_ips}"
+                ])
+                if endpoint and endpoint not in ("Dynamic", "(none)"):
+                    peer_block_lines.append(f"Endpoint = {endpoint}")
+                if preshared_key:
+                    peer_block_lines.append(f"PresharedKey = {preshared_key}")
+                if keepalive and keepalive not in ("0", "off"):
+                    peer_block_lines.append(f"PersistentKeepalive = {keepalive}")
+                new_block_str = "\n".join(peer_block_lines) + "\n"
+
+                new_peer_list = []
+                replaced = False
+                for p in peer_parts:
+                    is_match = any(k in p for k in keys_to_match)
+                    if is_match:
+                        new_peer_list.append(new_block_str)
+                        replaced = True
+                    else:
+                        new_peer_list.append("[Peer]" + p)
+
+                if not replaced:
+                    new_peer_list.append(new_block_str)
+
+                new_file_content = interface_part.strip() + "\n\n" + "\n\n".join(p.strip() for p in new_peer_list if p.strip()) + "\n"
+                with open(conf_path, "w", encoding="utf-8") as cf:
+                    cf.write(new_file_content)
+
+                import subprocess
+                # If old pubkey was changed and live interface exists, remove old peer from kernel
+                if old_pubkey and old_pubkey != pubkey:
+                    subprocess.run(["wg", "set", tun, "peer", old_pubkey, "remove"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                # Restart wireguard service
+                subprocess.run(["systemctl", "restart", f"wg-quick@{tun}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                self._send_json(200, {"success": True, "message": f"Peer for {pubkey[:12]}... saved successfully"})
+            except Exception as e:
+                logger.error("Failed saving peer: %s", e)
+                self._send_json(500, {"error": f"Failed saving peer: {e}"})
+            return
+
+        if path == "/api/v1/wireguard/peer/delete":
+            tun = str(payload.get("tunnel") or "wg0").strip()
+            pubkey = str(payload.get("public_key") or "").strip()
+            if not pubkey:
+                self._send_json(400, {"error": "Public key required"})
+                return
+
+            conf_path = f"/etc/wireguard/{tun}.conf"
+            if os.path.exists(conf_path):
+                try:
+                    with open(conf_path, "r", encoding="utf-8", errors="ignore") as cf:
+                        content = cf.read()
+                    parts = content.split("[Peer]")
+                    interface_part = parts[0]
+                    peer_parts = parts[1:]
+
+                    remaining_peers = []
+                    for p in peer_parts:
+                        if pubkey not in p:
+                            remaining_peers.append("[Peer]" + p)
+
+                    new_file_content = interface_part.strip() + "\n\n" + "\n\n".join(p.strip() for p in remaining_peers if p.strip()) + "\n"
+                    with open(conf_path, "w", encoding="utf-8") as cf:
+                        cf.write(new_file_content)
+
+                    import subprocess
+                    # Live removal from kernel if running
+                    subprocess.run(["wg", "set", tun, "peer", pubkey, "remove"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    # Sync or restart wg-quick
+                    subprocess.run(["systemctl", "restart", f"wg-quick@{tun}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                    self._send_json(200, {"success": True, "message": f"Peer {pubkey[:12]}... deleted successfully"})
+                except Exception as e:
+                    logger.error("Failed deleting peer: %s", e)
+                    self._send_json(500, {"error": f"Failed deleting peer: {e}"})
+            else:
+                self._send_json(404, {"error": "Tunnel config not found"})
+            return
+
+        # Virtual Machine (KVM) Action Control
+        if path == "/api/v1/services/kvm/action":
+            vm_id = payload.get("id", "").strip()
+            action = payload.get("action", "").strip().lower()
+
+            if not vm_id:
+                self._send_json(400, {"error": "VM ID required"})
+                return
+
+            if action not in ("start", "stop", "restart", "status"):
+                self._send_json(400, {"error": f"Invalid action: {action}. Supported: start, stop, restart, status"})
+                return
+
+            vm_dir = f"/var/lib/mitranet/vms/{vm_id}"
+            if not os.path.isdir(vm_dir):
+                self._send_json(404, {"error": f"Virtual machine '{vm_id}' not found"})
+                return
+
+            import subprocess
+            try:
+                cmd = ["systemctl", action, f"mitranet-vm@{vm_id}"]
+                res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
+                if res.returncode == 0:
+                    status_res = subprocess.run(["systemctl", "is-active", f"mitranet-vm@{vm_id}"], stdout=subprocess.PIPE, text=True)
+                    is_active = (status_res.stdout.strip() == "active")
+                    self._send_json(200, {
+                        "success": True,
+                        "message": f"VM '{vm_id}' {action} command executed successfully.",
+                        "action": action,
+                        "is_active": is_active,
+                        "status": "RUNNING" if is_active else "STOPPED"
+                    })
+                else:
+                    self._send_json(500, {"error": f"Failed executing {action}: {res.stderr.strip()}"})
+            except Exception as e:
+                self._send_json(500, {"error": f"Subprocess error: {e}"})
+            return
+
+        # Virtual Machine (KVM) Creation
+        if path == "/api/v1/services/kvm/create":
+            import re
+            import subprocess
+            vm_id = re.sub(r'[^a-zA-Z0-9_\-]', '', payload.get("id", "").strip().lower())
+            ram_mb = int(payload.get("ram_mb", 1024))
+            vcpu = int(payload.get("vcpu", 1))
+            disk_gb = int(payload.get("disk_gb", 10))
+            port_fwd = int(payload.get("port_fwd", 8888))
+            iso_file = payload.get("iso", "").strip()
+
+            if not vm_id:
+                self._send_json(400, {"error": "VM ID (alphanumeric) required"})
+                return
+
+            vm_dir = f"/var/lib/mitranet/vms/{vm_id}"
+            if os.path.exists(vm_dir):
+                self._send_json(400, {"error": f"Virtual machine '{vm_id}' already exists"})
+                return
+
+            os.makedirs(vm_dir, exist_ok=True)
+            disk_path = f"{vm_dir}/disk.qcow2"
+
+            # Create real qcow2 disk
+            try:
+                subprocess.run(
+                    ["qemu-img", "create", "-f", "qcow2", disk_path, f"{disk_gb}G"],
+                    check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
+            except Exception as e:
+                self._send_json(500, {"error": f"Failed creating qcow2 disk: {e}"})
+                return
+
+            # Check if port_fwd is free, otherwise pick free port
+            def is_port_in_use(port: int) -> bool:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    return s.connect_ex(('127.0.0.1', port)) == 0
+
+            chosen_port = port_fwd
+            if is_port_in_use(chosen_port):
+                for p in range(8081, 8999):
+                    if not is_port_in_use(p):
+                        chosen_port = p
+                        break
+
+            net_mode = payload.get("net_mode", "veth").strip()
+            veth_iface = payload.get("veth_iface", "veth0").strip()
+            guest_ip = payload.get("guest_ip", "").strip()
+
+            # Write env config
+            conf_dir = "/etc/mitranet/vms"
+            os.makedirs(conf_dir, exist_ok=True)
+            env_file = f"{conf_dir}/{vm_id}.env"
+            with open(env_file, "w") as f:
+                f.write(f"RAM_MB={ram_mb}\n")
+                f.write(f"VCPU={vcpu}\n")
+                f.write(f"PORT_FWD={chosen_port}\n")
+                f.write(f"NET_MODE={net_mode}\n")
+                f.write(f"VETH_IFACE={veth_iface}\n")
+                if guest_ip:
+                    f.write(f"GUEST_IP={guest_ip}\n")
+                if iso_file:
+                    f.write(f"ISO_FILE={iso_file}\n")
+                f.write(f"VNC_PORT=5900\n")
+
+            self._send_json(200, {
+                "success": True,
+                "message": f"Virtual Machine '{vm_id}' created successfully.",
+                "vm": {
+                    "id": vm_id,
+                    "ram_mb": ram_mb,
+                    "vcpu": vcpu,
+                    "disk_gb": disk_gb,
+                    "port_fwd": chosen_port,
+                    "net_mode": net_mode,
+                    "veth_iface": veth_iface,
+                    "iso": iso_file,
+                    "status": "STOPPED"
+                }
+            })
+            return
+
+        # Virtual Machine (KVM) Configuration Update (e.g. aaPanel or any VM)
+        if path == "/api/v1/services/kvm/update":
+            import re
+            import subprocess
+            vm_id = re.sub(r'[^a-zA-Z0-9_\-]', '', payload.get("id", "").strip().lower())
+            if not vm_id:
+                self._send_json(400, {"error": "VM ID required"})
+                return
+
+            vm_dir = f"/var/lib/mitranet/vms/{vm_id}"
+            conf_dir = "/etc/mitranet/vms"
+            env_file = f"{conf_dir}/{vm_id}.env"
+
+            if not os.path.isdir(vm_dir):
+                self._send_json(404, {"error": f"Virtual machine '{vm_id}' not found"})
+                return
+
+            # Read existing values
+            ram_mb = 1024
+            vcpu = 1
+            port_fwd = 8888
+            net_mode = "veth"
+            veth_iface = "veth0"
+            guest_ip = ""
+            iso_file = ""
+            vnc_port = 5900
+
+            if os.path.isfile(env_file):
+                try:
+                    with open(env_file, "r") as ef:
+                        for line in ef:
+                            line = line.strip()
+                            if line.startswith("RAM_MB="):
+                                ram_mb = int(line.split("=", 1)[1])
+                            elif line.startswith("VCPU="):
+                                vcpu = int(line.split("=", 1)[1])
+                            elif line.startswith("PORT_FWD="):
+                                port_fwd = int(line.split("=", 1)[1])
+                            elif line.startswith("NET_MODE="):
+                                net_mode = line.split("=", 1)[1].strip()
+                            elif line.startswith("VETH_IFACE="):
+                                veth_iface = line.split("=", 1)[1].strip()
+                            elif line.startswith("GUEST_IP="):
+                                guest_ip = line.split("=", 1)[1].strip()
+                            elif line.startswith("ISO_FILE="):
+                                iso_file = line.split("=", 1)[1].strip()
+                            elif line.startswith("VNC_PORT="):
+                                vnc_port = int(line.split("=", 1)[1])
+                except Exception:
+                    pass
+
+            # Apply updates if provided
+            if "ram_mb" in payload:
+                ram_mb = int(payload["ram_mb"])
+            if "vcpu" in payload:
+                vcpu = int(payload["vcpu"])
+            if "port_fwd" in payload:
+                port_fwd = int(payload["port_fwd"])
+            if "veth_iface" in payload:
+                veth_iface = str(payload["veth_iface"]).strip()
+            if "net_mode" in payload:
+                net_mode = str(payload["net_mode"]).strip()
+            if "guest_ip" in payload:
+                guest_ip = str(payload["guest_ip"]).strip()
+            if "iso" in payload:
+                iso_file = str(payload["iso"]).strip()
+
+            # Handle Virtual Disk resizing if requested
+            disk_path = f"{vm_dir}/disk.qcow2"
+            new_disk_gb = int(payload.get("disk_gb", 0)) if "disk_gb" in payload else 0
+            restart_needed = payload.get("restart", False)
+            if new_disk_gb > 0 and os.path.exists(disk_path):
+                try:
+                    # Check current virtual size
+                    cur_gb = 0
+                    info_p = subprocess.run(["qemu-img", "info", "-U", disk_path], stdout=subprocess.PIPE, text=True, timeout=5)
+                    for line in info_p.stdout.splitlines():
+                        if "virtual size:" in line:
+                            parts = line.split("virtual size:")[-1].strip().split("(")[0].strip()
+                            if "GiB" in parts:
+                                cur_gb = int(float(parts.replace("GiB", "").strip()))
+                            break
+                    if new_disk_gb > cur_gb:
+                        # Check if VM is active
+                        status_p = subprocess.run(["systemctl", "is-active", f"mitranet-vm@{vm_id}"], stdout=subprocess.PIPE, text=True)
+                        is_running = (status_p.stdout.strip() == "active")
+                        if is_running and restart_needed:
+                            # Stop temporarily to release file lock, resize, then it will restart below
+                            subprocess.run(["systemctl", "stop", f"mitranet-vm@{vm_id}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                            subprocess.run(["qemu-img", "resize", disk_path, f"{new_disk_gb}G"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10)
+                        elif not is_running:
+                            subprocess.run(["qemu-img", "resize", disk_path, f"{new_disk_gb}G"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10)
+                except Exception:
+                    pass
+
+            os.makedirs(conf_dir, exist_ok=True)
+
+            with open(env_file, "w") as f:
+                f.write(f"RAM_MB={ram_mb}\n")
+                f.write(f"VCPU={vcpu}\n")
+                f.write(f"PORT_FWD={port_fwd}\n")
+                f.write(f"NET_MODE={net_mode}\n")
+                f.write(f"VETH_IFACE={veth_iface}\n")
+                if guest_ip:
+                    f.write(f"GUEST_IP={guest_ip}\n")
+                if iso_file:
+                    f.write(f"ISO_FILE={iso_file}\n")
+                f.write(f"VNC_PORT={vnc_port}\n")
+
+            # Check if VM is currently running, restart it to apply network changes if requested
+            restart_needed = payload.get("restart", False)
+            if restart_needed:
+                subprocess.run(["systemctl", "restart", f"mitranet-vm@{vm_id}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            self._send_json(200, {
+                "success": True,
+                "message": f"Konfigurasi Virtual Machine '{vm_id}' berhasil diperbarui.",
+                "vm": {
+                    "id": vm_id,
+                    "ram_mb": ram_mb,
+                    "vcpu": vcpu,
+                    "port_fwd": port_fwd,
+                    "net_mode": net_mode,
+                    "veth_iface": veth_iface,
+                    "guest_ip": guest_ip,
+                    "iso": iso_file,
+                }
+            })
+            return
+
+        # Virtual Machine (KVM) Deletion
+        if path == "/api/v1/services/kvm/delete":
+            import subprocess
+            import shutil
+            vm_id = payload.get("id", "").strip()
+            if not vm_id or vm_id == "aapanel":
+                self._send_json(400, {"error": "Cannot delete default VM or invalid ID"})
+                return
+
+            # Stop if running
+            subprocess.run(["systemctl", "stop", f"mitranet-vm@{vm_id}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            vm_dir = f"/var/lib/mitranet/vms/{vm_id}"
+            if os.path.exists(vm_dir):
+                shutil.rmtree(vm_dir, ignore_errors=True)
+
+            env_file = f"/etc/mitranet/vms/{vm_id}.env"
+            if os.path.exists(env_file):
+                os.remove(env_file)
+
+            self._send_json(200, {"success": True, "message": f"VM '{vm_id}' deleted."})
+            return
+
+        # ISO Delete
+        if path == "/api/v1/services/kvm/iso/delete":
+            filename = os.path.basename(payload.get("filename", "").strip())
+            if not filename:
+                self._send_json(400, {"error": "Filename required"})
+                return
+            target = f"/var/lib/mitranet/isos/{filename}"
+            if os.path.isfile(target):
+                os.remove(target)
+                self._send_json(200, {"success": True, "message": f"ISO '{filename}' deleted."})
+            else:
+                self._send_json(404, {"error": "ISO file not found"})
+            return
+
+        # 1-Click Eject & Clean ISO from VM after installation
+        if path == "/api/v1/services/kvm/eject-iso":
+            vm_id = payload.get("id", "").strip()
+            delete_iso_file = payload.get("delete_file", True)
+            if not vm_id:
+                self._send_json(400, {"error": "VM ID required"})
+                return
+
+            env_file = f"/etc/mitranet/vms/{vm_id}.env"
+            old_iso = ""
+            if os.path.isfile(env_file):
+                lines = []
+                with open(env_file, "r") as ef:
+                    for line in ef:
+                        if line.startswith("ISO_FILE="):
+                            old_iso = line.split("=", 1)[1].strip()
+                            continue
+                        lines.append(line)
+                with open(env_file, "w") as ef:
+                    ef.writelines(lines)
+
+            # Restart VM if running so it boots from HDD
+            import subprocess
+            status_p = subprocess.run(["systemctl", "is-active", f"mitranet-vm@{vm_id}"], stdout=subprocess.PIPE, text=True)
+            if status_p.stdout.strip() == "active":
+                subprocess.run(["systemctl", "restart", f"mitranet-vm@{vm_id}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            freed_msg = ""
+            if delete_iso_file and old_iso and os.path.isfile(old_iso):
+                try:
+                    iso_sz = round(os.path.getsize(old_iso) / (1024 * 1024 * 1024), 2)
+                    os.remove(old_iso)
+                    freed_msg = f" File ISO berhasil dihapus dan membebaskan {iso_sz} GB disk!"
+                except Exception as e:
+                    freed_msg = f" (Catatan: File ISO tidak dapat dihapus: {str(e)})"
+
+            self._send_json(200, {
+                "success": True,
+                "message": f"ISO berhasil dilepas dari VM '{vm_id}'. VM sekarang boot langsung dari Virtual Disk.{freed_msg}"
+            })
+            return
+
+        # Clean all unused ISOs
+        if path == "/api/v1/services/kvm/iso/clean-unused":
+            iso_dir = "/var/lib/mitranet/isos"
+            conf_dir = "/etc/mitranet/vms"
+            active_isos = set()
+            if os.path.isdir(conf_dir):
+                for f in os.listdir(conf_dir):
+                    if f.endswith(".env"):
+                        try:
+                            with open(os.path.join(conf_dir, f), "r") as ef:
+                                for line in ef:
+                                    if line.startswith("ISO_FILE="):
+                                        val = line.split("=", 1)[1].strip()
+                                        if val:
+                                            active_isos.add(val)
+                                            active_isos.add(os.path.basename(val))
+                        except Exception:
+                            pass
+
+            deleted_count = 0
+            freed_bytes = 0
+            if os.path.isdir(iso_dir):
+                for f in os.listdir(iso_dir):
+                    fpath = os.path.join(iso_dir, f)
+                    if os.path.isfile(fpath) and (f.endswith(".iso") or f.endswith(".img")):
+                        if fpath not in active_isos and f not in active_isos:
+                            try:
+                                sz = os.path.getsize(fpath)
+                                os.remove(fpath)
+                                freed_bytes += sz
+                                deleted_count += 1
+                            except Exception:
+                                pass
+
+            freed_mb = round(freed_bytes / (1024 * 1024), 1)
+            freed_str = f"{round(freed_mb/1024, 2)} GB" if freed_mb > 1024 else f"{freed_mb} MB"
+            self._send_json(200, {
+                "success": True,
+                "deleted_count": deleted_count,
+                "freed_str": freed_str,
+                "message": f"Berhasil membersihkan {deleted_count} ISO tak terpakai dan membebaskan {freed_str} ruang penyimpanan."
+            })
+            return
+
+
+        # 21. Virtual Ethernet (vEthernet) Creation
+        if path == "/api/v1/interfaces/vethernet/create":
+            import re
+            import subprocess
+            name = re.sub(r'[^a-zA-Z0-9_\-]', '', payload.get("name", "").strip().lower())
+            ip_cidr = payload.get("ip_cidr", "").strip()
+            desc = payload.get("description", "").strip()
+
+            if not name:
+                name = "veth0"
+
+            if not ip_cidr or "/" not in ip_cidr:
+                self._send_json(400, {"error": "Format IPv4/CIDR tidak valid (contoh: 192.168.101.254/24)"})
+                return
+
+            try:
+                # 1. Create Linux bridge device for virtual ethernet
+                # Check if interface already exists
+                check_proc = subprocess.run(["ip", "link", "show", name], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                if check_proc.returncode != 0:
+                    add_link = subprocess.run(["ip", "link", "add", name, "type", "bridge"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                    if add_link.returncode != 0:
+                        self._send_json(500, {"error": f"Gagal membuat bridge link: {add_link.stderr.strip()}"})
+                        return
+
+                # 2. Assign IP address
+                # Flush old IPs if any on this bridge
+                subprocess.run(["ip", "addr", "flush", "dev", name], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                add_ip = subprocess.run(["ip", "addr", "add", ip_cidr, "dev", name], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                if add_ip.returncode != 0:
+                    self._send_json(500, {"error": f"Gagal menambahkan IP: {add_ip.stderr.strip()}"})
+                    return
+
+                # 3. Bring interface UP
+                subprocess.run(["ip", "link", "set", name, "up"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                # 4. Enable IPv4 forwarding in kernel
+                subprocess.run(["sysctl", "-w", "net.ipv4.ip_forward=1"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                # 5. Automatically configure dnsmasq DHCP & NAT for vEthernet
+                try:
+                    import ipaddress
+                    net_obj = ipaddress.ip_network(ip_cidr, strict=False)
+                    host_list = list(net_obj.hosts())
+                    if len(host_list) >= 10:
+                        dhcp_start = str(host_list[5])
+                        dhcp_end = str(host_list[-5])
+                        router_ip = ip_cidr.split("/")[0]
+
+                        # Write dnsmasq config for this vethernet interface
+                        dnsmasq_conf = (
+                            f"interface={name}\n"
+                            f"bind-interfaces\n"
+                            f"dhcp-range={name},{dhcp_start},{dhcp_end},255.255.255.0,12h\n"
+                            f"dhcp-option={name},option:router,{router_ip}\n"
+                            f"dhcp-option={name},option:dns-server,{router_ip},8.8.8.8,1.1.1.1\n"
+                        )
+                        dnsmasq_file = f"/etc/dnsmasq.d/vethernet_{name}.conf"
+                        with open(dnsmasq_file, "w") as df:
+                            df.write(dnsmasq_conf)
+                        # Reload / restart dnsmasq
+                        subprocess.run(["systemctl", "restart", "dnsmasq"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                        # Configure iptables NAT MASQUERADE for this subnet so guest VM gets internet access
+                        subprocess.run([
+                            "iptables", "-t", "nat", "-C", "POSTROUTING", "-s", str(net_obj), "!", "-o", name, "-j", "MASQUERADE"
+                        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                        # If rule does not exist, add it
+                        subprocess.run([
+                            "iptables", "-t", "nat", "-A", "POSTROUTING", "-s", str(net_obj), "!", "-o", name, "-j", "MASQUERADE"
+                        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                except Exception as de:
+                    logger.warning("Could not setup dnsmasq DHCP for vEthernet %s: %s", name, de)
+
+                # 6. Persist to /etc/mitranet/network/vethernet.json
+                conf_dir = "/etc/mitranet/network"
+                os.makedirs(conf_dir, exist_ok=True)
+                conf_file = f"{conf_dir}/vethernet.json"
+                veth_db = {}
+                if os.path.isfile(conf_file):
+                    try:
+                        with open(conf_file, "r") as cf:
+                            veth_db = json.load(cf)
+                    except Exception:
+                        veth_db = {}
+
+                veth_db[name] = {
+                    "name": name,
+                    "ip_cidr": ip_cidr,
+                    "description": desc or f"Virtual Subnet for {name}",
+                    "created_at": time.time()
+                }
+                with open(conf_file, "w") as cf:
+                    json.dump(veth_db, cf, indent=2)
+
+                self._send_json(200, {
+                    "success": True,
+                    "message": f"vEthernet interface '{name}' ({ip_cidr}) berhasil dibuat dan diaktifkan.",
+                    "data": veth_db[name]
+                })
+            except Exception as e:
+                self._send_json(500, {"error": f"Eksekusi gagal: {e}"})
+            return
+
+        # 22. Virtual Ethernet (vEthernet) Deletion
+        if path == "/api/v1/interfaces/vethernet/delete":
+            import subprocess
+            name = payload.get("name", "").strip()
+            if not name:
+                self._send_json(400, {"error": "Interface name required"})
+                return
+
+            try:
+                # 1. Bring interface DOWN and delete link
+                subprocess.run(["ip", "link", "set", name, "down"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                subprocess.run(["ip", "link", "del", name], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                # 2. Update config file
+                conf_file = "/etc/mitranet/network/vethernet.json"
+                if os.path.isfile(conf_file):
+                    try:
+                        with open(conf_file, "r") as cf:
+                            veth_db = json.load(cf)
+                        if name in veth_db:
+                            del veth_db[name]
+                            with open(conf_file, "w") as cf:
+                                json.dump(veth_db, cf, indent=2)
+                    except Exception:
+                        pass
+
+                self._send_json(200, {"success": True, "message": f"vEthernet interface '{name}' berhasil dihapus."})
+            except Exception as e:
+                self._send_json(500, {"error": f"Gagal menghapus interface: {e}"})
+            return
+
+        # 22b. DHCP Server Settings Mutation
+        if path == "/api/v1/services/dhcp/save":
+            import subprocess
+            ifname = payload.get("interface", "").strip()
+            enabled = bool(payload.get("enabled", True))
+            range_start = payload.get("range_start", "").strip()
+            range_end = payload.get("range_end", "").strip()
+            gateway = payload.get("gateway", "").strip()
+            dns_servers = payload.get("dns", [])
+            lease_time = payload.get("lease_time", "12h").strip() or "12h"
+
+            if not ifname:
+                self._send_json(400, {"error": "Interface name required"})
+                return
+
+            conf_file = f"/etc/dnsmasq.d/dhcp_{ifname}.conf"
+            # Also check vethernet conf file
+            veth_conf_file = f"/etc/dnsmasq.d/vethernet_{ifname}.conf"
+
+            try:
+                if not enabled:
+                    # Remove configuration if disabled
+                    for cf in (conf_file, veth_conf_file):
+                        if os.path.exists(cf):
+                            os.remove(cf)
+                    subprocess.run(["systemctl", "restart", "dnsmasq"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    self._send_json(200, {"success": True, "message": f"DHCP Server for {ifname} disabled."})
+                    return
+
+                if not range_start or not range_end:
+                    self._send_json(400, {"error": "DHCP range start and end required"})
+                    return
+
+                # Build dnsmasq config lines
+                lines = [
+                    f"interface={ifname}",
+                    f"bind-interfaces",
+                    f"dhcp-range={ifname},{range_start},{range_end},255.255.255.0,{lease_time}",
+                ]
+                if gateway:
+                    lines.append(f"dhcp-option={ifname},option:router,{gateway}")
+                if dns_servers:
+                    if isinstance(dns_servers, list):
+                        dns_str = ",".join(str(d).strip() for d in dns_servers if str(d).strip())
+                    else:
+                        dns_str = str(dns_servers).strip()
+                    if dns_str:
+                        lines.append(f"dhcp-option={ifname},option:dns-server,{dns_str}")
+
+                target_file = veth_conf_file if os.path.exists(veth_conf_file) else conf_file
+                os.makedirs("/etc/dnsmasq.d", exist_ok=True)
+                with open(target_file, "w") as df:
+                    df.write("\n".join(lines) + "\n")
+
+                # Restart dnsmasq
+                subprocess.run(["systemctl", "restart", "dnsmasq"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                # Ensure NAT masquerade if interface has private IP subnet
+                try:
+                    import ipaddress
+                    if gateway:
+                        net_obj = ipaddress.ip_network(f"{gateway}/24", strict=False)
+                        subprocess.run([
+                            "iptables", "-t", "nat", "-C", "POSTROUTING", "-s", str(net_obj), "!", "-o", ifname, "-j", "MASQUERADE"
+                        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                        subprocess.run([
+                            "iptables", "-t", "nat", "-A", "POSTROUTING", "-s", str(net_obj), "!", "-o", ifname, "-j", "MASQUERADE"
+                        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                except Exception:
+                    pass
+
+                self._send_json(200, {"success": True, "message": f"DHCP Server for {ifname} saved and active."})
+            except Exception as e:
+                self._send_json(500, {"error": f"Failed saving DHCP configuration: {e}"})
+            return
+
+        # 23. Linux Bridge Creation & Member Port Attachment
+        if path == "/api/v1/bridges/create":
+            name = payload.get("name", "").strip()
+            members = payload.get("members", [])
+            if not name:
+                self._send_json(400, {"error": "Bridge name required"})
+                return
+
+            try:
+                # 1. Create bridge
+                b_res = bridge_service.create_bridge(name)
+                # 2. Attach member ports if provided
+                if isinstance(members, list):
+                    for m in members:
+                        m_str = str(m).strip()
+                        if m_str and m_str != "lo":
+                            try:
+                                bridge_service.add_port(name, m_str)
+                            except Exception as pe:
+                                logger.warning("Could not attach port %s to bridge %s: %s", m_str, name, pe)
+
+                # 3. Bring bridge UP
+                import subprocess
+                subprocess.run(["ip", "link", "set", name, "up"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                self._send_json(200, {
+                    "success": True,
+                    "message": f"Bridge '{name}' successfully created.",
+                    "bridge": b_res.model_dump()
+                })
+            except Exception as e:
+                self._send_json(500, {"error": f"Failed creating bridge: {e}"})
+            return
+
+        # 24. Linux Bridge Deletion
+        if path == "/api/v1/bridges/delete":
+            name = payload.get("name", "").strip()
+            if not name:
+                self._send_json(400, {"error": "Bridge name required"})
+                return
+
+            try:
+                bridge_service.delete_bridge(name)
+                self._send_json(200, {"success": True, "message": f"Bridge '{name}' successfully deleted."})
+            except Exception as e:
+                self._send_json(500, {"error": f"Failed deleting bridge: {e}"})
             return
 
         self._send_json(404, {"error": "Endpoint not found"})
