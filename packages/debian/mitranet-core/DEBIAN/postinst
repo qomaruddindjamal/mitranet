@@ -23,6 +23,17 @@ BUG_REPORT_URL="https://mitranet.local/bugs"
 EOF
         fi
 
+        # Ensure high-speed networking modules and 100G sysctl rules are active
+        if [ ! -f /etc/modules-load.d/mitranet-network.conf ]; then
+            cat << 'EOF' > /etc/modules-load.d/mitranet-network.conf
+tcp_bbr
+sch_fq
+EOF
+        fi
+        modprobe tcp_bbr >/dev/null 2>&1 || true
+        modprobe sch_fq >/dev/null 2>&1 || true
+        sysctl --system >/dev/null 2>&1 || true
+
         # Reload systemd daemon
         if command -v systemctl >/dev/null 2>&1; then
             systemctl daemon-reload || true
