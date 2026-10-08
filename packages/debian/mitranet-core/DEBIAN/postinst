@@ -34,6 +34,11 @@ EOF
         modprobe sch_fq >/dev/null 2>&1 || true
         sysctl --system >/dev/null 2>&1 || true
 
+        # Disable intrusive daily apt background timers on router appliance
+        if command -v systemctl >/dev/null 2>&1; then
+            systemctl disable --now apt-daily.timer apt-daily-upgrade.timer >/dev/null 2>&1 || true
+        fi
+
         # Reload systemd daemon
         if command -v systemctl >/dev/null 2>&1; then
             systemctl daemon-reload || true
