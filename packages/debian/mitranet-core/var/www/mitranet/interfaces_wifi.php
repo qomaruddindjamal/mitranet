@@ -37,235 +37,18 @@ $has_wifi = !empty($wifi_interfaces);
 $current_tab = $_GET['tab'] ?? 'wifi';
 ?>
 
-<style>
-/* WinBox / RouterOS exact tab & toolbar styling */
-.winbox-window {
-    background: #d8e5f2;
-    border: none;
-    border-radius: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    font-size: 12px;
-    margin: 0;
-    flex: 1 1 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    height: 100%;
-}
-
-/* Header bar with WiFi title and Tabs */
-.winbox-header {
-    background: #c3d9ef;
-    background: linear-gradient(to bottom, #dbe8f5 0%, #c4dbf0 100%);
-    border-bottom: 1px solid #9cb8d9;
-    padding: 4px 6px 0 6px;
-    display: flex;
-    align-items: flex-end;
-    flex-wrap: wrap;
-    gap: 2px;
-}
-
-.winbox-title-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: #eaf2fa;
-    border: 1px solid #7ea3cf;
-    border-bottom: none;
-    padding: 5px 10px;
-    font-weight: 700;
-    color: #1e395b;
-    font-size: 12px;
-    border-top-left-radius: 3px;
-    border-top-right-radius: 3px;
-    margin-right: 6px;
-}
-.winbox-title-badge i {
-    color: #0275d8;
-}
-
-/* Winbox Tabs */
-.winbox-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    gap: 1px;
-}
-
-.winbox-tabs li a {
-    display: inline-block;
-    padding: 4px 9px;
-    font-size: 11px;
-    color: #2c496e;
-    text-decoration: none;
-    border: 1px solid transparent;
-    border-bottom: none;
-    border-top-left-radius: 3px;
-    border-top-right-radius: 3px;
-    white-space: nowrap;
-    transition: background 0.15s;
-}
-
-.winbox-tabs li a:hover {
-    background: #e4edf7;
-    color: #0b315b;
-}
-
-.winbox-tabs li.active a {
-    background: #ffffff;
-    border-color: #8faecf;
-    border-bottom: 1px solid #ffffff;
-    margin-bottom: -1px;
-    font-weight: 700;
-    color: #0c335e;
-    box-shadow: 0 -1px 2px rgba(0,0,0,0.04);
-}
-
-/* Action Toolbar (New, Enable, Disable, Remove, Find, Filter) */
-.winbox-toolbar {
-    background: #eef4f9;
-    background: linear-gradient(to bottom, #f6f9fc 0%, #e5eef6 100%);
-    border-top: 1px solid #ffffff;
-    border-bottom: 1px solid #abc1da;
-    padding: 4px 8px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.winbox-toolbar-left, .winbox-toolbar-right {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.winbox-btn {
-    background: #f7fafc;
-    border: 1px solid #9cb5cf;
-    border-radius: 3px;
-    padding: 2px 8px;
-    font-size: 11px;
-    color: #233e5c;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    cursor: pointer;
-    box-shadow: 0 1px 1px rgba(0,0,0,0.05);
-}
-.winbox-btn:hover:not(:disabled) {
-    background: #ffffff;
-    border-color: #648fb8;
-    color: #002244;
-}
-.winbox-btn:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-    background: #f0f3f6;
-    border-color: #c5d4e2;
-    color: #8c9ba9;
-}
-
-.winbox-btn-active {
-    background: #d4e5f7;
-    border-color: #4b84bf;
-    font-weight: 600;
-}
-
-/* Data Grid Table */
-.winbox-grid-container {
-    background: #ffffff;
-    overflow-x: auto;
-    overflow-y: auto;
-    flex: 1 1 auto;
-    height: 100%;
-}
-
-.winbox-grid {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 11px;
-    color: #212529;
-}
-
-.winbox-grid th {
-    background: #e2ecf5;
-    background: linear-gradient(to bottom, #e9f2fa 0%, #d8e5f2 100%);
-    border-right: 1px solid #b7cde3;
-    border-bottom: 1px solid #a6bed7;
-    padding: 4px 6px;
-    font-weight: 600;
-    color: #1e3c5f;
-    white-space: nowrap;
-    text-align: left;
-    user-select: none;
-}
-.winbox-grid th.sortable:hover {
-    background: #d3e4f4;
-    cursor: pointer;
-}
-.winbox-grid th:last-child {
-    border-right: none;
-}
-
-.winbox-grid td {
-    border-right: 1px solid #e1eaf2;
-    border-bottom: 1px solid #e8eff6;
-    padding: 4px 6px;
-    white-space: nowrap;
-}
-.winbox-grid td:last-child {
-    border-right: none;
-}
-
-.winbox-grid tbody tr:hover {
-    background-color: #edf4fb;
-}
-.winbox-grid tbody tr.selected {
-    background-color: #cde2f8 !important;
-}
-
-.winbox-empty-row {
-    padding: 50px 20px;
-    text-align: center;
-    color: #64748b;
-    background: #fafcfe;
-}
-.winbox-empty-row i {
-    font-size: 32px;
-    color: #94a3b8;
-    margin-bottom: 10px;
-    display: block;
-}
-
-/* Status Bar */
-.winbox-statusbar {
-    background: #e3edf6;
-    border-top: 1px solid #abc1da;
-    padding: 3px 8px;
-    font-size: 11px;
-    color: #335174;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-</style>
-
 <div class="container-fluid" style="padding: 0; flex: 1 1 auto; display: flex; flex-direction: column;">
 
-    <!-- WINBOX / ROUTEROS EXACT INTERFACE CONTAINER -->
-    <div class="winbox-window">
+    <!-- MITRANET APPLIANCE WIRELESS CONTAINER -->
+    <div class="mitranet-window">
 
         <!-- HEADER: TITLE + EXACT TABS -->
-        <div class="winbox-header">
-            <div class="winbox-title-badge">
+        <div class="mitranet-header">
+            <div class="mitranet-title-badge">
                 <i class="fa-solid fa-wifi"></i> WiFi
                 <i class="fa-solid fa-caret-down" style="font-size: 9px; color: #555;"></i>
             </div>
-            <ul class="winbox-tabs">
+            <ul class="mitranet-tabs">
                 <li class="<?=($current_tab === 'wifi') ? 'active' : ''?>">
                     <a href="interfaces_wifi.php?tab=wifi">WiFi</a>
                 </li>
@@ -312,42 +95,42 @@ $current_tab = $_GET['tab'] ?? 'wifi';
         </div>
 
         <!-- TOOLBAR: NEW, ENABLE, DISABLE, REMOVE, COMMENT, FIND, FILTER -->
-        <div class="winbox-toolbar">
-            <div class="winbox-toolbar-left">
-                <button type="button" class="winbox-btn" onclick="openNewModal()" title="Add New Interface">
+        <div class="mitranet-toolbar">
+            <div class="mitranet-toolbar-left">
+                <button type="button" class="mitranet-btn" onclick="openNewModal()" title="Add New Interface">
                     <i class="fa-solid fa-folder-plus text-primary"></i> <strong>New</strong>
                 </button>
-                <button type="button" class="winbox-btn" id="btn-enable" disabled title="Enable Selected">
+                <button type="button" class="mitranet-btn" id="btn-enable" disabled title="Enable Selected">
                     <i class="fa-solid fa-play text-muted"></i> Enable
                 </button>
-                <button type="button" class="winbox-btn" id="btn-disable" disabled title="Disable Selected">
+                <button type="button" class="mitranet-btn" id="btn-disable" disabled title="Disable Selected">
                     <i class="fa-solid fa-pause text-muted"></i> Disable
                 </button>
-                <button type="button" class="winbox-btn" id="btn-remove" disabled title="Remove Selected">
+                <button type="button" class="mitranet-btn" id="btn-remove" disabled title="Remove Selected">
                     <i class="fa-solid fa-xmark text-muted"></i> Remove
                 </button>
-                <button type="button" class="winbox-btn" id="btn-comment" disabled title="Set Comment">
+                <button type="button" class="mitranet-btn" id="btn-comment" disabled title="Set Comment">
                     <i class="fa-regular fa-comment text-muted"></i> Comment
                 </button>
             </div>
-            <div class="winbox-toolbar-right">
+            <div class="mitranet-toolbar-right">
                 <div style="position: relative; display: inline-flex; align-items: center;">
                     <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 6px; font-size: 10px; color: #738a9c;"></i>
                     <input type="text" id="grid-search" placeholder="Find" onkeyup="filterGrid(this.value)" 
                            style="padding: 2px 5px 2px 22px; font-size: 11px; height: 22px; border: 1px solid #9cb5cf; border-radius: 3px; width: 140px;">
                 </div>
-                <button type="button" class="winbox-btn" onclick="toggleFilter()" title="Advanced Filter">
+                <button type="button" class="mitranet-btn" onclick="toggleFilter()" title="Advanced Filter">
                     <i class="fa-solid fa-filter text-muted"></i> Filter
                 </button>
-                <button type="button" class="winbox-btn" onclick="location.reload()" title="Refresh">
+                <button type="button" class="mitranet-btn" onclick="location.reload()" title="Refresh">
                     <i class="fa-solid fa-arrows-rotate"></i>
                 </button>
             </div>
         </div>
 
         <!-- DATA GRID TABLE (EXACT MATCH TO SCREENSHOT COLUMNS) -->
-        <div class="winbox-grid-container">
-            <table class="winbox-grid" id="wifi-grid-table">
+        <div class="mitranet-grid-container">
+            <table class="mitranet-grid" id="wifi-grid-table">
                 <thead>
                     <tr>
                         <th style="width: 24px; text-align: center;"><i class="fa-regular fa-flag"></i></th>
@@ -413,8 +196,8 @@ $current_tab = $_GET['tab'] ?? 'wifi';
             </table>
         </div>
 
-        <!-- WINBOX STATUS BAR -->
-        <div class="winbox-statusbar">
+        <!-- MITRANET STATUS BAR -->
+        <div class="mitranet-statusbar">
             <div>
                 <span><strong>Total:</strong> <?=count($wifi_interfaces)?> items</span>
             </div>

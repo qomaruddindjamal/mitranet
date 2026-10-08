@@ -89,15 +89,15 @@ if (!empty($err)) {
 }
 ?>
 
-<div class="panel panel-default" style="margin-top: 0; border-top: none; border-radius: 0; box-shadow: none; border-color: #8faecf;">
-	<div class="panel-heading" style="background: #eef4f9; border-bottom: 1px solid #c5d7e8; color: #1e395b; padding: 6px 12px;">
-		<h2 class="panel-title" style="font-size: 12px; font-weight: 700;"><i class="fa-solid fa-network-wired text-primary"></i> <?=gettext("Interface Assignments")?></h2>
+<div class="panel panel-default panel-mitranet">
+	<div class="panel-heading">
+		<h2 class="panel-title"><i class="fa-solid fa-network-wired text-primary"></i> <?=gettext("Interface Assignments")?></h2>
 	</div>
-	<div class="panel-body" style="padding: 0;">
+	<div class="panel-body">
 		<div class="table-responsive">
-			<table class="table table-striped table-hover table-condensed" style="margin-bottom: 0; font-size: 11px;">
+			<table class="table table-striped table-hover table-condensed">
 				<thead>
-					<tr style="background: linear-gradient(to bottom, #e9f2fa 0%, #d8e5f2 100%); color: #1e3c5f;">
+					<tr>
 						<th><?=gettext("Interface")?></th>
 						<th><?=gettext("Link State")?></th>
 						<th><?=gettext("Type")?></th>

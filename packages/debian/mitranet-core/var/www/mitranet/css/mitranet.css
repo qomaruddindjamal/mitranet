@@ -2271,8 +2271,8 @@ body.sidebar-collapsed #pf-main-content {
     overflow: hidden !important;
 }
 
-/* Full-height Card Window for WiFi / Interfaces / Panels (Zero outer margins, flush borders) */
-.winbox-window {
+/* Full-height Card Window for Wireless / Interfaces / Panels (Zero outer margins, flush borders) */
+.mitranet-window {
     flex: 1 1 100% !important;
     display: flex !important;
     flex-direction: column !important;
@@ -2285,7 +2285,7 @@ body.sidebar-collapsed #pf-main-content {
     overflow: hidden !important;
 }
 
-.winbox-grid-container {
+.mitranet-grid-container {
     flex: 1 1 auto !important;
     display: flex !important;
     flex-direction: column !important;
@@ -2295,11 +2295,11 @@ body.sidebar-collapsed #pf-main-content {
     height: 100% !important;
 }
 
-.winbox-grid-container table {
+.mitranet-grid-container table {
     margin-bottom: 0 !important;
 }
 
-.winbox-statusbar {
+.mitranet-statusbar {
     margin-top: auto !important;
     flex-shrink: 0 !important;
 }
@@ -2393,4 +2393,248 @@ body.sidebar-collapsed #pf-main-content {
     border-top: 1px solid #d5e2ef !important;
     padding: 8px 15px !important;
 }
+
+/* ==========================================================================
+   MitraNet Standard Window & Data Grid Components (Global Uniform Styling)
+   ========================================================================== */
+.mitranet-window {
+    background: #d8e5f2 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    flex: 1 1 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    height: 100% !important;
+    max-height: 100% !important;
+}
+
+.mitranet-header {
+    background: #c3d9ef !important;
+    background: linear-gradient(to bottom, #dbe8f5 0%, #c4dbf0 100%) !important;
+    border-bottom: 1px solid #9cb8d9 !important;
+    padding: 4px 6px 0 6px !important;
+    display: flex !important;
+    align-items: flex-end !important;
+    flex-wrap: wrap !important;
+    gap: 2px !important;
+    flex-shrink: 0 !important;
+}
+
+.mitranet-title-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    background: #eaf2fa !important;
+    border: 1px solid #7ea3cf !important;
+    border-bottom: none !important;
+    padding: 5px 10px !important;
+    font-weight: 700 !important;
+    color: #1e395b !important;
+    font-size: 12px !important;
+    border-top-left-radius: 3px !important;
+    border-top-right-radius: 3px !important;
+    margin-right: 6px !important;
+}
+
+.mitranet-tabs {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    gap: 1px !important;
+}
+
+.mitranet-tabs li a {
+    display: inline-block !important;
+    padding: 4px 9px !important;
+    font-size: 11px !important;
+    color: #2c496e !important;
+    text-decoration: none !important;
+    border: 1px solid transparent !important;
+    border-bottom: none !important;
+    border-top-left-radius: 3px !important;
+    border-top-right-radius: 3px !important;
+    white-space: nowrap !important;
+    transition: background 0.15s !important;
+}
+
+.mitranet-tabs li a:hover {
+    background: #e4edf7 !important;
+    color: #0b315b !important;
+}
+
+.mitranet-tabs li.active a {
+    background: #ffffff !important;
+    border-color: #8faecf !important;
+    border-bottom: 1px solid #ffffff !important;
+    margin-bottom: -1px !important;
+    font-weight: 700 !important;
+    color: #0c335e !important;
+    box-shadow: 0 -1px 2px rgba(0,0,0,0.04) !important;
+}
+
+.mitranet-toolbar {
+    background: #eef4f9 !important;
+    background: linear-gradient(to bottom, #f6f9fc 0%, #e5eef6 100%) !important;
+    border-top: 1px solid #ffffff !important;
+    border-bottom: 1px solid #abc1da !important;
+    padding: 4px 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+    flex-shrink: 0 !important;
+}
+
+.mitranet-toolbar-left, .mitranet-toolbar-right {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+
+.mitranet-btn {
+    background: #f7fafc !important;
+    border: 1px solid #9cb5cf !important;
+    border-radius: 3px !important;
+    padding: 2px 8px !important;
+    font-size: 11px !important;
+    color: #233e5c !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    cursor: pointer !important;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.05) !important;
+}
+
+.mitranet-btn:hover:not(:disabled) {
+    background: #ffffff !important;
+    border-color: #648fb8 !important;
+    color: #002244 !important;
+}
+
+.mitranet-btn:disabled {
+    opacity: 0.55 !important;
+    cursor: not-allowed !important;
+    background: #f0f3f6 !important;
+    border-color: #c5d4e2 !important;
+    color: #8c9ba9 !important;
+}
+
+.mitranet-btn-active {
+    background: #d4e5f7 !important;
+    border-color: #4b84bf !important;
+    font-weight: 600 !important;
+}
+
+.mitranet-grid-container {
+    background: #ffffff !important;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    flex: 1 1 auto !important;
+    height: 100% !important;
+}
+
+.mitranet-grid {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 11px !important;
+    color: #212529 !important;
+    margin-bottom: 0 !important;
+}
+
+.mitranet-grid th {
+    background: #e2ecf5 !important;
+    background: linear-gradient(to bottom, #e9f2fa 0%, #d8e5f2 100%) !important;
+    border-right: 1px solid #b7cde3 !important;
+    border-bottom: 1px solid #a6bed7 !important;
+    padding: 4px 6px !important;
+    font-weight: 600 !important;
+    color: #1e3c5f !important;
+    white-space: nowrap !important;
+    text-align: left !important;
+    user-select: none !important;
+}
+
+.mitranet-grid th.sortable:hover {
+    background: #d3e4f4 !important;
+    cursor: pointer !important;
+}
+
+.mitranet-grid th:last-child {
+    border-right: none !important;
+}
+
+.mitranet-grid td {
+    border-right: 1px solid #e1eaf2 !important;
+    border-bottom: 1px solid #e8eff6 !important;
+    padding: 4px 6px !important;
+    white-space: nowrap !important;
+}
+
+.mitranet-grid td:last-child {
+    border-right: none !important;
+}
+
+.mitranet-grid tbody tr:hover {
+    background-color: #edf4fb !important;
+}
+
+.mitranet-grid tbody tr.selected {
+    background-color: #cde2f8 !important;
+}
+
+.mitranet-statusbar {
+    background: #e3edf6 !important;
+    border-top: 1px solid #abc1da !important;
+    padding: 3px 8px !important;
+    font-size: 11px !important;
+    color: #335174 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+}
+
+/* Unified panel styling under top tabs */
+.panel-mitranet {
+    margin-top: 0 !important;
+    border: 1px solid #8faecf !important;
+    border-top: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+}
+
+.panel-mitranet > .panel-heading {
+    background: #eef4f9 !important;
+    background: linear-gradient(to bottom, #f6f9fc 0%, #e5eef6 100%) !important;
+    border-bottom: 1px solid #c5d7e8 !important;
+    color: #1e395b !important;
+    padding: 6px 12px !important;
+}
+
+.panel-mitranet > .panel-heading .panel-title {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+}
+
+.panel-mitranet > .panel-body {
+    padding: 0 !important;
+}
+
+.panel-mitranet table {
+    margin-bottom: 0 !important;
+    font-size: 11px !important;
+}
+
+.panel-mitranet thead tr {
+    background: linear-gradient(to bottom, #e9f2fa 0%, #d8e5f2 100%) !important;
+    color: #1e3c5f !important;
+}
+
 
