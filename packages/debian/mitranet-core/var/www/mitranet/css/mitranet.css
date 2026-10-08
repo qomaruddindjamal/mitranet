@@ -2317,3 +2317,80 @@ body.sidebar-collapsed #pf-main-content {
     flex: 1 1 auto !important;
     overflow-y: auto !important;
 }
+
+/* ==========================================================================
+   Global MitraNet Tab & Card Window Refinements (Clean, Flush, Modern)
+   ========================================================================== */
+.nav-tabs {
+    background: #c3d9ef;
+    background: linear-gradient(to bottom, #dbe8f5 0%, #c4dbf0 100%);
+    border-bottom: 1px solid #9cb8d9 !important;
+    padding: 4px 6px 0 6px !important;
+    margin-bottom: 0 !important;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+}
+
+.nav-tabs > li {
+    margin-bottom: 0 !important;
+}
+
+.nav-tabs > li > a {
+    margin-right: 2px;
+    padding: 5px 12px !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    color: #2c496e !important;
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    border-bottom: none !important;
+    border-top-left-radius: 3px !important;
+    border-top-right-radius: 3px !important;
+    transition: all 0.15s ease;
+}
+
+.nav-tabs > li > a:hover {
+    background: #e4edf7 !important;
+    color: #0b315b !important;
+    border-color: transparent !important;
+}
+
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a:hover,
+.nav-tabs > li.active > a:focus {
+    background: #ffffff !important;
+    border: 1px solid #8faecf !important;
+    border-bottom: 1px solid #ffffff !important;
+    margin-bottom: -1px !important;
+    font-weight: 700 !important;
+    color: #0c335e !important;
+    box-shadow: 0 -1px 2px rgba(0,0,0,0.04) !important;
+}
+
+/* Global modal dialog clean look: static backdrop and prevent unwanted auto-dismiss */
+.modal {
+    text-align: left;
+}
+.modal-content {
+    border-radius: 4px !important;
+    border: 1px solid #7ea3cf !important;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.25) !important;
+}
+.modal-header {
+    background: #e6eef6 !important;
+    background: linear-gradient(to bottom, #edf4fa 0%, #dbe8f5 100%) !important;
+    border-bottom: 1px solid #b7cde3 !important;
+    padding: 10px 15px !important;
+}
+.modal-header .modal-title {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #1e3c5f !important;
+}
+.modal-footer {
+    background: #f7fafc !important;
+    border-top: 1px solid #d5e2ef !important;
+    padding: 8px 15px !important;
+}
+

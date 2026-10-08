@@ -38,22 +38,35 @@ $bridges = MitraNetApi::getBridges();
 $bonds = MitraNetApi::getBonds();
 
 // Filter out tap-* (internal KVM interfaces managed by QEMU/veth)
-// Sort: Physical > Bridge > veth* > others
+// AND filter out all Wireless/WiFi interfaces (so WiFi is strictly managed in /interfaces_wifi.php)
 $ifaces = array_filter($ifaces_raw, function($i) {
-    $name = $i['name'] ?? '';
-    return !preg_match('/^tap-/i', $name) && !preg_match('/^tap[0-9]+/i', $name);
+    $name = strtolower($i['name'] ?? '');
+    $type = strtolower($i['type'] ?? '');
+    
+    // Exclude internal KVM tap interfaces
+    if (preg_match('/^tap[-_0-9]/i', $name)) {
+        return false;
+    }
+    
+    // Exclude all wireless / wifi devices (wlan*, wlp*, wls*, ath*, ra*, or type wlan/wireless)
+    if (preg_match('/^(wlan|wlp|wls|ath|ra|wifi)/i', $name) || in_array($type, ['wlan', 'wireless', 'ieee80211'])) {
+        return false;
+    }
+    
+    return true;
 });
 
 // Sort by interface type priority
+// Priority: 1. Physical (SFP+/10G/100G/Ethernet) > 2. Bridge > 3. vEthernet > 4. WireGuard > 5. Others > Loopback last
 usort($ifaces, function($a, $b) {
     $priority = function($i) {
-        $name = $i['name'] ?? '';
+        $name = strtolower($i['name'] ?? '');
         $type = strtolower($i['type'] ?? '');
         if ($name === 'lo') return 99;                      // loopback last
+        if (preg_match('/^(en|eth|eno|ens|enp)/i', $name)) return 1; // Physical SFP/Ethernet 1G/10G/100G
         if (preg_match('/^br[-_]/i', $name) || $type === 'bridge') return 2; // Bridge
         if (preg_match('/^veth/i', $name)) return 3;        // vEthernet
         if (preg_match('/^wg/i', $name)) return 4;          // WireGuard
-        if (preg_match('/^(en|eth|eno|ens|enp)/i', $name)) return 1; // Physical
         return 5;
     };
     return $priority($a) <=> $priority($b);
@@ -76,13 +89,15 @@ if (!empty($err)) {
 }
 ?>
 
-<div class="panel panel-default">
-	<div class="panel-heading"><h2 class="panel-title"><?=gettext("Interface Assignments")?></h2></div>
-	<div class="panel-body">
+<div class="panel panel-default" style="margin-top: 0; border-top: none; border-radius: 0; box-shadow: none; border-color: #8faecf;">
+	<div class="panel-heading" style="background: #eef4f9; border-bottom: 1px solid #c5d7e8; color: #1e395b; padding: 6px 12px;">
+		<h2 class="panel-title" style="font-size: 12px; font-weight: 700;"><i class="fa-solid fa-network-wired text-primary"></i> <?=gettext("Interface Assignments")?></h2>
+	</div>
+	<div class="panel-body" style="padding: 0;">
 		<div class="table-responsive">
-			<table class="table table-striped table-hover table-condensed">
+			<table class="table table-striped table-hover table-condensed" style="margin-bottom: 0; font-size: 11px;">
 				<thead>
-					<tr>
+					<tr style="background: linear-gradient(to bottom, #e9f2fa 0%, #d8e5f2 100%); color: #1e3c5f;">
 						<th><?=gettext("Interface")?></th>
 						<th><?=gettext("Link State")?></th>
 						<th><?=gettext("Type")?></th>
@@ -100,7 +115,16 @@ if (!empty($err)) {
 					<tr>
 						<td>
 							<a href="interfaces.php?if=<?=urlencode($i['name'])?>">
-								<strong><i class="fa-solid fa-network-wired"></i> <?=htmlspecialchars(strtoupper($i['name']))?> (<?=htmlspecialchars($i['name'])?>)</strong>
+								<strong><i class="fa-solid <?=!empty($i['is_sfp']) ? 'fa-bolt text-warning' : 'fa-network-wired text-primary'?>"></i> 
+								<?php if (!empty($i['altname'])): ?>
+									<?=htmlspecialchars(strtoupper($i['altname']))?> <small class="text-muted">(<?=htmlspecialchars($i['name'])?>)</small>
+									<?php if (!empty($i['is_sfp'])): ?>
+										<span class="badge" style="background-color: #f39c12; font-size: 10px; margin-left: 4px;">SFP/Optical</span>
+									<?php endif; ?>
+								<?php else: ?>
+									<?=htmlspecialchars(strtoupper($i['name']))?>
+								<?php endif; ?>
+								</strong>
 							</a>
 						</td>
 						<td>
