@@ -1,7 +1,7 @@
 <?php
 /*
- * interfaces_wifi.php - MitraNet Wireless Interfaces
- * Adapted from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
+ * interfaces_wifi.php - MitraNet Wireless / WiFi Management
+ * Designed with modern RouterOS / WinBox / pfSense Tabbed Interface
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -9,7 +9,6 @@ $pgtitle = array(gettext("Interfaces"), gettext("Wireless"));
 $selected_menu = "interfaces";
 require_once(__DIR__ . '/includes/head.inc');
 
-$savemsg = "";
 $all_ifaces = MitraNetApi::getInterfaces();
 
 // Filter for genuine wireless interfaces:
@@ -35,281 +34,499 @@ $wifi_interfaces = array_filter($all_ifaces, function($i) {
 $wifi_interfaces = array_values($wifi_interfaces);
 $has_wifi = !empty($wifi_interfaces);
 
-$current_tab = $_GET['tab'] ?? 'overview';
-
-// Navigation pills
-$tab_array = array();
-$tab_array[] = array(gettext("Overview & Status"), ($current_tab === 'overview'), "interfaces_wifi.php?tab=overview");
-$tab_array[] = array(gettext("Scan & Connect (Client)"), ($current_tab === 'scan'), "interfaces_wifi.php?tab=scan");
-$tab_array[] = array(gettext("Access Point (AP Mode)"), ($current_tab === 'ap'), "interfaces_wifi.php?tab=ap");
-$tab_array[] = array(gettext("Hardware & Radios"), ($current_tab === 'detect'), "interfaces_wifi.php?tab=detect");
-display_top_tabs($tab_array);
+$current_tab = $_GET['tab'] ?? 'wifi';
 ?>
 
 <style>
-.wifi-card {
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    margin-bottom: 20px;
-    background: #fff;
-    border: 1px solid #e5e9ec;
-}
-.wifi-card .panel-heading {
-    border-top-left-radius: 7px;
-    border-top-right-radius: 7px;
-    font-weight: 600;
-    padding: 12px 18px;
-    background: #f8fafc;
-    border-bottom: 1px solid #e5e9ec;
-}
-.wifi-signal-bar {
-    height: 8px;
+/* WinBox / RouterOS exact tab & toolbar styling */
+.winbox-window {
+    background: #d8e5f2;
+    border: 1px solid #7ba0cd;
     border-radius: 4px;
-    background: #e9ecef;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    margin-bottom: 25px;
     overflow: hidden;
-    margin-top: 6px;
 }
-.wifi-signal-fill {
-    height: 100%;
-    transition: width 0.3s ease;
+
+/* Header bar with WiFi title and Tabs */
+.winbox-header {
+    background: #c3d9ef;
+    background: linear-gradient(to bottom, #dbe8f5 0%, #c4dbf0 100%);
+    border-bottom: 1px solid #9cb8d9;
+    padding: 4px 6px 0 6px;
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 2px;
 }
-.badge-wifi-connected {
-    background-color: #28a745;
-    color: #fff;
-    font-size: 12px;
+
+.winbox-title-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #eaf2fa;
+    border: 1px solid #7ea3cf;
+    border-bottom: none;
     padding: 5px 10px;
-    border-radius: 12px;
-}
-.badge-wifi-disconnected {
-    background-color: #6c757d;
-    color: #fff;
+    font-weight: 700;
+    color: #1e395b;
     font-size: 12px;
-    padding: 5px 10px;
-    border-radius: 12px;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    margin-right: 6px;
 }
-.badge-wifi-ap {
-    background-color: #007bff;
-    color: #fff;
-    font-size: 12px;
-    padding: 5px 10px;
-    border-radius: 12px;
+.winbox-title-badge i {
+    color: #0275d8;
 }
-.iface-selector-bar {
-    background: #edf2f7;
-    border: 1px solid #e2e8f0;
-    padding: 12px 18px;
-    border-radius: 8px;
-    margin-bottom: 18px;
+
+/* Winbox Tabs */
+.winbox-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    gap: 1px;
+}
+
+.winbox-tabs li a {
+    display: inline-block;
+    padding: 4px 9px;
+    font-size: 11px;
+    color: #2c496e;
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+
+.winbox-tabs li a:hover {
+    background: #e4edf7;
+    color: #0b315b;
+}
+
+.winbox-tabs li.active a {
+    background: #ffffff;
+    border-color: #8faecf;
+    border-bottom: 1px solid #ffffff;
+    margin-bottom: -1px;
+    font-weight: 700;
+    color: #0c335e;
+    box-shadow: 0 -1px 2px rgba(0,0,0,0.04);
+}
+
+/* Action Toolbar (New, Enable, Disable, Remove, Find, Filter) */
+.winbox-toolbar {
+    background: #eef4f9;
+    background: linear-gradient(to bottom, #f6f9fc 0%, #e5eef6 100%);
+    border-top: 1px solid #ffffff;
+    border-bottom: 1px solid #abc1da;
+    padding: 4px 8px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 8px;
     flex-wrap: wrap;
-    gap: 12px;
 }
-.empty-wifi-state {
-    padding: 35px 25px;
+
+.winbox-toolbar-left, .winbox-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.winbox-btn {
+    background: #f7fafc;
+    border: 1px solid #9cb5cf;
+    border-radius: 3px;
+    padding: 2px 8px;
+    font-size: 11px;
+    color: #233e5c;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+}
+.winbox-btn:hover:not(:disabled) {
+    background: #ffffff;
+    border-color: #648fb8;
+    color: #002244;
+}
+.winbox-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    background: #f0f3f6;
+    border-color: #c5d4e2;
+    color: #8c9ba9;
+}
+
+.winbox-btn-active {
+    background: #d4e5f7;
+    border-color: #4b84bf;
+    font-weight: 600;
+}
+
+/* Data Grid Table */
+.winbox-grid-container {
+    background: #ffffff;
+    overflow-x: auto;
+    min-height: 240px;
+}
+
+.winbox-grid {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    color: #212529;
+}
+
+.winbox-grid th {
+    background: #e2ecf5;
+    background: linear-gradient(to bottom, #e9f2fa 0%, #d8e5f2 100%);
+    border-right: 1px solid #b7cde3;
+    border-bottom: 1px solid #a6bed7;
+    padding: 4px 6px;
+    font-weight: 600;
+    color: #1e3c5f;
+    white-space: nowrap;
+    text-align: left;
+    user-select: none;
+}
+.winbox-grid th.sortable:hover {
+    background: #d3e4f4;
+    cursor: pointer;
+}
+.winbox-grid th:last-child {
+    border-right: none;
+}
+
+.winbox-grid td {
+    border-right: 1px solid #e1eaf2;
+    border-bottom: 1px solid #e8eff6;
+    padding: 4px 6px;
+    white-space: nowrap;
+}
+.winbox-grid td:last-child {
+    border-right: none;
+}
+
+.winbox-grid tbody tr:hover {
+    background-color: #edf4fb;
+}
+.winbox-grid tbody tr.selected {
+    background-color: #cde2f8 !important;
+}
+
+.winbox-empty-row {
+    padding: 50px 20px;
     text-align: center;
-    background: #fdfdfe;
-    border: 1px dashed #cbd5e1;
-    border-radius: 8px;
-    margin-bottom: 20px;
+    color: #64748b;
+    background: #fafcfe;
 }
-.empty-wifi-state i.main-icon {
-    font-size: 48px;
+.winbox-empty-row i {
+    font-size: 32px;
     color: #94a3b8;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
+    display: block;
+}
+
+/* Status Bar */
+.winbox-statusbar {
+    background: #e3edf6;
+    border-top: 1px solid #abc1da;
+    padding: 3px 8px;
+    font-size: 11px;
+    color: #335174;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 </style>
 
-<div class="container-fluid" style="padding-top: 15px;">
+<div class="container-fluid" style="padding-top: 10px;">
 
-<?php if (!$has_wifi): ?>
-    <!-- CLEAN EMPTY STATE: NO WIRELESS HARDWARE PRESENT -->
-    <div class="empty-wifi-state">
-        <i class="fa-solid fa-wifi-slash main-icon"></i>
-        <h3 style="font-weight: 700; color: #334155; margin-top: 0; margin-bottom: 8px;">
-            Tidak Ada Perangkat Wireless (Wi-Fi) yang Terdeteksi
-        </h3>
-        <p style="color: #64748b; max-width: 650px; margin: 0 auto 18px auto; font-size: 14px; line-height: 1.6;">
-            Sistem MitraNet Router tidak mendeteksi radio nirkabel fisik (PCIe Wi-Fi card atau USB Wi-Fi adapter) pada appliance ini. Semua antarmuka fisik yang tersedia saat ini adalah Ethernet/SFP berkabel.
-        </p>
-        <div style="display: inline-flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-            <button class="btn btn-default" onclick="location.reload();">
-                <i class="fa-solid fa-arrows-rotate"></i> Pindai Ulang Perangkat
-            </button>
-            <a href="interfaces_assign.php" class="btn btn-primary">
-                <i class="fa-solid fa-network-wired"></i> Buka Interface Assignments
-            </a>
-        </div>
-    </div>
+    <!-- WINBOX / ROUTEROS EXACT INTERFACE CONTAINER -->
+    <div class="winbox-window">
 
-    <!-- HARDWARE DIAGNOSTICS & SYSTEM INFO -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="panel panel-default wifi-card">
-                <div class="panel-heading">
-                    <i class="fa-solid fa-circle-info text-info" style="margin-right: 8px;"></i>
-                    Informasi Radio & Subsistem Kernel Wireless
-                </div>
-                <div class="panel-body">
-                    <div class="alert alert-info" style="margin-bottom: 15px;">
-                        <i class="fa-solid fa-circle-check"></i>
-                        <strong>Subsistem Kernel Siap:</strong> Driver <code>cfg80211</code>, <code>mac80211</code>, <code>hostapd</code>, dan utilitas <code>iw</code> sudah aktif di dalam kernel. Cukup hubungkan modul Wi-Fi USB atau kartu PCIe Wi-Fi yang kompatibel dengan Linux (contoh: chipset Atheros, MediaTek, Realtek, atau Intel) untuk mengaktifkan fungsi Access Point (AP Mode) atau Client Station secara otomatis.
-                    </div>
-
-                    <table class="table table-bordered table-striped" style="margin-bottom: 0;">
-                        <tbody>
-                            <tr>
-                                <th style="width: 30%;">Status Perangkat Wireless</th>
-                                <td><span class="label label-default">0 Perangkat Ditemukan</span></td>
-                            </tr>
-                            <tr>
-                                <th>Driver Kernel 802.11</th>
-                                <td><span class="label label-success">cfg80211 Aktif</span></td>
-                            </tr>
-                            <tr>
-                                <th>Layanan AP Daemon</th>
-                                <td><span class="label label-info">hostapd Siap</span></td>
-                            </tr>
-                            <tr>
-                                <th>Format Penamaan Port Otomatis</th>
-                                <td>
-                                    <code>wlan1-2.4</code> (Frekuensi 2.4 GHz) &amp; 
-                                    <code>wlan2-5.8</code> (Frekuensi 5.8 GHz / 5 GHz)
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+        <!-- HEADER: TITLE + EXACT TABS -->
+        <div class="winbox-header">
+            <div class="winbox-title-badge">
+                <i class="fa-solid fa-wifi"></i> WiFi
+                <i class="fa-solid fa-caret-down" style="font-size: 9px; color: #555;"></i>
             </div>
+            <ul class="winbox-tabs">
+                <li class="<?=($current_tab === 'wifi') ? 'active' : ''?>">
+                    <a href="interfaces_wifi.php?tab=wifi">WiFi</a>
+                </li>
+                <li class="<?=($current_tab === 'network') ? 'active' : ''?>">
+                    <a href="interfaces_wifi.php?tab=network">Network</a>
+                </li>
+                <li class="<?=($current_tab === 'configuration') ? 'active' : ''?>">
+                    <a href="interfaces_wifi.php?tab=configuration">Configuration</a>
+                </li>
+                <li class="<?=($current_tab === 'channel') ? 'active' : ''?>">
+                    <a href="interfaces_wifi.php?tab=channel">Channel</a>
+                </li>
+                <li class="<?=($current_tab === 'security') ? 'active' : ''?>">
+                    <a href="interfaces_wifi.php?tab=security">Security</a>
+                </li>
+                <li class="<?=($current_tab === 'aaa') ? 'active' : ''?>">
+                    <a href="interfaces_wifi.php?tab=aaa">AAA</a>
+                </li>
+                <li class="<?=($current_tab === 'datapath') ? 'active' : ''?>">
+                    <a href="interfaces_wifi.php?tab=datapath">Datapath</a>
+                </li>
+                <li class="<?=($current_tab === 'interworking') ? 'active' : ''?>">
+                    <a href="interfaces_wifi.php?tab=interworking">Interworking</a>
+                </li>
+                <li class="<?=($current_tab === 'steering') ? 'active' : ''?>">
+                    <a href="interfaces_wifi.php?tab=steering">Steering</a>
+                </li>
+                <li class="<?=($current_tab === 'registration') ? 'active' : ''?>">
+                    <a href="interfaces_wifi.php?tab=registration">Registration</a>
+                </li>
+                <li class="<?=($current_tab === 'access_list') ? 'active' : ''?>">
+                    <a href="interfaces_wifi.php?tab=access_list">Access List</a>
+                </li>
+                <li class="<?=($current_tab === 'provisioning') ? 'active' : ''?>">
+                    <a href="interfaces_wifi.php?tab=provisioning">Provisioning</a>
+                </li>
+                <li class="<?=($current_tab === 'radios') ? 'active' : ''?>">
+                    <a href="interfaces_wifi.php?tab=radios">Radios</a>
+                </li>
+                <li class="<?=($current_tab === 'remote_cap') ? 'active' : ''?>">
+                    <a href="interfaces_wifi.php?tab=remote_cap">Remote CAP</a>
+                </li>
+            </ul>
         </div>
-    </div>
 
-<?php else: ?>
-    <!-- WIRELESS HARDWARE IS DETECTED -->
-    <div class="iface-selector-bar">
-        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-            <label style="margin: 0; font-weight: 600; font-size: 14px;">
-                <i class="fa-solid fa-wifi text-primary"></i> Antarmuka Wireless Aktif:
-            </label>
-            <select id="select-active-iface" class="form-control" style="width: auto; min-width: 300px; font-weight: 600;" onchange="changeActiveInterface(this.value)">
-                <?php foreach ($wifi_interfaces as $w): 
-                    $disp = strtoupper($w['altname'] ?? $w['name']) . " (" . htmlspecialchars($w['name']) . ")";
-                    if (!empty($w['port_label'])) {
-                        $disp .= " - " . htmlspecialchars($w['port_label']);
-                    }
-                ?>
-                    <option value="<?=htmlspecialchars($w['name'])?>"><?=htmlspecialchars($disp)?></option>
-                <?php endforeach; ?>
-            </select>
-            <span id="iface-switch-msg" class="text-success" style="display: none; font-weight: 600;">
-                <i class="fa-solid fa-circle-check"></i> Interface updated
-            </span>
-        </div>
-        <div>
-            <button class="btn btn-sm btn-info" onclick="location.reload();">
-                <i class="fa-solid fa-rotate"></i> Pindai Ulang Perangkat
-            </button>
-        </div>
-    </div>
-
-    <!-- TAB 1: OVERVIEW & STATUS -->
-    <div class="row">
-        <div class="col-md-7">
-            <div class="panel panel-default wifi-card">
-                <div class="panel-heading">
-                    <i class="fa-solid fa-wifi text-primary" style="margin-right: 8px;"></i>
-                    Status Antarmuka Wireless
-                    <button class="btn btn-xs btn-default pull-right" onclick="location.reload();">
-                        <i class="fa-solid fa-arrows-rotate"></i> Refresh
-                    </button>
+        <!-- TOOLBAR: NEW, ENABLE, DISABLE, REMOVE, COMMENT, FIND, FILTER -->
+        <div class="winbox-toolbar">
+            <div class="winbox-toolbar-left">
+                <button type="button" class="winbox-btn" onclick="openNewModal()" title="Add New Interface">
+                    <i class="fa-solid fa-folder-plus text-primary"></i> <strong>New</strong>
+                </button>
+                <button type="button" class="winbox-btn" id="btn-enable" disabled title="Enable Selected">
+                    <i class="fa-solid fa-play text-muted"></i> Enable
+                </button>
+                <button type="button" class="winbox-btn" id="btn-disable" disabled title="Disable Selected">
+                    <i class="fa-solid fa-pause text-muted"></i> Disable
+                </button>
+                <button type="button" class="winbox-btn" id="btn-remove" disabled title="Remove Selected">
+                    <i class="fa-solid fa-xmark text-muted"></i> Remove
+                </button>
+                <button type="button" class="winbox-btn" id="btn-comment" disabled title="Set Comment">
+                    <i class="fa-regular fa-comment text-muted"></i> Comment
+                </button>
+            </div>
+            <div class="winbox-toolbar-right">
+                <div style="position: relative; display: inline-flex; align-items: center;">
+                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 6px; font-size: 10px; color: #738a9c;"></i>
+                    <input type="text" id="grid-search" placeholder="Find" onkeyup="filterGrid(this.value)" 
+                           style="padding: 2px 5px 2px 22px; font-size: 11px; height: 22px; border: 1px solid #9cb5cf; border-radius: 3px; width: 140px;">
                 </div>
-                <div class="panel-body">
-                    <?php $first_w = $wifi_interfaces[0]; ?>
-                    <table class="table table-striped table-hover table-wifi">
-                        <tbody>
-                            <tr>
-                                <th style="width: 35%;">Port / Antarmuka</th>
-                                <td>
-                                    <strong><?=htmlspecialchars(strtoupper($first_w['altname'] ?? $first_w['name']))?></strong> 
-                                    <code>(<?=htmlspecialchars($first_w['name'])?>)</code>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>Label Port</th>
-                                <td><span class="label label-info"><?=htmlspecialchars($first_w['port_label'] ?? 'Wireless Port')?></span></td>
-                            </tr>
-                            <tr>
-                                <th>Status Link</th>
-                                <td>
-                                    <?php if (!empty($first_w['is_up'])): ?>
-                                        <span class="label label-success"><i class="fa-solid fa-arrow-up"></i> UP</span>
-                                    <?php else: ?>
-                                        <span class="label label-danger"><i class="fa-solid fa-arrow-down"></i> DOWN</span>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>MAC Address</th>
-                                <td><code><?=htmlspecialchars($first_w['mac_address'] ?? '--')?></code></td>
-                            </tr>
-                            <tr>
-                                <th>IP Address</th>
-                                <td>
-                                    <?php 
-                                    $w_ips = array_merge($first_w['ipv4_addresses'] ?? [], $first_w['ipv6_addresses'] ?? []);
-                                    echo !empty($w_ips) ? htmlspecialchars(implode(', ', $w_ips)) : '<span class="text-muted">None</span>';
-                                    ?>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>MTU</th>
-                                <td><?=htmlspecialchars($first_w['mtu'] ?? 1500)?></td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <div style="margin-top: 15px;">
-                        <a href="interfaces_wifi.php?tab=scan" class="btn btn-primary">
-                            <i class="fa-solid fa-satellite-dish"></i> Scan &amp; Connect Networks
-                        </a>
-                        <a href="interfaces_wifi.php?tab=ap" class="btn btn-info pull-right">
-                            <i class="fa-solid fa-tower-broadcast"></i> Setup Access Point (AP)
-                        </a>
-                    </div>
-                </div>
+                <button type="button" class="winbox-btn" onclick="toggleFilter()" title="Advanced Filter">
+                    <i class="fa-solid fa-filter text-muted"></i> Filter
+                </button>
+                <button type="button" class="winbox-btn" onclick="location.reload()" title="Refresh">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                </button>
             </div>
         </div>
 
-        <div class="col-md-5">
-            <div class="panel panel-default wifi-card">
-                <div class="panel-heading">
-                    <i class="fa-solid fa-microchip text-info" style="margin-right: 8px;"></i>
-                    Daftar Radio Wireless Terpasang
-                </div>
-                <div class="panel-body">
-                    <ul class="list-group">
-                        <?php foreach ($wifi_interfaces as $idx => $w): ?>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong><?=htmlspecialchars(strtoupper($w['altname'] ?? $w['name']))?></strong>
-                                    <span class="text-muted">(<?=htmlspecialchars($w['name'])?>)</span>
-                                </div>
-                                <span class="badge" style="background-color: #007bff;"><?=htmlspecialchars($w['port_label'] ?? 'WLAN')?></span>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
+        <!-- DATA GRID TABLE (EXACT MATCH TO SCREENSHOT COLUMNS) -->
+        <div class="winbox-grid-container">
+            <table class="winbox-grid" id="wifi-grid-table">
+                <thead>
+                    <tr>
+                        <th style="width: 24px; text-align: center;"><i class="fa-regular fa-flag"></i></th>
+                        <th class="sortable" style="min-width: 140px;">Name <i class="fa-solid fa-caret-up" style="font-size: 9px; color: #555;"></i></th>
+                        <th class="sortable" style="min-width: 90px;">Type</th>
+                        <th class="sortable" style="min-width: 80px;">Actual MTU</th>
+                        <th class="sortable" style="min-width: 70px;">L2 MTU</th>
+                        <th class="sortable" style="min-width: 60px;">ARP</th>
+                        <th class="sortable" style="min-width: 60px;">CAP</th>
+                        <th class="sortable" style="min-width: 90px;">Mode</th>
+                        <th class="sortable" style="min-width: 120px;">SSID</th>
+                        <th class="sortable" style="min-width: 90px;">Band</th>
+                        <th class="sortable" style="min-width: 90px;">Channel ...</th>
+                        <th class="sortable" style="min-width: 90px;">Frequency</th>
+                        <th class="sortable" style="min-width: 100px;">Passphrase</th>
+                        <th class="sortable" style="min-width: 110px;">Multi Passph...</th>
+                        <th class="sortable" style="min-width: 110px;">Current Chan...</th>
+                        <th class="sortable" style="min-width: 70px;">Tx</th>
+                        <th style="width: 20px; text-align: center;"><i class="fa-solid fa-bars"></i></th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php if (!$has_wifi): ?>
+                    <!-- NO GENUINE WIFI ADAPTER DETECTED - CLEAN ZERO INTERFACE STATE -->
+                    <tr>
+                        <td colspan="17" class="winbox-empty-row">
+                            <i class="fa-solid fa-wifi-slash"></i>
+                            <div style="font-weight: 600; font-size: 13px; color: #475569; margin-bottom: 4px;">
+                                Tidak Ada Antarmuka Wireless (Wi-Fi) yang Terdeteksi
+                            </div>
+                            <div style="font-size: 11px; color: #64748b; max-width: 580px; margin: 0 auto 12px auto;">
+                                Saat ini tidak ada perangkat atau adapter Wi-Fi (PCIe/USB) yang terpasang pada appliance MitraNet.
+                                Hubungkan adapter nirkabel yang didukung untuk menambahkan antarmuka secara otomatis (contoh: <code>wlan1-2.4</code>, <code>wlan2-5.8</code>).
+                            </div>
+                            <div style="display: inline-flex; gap: 8px;">
+                                <button type="button" class="winbox-btn" onclick="location.reload();">
+                                    <i class="fa-solid fa-rotate"></i> Pindai Ulang Perangkat
+                                </button>
+                                <a href="interfaces_assign.php" class="winbox-btn" style="text-decoration: none;">
+                                    <i class="fa-solid fa-network-wired"></i> Buka Interface Assignments
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                <?php else: ?>
+                    <!-- GENUINE WIFI INTERFACES POPULATED DYNAMICALLY -->
+                    <?php foreach ($wifi_interfaces as $idx => $w): 
+                        $w_name = $w['altname'] ?? $w['name'];
+                        $is_up = !empty($w['is_up']);
+                        $band = "2.4GHz / 5GHz";
+                        if (strpos($w_name, '2.4') !== false) $band = "2.4GHz-b/g/n/ax";
+                        elseif (strpos($w_name, '5.8') !== false || strpos($w_name, '5') !== false) $band = "5GHz-a/n/ac/ax";
+                    ?>
+                    <tr onclick="selectRow(this, '<?=htmlspecialchars($w['name'])?>')">
+                        <td style="text-align: center;">
+                            <?php if ($is_up): ?>
+                                <i class="fa-solid fa-check text-success" title="Running"></i>
+                            <?php else: ?>
+                                <i class="fa-solid fa-minus text-muted" title="Disabled"></i>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <strong><?=htmlspecialchars(strtoupper($w_name))?></strong>
+                            <span class="text-muted" style="font-size: 10px;">(<?=htmlspecialchars($w['name'])?>)</span>
+                        </td>
+                        <td><span class="badge" style="background: #2563eb; font-size: 10px; font-weight: normal;"><?=htmlspecialchars($w['type'] ?? 'wlan')?></span></td>
+                        <td><?=htmlspecialchars($w['mtu'] ?? 1500)?></td>
+                        <td>1500</td>
+                        <td>enabled</td>
+                        <td>no</td>
+                        <td>ap-bridge</td>
+                        <td><em>MitraNet-<?=htmlspecialchars(substr($w['mac_address'] ?? 'WLAN', -5))?></em></td>
+                        <td><?=htmlspecialchars($band)?></td>
+                        <td>auto</td>
+                        <td>auto</td>
+                        <td>••••••••</td>
+                        <td>no</td>
+                        <td><?=htmlspecialchars($is_up ? '2412/20/gn' : 'disabled')?></td>
+                        <td>100</td>
+                        <td style="text-align: center;"><i class="fa-solid fa-ellipsis-vertical text-muted"></i></td>
+                    </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- WINBOX STATUS BAR -->
+        <div class="winbox-statusbar">
+            <div>
+                <span><strong>Total:</strong> <?=count($wifi_interfaces)?> items</span>
+                <?php if ($has_wifi): ?>
+                    <span style="margin-left: 12px; color: #16a34a;"><i class="fa-solid fa-circle" style="font-size: 8px;"></i> Wireless Hardware Ready</span>
+                <?php else: ?>
+                    <span style="margin-left: 12px; color: #64748b;"><i class="fa-solid fa-circle" style="font-size: 8px;"></i> No Wireless Interfaces Installed</span>
+                <?php endif; ?>
+            </div>
+            <div>
+                <span class="text-muted">MitraNet Wireless Management Subsystem</span>
             </div>
         </div>
+
     </div>
-<?php endif; ?>
 
 </div>
 
+<!-- MODAL: ADD / NEW INTERFACE CONFIGURATION -->
+<div id="modal-new-wifi" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content" style="border-radius: 4px;">
+            <div class="modal-header" style="background: #e6eef6; border-bottom: 1px solid #b7cde3; padding: 10px 15px;">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title" style="font-size: 14px; font-weight: 700; color: #1e3c5f;">
+                    <i class="fa-solid fa-wifi text-primary"></i> New Wireless Interface
+                </h4>
+            </div>
+            <div class="modal-body" style="font-size: 12px;">
+                <?php if (!$has_wifi): ?>
+                    <div class="alert alert-warning" style="margin-bottom: 0;">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <strong>Tidak Ada Radio Fisik:</strong> Tidak ada adapter Wi-Fi fisik yang dapat dikonfigurasi saat ini. Silakan sambungkan USB Wi-Fi adapter atau kartu PCIe nirkabel ke mesin ini.
+                    </div>
+                <?php else: ?>
+                    <div class="form-group">
+                        <label>Hardware Interface / Master Radio:</label>
+                        <select class="form-control input-sm">
+                            <?php foreach ($wifi_interfaces as $w): ?>
+                                <option value="<?=htmlspecialchars($w['name'])?>"><?=htmlspecialchars(strtoupper($w['altname'] ?? $w['name']))?> (<?=htmlspecialchars($w['name'])?>)</option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Mode:</label>
+                        <select class="form-control input-sm">
+                            <option value="ap">Access Point (AP Mode)</option>
+                            <option value="station">Station (Client / Connect to AP)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>SSID Name:</label>
+                        <input type="text" class="form-control input-sm" placeholder="MitraNet-WiFi">
+                    </div>
+                    <div class="form-group">
+                        <label>WPA2/WPA3 Passphrase:</label>
+                        <input type="password" class="form-control input-sm" placeholder="Minimal 8 karakter">
+                    </div>
+                <?php endif; ?>
+            </div>
+            <div class="modal-footer" style="background: #f7fafc; padding: 8px 15px;">
+                <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cancel</button>
+                <?php if ($has_wifi): ?>
+                    <button type="button" class="btn btn-sm btn-primary">Apply &amp; Create</button>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-function changeActiveInterface(iface) {
-    $('#iface-switch-msg').fadeIn().delay(1200).fadeOut();
+function openNewModal() {
+    $('#modal-new-wifi').modal('show');
+}
+
+function selectRow(tr, ifname) {
+    $('#wifi-grid-table tbody tr').removeClass('selected');
+    $(tr).addClass('selected');
+    $('#btn-enable, #btn-disable, #btn-remove, #btn-comment').prop('disabled', false);
+}
+
+function filterGrid(val) {
+    val = (val || '').toLowerCase();
+    $('#wifi-grid-table tbody tr').each(function() {
+        var text = $(this).text().toLowerCase();
+        if (text.indexOf(val) !== -1) {
+            $(this).show();
+        } else {
+            $(this).hide();
+        }
+    });
+}
+
+function toggleFilter() {
+    var inp = $('#grid-search');
+    inp.focus();
 }
 </script>
 
