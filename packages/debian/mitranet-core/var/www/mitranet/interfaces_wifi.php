@@ -370,29 +370,7 @@ $current_tab = $_GET['tab'] ?? 'wifi';
                     </tr>
                 </thead>
                 <tbody>
-                <?php if (!$has_wifi): ?>
-                    <!-- NO GENUINE WIFI ADAPTER DETECTED - CLEAN ZERO INTERFACE STATE -->
-                    <tr>
-                        <td colspan="17" class="winbox-empty-row">
-                            <i class="fa-solid fa-wifi-slash"></i>
-                            <div style="font-weight: 600; font-size: 13px; color: #475569; margin-bottom: 4px;">
-                                Tidak Ada Antarmuka Wireless (Wi-Fi) yang Terdeteksi
-                            </div>
-                            <div style="font-size: 11px; color: #64748b; max-width: 580px; margin: 0 auto 12px auto;">
-                                Saat ini tidak ada perangkat atau adapter Wi-Fi (PCIe/USB) yang terpasang pada appliance MitraNet.
-                                Hubungkan adapter nirkabel yang didukung untuk menambahkan antarmuka secara otomatis (contoh: <code>wlan1-2.4</code>, <code>wlan2-5.8</code>).
-                            </div>
-                            <div style="display: inline-flex; gap: 8px;">
-                                <button type="button" class="winbox-btn" onclick="location.reload();">
-                                    <i class="fa-solid fa-rotate"></i> Pindai Ulang Perangkat
-                                </button>
-                                <a href="interfaces_assign.php" class="winbox-btn" style="text-decoration: none;">
-                                    <i class="fa-solid fa-network-wired"></i> Buka Interface Assignments
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                <?php else: ?>
+                <?php if ($has_wifi): ?>
                     <!-- GENUINE WIFI INTERFACES POPULATED DYNAMICALLY -->
                     <?php foreach ($wifi_interfaces as $idx => $w): 
                         $w_name = $w['altname'] ?? $w['name'];
@@ -439,11 +417,6 @@ $current_tab = $_GET['tab'] ?? 'wifi';
         <div class="winbox-statusbar">
             <div>
                 <span><strong>Total:</strong> <?=count($wifi_interfaces)?> items</span>
-                <?php if ($has_wifi): ?>
-                    <span style="margin-left: 12px; color: #16a34a;"><i class="fa-solid fa-circle" style="font-size: 8px;"></i> Wireless Hardware Ready</span>
-                <?php else: ?>
-                    <span style="margin-left: 12px; color: #64748b;"><i class="fa-solid fa-circle" style="font-size: 8px;"></i> No Wireless Interfaces Installed</span>
-                <?php endif; ?>
             </div>
             <div>
                 <span class="text-muted">MitraNet Wireless Management Subsystem</span>

@@ -57,9 +57,24 @@ class InterfaceDiscoveryService:
             info_kind = linkinfo.get("info_kind")
             final_type = info_kind if info_kind else link_type
 
-            # Check if this interface is wireless (802.11) via sysfs or naming
+            # Check if this interface is wireless (802.11) via sysfs, udev, driver or naming
             import os
-            if os.path.isdir(f"/sys/class/net/{ifname}/wireless") or os.path.isdir(f"/sys/class/net/{ifname}/phy80211") or ifname.startswith(("wlan", "wlp", "wls", "ath", "ra")):
+            is_wireless_dev = (
+                os.path.isdir(f"/sys/class/net/{ifname}/wireless") or
+                os.path.isdir(f"/sys/class/net/{ifname}/phy80211") or
+                ifname.startswith(("wlan", "wlp", "wls", "wlx", "ath", "ra"))
+            )
+            # Check device subsystem or driver
+            try:
+                drv_link = f"/sys/class/net/{ifname}/device/driver"
+                if os.path.islink(drv_link):
+                    drv_name = os.path.basename(os.readlink(drv_link)).lower()
+                    if any(k in drv_name for k in ["80211", "ath", "rtlwifi", "rtw_", "mt76", "brcm", "iwl", "carl9170", "zd1211"]):
+                        is_wireless_dev = True
+            except Exception:
+                pass
+
+            if is_wireless_dev:
                 final_type = "wlan"
 
             # Administrative state (from kernel flags)
@@ -143,15 +158,13 @@ class InterfaceDiscoveryService:
         def _detect_wlan_band(name: str) -> str:
             # Detect 2.4GHz vs 5.8GHz / 5GHz for wlan interface
             try:
-                # Query iw dev <name> info or iw phy
                 res = subprocess.run(["iw", "dev", name, "info"], capture_output=True, text=True, timeout=2)
                 phy_match = re.search(r"wiphy\s+(\d+)", res.stdout)
                 phy_id = phy_match.group(1) if phy_match else "0"
                 
-                # Check frequencies supported by this phy
                 info_res = subprocess.run(["iw", f"phy{phy_id}", "info"], capture_output=True, text=True, timeout=2)
-                has_24 = bool(re.search(r"24\d\d\s+MHz", info_res.stdout))
-                has_5 = bool(re.search(r"5\d\d\d\s+MHz", info_res.stdout))
+                has_24 = bool(re.search(r"24\d\d(?:\.\d+)?\s+MHz", info_res.stdout))
+                has_5 = bool(re.search(r"5\d\d\d(?:\.\d+)?\s+MHz", info_res.stdout))
                 
                 if has_24 and not has_5:
                     return "2.4"
@@ -175,7 +188,7 @@ class InterfaceDiscoveryService:
                 continue
 
             # Wireless interfaces
-            if iface.type == "wlan" or iface.name.startswith(("wlan", "wlp", "wls", "ath", "ra")):
+            if iface.type == "wlan" or iface.name.startswith(("wlan", "wlp", "wls", "wlx", "ath", "ra")):
                 wlan_list.append(iface)
                 continue
 
@@ -198,19 +211,41 @@ class InterfaceDiscoveryService:
             w.altname = f"wlan1{suffix}"
             w.port_label = f"Wireless 1 ({band or '802.11'})"
         elif len(wlan_list) >= 2:
-            assigned_idx = 1
-            for w in wlan_list:
-                band = _detect_wlan_band(w.name)
-                if band == "2.4":
-                    w.altname = "wlan1-2.4"
-                    w.port_label = "Wireless 1 (2.4 GHz)"
-                elif band in ["5.8", "5"]:
-                    w.altname = "wlan2-5.8"
-                    w.port_label = "Wireless 2 (5.8 GHz)"
-                else:
-                    w.altname = f"wlan{assigned_idx}"
-                    w.port_label = f"Wireless {assigned_idx}"
-                    assigned_idx += 1
+            # Check bands
+            bands = [_detect_wlan_band(w.name) for w in wlan_list]
+            # If explicit 2.4 and 5.8 detected, map specifically
+            has_explicit_24 = any(b == "2.4" for b in bands)
+            has_explicit_5 = any(b in ["5.8", "5"] for b in bands)
+
+            if has_explicit_24 or has_explicit_5:
+                wlan_24_idx = 1
+                wlan_5_idx = 2
+                for w in wlan_list:
+                    b = _detect_wlan_band(w.name)
+                    if b == "2.4":
+                        w.altname = f"wlan{wlan_24_idx}-2.4"
+                        w.port_label = f"Wireless {wlan_24_idx} (2.4 GHz)"
+                        wlan_24_idx += 2
+                    elif b in ["5.8", "5"]:
+                        w.altname = f"wlan{wlan_5_idx}-5.8"
+                        w.port_label = f"Wireless {wlan_5_idx} (5.8 GHz)"
+                        wlan_5_idx += 2
+                    else:
+                        w.altname = f"wlan{wlan_24_idx}"
+                        w.port_label = f"Wireless {wlan_24_idx}"
+                        wlan_24_idx += 1
+            else:
+                # When two radios exist (e.g. dual-band or simultaneous radios), convention is radio1 -> 2.4, radio2 -> 5.8
+                for idx, w in enumerate(wlan_list, 1):
+                    if idx == 1:
+                        w.altname = "wlan1-2.4"
+                        w.port_label = "Wireless 1 (2.4 GHz)"
+                    elif idx == 2:
+                        w.altname = "wlan2-5.8"
+                        w.port_label = "Wireless 2 (5.8 GHz)"
+                    else:
+                        w.altname = f"wlan{idx}"
+                        w.port_label = f"Wireless {idx}"
 
         logger.debug("Discovered %d network interfaces", len(interfaces))
         return interfaces
