@@ -1,52 +1,52 @@
 # MITRANET WORK STATE — PERSISTENT CHECKPOINT
 
-- **Waktu Pembaruan:** 2026-10-10 00:52:00 WIB
-- **Tujuan & Ruang Lingkup Aktif:** Redesain modul QoS Manager (`web/qos/qos.php`) agar 100% identik dengan tampilan MikroTik WinBox Queues window (Header Title Badge, 4 Tabs Queues, WinBox Toolbar, Data Grid Table Simple Queues, dan Modal WinBox).
+- **Waktu Pembaruan:** 2026-10-10 01:00:00 WIB
+- **Tujuan & Ruang Lingkup Aktif:** Redesain modul VPN (`web/vpn/vpn.php`) agar mengadopsi tampilan MikroTik WinBox PPP (Interface, PPPoE Servers, OVPN Servers, Secrets, Profiles, Active Connections, L2TP Ethernet, L2TP Secrets) dengan nama utama badge **VPN** dan sidebar menu VPN diubah menjadi direct link (tanpa flyout drop-right).
 
 ---
 
-### 1. HASIL REDESAIN QOS MANAGER (TERVERIFIKASI LIVE & SESUAI SCREENSHOT)
-1. **MikroTik WinBox Header & Badge**:
-   - Title Badge: `<i class="fa-solid fa-chart-line text-primary"></i> Queues <i class="fa-solid fa-caret-down"></i>`.
-   - 4 Tabs Navigasi:
-     1. `Simple Queues` (Tab aktif default)
-     2. `Interface Queues` (qdisc fq_codel / multi-queue)
-     3. `Queue Tree` (HTB hierarchy)
-     4. `Queue Types` (fq_codel, cake, sfq, pfifo)
-2. **WinBox Action Toolbar**:
-   - Tombol Kiri: `New` [square-plus], `Enable` [play], `Disable` [pause], `Remove` [xmark], `Comment` [comment].
-   - Tombol Kanan: `Find` (input text search filter realtime), `Filter`, Column options icon.
-3. **Data Grid Table (Kolom Presisi Sesuai Screenshot)**:
-   - `# ^` (Sort ID urutan queue)
-   - `[flag]` (Indikator status / comment)
-   - `Name` (Nama queue + preview komentar)
-   - `Target` (IP / subnet target, misal `192.168.88.0/24`)
-   - `Upload Max Limit` (Badge Upload limit, misal `10M`)
-   - `Download Max Limit` (Badge Download limit, misal `20M`)
-   - `Packet Marks` (Marker paket, misal `no-mark`)
-   - `Total Max Limit (...)` (Total limit bandwidth)
-   - `[menu]` (Ellipsis action menu)
-4. **Modal WinBox Popup untuk Add / Edit Simple Queue**:
-   - Layout 2 kolom khas MikroTik WinBox (form fields di kiri, tombol Action `OK`, `Cancel`, `Apply`, `Reset` di kanan).
-   - Preset drop-down kecepatan: 1M, 2M, 5M, 10M, 20M, 50M, 100M, unlimited.
-   - Terintegrasi penuh dengan SweetAlert2 (`MitraNet.toast`, `MitraNet.confirmDelete`, `MitraNet.promptInput`).
+### 1. HASIL IMPLEMENTASI MODUL VPN (TERVERIFIKASI LIVE)
+1. **Sidebar Menu VPN (Tanpa Drop-Right / Direct Link)**:
+   - Diperbarui di [web/includes/head.inc](file:///c:/mitranet/web/includes/head.inc):
+     `array('id' => 'vpn', 'name' => 'VPN', 'icon' => 'fa-key', 'url' => '/vpn/vpn.php', 'direct' => true)`
+   - Tidak lagi memunculkan icon panah `fa-caret-right` dan flyout submenu drop-right. Mengklik menu VPN langsung membuka `/vpn/vpn.php`.
+2. **Title Badge & Window Header**:
+   - Title Badge: `<i class="fa-solid fa-desktop text-primary"></i> VPN <i class="fa-solid fa-caret-down"></i>` (sesuai instruksi: nama utama VPN, bukan PPP).
+   - Tab Bar Lengkap Sesuai Screenshot MikroTik:
+     1. `Interface` (Tab default aktif)
+     2. `PPPoE Servers`
+     3. `OVPN Servers`
+     4. `Secrets`
+     5. `Profiles`
+     6. `Active Connections`
+     7. `L2TP Ethernet`
+     8. `L2TP Secrets`
+3. **Toolbar & Data Grid Table (Kolom Presisi)**:
+   - Toolbar: `New`, `Enable`, `Disable`, `Remove`, `Comment`, `Find`, `Filter`, Column options.
+   - Kolom Grid: `Flag (⚑)`, `Name ^`, `Type`, `Actual MTU`, `L2 MTU`, `Tx`, `Rx`, `Tx Packet (p/s)`, `Rx Packet (p/s)`, `FP Tx`, `FP Rx`, `FP Tx Packet (p/s)`, `FP Rx Packet (p/s)`, Context Menu (`⋮`).
+4. **Modal Dialog Tambah & Edit VPN Interface (WinBox 2-Column)**:
+   - Tab General, Dial Out, dan Status.
+   - Action list tombol: OK, Cancel, Apply, Reset.
 
 ---
 
 ### 2. DEPLOYMENT & PIPELINE STATUS
-- **Sintaks PHP:** Lulus uji tanpa error (`No syntax errors detected in qos.php`).
+- **Sintaks PHP:** Lulus uji tanpa error (`No syntax errors detected in vpn.php`).
 - **Verifikasi Live Mini PC (`10.10.66.228`):**
-  - Berkas disinkronkan ke `/mitranet/web/qos/qos.php` dan `/usr/share/mitranet/web/qos/qos.php`.
-  - Teruji render sempurna (58,758 bytes) dengan seluruh elemen kunci terkonfirmasi:
-    - `Has 'Simple Queues': YES`
-    - `Has 'Upload Max Limit': YES`
-    - `Has 'Download Max Limit': YES`
-    - `Has 'Packet Marks': YES`
-    - `Has 'Total Max Limit': YES`
-- **Artefak ISO:** Berhasil dibuild di `iso/MitraNet-Rinjani-1.0.2-amd64.iso` (~970 MB).
-- **GitHub Remote:** Siap dipush ke `https://github.com/qomaruddindjamal/mitranet.git` branch `main`.
+  - Berkas disinkronkan ke `/mitranet/web/vpn/vpn.php`, `/usr/share/mitranet/web/vpn/vpn.php`, dan `head.inc`.
+  - Teruji render sempurna (55,988 bytes) dengan seluruh tab dan sidebar direct link terkonfirmasi:
+    - `Has 'VPN' badge: YES`
+    - `Has 'Interface' tab: YES`
+    - `Has 'PPPoE Servers': YES`
+    - `Has 'OVPN Servers': YES`
+    - `Has 'Secrets': YES`
+    - `Has 'Profiles': YES`
+    - `Has 'Active Connections': YES`
+    - `Has 'L2TP Ethernet': YES`
+    - `Has 'L2TP Secrets': YES`
+    - `Has direct link in sidebar: YES`
 
 ---
 
 ### 3. SATU LANGKAH BERIKUTNYA YANG SPESIFIK
-- Menjalankan deployment pipeline otomatis `deploy_pipeline.py` untuk sync penuh, rebuild ISO, dan push commit ke repositori GitHub.
+- Menjalankan pipeline deployment otomatis `deploy_pipeline.py` untuk sinkronisasi penuh, build ISO, dan git push.

@@ -1,20 +1,16 @@
 # LANGKAH BERIKUTNYA MITRANET
 
-LANGKAH BERIKUTNYA: Eksekusi Automated Deployment Pipeline (Sync Mini PC, Rebuild ISO, Git Push) untuk perubahan QoS Manager WinBox UI
-ALASAN: Modul QoS Manager (`web/qos/qos.php`) telah didesain ulang menyerupai jendela MikroTik WinBox Queues secara presisi dan terverifikasi live di Mini PC. Sesuai Golden Rule, setiap pembaruan kode harus melewati 3 tahapan deployment resmi.
+LANGKAH BERIKUTNYA: Eksekusi Automated Deployment Pipeline (Sync Mini PC, Rebuild ISO, Git Push) untuk modul VPN WinBox UI
+ALASAN: Modul VPN (`web/vpn/vpn.php`) telah selesai diimplementasikan dengan badge "VPN", 8 tab PPP/VPN MikroTik, tabel kolom identik, dan sidebar menu VPN telah diubah menjadi direct link tanpa drop-right. Terverifikasi 100% live di Mini PC.
 FILE ATAU SERVICE TERKAIT:
-- `web/qos/qos.php`
+- `web/vpn/vpn.php`
+- `web/includes/head.inc`
 - `deploy_pipeline.py`
-- `build/build_iso.py`
 PRASYARAT:
-- Sintaks `qos.php` bebas error (STATUS: PASS)
-- Uji render HTML di Mini PC sukses memuat Simple Queues, Upload Max Limit, Download Max Limit (STATUS: PASS)
+- Sintaks `vpn.php` dan `head.inc` bebas error (STATUS: PASS)
+- Render WebUI di Mini PC terkonfirmasi sukses memuat badge VPN dan sidebar direct link (STATUS: PASS)
 PERINTAH ATAU TINDAKAN YANG DIRENCANAKAN:
-1. Jalankan `python c:\mitranet\deploy_pipeline.py "feat(qos): transform QoS Manager to MikroTik WinBox Queues UI matching reference"`
+1. Jalankan `python c:\mitranet\deploy_pipeline.py "feat(vpn): transform VPN to MikroTik WinBox PPP style with direct sidebar link and VPN title"`
 2. Pastikan ISO `MitraNet-Rinjani-1.0.2-amd64.iso` ter-rebuild dengan exit code 0
 3. Pastikan git push ke origin/main sukses
-TES KEBERHASILAN:
-- ISO ter-generate tanpa error, push commit tampil di GitHub, Mini PC tersinkronisasi 100%
-PROSEDUR ROLLBACK:
-- `git checkout -- web/qos/qos.php`
 STATUS: READY_TO_EXECUTE
