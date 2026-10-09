@@ -57,6 +57,188 @@ vrf_service = VRFService()
 fw_engine = FirewallTransactionEngine()
 tx_engine = NetworkTransactionEngine()
 
+# ── DNS config helpers (D2, D3) ───────────────────────────────────────────────
+
+_HOSTS_BEGIN = "# BEGIN MITRANET MANAGED HOST OVERRIDES"
+_HOSTS_END   = "# END MITRANET MANAGED HOST OVERRIDES"
+
+
+# ── F3: Input validation helpers ──────────────────────────────────────────────
+
+import ipaddress as _ipaddress
+import re as _re
+
+# RFC 952 / RFC 1123: each label 1-63 chars, alphanumeric + hyphen,
+# must not start or end with hyphen.  Full FQDN (without trailing dot) ≤ 253.
+_LABEL_RE = _re.compile(r'^[A-Za-z0-9]([A-Za-z0-9\-]{0,61}[A-Za-z0-9])?$|^[A-Za-z0-9]$')
+
+
+def _validate_ip(addr: str) -> bool:
+    """Return True if *addr* is a syntactically valid IPv4 or IPv6 address."""
+    try:
+        _ipaddress.ip_address(addr)
+        return True
+    except ValueError:
+        return False
+
+
+def _validate_hostname(name: str) -> bool:
+    """Return True if *name* is a valid hostname or FQDN per RFC 1123.
+
+    Rules:
+    - Total length (without trailing dot) must be 1–253 characters.
+    - Each dot-separated label must be 1–63 characters.
+    - Labels may only contain ASCII letters, digits, and hyphens.
+    - Labels must not start or end with a hyphen.
+    """
+    if not name or len(name) > 253:
+        return False
+    labels = name.rstrip('.').split('.')
+    return bool(labels) and all(_LABEL_RE.match(lbl) for lbl in labels)
+
+
+# ── F2: Atomic file write with permission + ownership preservation ─────────────
+
+def _atomic_write(path: str, content: str, new_file_mode: int = 0o644) -> None:
+    """Write *content* to *path* atomically using a sibling temp file + rename.
+
+    The temp file is created on the same filesystem as the target so that
+    os.replace() is a single atomic rename() syscall.  The file is fsynced
+    before the rename to guard against partial writes on power loss.
+
+    F2 fix: the replacement file inherits the mode (permission bits) of the
+    existing target.  For a new file (target does not yet exist), *new_file_mode*
+    is applied instead.  Ownership (uid/gid) is restored best-effort via
+    os.fchown; failure is silently accepted unless the process is running as
+    root (uid 0), in which case a PermissionError is raised so the caller
+    can decide how to proceed.
+
+    The target must not be a symlink; callers are responsible for checking
+    os.path.islink() before calling this function.
+    Raises on any failure so the caller can handle/log the error.
+    """
+    import tempfile
+    import stat as _stat
+    target = pathlib.Path(path)
+
+    # F2: Capture target metadata BEFORE opening the temp file to minimise
+    # the TOCTOU window.  We accept the narrow race; the alternative of
+    # fstat()-ing the target after opening cannot retrieve the *target's*
+    # metadata — only the temp file's.
+    try:
+        tgt_stat    = os.stat(path)                # follows symlinks, raises if absent
+        target_mode = _stat.S_IMODE(tgt_stat.st_mode)
+        target_uid  = tgt_stat.st_uid
+        target_gid  = tgt_stat.st_gid
+        target_exists = True
+    except FileNotFoundError:
+        target_mode   = new_file_mode
+        target_uid    = -1
+        target_gid    = -1
+        target_exists = False
+
+    tmp_fd, tmp_path = tempfile.mkstemp(
+        dir=target.parent,
+        prefix=f".{target.name}.tmp.",
+        suffix=".tmp"
+    )
+    try:
+        # Apply target mode to the temp file BEFORE writing any content.
+        # mkstemp() creates the file as 0600 (owner-only); we correct that here.
+        os.fchmod(tmp_fd, target_mode)
+
+        # Best-effort ownership restoration (only meaningful on POSIX as root).
+        if target_exists and hasattr(os, "fchown"):
+            try:
+                os.fchown(tmp_fd, target_uid, target_gid)
+            except (PermissionError, OSError):
+                # Not running as root — ownership mismatch is acceptable.
+                # Raise only when we ARE root so a genuine anomaly is surfaced.
+                is_root = hasattr(os, "geteuid") and os.geteuid() == 0
+                if is_root:
+                    raise PermissionError(
+                        f"Running as root but fchown({path}, "
+                        f"{target_uid}, {target_gid}) failed."
+                    )
+
+        with os.fdopen(tmp_fd, "w", encoding="utf-8") as fh:
+            fh.write(content)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp_path, path)
+    except Exception:
+        # Best-effort cleanup so we don't leave stray temp files.
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
+
+
+def _update_hosts_managed_block(hosts_file: str, host_overrides: list) -> None:
+    """Replace only the MitraNet-managed block in *hosts_file*, preserving all
+    other content (D2 fix).
+
+    Rules:
+    - Lines outside BEGIN/END markers are left unchanged.
+    - If no markers exist, the managed block is appended to the end.
+    - If exactly one BEGIN+END pair is found, it is replaced atomically.
+    - If the marker structure is ambiguous (missing END, multiple pairs, nested),
+      the function raises ValueError so the caller can surface the error.
+    """
+    BEGIN = _HOSTS_BEGIN
+    END   = _HOSTS_END
+
+    # Read existing content (or start empty if file does not exist yet)
+    try:
+        existing = pathlib.Path(hosts_file).read_text(encoding="utf-8")
+    except FileNotFoundError:
+        existing = ""
+
+    lines = existing.splitlines()
+
+    # Locate marker positions
+    begin_indices = [i for i, l in enumerate(lines) if l.strip() == BEGIN]
+    end_indices   = [i for i, l in enumerate(lines) if l.strip() == END]
+
+    # Build the replacement managed block content
+    managed_entries = []
+    for ho in host_overrides:
+        if not isinstance(ho, dict):
+            continue
+        h_ip   = str(ho.get("ip",   "")).strip()
+        h_name = str(ho.get("host", "")).strip()
+        # F3: validate IP address format and hostname per RFC 1123
+        if _validate_ip(h_ip) and _validate_hostname(h_name):
+            managed_entries.append(f"{h_ip} {h_name}")
+
+    block_lines = [BEGIN] + managed_entries + [END]
+
+    if not begin_indices and not end_indices:
+        # No markers — append block preserving existing content  (F5: dead
+        # 'separator' variable removed; blank line inserted unconditionally)
+        new_lines = lines + [""] + block_lines
+    elif len(begin_indices) == 1 and len(end_indices) == 1:
+        bi = begin_indices[0]
+        ei = end_indices[0]
+        if bi > ei:
+            raise ValueError(
+                f"Malformed {hosts_file}: END marker (line {ei+1}) "
+                f"appears before BEGIN marker (line {bi+1})."
+            )
+        # Replace everything from BEGIN to END (inclusive)
+        new_lines = lines[:bi] + block_lines + lines[ei + 1:]
+    else:
+        raise ValueError(
+            f"Ambiguous marker structure in {hosts_file}: "
+            f"found {len(begin_indices)} BEGIN and {len(end_indices)} END markers. "
+            "Manual inspection required before proceeding."
+        )
+
+    new_content = "\n".join(new_lines) + "\n"
+    _atomic_write(hosts_file, new_content)
+
+
 
 class ManagementApiHandler(BaseHTTPRequestHandler):
     """HTTP Request Handler for MitraNet Management API and Static WebUI."""
@@ -1151,6 +1333,116 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                     except Exception:
                         pass
             self._send_json(200, {"success": True, "dhcp": dhcp_configs})
+            return
+
+        # 18c. DNS Server / Resolver / Forwarder Settings
+        if path == "/api/v1/services/dns":
+            import subprocess
+            conf_file = "/etc/dnsmasq.d/dns_server.conf"
+            hosts_file = "/etc/hosts"
+
+            # Check dnsmasq service status
+            is_active = False
+            try:
+                res = subprocess.run(["systemctl", "is-active", "dnsmasq"], stdout=subprocess.PIPE, text=True)
+                is_active = (res.stdout.strip() == "active")
+            except Exception:
+                pass
+
+            # Read /etc/resolv.conf for current upstream resolvers
+            upstream_servers = []
+            if os.path.exists("/etc/resolv.conf"):
+                try:
+                    with open("/etc/resolv.conf", "r") as rf:
+                        for line in rf:
+                            parts = line.strip().split()
+                            if len(parts) >= 2 and parts[0] == "nameserver" and parts[1] not in upstream_servers:
+                                upstream_servers.append(parts[1])
+                except Exception:
+                    pass
+
+            # Read custom DNS configuration if present
+            forward_servers = []
+            listen_port = 53
+            domain_overrides = []
+            cache_size = 1000
+            strict_order = False
+            bogus_priv = True
+            domain_needed = True
+
+            if os.path.exists(conf_file):
+                try:
+                    with open(conf_file, "r") as cf:
+                        for line in cf:
+                            line = line.strip()
+                            if not line or line.startswith("#"):
+                                continue
+                            if line.startswith("server="):
+                                val = line.split("=", 1)[1].strip()
+                                if val.startswith("/") and "/" in val[1:]:
+                                    # Domain override: server=/example.com/1.2.3.4
+                                    sub_parts = val.strip("/").split("/")
+                                    if len(sub_parts) >= 2:
+                                        domain_overrides.append({"domain": sub_parts[0], "ip": sub_parts[1]})
+                                else:
+                                    if val not in forward_servers:
+                                        forward_servers.append(val)
+                            elif line.startswith("port="):
+                                try:
+                                    listen_port = int(line.split("=", 1)[1].strip())
+                                except ValueError:
+                                    pass
+                            elif line.startswith("cache-size="):
+                                try:
+                                    cache_size = int(line.split("=", 1)[1].strip())
+                                except ValueError:
+                                    pass
+                            elif line == "strict-order":
+                                strict_order = True
+                            elif line == "no-bogus-priv":
+                                bogus_priv = False
+                            elif line == "no-domain-needed":
+                                domain_needed = False
+                except Exception:
+                    pass
+
+            # Read custom Host Overrides from /etc/hosts
+            host_overrides = []
+            if os.path.exists(hosts_file):
+                try:
+                    with open(hosts_file, "r") as hf:
+                        for line in hf:
+                            line = line.strip()
+                            if not line or line.startswith("#"):
+                                continue
+                            parts = line.split()
+                            if len(parts) >= 2:
+                                ip_addr = parts[0]
+                                host_names = parts[1:]
+                                for hn in host_names:
+                                    # Skip default loopbacks
+                                    if ip_addr in ("127.0.0.1", "::1") and hn in ("localhost", "ip6-localhost", "ip6-loopback", "mitranet"):
+                                        continue
+                                    host_overrides.append({"ip": ip_addr, "host": hn})
+                except Exception:
+                    pass
+
+            self._send_json(200, {
+                "success": True,
+                "dns": {
+                    "enabled": is_active,
+                    "service_active": is_active,
+                    "listen_port": listen_port,
+                    "upstream_resolvers": upstream_servers,
+                    "forward_servers": forward_servers if forward_servers else [s for s in upstream_servers if s != "127.0.0.1"],
+                    "cache_size": cache_size,
+                    "strict_order": strict_order,
+                    "bogus_priv": bogus_priv,
+                    "domain_needed": domain_needed,
+                    "host_overrides": host_overrides,
+                    "domain_overrides": domain_overrides
+                }
+            })
             return
 
         # 19. Virtual Machines (KVM / Containers) - Live Inspection (No Dummy)
@@ -3032,6 +3324,150 @@ PrivateKey = {priv_key}
                 self._send_json(200, {"success": True, "message": f"DHCP Server for {ifname} saved and active."})
             except Exception as e:
                 self._send_json(500, {"error": f"Failed saving DHCP configuration: {e}"})
+            return
+
+        # 22c. DNS Server / Forwarder Mutation
+        if path == "/api/v1/services/dns/save":
+            import subprocess
+            enabled = bool(payload.get("enabled", True))
+            listen_port = int(payload.get("listen_port", 53) or 53)
+            forward_servers = payload.get("forward_servers", [])
+            cache_size = int(payload.get("cache_size", 1000) or 1000)
+            strict_order = bool(payload.get("strict_order", False))
+            bogus_priv = bool(payload.get("bogus_priv", True))
+            domain_needed = bool(payload.get("domain_needed", True))
+            host_overrides = payload.get("host_overrides", [])
+            domain_overrides = payload.get("domain_overrides", [])
+
+            conf_file = "/etc/dnsmasq.d/dns_server.conf"
+            hosts_file = "/etc/hosts"
+
+            try:
+                if not enabled:
+                    # Disable dnsmasq DNS service
+                    if os.path.exists(conf_file):
+                        os.remove(conf_file)
+                    subprocess.run(["systemctl", "stop", "dnsmasq"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    self._send_json(200, {"success": True, "message": "DNS Server disabled successfully."})
+                    return
+
+                # Build dnsmasq configuration
+                lines = [
+                    "# MitraNet DNS Server Configuration",
+                    f"port={listen_port}",
+                    f"cache-size={cache_size}",
+                ]
+
+                if domain_needed:
+                    lines.append("domain-needed")
+                else:
+                    lines.append("no-domain-needed")
+
+                if bogus_priv:
+                    lines.append("bogus-priv")
+                else:
+                    lines.append("no-bogus-priv")
+
+                if strict_order:
+                    lines.append("strict-order")
+
+                # Forward upstream servers (F3: validate IP address format)
+                if isinstance(forward_servers, list):
+                    for fs in forward_servers:
+                        fs = str(fs).strip()
+                        if _validate_ip(fs):
+                            lines.append(f"server={fs}")
+
+                # Domain overrides (F3: validate hostname and IP separately)
+                if isinstance(domain_overrides, list):
+                    for do in domain_overrides:
+                        if isinstance(do, dict):
+                            d_name = str(do.get("domain", "")).strip()
+                            d_ip = str(do.get("ip", "")).strip()
+                            if _validate_hostname(d_name) and _validate_ip(d_ip):
+                                lines.append(f"server=/{d_name}/{d_ip}")
+
+                # D3: Atomic write for dnsmasq configuration
+                os.makedirs("/etc/dnsmasq.d", exist_ok=True)
+                _atomic_write(conf_file, "\n".join(lines) + "\n")
+
+                # D2: Update /etc/hosts using managed markers (preserve non-MitraNet lines)
+                if isinstance(host_overrides, list):
+                    try:
+                        _update_hosts_managed_block(hosts_file, host_overrides)
+                    except ValueError as hosts_err:
+                        # Ambiguous marker structure — fail safe, do not overwrite
+                        self._send_json(500, {"error": f"Cannot update /etc/hosts safely: {hosts_err}"})
+                        return
+                    except Exception as hosts_exc:
+                        logger.warning("Could not update /etc/hosts: %s", hosts_exc)
+
+                # D3: Update /etc/resolv.conf atomically, only if it is a regular file
+                # (systemd-resolved and NetworkManager manage it as a symlink)
+                try:
+                    resolv_path = "/etc/resolv.conf"
+                    resolv_lines = ["# Generated by MitraNet DNS Server", "nameserver 127.0.0.1"]
+                    if isinstance(forward_servers, list):
+                        for fs in forward_servers:
+                            fs = str(fs).strip()
+                            if fs and fs != "127.0.0.1":
+                                resolv_lines.append(f"nameserver {fs}")
+                    if os.path.islink(resolv_path):
+                        logger.warning(
+                            "/etc/resolv.conf is a symlink (likely managed by systemd-resolved or "
+                            "NetworkManager); skipping overwrite to avoid breaking system DNS. "
+                            "Configure upstream resolvers through the system resolver instead."
+                        )
+                    else:
+                        _atomic_write(resolv_path, "\n".join(resolv_lines) + "\n")
+                except Exception as resolv_exc:
+                    logger.warning("Could not update /etc/resolv.conf: %s", resolv_exc)
+
+                # Start or restart dnsmasq
+                subprocess.run(["systemctl", "enable", "dnsmasq"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                res = subprocess.run(["systemctl", "restart", "dnsmasq"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                if res.returncode != 0:
+                    self._send_json(500, {"error": f"Failed restarting dnsmasq: {res.stderr}"})
+                    return
+
+                self._send_json(200, {"success": True, "message": "DNS Server configuration saved and active."})
+            except Exception as e:
+                self._send_json(500, {"error": f"Failed saving DNS configuration: {e}"})
+            return
+
+        # 22d. DNS Service-Only Restart  [D1 fix — restarts dnsmasq ONLY, NOT the system]
+        if path == "/api/v1/services/dnsmasq/restart":
+            import subprocess
+            # F1: explicit timeouts prevent the thread from hanging indefinitely
+            # if systemd is slow or unresponsive.  30 s is generous for a
+            # service restart; 10 s for a status query is more than sufficient.
+            _RESTART_TIMEOUT  = 30  # seconds
+            _IS_ACTIVE_TIMEOUT = 10  # seconds
+            try:
+                res = subprocess.run(
+                    ["systemctl", "restart", "dnsmasq"],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                    timeout=_RESTART_TIMEOUT
+                )
+                if res.returncode == 0:
+                    # Confirm the service is actually active post-restart
+                    status_res = subprocess.run(
+                        ["systemctl", "is-active", "dnsmasq"],
+                        stdout=subprocess.PIPE, text=True,
+                        timeout=_IS_ACTIVE_TIMEOUT
+                    )
+                    is_active = (status_res.stdout.strip() == "active")
+                    if is_active:
+                        self._send_json(200, {"success": True, "message": "dnsmasq service restarted successfully."})
+                    else:
+                        self._send_json(500, {"error": "dnsmasq restarted but is not in active state. Check 'systemctl status dnsmasq'."})
+                else:
+                    self._send_json(500, {"error": f"Failed to restart dnsmasq: {res.stderr.strip()}"})
+            except subprocess.TimeoutExpired:
+                # F1: do NOT claim success — the operation outcome is unknown.
+                self._send_json(500, {"error": "dnsmasq restart timed out. Check 'systemctl status dnsmasq' on the device."})
+            except Exception as e:
+                self._send_json(500, {"error": f"Exception restarting dnsmasq: {e}"})
             return
 
         # 23. Linux Bridge Creation & Member Port Attachment

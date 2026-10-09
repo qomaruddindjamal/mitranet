@@ -428,5 +428,18 @@ class MitraNetApi {
     public static function saveDhcpConfig($payload) {
         return self::request('/services/dhcp/save', 'POST', $payload);
     }
+
+    public static function getDnsConfig() {
+        $res = self::request('/services/dns');
+        return $res['status'] === 200 ? ($res['data']['dns'] ?? []) : [];
+    }
+
+    public static function saveDnsConfig($payload) {
+        return self::request('/services/dns/save', 'POST', $payload);
+    }
+
+    public static function restartDnsmasq() {
+        return self::request('/services/dnsmasq/restart', 'POST', []);
+    }
 }
 
