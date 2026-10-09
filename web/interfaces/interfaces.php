@@ -818,11 +818,12 @@ if (!function_exists('fmt_pkts')) {
 					$tx_pkts    = (int)($traffic['tx_packets'] ?? 0);
 					$ifname     = $i['name'];
 					$altname    = $i['altname'] ?? $ifname;
-					$type       = $i['type'] ?? 'ether';
 					if (is_dir("/sys/class/net/{$ifname}/bridge") || preg_match('/^br[-_]/i', $ifname) || $type === 'bridge') $type = 'Bridge';
 					elseif (is_dir("/sys/class/net/{$ifname}/bonding") || preg_match('/^bond/i', $ifname) || $type === 'bond') $type = 'Bonding';
 					elseif (preg_match('/^vlan/i', $ifname) || strpos($ifname, '.') !== false || $type === 'vlan') $type = 'VLAN';
+					elseif ($type === 'macvlan' || preg_match('/^(macvlan|mac[0-9])/i', $ifname)) $type = 'MACVLAN';
 					elseif (preg_match('/^wg/i', $ifname)) $type = 'WireGuard';
+					elseif (preg_match('/^veth/i', $ifname)) $type = 'vEthernet';
 					elseif ($ifname === 'lo') $type = 'Loopback';
 					else $type = 'Ethernet';
 					$mtu = $i['mtu'] ?? 1500;
