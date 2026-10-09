@@ -288,8 +288,14 @@ $(function() {
 	});
 
 	// Run in-page defined events
-	while (func = window.events.shift())
-		func();
+	if (window.events && Array.isArray(window.events)) {
+		while (window.events.length > 0) {
+			var func = window.events.shift();
+			if (typeof func === 'function') {
+				func();
+			}
+		}
+	}
 });
 
 // Implement data-toggle=disable
