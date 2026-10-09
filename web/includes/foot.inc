@@ -43,10 +43,14 @@
 		$(document).ready(function() {
 			var isDesktop = function() { return $(window).width() >= 992; };
 
-			// Restore collapsed sidebar state on desktop
+			// Restore collapsed sidebar state on desktop only
 			var isCollapsed = localStorage.getItem('mitranet_sidebar_collapsed') === 'true';
-			if (isCollapsed && isDesktop()) {
-				$('body').addClass('sidebar-collapsed');
+			if (isDesktop()) {
+				if (isCollapsed) {
+					$('body').addClass('sidebar-collapsed');
+				}
+			} else {
+				$('body').removeClass('sidebar-collapsed');
 			}
 
 			// Sidebar toggle button (Hamburger)
