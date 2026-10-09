@@ -1,52 +1,61 @@
 # MITRANET WORK STATE — PERSISTENT CHECKPOINT
 
-- **Waktu Pembaruan:** 2026-10-10 01:00:00 WIB
-- **Tujuan & Ruang Lingkup Aktif:** Redesain modul VPN (`web/vpn/vpn.php`) agar mengadopsi tampilan MikroTik WinBox PPP (Interface, PPPoE Servers, OVPN Servers, Secrets, Profiles, Active Connections, L2TP Ethernet, L2TP Secrets) dengan nama utama badge **VPN** dan sidebar menu VPN diubah menjadi direct link (tanpa flyout drop-right).
+- **Waktu Pembaruan:** 2026-10-10 01:10:00 WIB
+- **Tujuan & Ruang Lingkup Aktif:** Penambahan sub-menu **Security Services** pada menu **Services** dengan tampilan MikroTik WinBox IP > Services lengkap sesuai gambar (Flag `XI`/`D`/`Dc`, Nama service, Port, Available From, VRF, Certificate, TLS Version, Max Sessions, Remote, Local, Protocol, NetNS, Container, serta toolbar Enable/Disable dan modal edit).
 
 ---
 
-### 1. HASIL IMPLEMENTASI MODUL VPN (TERVERIFIKASI LIVE)
-1. **Sidebar Menu VPN (Tanpa Drop-Right / Direct Link)**:
-   - Diperbarui di [web/includes/head.inc](file:///c:/mitranet/web/includes/head.inc):
-     `array('id' => 'vpn', 'name' => 'VPN', 'icon' => 'fa-key', 'url' => '/vpn/vpn.php', 'direct' => true)`
-   - Tidak lagi memunculkan icon panah `fa-caret-right` dan flyout submenu drop-right. Mengklik menu VPN langsung membuka `/vpn/vpn.php`.
-2. **Title Badge & Window Header**:
-   - Title Badge: `<i class="fa-solid fa-desktop text-primary"></i> VPN <i class="fa-solid fa-caret-down"></i>` (sesuai instruksi: nama utama VPN, bukan PPP).
-   - Tab Bar Lengkap Sesuai Screenshot MikroTik:
-     1. `Interface` (Tab default aktif)
-     2. `PPPoE Servers`
-     3. `OVPN Servers`
-     4. `Secrets`
-     5. `Profiles`
-     6. `Active Connections`
-     7. `L2TP Ethernet`
-     8. `L2TP Secrets`
-3. **Toolbar & Data Grid Table (Kolom Presisi)**:
-   - Toolbar: `New`, `Enable`, `Disable`, `Remove`, `Comment`, `Find`, `Filter`, Column options.
-   - Kolom Grid: `Flag (⚑)`, `Name ^`, `Type`, `Actual MTU`, `L2 MTU`, `Tx`, `Rx`, `Tx Packet (p/s)`, `Rx Packet (p/s)`, `FP Tx`, `FP Rx`, `FP Tx Packet (p/s)`, `FP Rx Packet (p/s)`, Context Menu (`⋮`).
-4. **Modal Dialog Tambah & Edit VPN Interface (WinBox 2-Column)**:
-   - Tab General, Dial Out, dan Status.
-   - Action list tombol: OK, Cancel, Apply, Reset.
+### 1. HASIL IMPLEMENTASI SECURITY SERVICES (TERVERIFIKASI LIVE)
+1. **Sub-Menu Security Services pada Menu Services**:
+   - Ditambahkan pada `$services_menu` di [web/includes/head.inc](file:///c:/mitranet/web/includes/head.inc):
+     `array("Security Services", "/services/services_security.php")`
+   - Tersedia di flyout submenu menu Services pada sidebar MitraNet.
+2. **Title Badge & Header MikroTik WinBox**:
+   - Title Badge: `<i class="fa-solid fa-shield-halved text-primary"></i> Services <i class="fa-solid fa-caret-down"></i>`.
+3. **Toolbar WinBox**:
+   - `Enable` (icon play hijau).
+   - `Disable` (icon pause muted/warning).
+   - Pencarian real-time `Find`, `Filter`, serta pengaturan kolom.
+4. **Data Grid Table (Kolom & Entri Sesuai Gambar Referensi)**:
+   - Kolom: `Flag (⚑)`, `Name ^`, `Port`, `Available From`, `VRF`, `Certificate`, `TLS Ver...`, `Max Ses...`, `Remote`, `Local`, `Protocol`, `NetNS`, `Container`, Context Menu (`⋮`).
+   - Layanan Terdaftar:
+     - `api` (6692 / tcp) - XI
+     - `api-ssl` (8729 / tcp) - XI
+     - `btest` (2000 / tcp) - D
+     - `dhcp` (67 / udp) - D
+     - `discover` (5678 / udp) - D
+     - `ftp` (21 / tcp) - XI
+     - `ipsec` (4500 & 500 / udp) - D
+     - `l2tp` (1701 / udp) - D
+     - `ntp` (123 / udp) - D
+     - `ppp` (1723 / tcp) - D
+     - `resolver` (53 / tcp & udp) - D
+     - `revers...` (443 / tcp)
+     - `ssh` (22 / tcp) - XI
+     - `telnet` (23 / tcp) - XI
+     - `winbox` (8291 / tcp) dengan sub-sesi aktif `win...` (Remote: `10.10.66.150:53384`, Local: `103.247.13.9`) - Dc
+     - `www` (80 / tcp) - XI
+     - `www-...` (443 / tcp) - XI
+5. **Modal Dialog Edit IP Service (WinBox 2-Column)**:
+   - Form konfigurasi Port, Available From, Certificate, Max Sessions, dengan tombol aksi `OK`, `Cancel`, `Apply`.
+   - Terintegrasi penuh dengan SweetAlert2 toast notification.
 
 ---
 
 ### 2. DEPLOYMENT & PIPELINE STATUS
-- **Sintaks PHP:** Lulus uji tanpa error (`No syntax errors detected in vpn.php`).
+- **Sintaks PHP:** Bebas error (`php -l` lulus).
 - **Verifikasi Live Mini PC (`10.10.66.228`):**
-  - Berkas disinkronkan ke `/mitranet/web/vpn/vpn.php`, `/usr/share/mitranet/web/vpn/vpn.php`, dan `head.inc`.
-  - Teruji render sempurna (55,988 bytes) dengan seluruh tab dan sidebar direct link terkonfirmasi:
-    - `Has 'VPN' badge: YES`
-    - `Has 'Interface' tab: YES`
-    - `Has 'PPPoE Servers': YES`
-    - `Has 'OVPN Servers': YES`
-    - `Has 'Secrets': YES`
-    - `Has 'Profiles': YES`
-    - `Has 'Active Connections': YES`
-    - `Has 'L2TP Ethernet': YES`
-    - `Has 'L2TP Secrets': YES`
-    - `Has direct link in sidebar: YES`
+  - Berkas disinkronkan ke `/mitranet/web/services/services_security.php` dan `/usr/share/mitranet/web/services/services_security.php`.
+  - Teruji render sempurna (83,471 bytes) dengan seluruh elemen kunci terkonfirmasi:
+    - `Has 'Services' badge: YES`
+    - `Has 'api' service: YES`
+    - `Has 'winbox' service: YES`
+    - `Has 'Available From': YES`
+    - `Has 'Certificate': YES`
+    - `Has 'Max Ses...': YES`
+    - `Has 'Security Services' in menu: YES`
 
 ---
 
 ### 3. SATU LANGKAH BERIKUTNYA YANG SPESIFIK
-- Menjalankan pipeline deployment otomatis `deploy_pipeline.py` untuk sinkronisasi penuh, build ISO, dan git push.
+- Menjalankan pipeline deployment otomatis `deploy_pipeline.py` untuk sinkronisasi penuh, build ISO, dan push commit ke repositori GitHub.

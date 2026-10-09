@@ -93,6 +93,7 @@ $services_menu = array(
     array("IGMP Proxy", "/services/igmpproxy.php"),
     array("NTP", "/services/ntpd.php"),
     array("Router Advertisement", "/services/radvd.php"),
+    array("Security Services", "/services/services_security.php"),
     array("SNMP", "/services/snmp.php"),
     array("Wake-on-LAN", "/services/wol.php"),
     array("KVM Services", "/services/kvm.php")
