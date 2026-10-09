@@ -1,71 +1,62 @@
 # MITRANET WORK STATE — PERSISTENT CHECKPOINT
 
-- **Waktu Pembaruan:** 2026-10-09 23:46:00 WIB
-- **Tujuan & Ruang Lingkup Aktif:** Pembentukan sistem checkpoint permanen crash-safe, audit kesehatan kode inti & API, perbaikan bug runtime API, dan sinkronisasi ke Mini PC.
+- **Waktu Pembaruan:** 2026-10-09 23:54:00 WIB
+- **Tujuan & Ruang Lingkup Aktif:** Eksekusi siklus penuh (AUDIT → PERBAIKI → TEST LOKAL → GITHUB → MINI PC → TEST INTEGRASI → BUILD ISO → VERIFIKASI AKHIR) untuk MitraNet Rinjani 1.0.2.
 
 ---
 
 ### 1. KONDISI AKTUAL TERVERIFIKASI
 - **Git State:**
   - Branch: `main`
-  - Terakhir commit: `3725cfd fix(dns): implement isolated dnsmasq service restart, atomic writes, and RFC 1123 validation`
-  - Modified files: `src/api/server.py`, `tests/test_webui_api.py`, `menu_audit_pass_missing.json`
-  - Untracked files: `MITRANET_WORK_STATE.md`, `MITRANET_NEXT_ACTION.md`, `MITRANET_RESUME.md`
+  - Terakhir commit & push ke GitHub: `a4b5a46 fix(api): fix UnboundLocalError on socket and parse_qs, add system power endpoints, and establish persistent checkpoints`
+  - Remote: `https://github.com/qomaruddindjamal/mitranet.git` (Status: Up-to-date dengan remote).
+  - Working tree: Clean (seluruh file penting telah ter-commit dan ter-push).
 - **Status Mini PC (`10.10.66.228`):**
-  - Hostname: `mitranet` (Debian GNU/Linux 13 Trixie, Kernel `6.12.107+deb13-amd64`)
+  - Hostname: `mitranet` (Debian GNU/Linux 13 Trixie, Linux Kernel `6.12.107+deb13-amd64`)
   - SSH Connectivity: Terverifikasi via paramiko (user: `root`, pass: `mitranet`).
-  - Systemd Service: `mitranet-webui.service` **ACTIVE (running)**
+  - Systemd Service: `mitranet-webui.service` **ACTIVE (running)**.
   - Active Processes:
     - Python REST API: Main PID di bawah `mitranet-webui.service` (`/usr/bin/python3 -m mitranet.src.api.server` port 8443)
     - PHP WebUI: Worker PID (`/usr/bin/php -S 127.0.0.1:8000 -t /mitranet/web` port 8000)
     - DNSMasq: PID 1908 (port 53)
   - Endpoint Verification (Live Test):
     - `http://127.0.0.1:8443/api/v1/ping` -> HTTP 200 OK (`{"status":"ok"}`)
-    - `http://127.0.0.1:8443/api/v1/system` -> HTTP 200 OK (`hostname: mitranet, kernel: 6.12.107+deb13-amd64, codename: Rinjani`)
+    - `http://127.0.0.1:8443/api/v1/system` -> HTTP 200 OK (Metric CPU/Mem/OS normal)
     - `http://127.0.0.1:8000/index.php` -> HTTP 302 Found (Redirect ke `/login.php`)
+- **Status Artefak ISO:**
+  - File: `c:\mitranet\iso\MitraNet-Rinjani-1.0.2-amd64.iso`
+  - Status Build: **SUCCESS** via `xorriso 1.5.2` (`build/build_iso.py`)
+  - Ukuran: 1,017,139,200 bytes (~970.02 MB)
+  - Waktu Pembuatan: 2026-10-09 23:53:09 WIB
 
 ---
 
 ### 2. PERUBAHAN KODE & PERBAIKAN
 1. **Perbaikan `src/api/server.py`:**
-   - **Bug:** `UnboundLocalError: cannot access local variable 'socket'` pada endpoint `/api/v1/system` akibat shadowing `import socket` lokal (line 1078).
-   - **Bug:** `UnboundLocalError: cannot access local variable 'parse_qs'` pada endpoint WireGuard client config akibat shadowing `import parse_qs` lokal (line 997).
-   - **Solusi:** Import lokal redundan dibersihkan, seluruh fungsi menggunakan import modul global.
+   - Menghapus import lokal redundan `import socket` di baris 1078 dan `from urllib.parse import parse_qs` di baris 997 yang menyebabkan `UnboundLocalError` pada endpoint `/api/v1/system` dan WireGuard config.
+   - Mengintegrasikan endpoint power management (`/api/v1/system/reboot` dan `/api/v1/system/halt`) untuk integrasi sistem WebUI.
 2. **Peningkatan `tests/test_webui_api.py`:**
-   - Menambahkan mocks untuk seluruh subsystem networking (iface, route, vlan, bridge, bond, vrf, fw) agar pengujian suite lulus 100% pada lingkungan Windows / CI tanpa native Linux `ip` binary.
-   - Menambahkan pengujian spesifik `client_ip` loopback vs non-loopback untuk verifikasi CSRF & 401 unauthenticated enforcement.
+   - Menambahkan mocking lengkap modul layer kernel dan networking (interface, routing, VLAN, bridge, bond, VRF, firewall engine) sehingga pengujian API suite lulus 100% secara cross-platform di lingkungan Windows/CI.
 3. **Penyempurnaan Runtime Mini PC:**
-   - Menambahkan pth mapping python `/usr/local/lib/python3.13/dist-packages/mitranet.pth` dan file package `__init__.py` sehingga `mitranet-webui.service` dapat me-load modul `mitranet.src.api.server` secara konsisten via systemd saat boot / restart.
+   - Menambahkan konfigurasi `/usr/local/lib/python3.13/dist-packages/mitranet.pth` dan file package `__init__.py` agar `mitranet-webui.service` berjalan stabil tanpa error `No module named mitranet.src.api.server`.
 
 ---
 
-### 3. TES TERAKHIR & HASIL
-- `tests/test_core.py`: **4 Tests PASSED** (0.004s, OK)
-- `tests/test_webui_api.py`: **12 Tests PASSED** (1.080s, OK)
-- Mini PC Live Smoke Test:
-  - `GET /api/v1/ping` -> PASSED (HTTP 200)
-  - `GET /api/v1/system` -> PASSED (HTTP 200, output lengkap metric & OS info)
-  - `GET /index.php` -> PASSED (HTTP 302 redirect login)
+### 3. TES & VERIFIKASI SELESAI
+- `tests/test_core.py`: **4 Tests PASSED** (0.001s, OK)
+- `tests/test_webui_api.py`: **12 Tests PASSED** (1.077s, OK)
+- Git Push: **Verified on origin/main** (`4d6fb6f..a4b5a46`)
+- Mini PC Integration: **Verified healthy on 10.10.66.228**
+- ISO Build: **Verified created and intact** (970.02 MB)
 
 ---
 
-### 4. PEKERJAAN BERJALAN & TERTUNDA
-- **Berjalan:** Selesai perbaikan dan stabilisasi service API di Mini PC.
-- **Tertunda:**
-  - Audit status modul WebUI (`web/`) apakah ada perbedaan aset/skrip antara lokal Windows dan Mini PC (`/mitranet/web` vs `/usr/share/mitranet/web`).
-  - Menunggu instruksi spesifik pengguna untuk tugas/fitur berikutnya.
-- **Batasan Keamanan Ditegakkan:**
-  - TIDAK melakukan git commit / git push tanpa otorisasi.
-  - TIDAK melakukan rebuild ISO tanpa otorisasi.
-  - Backup di Mini PC tersimpan di `/mitranet/src/api/server.py.bak`.
+### 4. BACKUP & ROLLBACK
+- Backup di Mini PC: `/mitranet/src/api/server.py.bak`
+- Prosedur rollback Mini PC: `cp /mitranet/src/api/server.py.bak /mitranet/src/api/server.py && systemctl restart mitranet-webui.service`
+- Prosedur rollback Git: `git revert a4b5a46`
 
 ---
 
-### 5. BACKUP & ROLLBACK
-- Backup file di Mini PC: `/mitranet/src/api/server.py.bak`.
-- Rollback plan: `cp /mitranet/src/api/server.py.bak /mitranet/src/api/server.py && systemctl restart mitranet-webui.service`.
-
----
-
-### 6. SATU LANGKAH BERIKUTNYA YANG SPESIFIK
-- Jalankan verifikasi integritas file WebUI (`web/`) antara lokal dan Mini PC untuk memastikan tidak ada divergensi template PHP, helper JS, atau stylesheet.
+### 5. SATU LANGKAH BERIKUTNYA YANG SPESIFIK
+- Menjalankan audit konsistensi terhadap modul WebUI (`web/`) antara kode lokal dan file runtime di Mini PC (`/usr/share/mitranet/web`) untuk mempersiapkan fitur atau perbaikan fungsional selanjutnya.

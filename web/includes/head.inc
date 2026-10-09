@@ -178,16 +178,16 @@ $sidebar_structure = array(
     array('id' => 'firewall', 'name' => 'Firewall', 'icon' => 'fa-shield-halved', 'menu' => $firewall_menu),
     array('id' => 'services', 'name' => 'Services', 'icon' => 'fa-cubes', 'menu' => $services_menu),
     array('id' => 'vpn', 'name' => 'VPN', 'icon' => 'fa-key', 'menu' => $vpn_menu),
-    array('id' => 'xray', 'name' => 'Xray-core', 'icon' => 'fa-bolt', 'url' => '/vpn_xray.php', 'direct' => true)
+    array('id' => 'xray', 'name' => 'Xray-core', 'icon' => 'fa-bolt', 'url' => '/xray/xray.php', 'direct' => true)
 );
 
 if (MitraNetApi::isKvmEnabled()) {
-    $sidebar_structure[] = array('id' => 'kvm', 'name' => 'KVM', 'icon' => 'fa-server', 'url' => '/services_virtual.php', 'direct' => true);
+    $sidebar_structure[] = array('id' => 'kvm', 'name' => 'KVM', 'icon' => 'fa-server', 'url' => '/services/kvm.php', 'direct' => true);
 }
 
 $sidebar_structure = array_merge($sidebar_structure, array(
     array('id' => 'diagnostics', 'name' => 'Diagnostics', 'icon' => 'fa-toolbox', 'menu' => $diagnostics_menu),
-    array('id' => 'terminal', 'name' => 'Terminal', 'icon' => 'fa-terminal', 'url' => '/diag_terminal.php', 'direct' => true),
+    array('id' => 'terminal', 'name' => 'Terminal', 'icon' => 'fa-terminal', 'url' => '/terminal/terminal.php', 'direct' => true),
     array('id' => 'tools', 'name' => 'Tools', 'icon' => 'fa-screwdriver-wrench', 'menu' => $tools_menu),
     array('id' => 'status', 'name' => 'Status', 'icon' => 'fa-chart-line', 'menu' => $status_menu),
     array('id' => 'system', 'name' => 'System', 'icon' => 'fa-gears', 'menu' => $system_menu)

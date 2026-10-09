@@ -38,7 +38,7 @@ $uptimestr .= sprintf("%02d Hours %02d Minutes %02d Seconds", $uphours, $upmins,
 				<h2 class="panel-title">
 					<i class="fa-solid fa-server"></i> System Information
 					<span class="widget-heading-icon">
-						<a href="/system.php" title="Configure System"><i class="fa-solid fa-cog"></i></a>
+						<a href="/system/system.php" title="Configure System"><i class="fa-solid fa-cog"></i></a>
 					</span>
 				</h2>
 			</div>
@@ -85,7 +85,7 @@ $uptimestr .= sprintf("%02d Hours %02d Minutes %02d Seconds", $uphours, $upmins,
 										<div class="progress-bar progress-bar-striped" role="progressbar" style="width: <?=$states_pct?>%;"></div>
 									</div>
 									<span><?=$states_pct?>% (<?=number_format($states_cnt)?>/<?=number_format($states_max)?>)</span>
-									&nbsp;<span><a href="/diag_dump_states.php">Show states</a></span>
+									&nbsp;<span><a href="/diagnostics/diag_dump_states.php">Show states</a></span>
 								</td>
 							</tr>
 							<tr>
@@ -119,7 +119,7 @@ $uptimestr .= sprintf("%02d Hours %02d Minutes %02d Seconds", $uphours, $upmins,
 								<td>
 									<span class="label label-success">Running: v<?=htmlspecialchars($cfg['running_version'] ?? 1)?></span>
 									&nbsp;<span class="label label-info">Candidate: v<?=htmlspecialchars($cfg['candidate_version'] ?? 1)?></span>
-									&nbsp;<span><a href="/diag_backup.php">History</a></span>
+									&nbsp;<span><a href="/diagnostics/diag_backup.php">History</a></span>
 								</td>
 							</tr>
 						</tbody>

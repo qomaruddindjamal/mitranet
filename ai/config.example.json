@@ -1,0 +1,17 @@
+{
+  "project_name": "MitraNet Rinjani 1.0.2",
+  "workspace_root": "C:\\mitranet",
+  "minipc_ip": "10.10.66.228",
+  "minipc_user": "root",
+  "minipc_ssh_port": 22,
+  "api_port": 8443,
+  "webui_port": 8000,
+  "runtime_web_path": "/usr/share/mitranet/web",
+  "runtime_core_path": "/mitranet/core",
+  "runtime_src_path": "/mitranet/src",
+  "ai_mode_default": "ASK",
+  "model_provider": "local_rule_engine",
+  "knowledge_base_path": "ai/knowledge",
+  "memory_path": "ai/memory",
+  "log_path": "ai/logs/assistant.log"
+}
