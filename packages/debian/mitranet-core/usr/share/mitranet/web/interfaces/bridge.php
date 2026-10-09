@@ -80,7 +80,7 @@ foreach ($all_ifaces as $if_item) {
 }
 
 $tab_array = array();
-$tab_array[] = array(gettext("Interface Assignments"), false, "interfaces_assign.php");
+$tab_array[] = array(gettext("Interface"), false, "interfaces.php");
 $tab_array[] = array(gettext("VLANs"), false, "vlan.php");
 $tab_array[] = array(gettext("Bridges"), true, "bridge.php");
 $tab_array[] = array(gettext("LAGGs"), false, "lagg.php");

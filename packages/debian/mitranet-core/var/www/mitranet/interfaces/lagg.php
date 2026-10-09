@@ -11,7 +11,7 @@ require_once(__DIR__ . '/../includes/head.inc');
 $bonds = MitraNetApi::getBonds();
 
 $tab_array = array();
-$tab_array[] = array(gettext("Interface Assignments"), false, "interfaces_assign.php");
+$tab_array[] = array(gettext("Interface"), false, "interfaces.php");
 $tab_array[] = array(gettext("VLANs"), false, "vlan.php");
 $tab_array[] = array(gettext("Bridges"), false, "bridge.php");
 $tab_array[] = array(gettext("LAGGs"), true, "lagg.php");

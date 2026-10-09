@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $vethernets = MitraNetApi::getVethernets();
 
 $tab_array = array();
-$tab_array[] = array(gettext("Interface Assignments"), false, "interfaces_assign.php");
+$tab_array[] = array(gettext("Interface"), false, "interfaces.php");
 $tab_array[] = array(gettext("VLANs"), false, "vlan.php");
 $tab_array[] = array(gettext("Bridges"), false, "bridge.php");
 $tab_array[] = array(gettext("LAGGs"), false, "lagg.php");

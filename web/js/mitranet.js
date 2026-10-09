@@ -369,7 +369,7 @@ $(function() {
 	 * 1. Auto-refresh with countdown indicator
 	 * ------------------------------------------------------------------ */
 	var REFRESH_SECS = 30;
-	var $refreshBtn  = $('a[href="interfaces_assign.php"][role="button"]').first();
+	var $refreshBtn  = $('a[href="interfaces.php"][role="button"]').first();
 
 	if ($refreshBtn.length) {
 		var $badge = $('<span class="badge iface-refresh-badge">' + REFRESH_SECS + 's</span>');
@@ -382,7 +382,7 @@ $(function() {
 			if (remaining <= 5) $badge.addClass('iface-refresh-badge-urgent');
 			if (remaining <= 0) {
 				clearInterval(timer);
-				window.location.href = 'interfaces_assign.php';
+				window.location.href = 'interfaces.php';
 			}
 		}, 1000);
 

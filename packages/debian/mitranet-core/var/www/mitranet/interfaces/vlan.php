@@ -46,7 +46,7 @@ $vlans = MitraNetApi::getVlans();
 $ifaces = MitraNetApi::getInterfaces();
 
 $tab_array = array();
-$tab_array[] = array(gettext("Interface Assignments"), false, "interfaces_assign.php");
+$tab_array[] = array(gettext("Interface"), false, "interfaces.php");
 $tab_array[] = array(gettext("VLANs"), true, "vlan.php");
 $tab_array[] = array(gettext("Bridges"), false, "bridge.php");
 $tab_array[] = array(gettext("LAGGs"), false, "lagg.php");
