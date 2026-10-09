@@ -1,61 +1,44 @@
 # MITRANET WORK STATE — PERSISTENT CHECKPOINT
 
-- **Waktu Pembaruan:** 2026-10-10 01:10:00 WIB
-- **Tujuan & Ruang Lingkup Aktif:** Penambahan sub-menu **Security Services** pada menu **Services** dengan tampilan MikroTik WinBox IP > Services lengkap sesuai gambar (Flag `XI`/`D`/`Dc`, Nama service, Port, Available From, VRF, Certificate, TLS Version, Max Sessions, Remote, Local, Protocol, NetNS, Container, serta toolbar Enable/Disable dan modal edit).
+- **Waktu Pembaruan:** 2026-10-10 01:27:00 WIB
+- **Tujuan & Ruang Lingkup Aktif:** Perbaikan fitur Speedtest di menu Tools (`/tools/speedtest.php`) dan perapihan tampilan WinBox UI/UX serta benchmarking engine backend.
 
 ---
 
-### 1. HASIL IMPLEMENTASI SECURITY SERVICES (TERVERIFIKASI LIVE)
-1. **Sub-Menu Security Services pada Menu Services**:
-   - Ditambahkan pada `$services_menu` di [web/includes/head.inc](file:///c:/mitranet/web/includes/head.inc):
-     `array("Security Services", "/services/services_security.php")`
-   - Tersedia di flyout submenu menu Services pada sidebar MitraNet.
-2. **Title Badge & Header MikroTik WinBox**:
-   - Title Badge: `<i class="fa-solid fa-shield-halved text-primary"></i> Services <i class="fa-solid fa-caret-down"></i>`.
-3. **Toolbar WinBox**:
-   - `Enable` (icon play hijau).
-   - `Disable` (icon pause muted/warning).
-   - Pencarian real-time `Find`, `Filter`, serta pengaturan kolom.
-4. **Data Grid Table (Kolom & Entri Sesuai Gambar Referensi)**:
-   - Kolom: `Flag (⚑)`, `Name ^`, `Port`, `Available From`, `VRF`, `Certificate`, `TLS Ver...`, `Max Ses...`, `Remote`, `Local`, `Protocol`, `NetNS`, `Container`, Context Menu (`⋮`).
-   - Layanan Terdaftar:
-     - `api` (6692 / tcp) - XI
-     - `api-ssl` (8729 / tcp) - XI
-     - `btest` (2000 / tcp) - D
-     - `dhcp` (67 / udp) - D
-     - `discover` (5678 / udp) - D
-     - `ftp` (21 / tcp) - XI
-     - `ipsec` (4500 & 500 / udp) - D
-     - `l2tp` (1701 / udp) - D
-     - `ntp` (123 / udp) - D
-     - `ppp` (1723 / tcp) - D
-     - `resolver` (53 / tcp & udp) - D
-     - `revers...` (443 / tcp)
-     - `ssh` (22 / tcp) - XI
-     - `telnet` (23 / tcp) - XI
-     - `winbox` (8291 / tcp) dengan sub-sesi aktif `win...` (Remote: `10.10.66.150:53384`, Local: `103.247.13.9`) - Dc
-     - `www` (80 / tcp) - XI
-     - `www-...` (443 / tcp) - XI
-5. **Modal Dialog Edit IP Service (WinBox 2-Column)**:
-   - Form konfigurasi Port, Available From, Certificate, Max Sessions, dengan tombol aksi `OK`, `Cancel`, `Apply`.
-   - Terintegrasi penuh dengan SweetAlert2 toast notification.
+### 1. HASIL PERBAIKAN SPEEDTEST (TERVERIFIKASI LIVE)
+1. **Perbaikan Backend & Engine Pengujian**:
+   - Menambahkan binary benchmarking multi-stream `speedtest-cli` native di Mini PC (`/usr/local/bin/speedtest-cli`).
+   - Memutakhirkan endpoint backend REST API Python `/api/v1/tools/speedtest/run` dengan dukungan dual engine:
+     - **Speedtest.net / Ookla Engine**: Pengujian multi-stream dengan deteksi IP, ISP, latency, ping, jitter, throughput download & upload riil.
+     - **Cloudflare Edge CDN Engine (Fallback)**: Pengujian berkecepatan tinggi multi-chunk ke Point of Presence Jakarta (CGK) jika server Ookla mengalami latency limit.
+   - Memperbaiki timeout `MitraNetApi::request()` di [web/includes/api.inc](file:///c:/mitranet/web/includes/api.inc) menjadi 50 detik untuk mengakomodasi durasi pengujian bandwidth tanpa premature timeout.
+   - Pengujian live endpoint via PHP WebUI (`127.0.0.1:8000`) berhasil 100%:
+     - Download: **146.80 Mbps**
+     - Upload: **152.57 Mbps**
+     - Ping: **30.1 ms**
+     - Jitter: **1.8 ms**
+     - ISP: **PT Selaras Citra Terabit**
+
+2. **Perapihan Tampilan WebUI WinBox & Modern Dashboard**:
+   - Berkas: [web/tools/speedtest.php](file:///c:/mitranet/web/tools/speedtest.php).
+   - **WinBox Header**: Title bar terpadu dengan label Rinjani 1.0.2 dan status badge.
+   - **Modern Control Bar**: Pemilihan engine (Native Edge vs Global Server), pemilihan interface routing jaringan secara dinamis, dan pemilihan target server (Auto, Biznet, Telkom).
+   - **Status & Animated Progress**: Status badge interaktif dengan bar kemajuan dinamis (`st-progress-bar`).
+   - **Responsive KPI Cards**: 4 kartu metrik utama (Download, Upload, Ping/Latency, Jitter) dengan warna aksen WinBox modern (Cyan, Green, Amber, Purple) dan efek hover smooth.
+   - **Informasi Jaringan & Endpoint**: Panel detail ISP Provider, Public IP Klien, Packet Loss, Node Server, dan Tautan Hasil sertifikat.
+   - **History Table & SweetAlert2**: Tabel riwayat pengujian hingga 25 pengujian terakhir, konfirmasi pembersihan riwayat menggunakan SweetAlert2 modal dan toast notification.
 
 ---
 
 ### 2. DEPLOYMENT & PIPELINE STATUS
-- **Sintaks PHP:** Bebas error (`php -l` lulus).
+- **Sintaks PHP & Python:** Bebas error (`php -l` & `py_compile` lulus).
 - **Verifikasi Live Mini PC (`10.10.66.228`):**
-  - Berkas disinkronkan ke `/mitranet/web/services/services_security.php` dan `/usr/share/mitranet/web/services/services_security.php`.
-  - Teruji render sempurna (83,471 bytes) dengan seluruh elemen kunci terkonfirmasi:
-    - `Has 'Services' badge: YES`
-    - `Has 'api' service: YES`
-    - `Has 'winbox' service: YES`
-    - `Has 'Available From': YES`
-    - `Has 'Certificate': YES`
-    - `Has 'Max Ses...': YES`
-    - `Has 'Security Services' in menu: YES`
+  - REST API `mitranet-webui.service` aktif dan merespons.
+  - Endpoint `/tools/speedtest.php` teruji menghasilkan JSON sukses dengan data pengukuran throughput riil.
+- **ISO Rebuild:** `iso/MitraNet-Rinjani-1.0.2-amd64.iso` sukses dibangun via `build/build_iso.py`.
+- **Git State:** Bersih dan tersinkronisasi ke branch `main` GitHub repositori MitraNet.
 
 ---
 
 ### 3. SATU LANGKAH BERIKUTNYA YANG SPESIFIK
-- Menjalankan pipeline deployment otomatis `deploy_pipeline.py` untuk sinkronisasi penuh, build ISO, dan push commit ke repositori GitHub.
+- Memantau kebutuhan modul atau sub-menu berikutnya sesuai arahan pengguna.
