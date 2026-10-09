@@ -76,14 +76,7 @@ function fmt_pkts(int $p): string {
     return (string)$p;
 }
 
-$tab_array   = array();
-$tab_array[] = array(gettext("Interface Assignments"), true,  "interfaces_assign.php");
-$tab_array[] = array(gettext("VLANs"),                 false, "interfaces_vlan.php");
-$tab_array[] = array(gettext("Bridges"),               false, "interfaces_bridge.php");
-$tab_array[] = array(gettext("LAGGs"),                 false, "interfaces_lagg.php");
-$tab_array[] = array(gettext("VRFs"),                  false, "interfaces_vrf.php");
-$tab_array[] = array(gettext("vEthernet (KVM)"),       false, "interfaces_vethernet.php");
-display_top_tabs($tab_array);
+$current_tab = $_GET['tab'] ?? 'interface';
 
 if (!empty($msg)) print_info_box($msg, "success");
 if (!empty($err)) print_info_box($err, "danger");
@@ -91,85 +84,108 @@ if (!empty($err)) print_info_box($err, "danger");
 
 <div class="container-fluid mitranet-page-container">
 	<div class="mitranet-window">
-		<!-- TOOLBAR: REFRESH, FILTER, FIND -->
+
+		<!-- HEADER: BADGE + TABS (MATCHING SCREENSHOT) -->
+		<div class="mitranet-header">
+			<div class="mitranet-title-badge">
+				<i class="fa-solid fa-network-wired"></i> Interfaces
+				<i class="fa-solid fa-caret-down"></i>
+			</div>
+			<ul class="mitranet-tabs">
+				<li class="<?=($current_tab === 'interface') ? 'active' : ''?>">
+					<a href="interfaces_assign.php?tab=interface">Interface</a>
+				</li>
+				<li class="<?=($current_tab === 'interface_list') ? 'active' : ''?>">
+					<a href="interfaces_assign.php?tab=interface_list">Interface List</a>
+				</li>
+				<li class="<?=($current_tab === 'ethernet') ? 'active' : ''?>">
+					<a href="interfaces_assign.php?tab=ethernet">Ethernet</a>
+				</li>
+				<li class="<?=($current_tab === 'eoip') ? 'active' : ''?>">
+					<a href="interfaces_assign.php?tab=eoip">EoIP Tunnel</a>
+				</li>
+				<li class="<?=($current_tab === 'iptunnel') ? 'active' : ''?>">
+					<a href="interfaces_assign.php?tab=iptunnel">IP Tunnel</a>
+				</li>
+				<li class="<?=($current_tab === 'gre') ? 'active' : ''?>">
+					<a href="interfaces_assign.php?tab=gre">GRE Tunnel</a>
+				</li>
+				<li class="<?=($current_tab === 'vlan') ? 'active' : ''?>">
+					<a href="interfaces_vlan.php">VLAN</a>
+				</li>
+				<li class="<?=($current_tab === 'vxlan') ? 'active' : ''?>">
+					<a href="interfaces_assign.php?tab=vxlan">VXLAN</a>
+				</li>
+				<li class="<?=($current_tab === 'vrrp') ? 'active' : ''?>">
+					<a href="interfaces_assign.php?tab=vrrp">VRRP</a>
+				</li>
+				<li class="<?=($current_tab === 'macsec') ? 'active' : ''?>">
+					<a href="interfaces_assign.php?tab=macsec">MACsec</a>
+				</li>
+				<li class="<?=($current_tab === 'macvlan') ? 'active' : ''?>">
+					<a href="interfaces_assign.php?tab=macvlan">MACVLAN</a>
+				</li>
+				<li class="<?=($current_tab === 'bonding') ? 'active' : ''?>">
+					<a href="interfaces_lagg.php">Bonding</a>
+				</li>
+				<li class="<?=($current_tab === 'lte') ? 'active' : ''?>">
+					<a href="interfaces_assign.php?tab=lte">LTE</a>
+				</li>
+			</ul>
+		</div>
+
+		<!-- TOOLBAR (MATCHING SCREENSHOT) -->
 		<div class="mitranet-toolbar">
 			<div class="mitranet-toolbar-left">
-				<a href="interfaces_vlan.php" class="mitranet-btn" title="Add VLAN">
-					<i class="fa-solid fa-plus text-primary"></i> <strong>New VLAN</strong>
-				</a>
-				<a href="interfaces_bridge.php" class="mitranet-btn" title="Add Bridge">
-					<i class="fa-solid fa-plus text-info"></i> <strong>New Bridge</strong>
-				</a>
+				<button type="button" class="mitranet-btn" onclick="openNewModal()" title="Add New Interface">
+					<i class="fa-solid fa-folder-plus text-primary"></i> <strong>New</strong>
+				</button>
+				<button type="button" class="mitranet-btn" id="btn-enable" disabled title="Enable Selected">
+					<i class="fa-solid fa-play text-muted"></i> Enable
+				</button>
+				<button type="button" class="mitranet-btn" id="btn-disable" disabled title="Disable Selected">
+					<i class="fa-solid fa-pause text-muted"></i> Disable
+				</button>
+				<button type="button" class="mitranet-btn" id="btn-remove" disabled title="Remove Selected">
+					<i class="fa-solid fa-xmark text-muted"></i> Remove
+				</button>
+				<button type="button" class="mitranet-btn" id="btn-comment" disabled title="Set Comment">
+					<i class="fa-regular fa-comment text-muted"></i> Comment
+				</button>
 			</div>
 			<div class="mitranet-toolbar-right">
 				<div class="mitranet-search-wrapper">
 					<i class="fa-solid fa-magnifying-glass"></i>
-					<input type="text" id="grid-search" placeholder="Find interface..." onkeyup="filterAssignGrid(this.value)">
+					<input type="text" id="grid-search" placeholder="Find" onkeyup="filterAssignGrid(this.value)">
 				</div>
+				<button type="button" class="mitranet-btn" onclick="$('#grid-search').focus()" title="Advanced Filter">
+					<i class="fa-solid fa-filter text-muted"></i> Filter
+				</button>
 				<button type="button" class="mitranet-btn" onclick="location.reload()" title="Refresh">
 					<i class="fa-solid fa-arrows-rotate"></i>
 				</button>
 			</div>
 		</div>
 
+		<!-- DATA GRID TABLE (MATCHING SCREENSHOT COLUMNS) -->
 		<div class="mitranet-grid-container">
 			<table class="mitranet-grid" id="iface-grid-table">
 				<thead>
 					<tr>
-						<!-- Flag -->
-						<th class="iface-col-flag" title="Link / Carrier State">
-							<i class="fa-solid fa-circle-dot"></i>
-						</th>
-						<!-- Name -->
-						<th class="iface-col-name">
-							<?=gettext("Name")?>
-						</th>
-						<!-- Type -->
-						<th class="iface-col-type">
-							<?=gettext("Type")?>
-						</th>
-						<!-- MAC -->
-						<th class="iface-col-mac">
-							<?=gettext("MAC Address")?>
-						</th>
-						<!-- MTU -->
-						<th class="iface-col-mtu">
-							<?=gettext("MTU")?>
-						</th>
-						<!-- IPv4 -->
-						<th class="iface-col-ip">
-							<i class="fa-solid fa-4 text-success" title="IPv4"></i>
-							IPv4
-						</th>
-						<!-- IPv6 -->
-						<th class="iface-col-ip">
-							<i class="fa-solid fa-6 text-info" title="IPv6"></i>
-							IPv6
-						</th>
-						<!-- TX -->
-						<th class="iface-col-traffic">
-							<i class="fa-solid fa-arrow-up text-warning" title="Transmit Bytes"></i>
-							TX
-						</th>
-						<!-- RX -->
-						<th class="iface-col-traffic">
-							<i class="fa-solid fa-arrow-down text-success" title="Receive Bytes"></i>
-							RX
-						</th>
-						<!-- TX Packets -->
-						<th class="iface-col-pkts">
-							<i class="fa-solid fa-arrow-up text-warning" title="TX Packets"></i>
-							TX Pkts
-						</th>
-						<!-- RX Packets -->
-						<th class="iface-col-pkts">
-							<i class="fa-solid fa-arrow-down text-success" title="RX Packets"></i>
-							RX Pkts
-						</th>
-						<!-- Actions -->
-						<th class="iface-col-actions">
-							<?=gettext("Actions")?>
-						</th>
+						<th class="text-center col-flag"><i class="fa-regular fa-flag"></i></th>
+						<th class="sortable col-name">Name <i class="fa-solid fa-caret-up"></i></th>
+						<th class="sortable col-type">Type</th>
+						<th class="sortable col-mtu">Actual MTU</th>
+						<th class="sortable col-l2mtu">L2 MTU</th>
+						<th class="sortable">Tx</th>
+						<th class="sortable">Rx</th>
+						<th class="sortable">Tx Packet (p/s)</th>
+						<th class="sortable">Rx Packet (p/s)</th>
+						<th class="sortable">FP Tx</th>
+						<th class="sortable">FP Rx</th>
+						<th class="sortable">FP Tx Packet (p/s)</th>
+						<th class="sortable">FP Rx Packet (p/s)</th>
+						<th class="text-center col-menu"><i class="fa-solid fa-bars"></i></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -184,141 +200,62 @@ if (!empty($err)) print_info_box($err, "danger");
 					<?php
 					$is_up      = !empty($i['is_up']);
 					$oper_state = strtoupper($i['oper_state'] ?? '');
-					$ipv4s      = $i['ipv4_addresses'] ?? [];
-					$ipv6s      = $i['ipv6_addresses'] ?? [];
 					$traffic    = $i['traffic'] ?? [];
 					$rx_bytes   = (int)($traffic['rx_bytes']   ?? 0);
 					$tx_bytes   = (int)($traffic['tx_bytes']   ?? 0);
 					$rx_pkts    = (int)($traffic['rx_packets'] ?? 0);
 					$tx_pkts    = (int)($traffic['tx_packets'] ?? 0);
-					$is_protected = ($i['name'] === 'lo' || $i['name'] === 'enp0s3');
+					$ifname     = $i['name'];
+					$altname    = $i['altname'] ?? $ifname;
+					$type       = $i['type'] ?? 'ether';
+					if (preg_match('/^br[-_]/i', $ifname) || $type === 'bridge') $type = 'Bridge';
+					elseif (preg_match('/^vlan/i', $ifname) || strpos($ifname, '.') !== false) $type = 'VLAN';
+					elseif (preg_match('/^wg/i', $ifname)) $type = 'WireGuard';
+					elseif (preg_match('/^bond/i', $ifname)) $type = 'Bonding';
+					elseif ($ifname === 'lo') $type = 'Loopback';
+					else $type = 'Ethernet';
+					$mtu = $i['mtu'] ?? 1500;
 					?>
-					<tr class="iface-row <?=$is_up ? 'iface-row-up' : 'iface-row-down'?>">
-						<!-- Flag / Status -->
-						<td class="iface-col-flag">
+					<tr onclick="selectRow(this, '<?=htmlspecialchars($ifname)?>', '<?=htmlspecialchars(addslashes($i['comment'] ?? ''))?>')">
+						<!-- Flag -->
+						<td class="text-center">
 							<?php if ($is_up && $oper_state === 'UP'): ?>
-								<span class="iface-flag iface-flag-up" title="Link UP / Carrier Present">
-									<i class="fa-solid fa-circle"></i>
-								</span>
+								<i class="fa-solid fa-check text-success" title="Running / Link UP"></i>
 							<?php elseif ($is_up): ?>
-								<span class="iface-flag iface-flag-nocarrier" title="Admin UP — No Carrier">
-									<i class="fa-solid fa-circle-half-stroke"></i>
-								</span>
+								<i class="fa-solid fa-circle-half-stroke text-warning" title="No Carrier"></i>
 							<?php else: ?>
-								<span class="iface-flag iface-flag-down" title="DOWN">
-									<i class="fa-regular fa-circle"></i>
-								</span>
+								<i class="fa-solid fa-minus text-muted" title="Disabled"></i>
 							<?php endif; ?>
 						</td>
 						<!-- Name -->
-						<td class="iface-col-name">
-							<a href="interfaces.php?if=<?=urlencode($i['name'])?>" class="iface-name-link">
-								<i class="fa-solid <?=!empty($i['is_sfp']) ? 'fa-bolt text-warning' : 'fa-ethernet text-primary'?>"></i>
-								<?php if (!empty($i['altname'])): ?>
-									<strong><?=htmlspecialchars(strtoupper($i['altname']))?></strong>
-									<small class="text-muted">&nbsp;<?=htmlspecialchars($i['name'])?></small>
-									<?php if (!empty($i['is_sfp'])): ?>
-										<span class="badge badge-sfp">SFP</span>
-									<?php endif; ?>
-								<?php else: ?>
-									<strong><?=htmlspecialchars(strtoupper($i['name']))?></strong>
-								<?php endif; ?>
-							</a>
+						<td>
+							<strong><?=htmlspecialchars(strtoupper($altname))?></strong>
+							<span class="text-muted text-subname">(<?=htmlspecialchars($ifname)?>)</span>
 						</td>
 						<!-- Type -->
-						<td class="iface-col-type">
-							<span class="label label-default">
-								<?=htmlspecialchars($i['type'] ?? 'ether')?>
-							</span>
-						</td>
-						<!-- MAC Address -->
-						<td class="iface-col-mac">
-							<code class="iface-mac">
-								<?=htmlspecialchars($i['mac_address'] ?? '--')?>
-							</code>
-						</td>
-						<!-- MTU -->
-						<td class="iface-col-mtu">
-							<?=htmlspecialchars($i['mtu'] ?? 1500)?>
-						</td>
-						<!-- IPv4 -->
-						<td class="iface-col-ip">
-							<?php if (empty($ipv4s)): ?>
-								<span class="text-muted">—</span>
-							<?php else: ?>
-								<?php foreach ($ipv4s as $ip4): ?>
-									<span class="label label-success iface-ip-label">
-										<?=htmlspecialchars($ip4)?>
-									</span>
-								<?php endforeach; ?>
-							<?php endif; ?>
-						</td>
-						<!-- IPv6 -->
-						<td class="iface-col-ip">
-							<?php if (empty($ipv6s)): ?>
-								<span class="text-muted">—</span>
-							<?php else: ?>
-								<?php foreach ($ipv6s as $ip6): ?>
-									<span class="label label-info iface-ip-label">
-										<?=htmlspecialchars($ip6)?>
-									</span>
-								<?php endforeach; ?>
-							<?php endif; ?>
-						</td>
-						<!-- TX Bytes -->
-						<td class="iface-col-traffic iface-traffic-cell">
-							<span class="badge badge-traffic badge-traffic-tx">
-								<?=fmt_bytes($tx_bytes)?>
-							</span>
-						</td>
-						<!-- RX Bytes -->
-						<td class="iface-col-traffic iface-traffic-cell">
-							<span class="badge badge-traffic">
-								<?=fmt_bytes($rx_bytes)?>
-							</span>
-						</td>
-						<!-- TX Packets -->
-						<td class="iface-col-pkts iface-traffic-cell">
-							<?php if ($tx_pkts > 0): ?>
-								<span class="badge badge-pkts badge-pkts-tx">
-									<?=fmt_pkts($tx_pkts)?>
-								</span>
-							<?php else: ?>
-								<span class="text-muted">—</span>
-							<?php endif; ?>
-						</td>
-						<!-- RX Packets -->
-						<td class="iface-col-pkts iface-traffic-cell">
-							<?php if ($rx_pkts > 0): ?>
-								<span class="badge badge-pkts">
-									<?=fmt_pkts($rx_pkts)?>
-								</span>
-							<?php else: ?>
-								<span class="text-muted">—</span>
-							<?php endif; ?>
-						</td>
-						<!-- Actions -->
-						<td class="iface-col-actions">
-							<form method="post" action="interfaces_assign.php" class="form-inline-action">
-								<input type="hidden" name="action" value="set_state">
-								<input type="hidden" name="interface" value="<?=htmlspecialchars($i['name'])?>">
-								<?php if ($is_up): ?>
-									<input type="hidden" name="state" value="down">
-									<button type="submit"
-										class="btn btn-xs btn-danger"
-										<?=$is_protected ? 'disabled title="Protected management interface"' : ''?>>
-										<i class="fa-solid fa-arrow-down"></i>
-										Down
-									</button>
-								<?php else: ?>
-									<input type="hidden" name="state" value="up">
-									<button type="submit" class="btn btn-xs btn-success">
-										<i class="fa-solid fa-arrow-up"></i>
-										Up
-									</button>
-								<?php endif; ?>
-							</form>
-						</td>
+						<td><span class="label label-default"><?=htmlspecialchars($type)?></span></td>
+						<!-- Actual MTU -->
+						<td><?=htmlspecialchars($mtu)?></td>
+						<!-- L2 MTU -->
+						<td>1500</td>
+						<!-- Tx -->
+						<td><?=fmt_bytes($tx_bytes)?></td>
+						<!-- Rx -->
+						<td><?=fmt_bytes($rx_bytes)?></td>
+						<!-- Tx Packet (p/s) -->
+						<td><?=fmt_pkts($tx_pkts)?></td>
+						<!-- Rx Packet (p/s) -->
+						<td><?=fmt_pkts($rx_pkts)?></td>
+						<!-- FP Tx -->
+						<td>0 B</td>
+						<!-- FP Rx -->
+						<td>0 B</td>
+						<!-- FP Tx Packet (p/s) -->
+						<td>0</td>
+						<!-- FP Rx Packet (p/s) -->
+						<td>0</td>
+						<!-- Actions / Menu -->
+						<td class="text-center"><i class="fa-solid fa-ellipsis-vertical text-muted"></i></td>
 					</tr>
 					<?php endforeach; ?>
 				<?php endif; ?>
@@ -329,7 +266,7 @@ if (!empty($err)) print_info_box($err, "danger");
 		<!-- STATUSBAR -->
 		<div class="mitranet-statusbar">
 			<div>
-				<span><strong>Total:</strong> <?=count($ifaces)?> interfaces assigned</span>
+				<span><strong>Total:</strong> <?=count($ifaces)?> items</span>
 			</div>
 			<div>
 				<span class="text-muted">MitraNet Interface Subsystem</span>
@@ -339,18 +276,94 @@ if (!empty($err)) print_info_box($err, "danger");
 	</div>
 </div>
 
-<div class="infoblock">
-<?php
-print_info_box(
-    gettext("Interfaces that are configured as members of a LAGG or Bridge interface will have their traffic managed by their respective virtual interfaces.") .
-    '<br/><br/>' .
-    gettext("VLAN interfaces must be created on the VLANs tab before they can be assigned."),
-    'info', false
-);
-?>
+<!-- MODAL: ADD NEW INTERFACE -->
+<div id="modal-new-interface" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">
+                    <i class="fa-solid fa-network-wired text-primary"></i> New Interface
+                </h4>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Interface Type:</label>
+                    <select class="form-control" id="new-iface-type" onchange="onTypeChange(this.value)">
+                        <option value="vlan">VLAN Interface</option>
+                        <option value="bridge">Bridge Interface</option>
+                        <option value="bonding">Bonding / LAGG</option>
+                        <option value="vxlan">VXLAN Tunnel</option>
+                        <option value="gre">GRE Tunnel</option>
+                        <option value="iptunnel">IP Tunnel (IPIP)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Name / Identifier:</label>
+                    <input type="text" class="form-control" id="new-iface-name" placeholder="e.g. vlan100, br0">
+                </div>
+                <div class="form-group" id="group-parent">
+                    <label>Parent Interface:</label>
+                    <select class="form-control" id="new-iface-parent">
+                        <?php foreach ($ifaces as $p): ?>
+                            <option value="<?=htmlspecialchars($p['name'])?>"><?=htmlspecialchars(strtoupper($p['name']))?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-sm btn-primary" onclick="createInterface()">Apply &amp; Create</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
+var selectedIface = null;
+
+function openNewModal() {
+    $('#modal-new-interface').modal('show');
+}
+
+function onTypeChange(val) {
+    if (val === 'vlan') {
+        $('#group-parent').show();
+    } else {
+        $('#group-parent').hide();
+    }
+}
+
+function selectRow(tr, ifname, comment) {
+    $('#iface-grid-table tbody tr').removeClass('selected');
+    $(tr).addClass('selected');
+    selectedIface = ifname;
+    $('#btn-enable, #btn-disable, #btn-remove, #btn-comment').prop('disabled', false);
+}
+
+$('#btn-enable').on('click', function() {
+    if (!selectedIface) return;
+    postIfaceState(selectedIface, 'up');
+});
+
+$('#btn-disable').on('click', function() {
+    if (!selectedIface) return;
+    if (selectedIface === 'lo' || selectedIface === 'enp0s3') {
+        alert('Interface manajemen ini dilindungi dan tidak dapat dimatikan.');
+        return;
+    }
+    postIfaceState(selectedIface, 'down');
+});
+
+function postIfaceState(ifname, state) {
+    var form = $('<form method="post" action="interfaces_assign.php"></form>');
+    form.append('<input type="hidden" name="action" value="set_state">');
+    form.append('<input type="hidden" name="interface" value="' + ifname + '">');
+    form.append('<input type="hidden" name="state" value="' + state + '">');
+    $('body').append(form);
+    form.submit();
+}
+
 function filterAssignGrid(val) {
     val = (val || '').toLowerCase();
     $('#iface-grid-table tbody tr').each(function() {
@@ -361,6 +374,14 @@ function filterAssignGrid(val) {
             $(this).hide();
         }
     });
+}
+
+function createInterface() {
+    var type = $('#new-iface-type').val();
+    if (type === 'vlan') location.href = 'interfaces_vlan.php';
+    else if (type === 'bridge') location.href = 'interfaces_bridge.php';
+    else if (type === 'bonding') location.href = 'interfaces_lagg.php';
+    else alert('Konfigurasi tipe ' + type + ' dapat dilakukan di tab masing-masing.');
 }
 </script>
 
