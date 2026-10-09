@@ -172,13 +172,15 @@ $help_menu = array(
 );
 
 $sidebar_structure = array(
+    array('id' => 'volt', 'name' => 'vOLT', 'icon' => 'fa-network-wired', 'url' => '/vOlt/vOlt.php', 'direct' => true),
     array('id' => 'wifi', 'name' => 'Wireless', 'icon' => 'fa-wifi', 'url' => '/wifi/wifi.php', 'direct' => true),
     array('id' => 'interfaces', 'name' => 'Interfaces', 'icon' => 'fa-network-wired', 'url' => '/interfaces/interfaces.php', 'direct' => true),
     array('id' => 'wireguard', 'name' => 'WireGuard', 'icon' => 'fa-circle-nodes', 'url' => '/wg/vpn_wg_tunnels.php', 'direct' => true),
     array('id' => 'firewall', 'name' => 'Firewall', 'icon' => 'fa-shield-halved', 'menu' => $firewall_menu),
     array('id' => 'services', 'name' => 'Services', 'icon' => 'fa-cubes', 'menu' => $services_menu),
     array('id' => 'vpn', 'name' => 'VPN', 'icon' => 'fa-key', 'menu' => $vpn_menu),
-    array('id' => 'xray', 'name' => 'Xray-core', 'icon' => 'fa-bolt', 'url' => '/xray/xray.php', 'direct' => true)
+    array('id' => 'xray', 'name' => 'Xray-core', 'icon' => 'fa-bolt', 'url' => '/xray/xray.php', 'direct' => true),
+    array('id' => 'qos', 'name' => 'QoS Manager', 'icon' => 'fa-gauge-high', 'url' => '/qos/qos.php', 'direct' => true)
 );
 
 if (MitraNetApi::isKvmEnabled()) {
