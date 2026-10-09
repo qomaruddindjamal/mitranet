@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /*
  * index.php - MitraNet System Dashboard
  * Adapted from pfSense index.php
@@ -137,7 +137,7 @@ $uptimestr .= sprintf("%02d Hours %02d Minutes %02d Seconds", $uphours, $upmins,
 				<h2 class="panel-title">
 					<i class="fa-solid fa-network-wired"></i> Interfaces
 					<span class="widget-heading-icon">
-						<a href="/interfaces_assign.php" title="Assign Interfaces"><i class="fa-solid fa-cog"></i></a>
+						<a href="/interfaces/interfaces_assign.php" title="Assign Interfaces"><i class="fa-solid fa-cog"></i></a>
 					</span>
 				</h2>
 			</div>

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /*
  * interfaces_bridge.php - MitraNet Bridge Interfaces
  * Adapted from pfSense interfaces_bridge.php
@@ -6,7 +6,7 @@
 
 $pgtitle = array(gettext("Interfaces"), gettext("Bridges"));
 $selected_menu = "interfaces";
-require_once(__DIR__ . '/includes/head.inc');
+require_once(__DIR__ . '/../includes/head.inc');
 
 $msg = '';
 $err = '';
@@ -81,11 +81,11 @@ foreach ($all_ifaces as $if_item) {
 
 $tab_array = array();
 $tab_array[] = array(gettext("Interface Assignments"), false, "interfaces_assign.php");
-$tab_array[] = array(gettext("VLANs"), false, "interfaces_vlan.php");
-$tab_array[] = array(gettext("Bridges"), true, "interfaces_bridge.php");
-$tab_array[] = array(gettext("LAGGs"), false, "interfaces_lagg.php");
-$tab_array[] = array(gettext("VRFs"), false, "interfaces_vrf.php");
-$tab_array[] = array(gettext("vEthernet (KVM)"), false, "interfaces_vethernet.php");
+$tab_array[] = array(gettext("VLANs"), false, "vlan.php");
+$tab_array[] = array(gettext("Bridges"), true, "bridge.php");
+$tab_array[] = array(gettext("LAGGs"), false, "lagg.php");
+$tab_array[] = array(gettext("VRFs"), false, "vrf.php");
+$tab_array[] = array(gettext("vEthernet (KVM)"), false, "vethernet.php");
 display_top_tabs($tab_array);
 
 if (!empty($msg)) {
@@ -184,5 +184,5 @@ if (!empty($err)) {
 	</div>
 </div>
 
-<?php require_once(__DIR__ . '/includes/foot.inc'); ?>
+<?php require_once(__DIR__ . '/../includes/foot.inc'); ?>
 

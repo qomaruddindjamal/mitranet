@@ -57,21 +57,21 @@ $system_menu = array(
 
 
 $interfaces_menu = array(
-    array("Assignments", "/interfaces_assign.php"),
+    array("Assignments", "/interfaces/interfaces_assign.php"),
     array("-DIVIDER-", "")
 );
 $ifaces_list = MitraNetApi::getInterfaces();
 if (!empty($ifaces_list)) {
     foreach ($ifaces_list as $i_entry) {
-        $interfaces_menu[] = array(strtoupper($i_entry['name']) . " (" . $i_entry['name'] . ")", "/interfaces.php?if=" . urlencode($i_entry['name']));
+        $interfaces_menu[] = array(strtoupper($i_entry['name']) . " (" . $i_entry['name'] . ")", "/interfaces/interfaces.php?if=" . urlencode($i_entry['name']));
     }
 }
 $interfaces_menu[] = array("-DIVIDER-", "");
-$interfaces_menu[] = array("VLANs", "/interfaces_vlan.php");
-$interfaces_menu[] = array("Bridges", "/interfaces_bridge.php");
-$interfaces_menu[] = array("LAGGs", "/interfaces_lagg.php");
-$interfaces_menu[] = array("VRFs", "/interfaces_vrf.php");
-$interfaces_menu[] = array("vEthernet (KVM)", "/interfaces_vethernet.php");
+$interfaces_menu[] = array("VLANs", "/interfaces/vlan.php");
+$interfaces_menu[] = array("Bridges", "/interfaces/bridge.php");
+$interfaces_menu[] = array("LAGGs", "/interfaces/lagg.php");
+$interfaces_menu[] = array("VRFs", "/interfaces/vrf.php");
+$interfaces_menu[] = array("vEthernet (KVM)", "/interfaces/vethernet.php");
 
 $firewall_menu = array(
     array("Aliases", "/firewall_aliases.php"),
@@ -175,8 +175,8 @@ $help_menu = array(
 );
 
 $sidebar_structure = array(
-    array('id' => 'wifi', 'name' => 'Wireless', 'icon' => 'fa-wifi', 'url' => '/interfaces_wifi.php', 'direct' => true),
-    array('id' => 'interfaces', 'name' => 'Interfaces', 'icon' => 'fa-network-wired', 'url' => '/interfaces_assign.php', 'direct' => true),
+    array('id' => 'wifi', 'name' => 'Wireless', 'icon' => 'fa-wifi', 'url' => '/wifi/wifi.php', 'direct' => true),
+    array('id' => 'interfaces', 'name' => 'Interfaces', 'icon' => 'fa-network-wired', 'url' => '/interfaces/interfaces_assign.php', 'direct' => true),
     array('id' => 'wireguard', 'name' => 'WireGuard', 'icon' => 'fa-circle-nodes', 'url' => '/wg/vpn_wg_tunnels.php', 'direct' => true),
     array('id' => 'firewall', 'name' => 'Firewall', 'icon' => 'fa-shield-halved', 'menu' => $firewall_menu),
     array('id' => 'services', 'name' => 'Services', 'icon' => 'fa-cubes', 'menu' => $services_menu),

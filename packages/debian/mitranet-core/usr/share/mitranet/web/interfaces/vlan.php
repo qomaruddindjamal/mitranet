@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /*
  * interfaces_vlan.php - MitraNet 802.1Q VLAN Interfaces
  * Adapted from pfSense interfaces_vlan.php
@@ -6,7 +6,7 @@
 
 $pgtitle = array(gettext("Interfaces"), gettext("VLANs"));
 $selected_menu = "interfaces";
-require_once(__DIR__ . '/includes/head.inc');
+require_once(__DIR__ . '/../includes/head.inc');
 
 $msg = '';
 $err = '';
@@ -47,11 +47,11 @@ $ifaces = MitraNetApi::getInterfaces();
 
 $tab_array = array();
 $tab_array[] = array(gettext("Interface Assignments"), false, "interfaces_assign.php");
-$tab_array[] = array(gettext("VLANs"), true, "interfaces_vlan.php");
-$tab_array[] = array(gettext("Bridges"), false, "interfaces_bridge.php");
-$tab_array[] = array(gettext("LAGGs"), false, "interfaces_lagg.php");
-$tab_array[] = array(gettext("VRFs"), false, "interfaces_vrf.php");
-$tab_array[] = array(gettext("vEthernet (KVM)"), false, "interfaces_vethernet.php");
+$tab_array[] = array(gettext("VLANs"), true, "vlan.php");
+$tab_array[] = array(gettext("Bridges"), false, "bridge.php");
+$tab_array[] = array(gettext("LAGGs"), false, "lagg.php");
+$tab_array[] = array(gettext("VRFs"), false, "vrf.php");
+$tab_array[] = array(gettext("vEthernet (KVM)"), false, "vethernet.php");
 display_top_tabs($tab_array);
 
 if (!empty($msg)) {
@@ -138,4 +138,4 @@ if (!empty($err)) {
 	</div>
 </div>
 
-<?php require_once(__DIR__ . '/includes/foot.inc'); ?>
+<?php require_once(__DIR__ . '/../includes/foot.inc'); ?>

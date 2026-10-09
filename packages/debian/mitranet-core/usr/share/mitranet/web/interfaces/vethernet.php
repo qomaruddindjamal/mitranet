@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /*
  * interfaces_vethernet.php - MitraNet Virtual Ethernet (vEthernet / Host-Guest Subnets)
  * Dedicated virtual interfaces for Single NIC VPS / KVM guest routing & port forwarding
@@ -7,7 +7,7 @@
 
 $pgtitle = array(gettext("Interfaces"), gettext("vEthernet"));
 $selected_menu = "interfaces";
-require_once(__DIR__ . '/includes/head.inc');
+require_once(__DIR__ . '/../includes/head.inc');
 
 $msg = '';
 $err = '';
@@ -46,11 +46,11 @@ $vethernets = MitraNetApi::getVethernets();
 
 $tab_array = array();
 $tab_array[] = array(gettext("Interface Assignments"), false, "interfaces_assign.php");
-$tab_array[] = array(gettext("VLANs"), false, "interfaces_vlan.php");
-$tab_array[] = array(gettext("Bridges"), false, "interfaces_bridge.php");
-$tab_array[] = array(gettext("LAGGs"), false, "interfaces_lagg.php");
-$tab_array[] = array(gettext("VRFs"), false, "interfaces_vrf.php");
-$tab_array[] = array(gettext("vEthernet (KVM)"), true, "interfaces_vethernet.php");
+$tab_array[] = array(gettext("VLANs"), false, "vlan.php");
+$tab_array[] = array(gettext("Bridges"), false, "bridge.php");
+$tab_array[] = array(gettext("LAGGs"), false, "lagg.php");
+$tab_array[] = array(gettext("VRFs"), false, "vrf.php");
+$tab_array[] = array(gettext("vEthernet (KVM)"), true, "vethernet.php");
 display_top_tabs($tab_array);
 
 if (!empty($msg)) {
@@ -155,4 +155,4 @@ if (!empty($err)) {
 	</div>
 </div>
 
-<?php require_once(__DIR__ . '/includes/foot.inc'); ?>
+<?php require_once(__DIR__ . '/../includes/foot.inc'); ?>

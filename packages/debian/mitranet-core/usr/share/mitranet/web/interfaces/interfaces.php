@@ -1,11 +1,11 @@
-﻿<?php
+<?php
 /*
  * interfaces.php - MitraNet Interface Details & Configuration Editor
  * Adapted from pfSense interfaces.php for Debian 13 (Trixie) Appliance
  * Licensed under the Apache License, Version 2.0.
  */
 
-require_once(__DIR__ . '/includes/api.inc');
+require_once(__DIR__ . '/../includes/api.inc');
 
 $msg = '';
 $err = '';
@@ -93,15 +93,15 @@ if ($selected_iface) {
     $pgtitle = array(gettext("Interfaces"), gettext("Interface Assignments"));
 }
 $selected_menu = "interfaces";
-require_once(__DIR__ . '/includes/head.inc');
+require_once(__DIR__ . '/../includes/head.inc');
 
 $tab_array = array();
 $tab_array[] = array(gettext("Interface Assignments"), empty($selected_iface), "interfaces_assign.php");
-$tab_array[] = array(gettext("VLANs"), false, "interfaces_vlan.php");
-$tab_array[] = array(gettext("Bridges"), false, "interfaces_bridge.php");
-$tab_array[] = array(gettext("LAGGs"), false, "interfaces_lagg.php");
-$tab_array[] = array(gettext("VRFs"), false, "interfaces_vrf.php");
-$tab_array[] = array(gettext("vEthernet (KVM)"), false, "interfaces_vethernet.php");
+$tab_array[] = array(gettext("VLANs"), false, "vlan.php");
+$tab_array[] = array(gettext("Bridges"), false, "bridge.php");
+$tab_array[] = array(gettext("LAGGs"), false, "lagg.php");
+$tab_array[] = array(gettext("VRFs"), false, "vrf.php");
+$tab_array[] = array(gettext("vEthernet (KVM)"), false, "vethernet.php");
 if ($selected_iface) {
     $tab_array[] = array(strtoupper($selected_iface['name']), true, "interfaces.php?if=" . urlencode($selected_iface['name']));
 }
@@ -319,4 +319,4 @@ $is_protected = ($selected_iface['name'] === 'lo' || $selected_iface['name'] ===
 </div>
 <?php endif; ?>
 
-<?php require_once(__DIR__ . '/includes/foot.inc'); ?>
+<?php require_once(__DIR__ . '/../includes/foot.inc'); ?>

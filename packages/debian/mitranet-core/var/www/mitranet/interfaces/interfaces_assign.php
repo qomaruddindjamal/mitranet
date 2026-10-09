@@ -7,7 +7,7 @@
 
 $pgtitle = array(gettext("Interfaces"), gettext("Interface Assignments"));
 $selected_menu = "interfaces";
-require_once(__DIR__ . '/includes/head.inc');
+require_once(__DIR__ . '/../includes/head.inc');
 
 $msg = '';
 $err = '';
@@ -111,7 +111,7 @@ if (!empty($err)) print_info_box($err, "danger");
 					<a href="interfaces_assign.php?tab=gre">GRE Tunnel</a>
 				</li>
 				<li class="<?=($current_tab === 'vlan') ? 'active' : ''?>">
-					<a href="interfaces_vlan.php">VLAN</a>
+					<a href="vlan.php">VLAN</a>
 				</li>
 				<li class="<?=($current_tab === 'vxlan') ? 'active' : ''?>">
 					<a href="interfaces_assign.php?tab=vxlan">VXLAN</a>
@@ -126,7 +126,7 @@ if (!empty($err)) print_info_box($err, "danger");
 					<a href="interfaces_assign.php?tab=macvlan">MACVLAN</a>
 				</li>
 				<li class="<?=($current_tab === 'bonding') ? 'active' : ''?>">
-					<a href="interfaces_lagg.php">Bonding</a>
+					<a href="lagg.php">Bonding</a>
 				</li>
 				<li class="<?=($current_tab === 'lte') ? 'active' : ''?>">
 					<a href="interfaces_assign.php?tab=lte">LTE</a>
@@ -378,11 +378,11 @@ function filterAssignGrid(val) {
 
 function createInterface() {
     var type = $('#new-iface-type').val();
-    if (type === 'vlan') location.href = 'interfaces_vlan.php';
-    else if (type === 'bridge') location.href = 'interfaces_bridge.php';
-    else if (type === 'bonding') location.href = 'interfaces_lagg.php';
+    if (type === 'vlan') location.href = 'vlan.php';
+    else if (type === 'bridge') location.href = 'bridge.php';
+    else if (type === 'bonding') location.href = 'lagg.php';
     else alert('Konfigurasi tipe ' + type + ' dapat dilakukan di tab masing-masing.');
 }
 </script>
 
-<?php require_once(__DIR__ . '/includes/foot.inc'); ?>
+<?php require_once(__DIR__ . '/../includes/foot.inc'); ?>

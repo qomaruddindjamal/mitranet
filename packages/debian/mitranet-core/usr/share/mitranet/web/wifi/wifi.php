@@ -7,7 +7,7 @@
 
 $pgtitle = array(gettext("Interfaces"), gettext("Wireless"));
 $selected_menu = "interfaces";
-require_once(__DIR__ . '/includes/head.inc');
+require_once(__DIR__ . '/../includes/head.inc');
 
 $all_ifaces = MitraNetApi::getInterfaces();
 
@@ -50,46 +50,46 @@ $current_tab = $_GET['tab'] ?? 'wifi';
             </div>
             <ul class="mitranet-tabs">
                 <li class="<?=($current_tab === 'wifi') ? 'active' : ''?>">
-                    <a href="interfaces_wifi.php?tab=wifi">WiFi</a>
+                    <a href="wifi.php?tab=wifi">WiFi</a>
                 </li>
                 <li class="<?=($current_tab === 'network') ? 'active' : ''?>">
-                    <a href="interfaces_wifi.php?tab=network">Network</a>
+                    <a href="wifi.php?tab=network">Network</a>
                 </li>
                 <li class="<?=($current_tab === 'configuration') ? 'active' : ''?>">
-                    <a href="interfaces_wifi.php?tab=configuration">Configuration</a>
+                    <a href="wifi.php?tab=configuration">Configuration</a>
                 </li>
                 <li class="<?=($current_tab === 'channel') ? 'active' : ''?>">
-                    <a href="interfaces_wifi.php?tab=channel">Channel</a>
+                    <a href="wifi.php?tab=channel">Channel</a>
                 </li>
                 <li class="<?=($current_tab === 'security') ? 'active' : ''?>">
-                    <a href="interfaces_wifi.php?tab=security">Security</a>
+                    <a href="wifi.php?tab=security">Security</a>
                 </li>
                 <li class="<?=($current_tab === 'aaa') ? 'active' : ''?>">
-                    <a href="interfaces_wifi.php?tab=aaa">AAA</a>
+                    <a href="wifi.php?tab=aaa">AAA</a>
                 </li>
                 <li class="<?=($current_tab === 'datapath') ? 'active' : ''?>">
-                    <a href="interfaces_wifi.php?tab=datapath">Datapath</a>
+                    <a href="wifi.php?tab=datapath">Datapath</a>
                 </li>
                 <li class="<?=($current_tab === 'interworking') ? 'active' : ''?>">
-                    <a href="interfaces_wifi.php?tab=interworking">Interworking</a>
+                    <a href="wifi.php?tab=interworking">Interworking</a>
                 </li>
                 <li class="<?=($current_tab === 'steering') ? 'active' : ''?>">
-                    <a href="interfaces_wifi.php?tab=steering">Steering</a>
+                    <a href="wifi.php?tab=steering">Steering</a>
                 </li>
                 <li class="<?=($current_tab === 'registration') ? 'active' : ''?>">
-                    <a href="interfaces_wifi.php?tab=registration">Registration</a>
+                    <a href="wifi.php?tab=registration">Registration</a>
                 </li>
                 <li class="<?=($current_tab === 'access_list') ? 'active' : ''?>">
-                    <a href="interfaces_wifi.php?tab=access_list">Access List</a>
+                    <a href="wifi.php?tab=access_list">Access List</a>
                 </li>
                 <li class="<?=($current_tab === 'provisioning') ? 'active' : ''?>">
-                    <a href="interfaces_wifi.php?tab=provisioning">Provisioning</a>
+                    <a href="wifi.php?tab=provisioning">Provisioning</a>
                 </li>
                 <li class="<?=($current_tab === 'radios') ? 'active' : ''?>">
-                    <a href="interfaces_wifi.php?tab=radios">Radios</a>
+                    <a href="wifi.php?tab=radios">Radios</a>
                 </li>
                 <li class="<?=($current_tab === 'remote_cap') ? 'active' : ''?>">
-                    <a href="interfaces_wifi.php?tab=remote_cap">Remote CAP</a>
+                    <a href="wifi.php?tab=remote_cap">Remote CAP</a>
                 </li>
             </ul>
         </div>
@@ -290,4 +290,4 @@ function toggleFilter() {
 }
 </script>
 
-<?php include(__DIR__ . '/includes/foot.inc'); ?>
+<?php include(__DIR__ . '/../includes/foot.inc'); ?>

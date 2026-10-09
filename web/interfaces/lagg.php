@@ -6,17 +6,17 @@
 
 $pgtitle = array(gettext("Interfaces"), gettext("LAGGs"));
 $selected_menu = "interfaces";
-require_once(__DIR__ . '/includes/head.inc');
+require_once(__DIR__ . '/../includes/head.inc');
 
 $bonds = MitraNetApi::getBonds();
 
 $tab_array = array();
 $tab_array[] = array(gettext("Interface Assignments"), false, "interfaces_assign.php");
-$tab_array[] = array(gettext("VLANs"), false, "interfaces_vlan.php");
-$tab_array[] = array(gettext("Bridges"), false, "interfaces_bridge.php");
-$tab_array[] = array(gettext("LAGGs"), true, "interfaces_lagg.php");
-$tab_array[] = array(gettext("VRFs"), false, "interfaces_vrf.php");
-$tab_array[] = array(gettext("vEthernet (KVM)"), false, "interfaces_vethernet.php");
+$tab_array[] = array(gettext("VLANs"), false, "vlan.php");
+$tab_array[] = array(gettext("Bridges"), false, "bridge.php");
+$tab_array[] = array(gettext("LAGGs"), true, "lagg.php");
+$tab_array[] = array(gettext("VRFs"), false, "vrf.php");
+$tab_array[] = array(gettext("vEthernet (KVM)"), false, "vethernet.php");
 display_top_tabs($tab_array);
 ?>
 
@@ -51,7 +51,7 @@ display_top_tabs($tab_array);
 </div>
 
 <nav class="action-buttons">
-	<a href="interfaces_lagg.php" role="button" class="btn btn-default btn-sm">
+	<a href="lagg.php" role="button" class="btn btn-default btn-sm">
 		<i class="fa-solid fa-rotate icon-embed-btn"></i>
 		<?=gettext("Refresh")?>
 	</a>
@@ -64,4 +64,4 @@ print_info_box(
 ?>
 </div>
 
-<?php require_once(__DIR__ . '/includes/foot.inc'); ?>
+<?php require_once(__DIR__ . '/../includes/foot.inc'); ?>
