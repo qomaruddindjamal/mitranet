@@ -320,6 +320,9 @@ $current_tab = $_GET['tab'] ?? 'interface';
 				<li class="<?=($current_tab === 'vlan') ? 'active' : ''?>">
 					<a href="vlan.php">VLAN</a>
 				</li>
+				<li class="<?=($current_tab === 'bridge') ? 'active' : ''?>">
+					<a href="bridge.php">Bridge</a>
+				</li>
 				<li class="<?=($current_tab === 'vxlan') ? 'active' : ''?>">
 					<a href="interfaces.php?tab=vxlan">VXLAN</a>
 				</li>
@@ -335,8 +338,11 @@ $current_tab = $_GET['tab'] ?? 'interface';
 				<li class="<?=($current_tab === 'bonding') ? 'active' : ''?>">
 					<a href="lagg.php">Bonding</a>
 				</li>
-				<li class="<?=($current_tab === 'lte') ? 'active' : ''?>">
-					<a href="interfaces.php?tab=lte">LTE</a>
+				<li class="<?=($current_tab === 'vether') ? 'active' : ''?>">
+					<a href="vethernet.php">vEther</a>
+				</li>
+				<li class="<?=($current_tab === 'vether_tunnel') ? 'active' : ''?>">
+					<a href="interfaces.php?tab=vether_tunnel">vEther Tunnel</a>
 				</li>
 			</ul>
 		</div>
@@ -507,9 +513,11 @@ $current_tab = $_GET['tab'] ?? 'interface';
                         <option value="vlan">VLAN Interface</option>
                         <option value="bridge">Bridge Interface</option>
                         <option value="bonding">Bonding / LAGG</option>
+                        <option value="vether">vEthernet (KVM / Host-Guest)</option>
                         <option value="vxlan">VXLAN Tunnel</option>
                         <option value="gre">GRE Tunnel</option>
                         <option value="iptunnel">IP Tunnel (IPIP)</option>
+                        <option value="eoip">EoIP Tunnel</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -600,6 +608,7 @@ function createInterface() {
     if (type === 'vlan') location.href = 'vlan.php';
     else if (type === 'bridge') location.href = 'bridge.php';
     else if (type === 'bonding') location.href = 'lagg.php';
+    else if (type === 'vether') location.href = 'vethernet.php';
     else alert('Konfigurasi tipe ' + type + ' dapat dilakukan di tab masing-masing.');
 }
 </script>
