@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /*
  * vpn_wg_tunnels_edit.php - MitraNet WireGuard Edit / Add Tunnel
  * Faithful port from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
@@ -173,7 +173,7 @@ display_top_tabs($tab_array, false, 'pills');
         </div>
     </div>
 
-    <div class="col-sm-10 col-sm-offset-2" style="margin-bottom: 20px;">
+    <div class="col-sm-10 col-sm-offset-2 save-row-20">
         <button class="btn btn-primary" type="submit" value="Save"><i class="fa-solid fa-save icon-embed-btn"></i> <?=($is_edit ? "Update Tunnel" : "Save Tunnel")?></button>
         <a href="vpn_wg_tunnels.php" class="btn btn-default"><i class="fa-solid fa-times"></i> Cancel</a>
     </div>

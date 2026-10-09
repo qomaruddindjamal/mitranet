@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /*
  * interfaces_vethernet.php - MitraNet Virtual Ethernet (vEthernet / Host-Guest Subnets)
  * Dedicated virtual interfaces for Single NIC VPS / KVM guest routing & port forwarding
@@ -98,7 +98,7 @@ if (!empty($err)) {
 							<td>
 								<?php if (!empty($v['members'])): ?>
 									<?php foreach ($v['members'] as $m): ?>
-										<span class="label label-default" style="margin-right: 3px;"><i class="fa-solid fa-network-wired"></i> <?=htmlspecialchars($m)?></span>
+										<span class="label label-default mr-1"><i class="fa-solid fa-network-wired"></i> <?=htmlspecialchars($m)?></span>
 									<?php endforeach; ?>
 								<?php else: ?>
 									<span class="text-muted">Tidak ada member aktif</span>
@@ -106,7 +106,7 @@ if (!empty($err)) {
 							</td>
 							<td><?=htmlspecialchars($v['description'] ?? '-')?></td>
 							<td>
-								<form method="post" style="display:inline;" onsubmit="return confirm('Hapus interface vEthernet ini?');">
+								<form method="post" class="form-inline-action" onsubmit="return confirm('Hapus interface vEthernet ini?');">
 									<input type="hidden" name="action" value="delete">
 									<input type="hidden" name="name" value="<?=htmlspecialchars($v['name'])?>">
 									<button type="submit" class="btn btn-xs btn-danger" title="<?=gettext('Delete vEthernet')?>"><i class="fa-solid fa-trash-can"></i> Hapus</button>

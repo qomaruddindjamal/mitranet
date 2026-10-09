@@ -4,7 +4,7 @@
  * Adapted from pfSense firewall_rules.php
  */
 
-$pgtitle = "Firewall: Rules";
+$pgtitle = array(gettext("Firewall"), gettext("Rules"));
 $selected_menu = "firewall";
 require_once(__DIR__ . '/includes/head.inc');
 
@@ -61,22 +61,26 @@ $fw = MitraNetApi::getFirewall();
 $status = $fw['status'] ?? [];
 $running_rules = $fw['config']['rules'] ?? [];
 $candidate_rules = $fw['candidate']['rules'] ?? [];
+
+$tab_array = array();
+$tab_array[] = array(gettext("Floating"), false, "firewall_rules.php?if=floating");
+$tab_array[] = array(gettext("WAN (enp0s3)"), false, "firewall_rules.php?if=wan");
+$tab_array[] = array(gettext("LAN (enp0s8)"), true, "firewall_rules.php?if=lan");
+display_top_tabs($tab_array);
+
+if (!empty($msg)) {
+    print_info_box($msg, "success");
+}
+if (!empty($err)) {
+    print_info_box($err, "danger");
+}
 ?>
 
-<h2>Firewall Rules (nftables)</h2>
-
-<?php if (!empty($msg)): ?>
-	<div class="alert alert-success"><?=htmlspecialchars($msg)?></div>
-<?php endif; ?>
-<?php if (!empty($err)): ?>
-	<div class="alert alert-danger"><?=htmlspecialchars($err)?></div>
-<?php endif; ?>
-
 <!-- Status & Base Policies -->
-<div class="panel panel-default">
-	<div class="panel-heading"><h3 class="panel-title"><i class="fa fa-shield-alt"></i> Engine Status & Base Policies</h3></div>
+<div class="panel panel-default panel-mitranet">
+	<div class="panel-heading"><h2 class="panel-title"><?=gettext("Firewall Rules (nftables Engine)")?></h2></div>
 	<div class="panel-body">
-		<div class="row">
+		<div class="row status-policy-row">
 			<div class="col-md-3"><strong>Status:</strong> <span class="label label-success"><?=strtoupper($status['status'] ?? 'ACTIVE')?></span></div>
 			<div class="col-md-3"><strong>Input Policy:</strong> <code><?=htmlspecialchars($status['input_policy'] ?? 'drop')?></code></div>
 			<div class="col-md-3"><strong>Forward Policy:</strong> <code><?=htmlspecialchars($status['forward_policy'] ?? 'drop')?></code></div>
@@ -86,7 +90,7 @@ $candidate_rules = $fw['candidate']['rules'] ?? [];
 </div>
 
 <!-- Running Ruleset -->
-<div class="panel panel-default">
+<div class="panel panel-default panel-mitranet">
 	<div class="panel-heading"><h3 class="panel-title"><i class="fa fa-list"></i> Active / Running Filter Rules</h3></div>
 	<div class="panel-body">
 		<table class="table table-striped table-hover">
@@ -121,15 +125,15 @@ $candidate_rules = $fw['candidate']['rules'] ?? [];
 </div>
 
 <!-- Candidate Ruleset & Management -->
-<div class="panel panel-info">
+<div class="panel panel-default panel-mitranet">
 	<div class="panel-heading">
 		<div class="pull-right">
-			<form method="post" style="display:inline;">
+			<form method="post" class="form-inline-action">
 				<input type="hidden" name="action" value="apply">
 				<button type="submit" class="btn btn-sm btn-success"><i class="fa fa-check"></i> Apply Candidate Changes</button>
 			</form>
 		</div>
-		<h3 class="panel-title"><i class="fa fa-edit"></i> Candidate Configuration & New Rules</h3>
+		<h3 class="panel-title"><i class="fa fa-edit"></i> Candidate Configuration &amp; New Rules</h3>
 	</div>
 	<div class="panel-body">
 		<table class="table table-striped">
@@ -156,7 +160,7 @@ $candidate_rules = $fw['candidate']['rules'] ?? [];
 						<td><?=htmlspecialchars($r['destination'] ?? 'any')?></td>
 						<td><?=htmlspecialchars($r['priority'] ?? 100)?></td>
 						<td>
-							<form method="post" style="display:inline;">
+							<form method="post" class="form-inline-action">
 								<input type="hidden" name="action" value="delete">
 								<input type="hidden" name="id" value="<?=htmlspecialchars($r['id'])?>">
 								<button type="submit" class="btn btn-xs btn-danger"><i class="fa fa-trash"></i></button>
@@ -194,7 +198,7 @@ $candidate_rules = $fw['candidate']['rules'] ?? [];
 			</div>
 			<div class="form-group">
 				<label>Priority</label>
-				<input type="number" name="priority" class="form-control" value="200" style="width: 80px;">
+				<input type="number" name="priority" class="form-control col-w-80" value="200">
 			</div>
 			<button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i> Add Rule</button>
 		</form>

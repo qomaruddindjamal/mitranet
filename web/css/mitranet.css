@@ -7,12 +7,13 @@
 @import url("/vendor/jquery-ui/jquery-ui-1.13.2.min.css");
 
 /*
- * pfSense.css
+ * mitranet-base.css
  *
- * part of pfSense (https://www.pfsense.org)
+ * Base styles adapted for MitraNet Linux Appliance
+ * Originally derived from pfSense (https://www.pfsense.org)
  * Copyright (c) 2016 Electric Sheep Fencing
  * Copyright (c) 2016-2026 Rubicon Communications, LLC (Netgate)
- * All rights reserved.
+ * Adapted for MitraNet Rinjani 1.0.2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -725,7 +726,7 @@ footer a {
     color: #e0e0e0;
 }
 
-/* All pfSense textareas benefit from using a fixed width font **/
+/* All MitraNet textareas benefit from using a fixed width font */
 textarea
 {
     font-family: monospace;
@@ -1084,7 +1085,7 @@ text underline, but text-color, background, font etc. could also be used */
    ======================================================= */
 
 /* ==========================================================================
-   pfSense Modern & Elegant MikroTik-Style Drop-Right Layout & Fixed Footer
+   MitraNet Modern & Elegant Drop-Right Sidebar Layout & Fixed Footer
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -1359,7 +1360,7 @@ body.sidebar-collapsed #topmenu .navbar-brand svg#logo {
 }
 
 /* --------------------------------------------------------------------------
-   3. LEFT SIDEBAR NAVIGATION (#pf-sidebar) - MIKROTIK STYLE
+   3. LEFT SIDEBAR NAVIGATION (#pf-sidebar)
    -------------------------------------------------------------------------- */
 #pf-sidebar {
     position: fixed;
@@ -1427,7 +1428,7 @@ body.sidebar-collapsed #topmenu .navbar-brand svg#logo {
     padding: 4px 0 16px 0;
 }
 
-/* MikroTik Row Item */
+/* Sidebar Row Item */
 .sidebar-item {
     position: relative;
     margin: 1px 6px;
@@ -1502,7 +1503,7 @@ body.sidebar-collapsed #topmenu .navbar-brand svg#logo {
     text-overflow: ellipsis;
 }
 
-/* MikroTik right caret */
+/* Sidebar right caret (expand indicator) */
 .sidebar-arrow {
     font-size: 11px;
     color: #5d6778;
@@ -1517,7 +1518,7 @@ body.sidebar-collapsed #topmenu .navbar-brand svg#logo {
     color: #ffffff;
 }
 
-/* Active or Pinned State (MikroTik style) */
+/* Active or Pinned State */
 .sidebar-item.active > .sidebar-link {
     color: #ffffff;
     background-color: #262c3a;
@@ -1532,7 +1533,7 @@ body.sidebar-collapsed #topmenu .navbar-brand svg#logo {
 }
 
 /* --------------------------------------------------------------------------
-   4. MIKROTIK DROP-RIGHT SUBMENU PANEL (DESKTOP)
+   4. SIDEBAR DROP-RIGHT SUBMENU PANEL (DESKTOP)
    -------------------------------------------------------------------------- */
 @media (min-width: 992px) {
     .sidebar-flyout {
@@ -1606,7 +1607,7 @@ body.sidebar-collapsed #topmenu .navbar-brand svg#logo {
         text-overflow: ellipsis;
     }
 
-    /* MikroTik signature blue hover */
+    /* MitraNet signature blue hover */
     .sidebar-submenu li a:hover {
         color: #ffffff !important;
         background-color: var(--pf-accent-blue) !important;
@@ -2855,5 +2856,812 @@ body.sidebar-collapsed #pf-main-content {
     margin-bottom: 0 !important;
 }
 
+/* ==========================================================================
+   MitraNet Utility Classes — Replaces all inline style= attributes
+   ========================================================================== */
+
+/* Display helpers */
+.d-inline        { display: inline !important; }
+.d-inline-block  { display: inline-block !important; }
+.d-none          { display: none !important; }
+
+/* Margin/Padding spacing utilities */
+.mb-10  { margin-bottom: 10px !important; }
+.mb-15  { margin-bottom: 15px !important; }
+.mb-20  { margin-bottom: 20px !important; }
+.mb-25  { margin-bottom: 25px !important; }
+.mt-5   { margin-top: 5px !important; }
+.mt-8   { margin-top: 8px !important; }
+.mt-10  { margin-top: 10px !important; }
+.pt-5   { padding-top: 5px !important; }
+.pt-24  { padding-top: 24px !important; }
+.p-20   { padding: 20px !important; }
+
+/* Font size helpers */
+.fs-11  { font-size: 11px !important; }
+.fs-12  { font-size: 12px !important; }
+.fs-13  { font-size: 13px !important; }
+.fs-085 { font-size: 0.85em !important; }
+.fs-080 { font-size: 0.80em !important; }
+.fs-075 { font-size: 0.75em !important; }
+.fs-09  { font-size: 0.9em !important; }
+
+/* Font helpers */
+.font-mono { font-family: monospace !important; }
+.font-mono-sm { font-family: monospace; font-size: 0.85em !important; }
+
+/* Text color */
+.text-dark-primary { color: #1e293b !important; }
+.text-muted-sm { font-size: 0.75em; margin: 2px 0 0; }
+
+/* Cursor */
+.cursor-pointer { cursor: pointer !important; }
+
+/* Table column widths — replaces width: Xpx on <th> */
+.col-w-20  { width: 20px !important; }
+.col-w-24  { width: 24px !important; }
+.col-w-30  { width: 30px !important; }
+.col-w-35  { width: 35% !important; }
+.col-w-80  { width: 80px !important; }
+.col-w-120 { width: 120px !important; }
+.col-w-140 { width: 140px !important; }
+.th-center { text-align: center !important; }
+.td-nowrap { white-space: nowrap !important; }
+.td-center { text-align: center !important; }
+.td-bold   { font-weight: bold !important; }
+
+/* Badge variants */
+.badge-sfp {
+    background-color: #f39c12;
+    font-size: 10px;
+    margin-left: 4px;
+}
+.badge-label-lg {
+    font-size: 13px !important;
+}
+
+/* Form inline button groups — replaces style="display:inline;" on <form> */
+.form-inline-action {
+    display: inline !important;
+}
+
+/* Pre scroll containers — replaces style="max-height: 400px; overflow-y: auto;" */
+.pre-scroll-400 {
+    max-height: 400px;
+    overflow-y: auto;
+}
+.pre-scroll-450 {
+    max-height: 450px;
+    overflow-y: auto;
+}
+
+/* WireGuard QR modal helpers */
+.qr-loading-box {
+    padding: 30px;
+    text-align: center;
+}
+.qr-loading-box p {
+    margin-top: 10px;
+}
+.qr-svg-box {
+    background: #ffffff;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    display: inline-block;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    width: 220px;
+    height: 220px;
+}
+.qr-caption {
+    margin-top: 8px;
+    font-size: 0.85em;
+}
+.qr-config-label {
+    font-size: 0.85em;
+}
+.qr-config-textarea {
+    font-family: monospace;
+    font-size: 0.8em;
+}
+.qr-no-data {
+    color: #dc3545;
+    padding-top: 70px;
+    text-align: center;
+}
+.qr-form-group {
+    margin-bottom: 10px;
+}
+.qr-col-right {
+    padding-top: 5px;
+    text-align: right;
+}
+.qr-private-warning {
+    font-size: 0.8em;
+    padding: 6px 10px;
+    margin-bottom: 10px;
+}
+.qr-col-mb {
+    margin-bottom: 15px;
+}
+.qr-mt {
+    margin-top: 5px;
+}
+
+/* Panel footer variation */
+.panel-footer-muted {
+    font-size: 0.9em;
+    background-color: #fcfcfc;
+    color: #6c757d;
+}
+
+/* Form group tweaks inside modals/wells */
+.well-config {
+    margin-left: 15px;
+    margin-right: 15px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+/* Save button row offset */
+.save-row {
+    margin-bottom: 25px;
+}
+.save-row-20 {
+    margin-bottom: 20px;
+}
+
+/* Action toolbar form margin */
+.form-toolbar-mt {
+    margin-top: 8px;
+}
+
+/* Table in speedtest/tools pages */
+.speedtest-header-row {
+    margin-bottom: 20px;
+}
+.speedtest-col-btn {
+    padding-top: 24px;
+}
+.speedtest-col-center {
+    text-align: center;
+    margin-bottom: 15px;
+}
+.td-empty-muted {
+    padding: 20px;
+    font-style: italic;
+    text-align: center;
+    color: #6c757d;
+}
+
+/* Panel margin-top override for inline panels */
+.panel-mt-10 {
+    margin-top: 10px !important;
+}
+
+/* Firewall/policy status row */
+.status-policy-row {
+    padding: 12px 16px;
+}
+
+/* WireGuard peer table monospace key column */
+.td-pubkey {
+    font-family: monospace;
+    font-size: 0.85em;
+    cursor: pointer;
+    word-break: break-all;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* WG status tree table */
+.table-overflow-visible {
+    overflow-x: visible !important;
+}
+
+/* Bootstrap 3 spacing helpers not included natively */
+.mr-1 { margin-right: 4px !important; }
+.mr-2 { margin-right: 8px !important; }
+.ml-1 { margin-left: 4px !important; }
+.ml-2 { margin-left: 8px !important; }
+
+/* ==========================================================================
+   services_virtual.php — KVM / aaPanel / VNC Console Classes
+   ========================================================================== */
+
+/* Spacing additions */
+.mt-15  { margin-top: 15px !important; }
+.mb-15  { margin-bottom: 15px !important; }
+.fs-13  { font-size: 13px !important; }
+.fw-bold { font-weight: bold !important; }
+.d-inline-block { display: inline-block !important; }
+
+/* aaPanel Credentials Card */
+.panel-creds-card {
+    border-width: 2px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.panel-heading-teal {
+    background: linear-gradient(135deg, #17a2b8 0%, #117a8b 100%);
+    color: #fff;
+    padding: 12px 18px;
+}
+.panel-heading-teal .panel-title { color: #fff; }
+
+.panel-title-lg {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.btn-aapanel-open {
+    font-weight: 600;
+    color: #117a8b !important;
+    background: #fff !important;
+    border: none !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.panel-body-clean {
+    background-color: #fcfdfe;
+    padding: 20px;
+}
+
+/* Flex layout helper — replaces display:flex; justify-content:space-between */
+.d-flex-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.d-flex-gap {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Form field labels */
+.field-label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+    display: block;
+}
+
+/* Readonly input — monospace URL / credentials */
+.input-mono-link {
+    background-color: #fff !important;
+    font-family: monospace;
+    font-size: 13px;
+    font-weight: bold;
+    color: #0275d8;
+}
+.input-mono-cred {
+    background-color: #fff !important;
+    font-family: monospace;
+    font-size: 14px;
+    font-weight: bold;
+}
+.input-pass-spaced {
+    letter-spacing: 1px;
+}
+
+/* ISO badge with primary color */
+.badge-primary {
+    background-color: #337ab7;
+}
+
+/* VNC Console Panel */
+.vnc-eject-bar {
+    background: #2a3b4c;
+    border-bottom: 1px solid #1a2733;
+    padding: 8px 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.vnc-eject-info {
+    color: #cee5fd;
+    font-size: 12px;
+}
+.vnc-panel-body {
+    padding: 10px 15px;
+    background: #222;
+    color: #fff;
+}
+.vnc-info-bar {
+    font-size: 13px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.vnc-hint-text {
+    margin-left: 10px;
+    color: #bbb;
+}
+.vnc-frame-wrap {
+    border: 2px solid #444;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #000;
+    text-align: center;
+}
+.vnc-iframe {
+    width: 100%;
+    height: 620px;
+    border: none;
+    display: block;
+}
+
+/* ==========================================================================
+   pkg_mgr.php / status_services / firewall_nat — Shared Utility Classes
+   ========================================================================== */
+
+/* Progress bar inline helpers */
+.progress-inline {
+    display: inline-block;
+    width: 100%;
+    margin-bottom: 0;
+}
+
+/* Status badge colors */
+.badge-running  { background-color: #5cb85c; }
+.badge-stopped  { background-color: #d9534f; }
+.badge-warning  { background-color: #f0ad4e; }
+
+/* Log output pre */
+.pre-log {
+    max-height: 350px;
+    overflow-y: auto;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    font-size: 12px;
+    border-radius: 4px;
+    padding: 10px;
+    font-family: monospace;
+}
+
+/* NAT rule table helpers */
+.td-nat-port { width: 80px; }
+.td-nat-proto { width: 60px; }
+.td-nat-actions { width: 100px; text-align: right; }
+
+/* Interfaces page */
+.iface-status-bar {
+    padding: 6px 12px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+}
+
+/* diag pages */
+.diag-output {
+    font-family: monospace;
+    font-size: 12px;
+    background: #0d1117;
+    color: #c9d1d9;
+    padding: 12px;
+    border-radius: 4px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+/* system.php / register */
+.system-info-row {
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+.system-info-label {
+    font-weight: 600;
+    color: #555;
+}
+
+/* ==========================================================================
+   Remaining page utility classes
+   ========================================================================== */
+
+/* Margin/padding additions */
+.mb-5  { margin-bottom: 5px !important; }
+.pt-5  { padding-top: 5px !important; }
+
+/* pkg_mgr.php - package listing */
+.pkg-tag {
+    display: inline-block;
+    margin: 3px 4px;
+    font-size: 12px;
+}
+.pkg-dep-tag {
+    display: inline-block;
+    margin: 1px;
+}
+.table-vmid {
+    vertical-align: middle;
+}
+
+/* Minimum-width columns (pkg table) */
+.col-minw-130 { min-width: 130px; }
+.col-minw-140 { min-width: 140px; }
+.col-minw-180 { min-width: 180px; }
+.col-minw-220 { min-width: 220px; }
+
+/* Accessibility: screen-reader only (replaces style="display:none" on status spans) */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    border: 0;
+}
+
+/* firewall NAT: small width inputs */
+.input-sm-w90 {
+    width: 90px !important;
+    display: inline-block;
+}
+
+/* interfaces.php: IP label block */
+.mb-5 { margin-bottom: 5px !important; }
+
+/* ==========================================================================
+   Final batch — VM dashboard, terminal, log viewer, diag, kvm
+   ========================================================================== */
+
+/* Spacing helpers */
+.mt-5   { margin-top:    5px  !important; }
+.mt-10  { margin-top:    10px !important; }
+.mt-25  { margin-top:    25px !important; }
+.mb-0   { margin-bottom: 0    !important; }
+.mb-8   { margin-bottom: 8px  !important; }
+.mb-20  { margin-bottom: 20px !important; }
+.mb-25  { margin-bottom: 25px !important; }
+.mb-10  { margin-bottom: 10px !important; }
+.pt-7   { padding-top:   7px  !important; }
+.fs-10  { font-size:     10px !important; }
+.fs-11  { font-size:     11px !important; }
+.fs-12  { font-size:     12px !important; }
+
+/* VM table column widths */
+.col-w-18  { width: 18%; }
+.col-w-20  { width: 20%; }
+.col-w-22  { width: 22%; }
+.col-w-35  { width: 35%; }
+.td-nowrap { white-space: nowrap; }
+
+/* VM row meta info */
+.vm-meta-muted { font-size: 11px; color: #777; margin-top: 3px; }
+.vm-meta-ok    { font-size: 11px; color: #28a745; margin-top: 2px; }
+.vm-meta-sub   { font-size: 11px; color: #666; margin-top: 4px; }
+.vm-meta-row   { font-size: 11px; margin-top: 2px; }
+.vm-meta-iso   { font-size: 10px; color: #888; margin-top: 2px; }
+
+/* VM resource badges */
+.badge-info-alt { background-color: #5bc0de; }
+.badge-warn-alt { background-color: #f0ad4e; }
+
+/* VM status labels (large) */
+.label-status {
+    font-size: 12px;
+    padding: 4px 8px;
+}
+.label-status-lg {
+    font-size: 13px;
+    padding: 6px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.label-status-off {
+    background-color: #777;
+}
+
+/* services_kvm.php */
+.pt-7 { padding-top: 7px !important; }
+.mb-8 { margin-bottom: 8px !important; }
+.ul-compact {
+    padding-left: 18px;
+    margin-bottom: 0;
+}
+
+/* Log viewer panel (status_logs.php) */
+.log-panel-body {
+    background-color: #1a1a1a;
+    color: #00ff00;
+    font-family: monospace;
+    max-height: 500px;
+    overflow-y: scroll;
+    padding: 15px;
+}
+
+/* Terminal output (diag_ping, diag_traceroute) */
+.pre-terminal {
+    background: #222;
+    color: #00ff66;
+    padding: 15px;
+    border-radius: 4px;
+    font-family: monospace;
+    max-height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+}
+.pre-log-green {
+    background: #1e1e1e;
+    color: #00ff66;
+    padding: 15px;
+    border-radius: 4px;
+    font-family: monospace;
+    max-height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+}
+
+/* Terminal panel (diag_terminal.php) */
+.terminal-title {
+    color: #7ee787;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+.terminal-hint {
+    color: #8b949e;
+    margin-bottom: 12px;
+}
+
+/* diag_command.php */
+.input-cmd-wide {
+    max-width: 600px;
+    margin-bottom: 12px;
+}
+.textarea-mono {
+    max-width: 800px;
+    font-family: monospace;
+}
+
+/* diag_edit.php */
+.input-gotoline {
+    padding: 3px 0;
+    width: 60px;
+}
+.file-browser-panel {
+    display: none;
+    border: 1px dashed #999;
+    width: 98%;
+    padding: 10px;
+}
+.editor-textarea {
+    line-height: 18px;
+}
+
+/* status_monitoring.php: hidden chart error (modern hidden attr) */
+
+/* pkg_mgr_installed.php legend bar */
+.legend-bar {
+    padding: 10px;
+    font-size: 12px;
+}
+
+/* services_dhcp_settings.php badge ON */
+.badge-on-xs {
+    background-color: #5cb85c;
+    font-size: 9px;
+}
+
+/* vpn_wg_peers.php - QR code unavailable state */
+.qr-unavailable {
+    padding-top: 70px;
+    text-align: center;
+}
 
 
+
+
+
+
+/* ==========================================================================
+   head.inc — sidebar brand icon & logo fallback (migrated from inline)
+   ========================================================================== */
+
+/* Sidebar brand shield icon */
+.sidebar-brand-icon {
+    color: #337ab7;
+    margin-right: 8px;
+}
+
+/* Logo fallback (when logo.svg is not found) */
+.logo-fallback-text {
+    font-weight: 900;
+    font-size: 22px;
+    color: #fff;
+}
+.logo-fallback-accent {
+    color: #00bcd4;
+}
+
+
+/* ==========================================================================
+   interfaces_assign.php — separated IPv4 / IPv6 / RX / TX columns
+   ========================================================================== */
+
+/* IP label badges in table — display block for stacking */
+.iface-ip-label {
+    display: inline-block;
+    margin-bottom: 2px;
+    font-size: 11px;
+    font-family: 'Roboto Mono', 'Courier New', monospace;
+    letter-spacing: 0.02em;
+}
+
+/* Traffic cells — centered, no-wrap */
+.iface-traffic-cell {
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+/* RX traffic badge — green tint */
+.badge-traffic {
+    display: inline-block;
+    padding: 2px 7px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 10px;
+    background-color: #1a472a;
+    color: #68d391;
+    font-family: 'Roboto Mono', 'Courier New', monospace;
+    letter-spacing: 0.03em;
+}
+
+/* TX traffic badge — amber/orange tint */
+.badge-traffic.badge-traffic-tx {
+    background-color: #422006;
+    color: #f6ad55;
+}
+
+/* Compact column widths for 10-col layout */
+.table-condensed td.iface-traffic-cell {
+    width: 70px;
+    min-width: 60px;
+}
+
+/* ==========================================================================
+   interfaces_assign.php — MikroTik-style interface list (redesign)
+   ========================================================================== */
+
+/* Table layout */
+.iface-assign-table {
+    table-layout: auto;
+    font-size: 12.5px;
+}
+
+/* Row state coloring */
+.iface-row-up  > td:first-child { border-left: 3px solid #27ae60; }
+.iface-row-down > td:first-child { border-left: 3px solid #c0392b; }
+
+/* ----- Flag column ----- */
+.iface-col-flag {
+    width: 24px;
+    min-width: 24px;
+    text-align: center;
+    padding: 6px 4px !important;
+}
+
+.iface-flag {
+    display: inline-block;
+    font-size: 10px;
+}
+.iface-flag-up         { color: #2ecc71; }
+.iface-flag-nocarrier  { color: #f39c12; }
+.iface-flag-down       { color: #555e6e; }
+
+/* ----- Name column ----- */
+.iface-col-name {
+    min-width: 120px;
+}
+
+.iface-name-link {
+    text-decoration: none !important;
+    color: inherit;
+}
+.iface-name-link:hover strong {
+    color: var(--pf-accent-blue, #337ab7);
+}
+
+/* ----- Type column ----- */
+.iface-col-type {
+    width: 80px;
+    min-width: 70px;
+}
+
+/* ----- MAC column ----- */
+.iface-col-mac {
+    width: 140px;
+    min-width: 120px;
+}
+
+.iface-mac {
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: #8899aa;
+}
+
+/* ----- MTU column ----- */
+.iface-col-mtu {
+    width: 55px;
+    min-width: 50px;
+    text-align: center;
+}
+
+/* ----- IP columns ----- */
+.iface-col-ip {
+    min-width: 130px;
+}
+
+/* ----- Traffic byte columns ----- */
+.iface-col-traffic {
+    width: 85px;
+    min-width: 75px;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+/* ----- Packet count columns ----- */
+.iface-col-pkts {
+    width: 70px;
+    min-width: 60px;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+/* ----- Actions column ----- */
+.iface-col-actions {
+    width: 80px;
+    min-width: 75px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* Packet badge — RX (green) */
+.badge-pkts {
+    display: inline-block;
+    padding: 2px 6px;
+    font-size: 10.5px;
+    font-weight: 600;
+    border-radius: 9px;
+    background-color: #1b3a2c;
+    color: #48bb78;
+    font-family: 'Roboto Mono', 'Courier New', monospace;
+}
+
+/* Packet badge — TX (orange) */
+.badge-pkts.badge-pkts-tx {
+    background-color: #3d1f08;
+    color: #ed8936;
+}
+
+/* Auto-refresh countdown badge (interfaces_assign.php) */
+.iface-refresh-badge {
+    background-color: #1a2d45;
+    color: #7fb3e0;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-family: 'Roboto Mono', monospace;
+    transition: background-color 0.3s, color 0.3s;
+}
+.iface-refresh-badge-urgent {
+    background-color: #4a1010;
+    color: #ff6b6b;
+    animation: iface-pulse 0.6s ease-in-out infinite alternate;
+}
+@keyframes iface-pulse {
+    from { opacity: 1; }
+    to   { opacity: 0.55; }
+}

@@ -196,6 +196,14 @@ class MitraNetApi {
         return self::request('/system/update', 'POST', ['hostname' => $hostname]);
     }
 
+    public static function systemReboot() {
+        return self::request('/system/reboot', 'POST', []);
+    }
+
+    public static function systemHalt() {
+        return self::request('/system/halt', 'POST', []);
+    }
+
     public static function updateSystemSettings($data) {
         return self::request('/system/update', 'POST', $data);
     }
@@ -341,7 +349,16 @@ class MitraNetApi {
 
     public static function getKvmData() {
         $res = self::request('/services/kvm');
-        return $res['status'] === 200 ? ($res['data'] ?? ['vms' => [], 'isos' => []]) : ['vms' => [], 'isos' => []];
+        return $res['status'] === 200 ? ($res['data'] ?? ['enabled' => false, 'vms' => [], 'isos' => []]) : ['enabled' => false, 'vms' => [], 'isos' => []];
+    }
+
+    public static function isKvmEnabled() {
+        $data = self::getKvmData();
+        return !empty($data['enabled']);
+    }
+
+    public static function toggleKvmService($enabled) {
+        return self::request('/services/kvm/toggle', 'POST', ['enabled' => (bool)$enabled]);
     }
 
     public static function getKvmVms() {

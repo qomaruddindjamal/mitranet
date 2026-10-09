@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /*
  * vpn_wg_peers_edit.php - MitraNet WireGuard Edit / Add Peer
  * Faithful port from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
@@ -156,15 +156,15 @@ display_top_tabs($tab_array, false, 'pills');
             </div>
 
             <!-- Client Generator Helper Banner -->
-            <div class="well well-sm" style="margin-left: 15px; margin-right: 15px; background: #f8fafc; border: 1px solid #e2e8f0;">
+            <div class="well well-sm well-config">
                 <div class="row">
                     <div class="col-sm-9">
-                        <strong style="color: #1e293b;"><i class="fa-solid fa-mobile-screen"></i> Client Setup Helper (Smartphone / Laptop / Device):</strong>
-                        <p style="margin: 3px 0 0; font-size: 0.85em; color: #64748b;">
+                        <strong class="text-dark-primary"><i class="fa-solid fa-mobile-screen"></i> Client Setup Helper (Smartphone / Laptop / Device):</strong>
+                        <p class="fs-085 text-muted mt-5">
                             Jika peer ini adalah perangkat client (HP/Laptop), klik tombol di samping untuk otomatis menghasilkan pasangan kunci client. Kunci pribadi client akan disimpan untuk membuat QR code siap scan.
                         </p>
                     </div>
-                    <div class="col-sm-3 text-right" style="padding-top: 5px;">
+                    <div class="col-sm-3 text-right qr-col-right">
                         <button class="btn btn-info btn-sm" type="button" id="btn-genclient"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate Client Keys</button>
                     </div>
                 </div>
@@ -241,7 +241,7 @@ display_top_tabs($tab_array, false, 'pills');
         </div>
     </div>
 
-    <div class="col-sm-10 col-sm-offset-2" style="margin-bottom: 20px;">
+    <div class="col-sm-10 col-sm-offset-2 save-row-20">
         <button class="btn btn-primary" type="submit" value="Save"><i class="fa-solid fa-save icon-embed-btn"></i> <?=($is_edit ? "Update Peer" : "Save Peer")?></button>
         <a href="vpn_wg_peers.php" class="btn btn-default"><i class="fa-solid fa-times"></i> Cancel</a>
     </div>

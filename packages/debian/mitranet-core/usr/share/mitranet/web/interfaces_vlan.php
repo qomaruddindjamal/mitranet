@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /*
  * interfaces_vlan.php - MitraNet 802.1Q VLAN Interfaces
  * Adapted from pfSense interfaces_vlan.php
@@ -86,7 +86,7 @@ if (!empty($err)) {
 							<td><span class="label label-info"><?=htmlspecialchars($v['vlan_id'])?></span></td>
 							<td><?=htmlspecialchars($v['description'] ?? '')?></td>
 							<td>
-								<form method="post" style="display:inline;">
+								<form method="post" class="form-inline-action">
 									<input type="hidden" name="action" value="delete">
 									<input type="hidden" name="name" value="<?=htmlspecialchars($v['name'])?>">
 									<button type="submit" class="btn btn-xs btn-danger" title="<?=gettext('Delete VLAN')?>"><i class="fa-solid fa-trash-can"></i></button>

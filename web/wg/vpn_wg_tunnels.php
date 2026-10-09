@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /*
  * vpn_wg_tunnels.php - MitraNet WireGuard Tunnels
  * Faithful port from pfSense /wg/vpn_wg_tunnels.php
@@ -72,12 +72,12 @@ display_top_tabs($tab_array, false, 'pills');
 					<th>Listen Port</th>
 					<th>Public Key</th>
 					<th>Peers</th>
-					<th style="width: 120px; text-align: center;">Actions</th>
+					<th class="col-w-120 th-center">Actions</th>
 				</tr>
 			</thead>
 			<tbody>
 			<?php if (empty($tunnels)): ?>
-				<tr><td colspan="9" class="text-center text-muted" style="padding: 20px;">Belum ada tunnel WireGuard yang dikonfigurasi. Klik tombol "Add Tunnel" di bawah untuk membuat.</td></tr>
+				<tr><td colspan="9" class="text-center text-muted td-empty-muted">Belum ada tunnel WireGuard yang dikonfigurasi. Klik tombol "Add Tunnel" di bawah untuk membuat.</td></tr>
 			<?php else: ?>
 				<?php foreach ($tunnels as $tun): ?>
 				<?php 
@@ -104,13 +104,13 @@ display_top_tabs($tab_array, false, 'pills');
 					<td><?=htmlspecialchars($tun['description'] ?? 'WireGuard Tunnel')?></td>
 					<td><code><?=htmlspecialchars($tun['address'] ?: '—')?></code></td>
 					<td><?=htmlspecialchars($tun['listen_port'] ?? '51820')?></td>
-					<td style="font-family:monospace;font-size:0.85em;cursor:pointer;"
+					<td class="td-pubkey"
 					    title="Klik untuk salin: <?=htmlspecialchars($tun['public_key'])?>"
 					    onclick="navigator.clipboard.writeText('<?=htmlspecialchars($tun['public_key'])?>');this.style.color='green';">
 						<?=htmlspecialchars(substr($tun['public_key'], 0, 16))?>...
 					</td>
 					<td><span class="badge"><?=count($tun['peers'] ?? [])?></span></td>
-					<td style="white-space:nowrap; text-align: center;">
+					<td class="td-nowrap td-center">
 						<a class="btn btn-xs btn-success" href="/wg/vpn_wg_peers_edit.php?tun=<?=urlencode($tname)?>" title="Add Peer to <?=htmlspecialchars($tname)?>"><i class="fa-solid fa-user-plus"></i></a>
 						<a class="btn btn-xs btn-primary" href="/wg/vpn_wg_tunnels_edit.php?tun=<?=urlencode($tname)?>" title="Edit Tunnel"><i class="fa-solid fa-pencil"></i></a>
 						<a class="btn btn-xs btn-danger" href="?act=delete&amp;tun=<?=urlencode($tname)?>"
@@ -123,7 +123,7 @@ display_top_tabs($tab_array, false, 'pills');
 			</tbody>
 		</table>
 	</div>
-	<div class="panel-footer text-muted" style="font-size: 0.9em; background-color: #fcfcfc;">
+	<div class="panel-footer text-muted panel-footer-muted">
 		<i class="fa-solid fa-circle-info text-info"></i> Layanan service daemon WireGuard (Start / Stop / Restart) dikelola secara terpusat di menu <a href="/status_services.php"><strong>Status: Services</strong></a>.
 	</div>
 </div>

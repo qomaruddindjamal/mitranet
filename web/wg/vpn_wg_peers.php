@@ -115,7 +115,7 @@ display_top_tabs($tab_array, false, 'pills');
 					<th>Allowed IPs</th>
 					<th>Endpoint</th>
 					<th>Last Handshake</th>
-					<th style="width: 140px;">Actions</th>
+					<th class="col-w-140">Actions</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -126,7 +126,7 @@ display_top_tabs($tab_array, false, 'pills');
 				<?php $pubkey_url = urlencode($p['public_key']); ?>
 				<tr ondblclick="document.location='vpn_wg_peers_edit.php?peer=<?=htmlspecialchars($pubkey_url)?>';">
 					<td><strong><?=htmlspecialchars($p['description'] ?? 'Peer')?></strong></td>
-					<td style="font-family:monospace;font-size:0.85em;cursor:pointer;"
+					<td class="td-pubkey"
 					    title="Klik untuk salin: <?=htmlspecialchars($p['public_key'])?>"
 					    onclick="navigator.clipboard.writeText('<?=htmlspecialchars($p['public_key'])?>');this.style.color='green';">
 						<?=htmlspecialchars(substr($p['public_key'], 0, 16))?>...
@@ -148,7 +148,7 @@ display_top_tabs($tab_array, false, 'pills');
 					}
 					?>
 					</td>
-					<td style="white-space:nowrap;">
+					<td class="td-nowrap">
 						<button class="btn btn-xs btn-info btn-show-qr" 
 						        type="button" 
 						        data-peer="<?=htmlspecialchars($p['public_key'])?>" 
@@ -187,42 +187,42 @@ display_top_tabs($tab_array, false, 'pills');
         <h4 class="modal-title" id="qrModalLabel"><i class="fa-solid fa-qrcode"></i> WireGuard Client Configuration &amp; QR Code</h4>
       </div>
       <div class="modal-body">
-        <div id="qrLoading" class="text-center" style="padding: 30px;">
+        <div id="qrLoading" class="qr-loading-box">
             <i class="fa-solid fa-spinner fa-spin fa-3x text-primary"></i>
-            <p style="margin-top: 10px;">Generating client configuration and QR code...</p>
+            <p>Generating client configuration and QR code...</p>
         </div>
 
-        <div id="qrContent" style="display: none;">
+        <div id="qrContent" class="d-none">
             <div class="row">
-                <div class="col-sm-6 text-center" style="margin-bottom: 15px;">
-                    <div id="qrSvgContainer" style="background: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #ddd; display: inline-block; box-shadow: 0 2px 8px rgba(0,0,0,0.08); width: 220px; height: 220px;">
+                <div class="col-sm-6 text-center qr-col-mb">
+                    <div id="qrSvgContainer" class="qr-svg-box">
                         <!-- SVG QR rendered here -->
                     </div>
-                    <p class="text-muted" style="margin-top: 8px; font-size: 0.85em;">
+                    <p class="text-muted qr-caption">
                         <i class="fa-solid fa-mobile-screen"></i> Scan menggunakan aplikasi WireGuard (iOS / Android)
                     </p>
                 </div>
                 <div class="col-sm-6">
-                    <div class="form-group" style="margin-bottom: 10px;">
-                        <label style="font-size: 0.85em;">Server Endpoint (IP / Host Publik)</label>
+                    <div class="form-group qr-form-group">
+                        <label class="qr-config-label">Server Endpoint (IP / Host Publik)</label>
                         <div class="input-group input-group-sm">
                             <input type="text" class="form-control" id="qrEndpointInput" placeholder="e.g. 103.93.162.168 or vpn.domain.com" />
                             <span class="input-group-btn">
                                 <button class="btn btn-default" type="button" id="btnUpdateEndpoint" title="Update QR Endpoint"><i class="fa-solid fa-rotate"></i></button>
                             </span>
                         </div>
-                        <span class="help-block" style="font-size: 0.75em; margin: 2px 0 0;">Ubah jika router berada di balik NAT publik atau DDNS.</span>
+                        <span class="help-block text-muted-sm">Ubah jika router berada di balik NAT publik atau DDNS.</span>
                     </div>
 
-                    <div id="privateKeyWarning" class="alert alert-warning" style="font-size: 0.8em; padding: 6px 10px; margin-bottom: 10px; display: none;">
+                    <div id="privateKeyWarning" class="alert alert-warning qr-private-warning d-none">
                         <i class="fa-solid fa-triangle-exclamation"></i> <strong>Perhatian:</strong> Private key client tidak tersimpan di router. Silakan masukkan private key client pada konfigurasi di bawah jika diperlukan.
                     </div>
                 </div>
             </div>
 
-            <div class="form-group" style="margin-top: 5px;">
-                <label style="font-size: 0.85em;">File Konfigurasi Client (<code>wg-client.conf</code>):</label>
-                <textarea class="form-control" id="qrConfigText" rows="7" style="font-family: monospace; font-size: 0.8em;" readonly></textarea>
+            <div class="form-group qr-mt">
+                <label class="qr-config-label">File Konfigurasi Client (<code>wg-client.conf</code>):</label>
+                <textarea class="form-control qr-config-textarea" id="qrConfigText" rows="7" readonly></textarea>
             </div>
         </div>
       </div>
@@ -269,7 +269,7 @@ $(document).ready(function() {
                     $('#qrSvgContainer').html(res.qr_svg);
                     $('#qrSvgContainer svg').css({width: '100%', height: '100%'});
                 } else {
-                    $('#qrSvgContainer').html('<div class="text-danger" style="padding-top:70px;">QR code tidak tersedia</div>');
+                    $('#qrSvgContainer').html('<div class="text-danger qr-unavailable">QR code tidak tersedia</div>');
                 }
                 $('#qrConfigText').val(res.config);
                 if (!endpointOverride && res.server_endpoint) {

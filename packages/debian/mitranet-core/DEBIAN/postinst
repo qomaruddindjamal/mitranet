@@ -3,13 +3,35 @@ set -e
 
 case "$1" in
     configure)
-        # Ensure directories exist with correct permissions
+        # =====================================================================
+        # 1. Ensure required runtime directories exist with correct permissions
+        # =====================================================================
         mkdir -p /var/log/mitranet /var/lib/mitranet /run/mitranet
+        mkdir -p /etc/mitranet/secrets /etc/mitranet/network /etc/mitranet/vms
         chmod 750 /var/log/mitranet /var/lib/mitranet
+        chmod 700 /etc/mitranet/secrets
 
-        # Register system identity if not present
+        # =====================================================================
+        # 2. Sync WebUI files from /usr/share/mitranet/web to /var/www/mitranet
+        #    Ensures ALL PHP pages are present in the active web root on install
+        # =====================================================================
+        WEB_SRC="/usr/share/mitranet/web"
+        WEB_DST="/var/www/mitranet"
+        if [ -d "$WEB_SRC" ]; then
+            mkdir -p "$WEB_DST"
+            cp -a "$WEB_SRC/." "$WEB_DST/"
+            if id -u www-data > /dev/null 2>&1; then
+                chown -R www-data:www-data "$WEB_DST" 2>/dev/null || true
+            fi
+            chmod -R 644 "$WEB_DST" 2>/dev/null || true
+            find "$WEB_DST" -type d -exec chmod 755 {} + 2>/dev/null || true
+        fi
+
+        # =====================================================================
+        # 3. Register system identity if not present
+        # =====================================================================
         if [ ! -f /etc/os-release ] || ! grep -q "ID=mitranet" /etc/os-release; then
-            cat << 'EOF' > /etc/os-release
+            cat << 'OSEOF' > /etc/os-release
 NAME="MitraNet"
 VERSION="1.0.2"
 ID=mitranet
@@ -20,28 +42,61 @@ PRETTY_NAME="MitraNet Rinjani 1.0.2"
 HOME_URL="https://mitranet.local"
 SUPPORT_URL="https://mitranet.local/support"
 BUG_REPORT_URL="https://mitranet.local/bugs"
-EOF
+OSEOF
         fi
 
-        # Ensure high-speed networking modules and 100G sysctl rules are active
+        # =====================================================================
+        # 4. Initialize default admin credentials if not present (first install)
+        #    Default credentials: admin / mitranet  (CHANGE after first login!)
+        # =====================================================================
+        AUTH_FILE="/etc/mitranet/secrets/webui_users.json"
+        if [ ! -f "$AUTH_FILE" ]; then
+            cat << 'AUTHEOF' > "$AUTH_FILE"
+{
+  "admin": {
+    "password_hash": "pbkdf2_sha256:100000:a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6:a404a58e2605c62cfb45567fe0a1e67c012ac39deccaf51cc0b06438485ef0e5",
+    "created_at": 0,
+    "comment": "Default admin - password: mitranet - CHANGE after first login"
+  }
+}
+AUTHEOF
+            chmod 600 "$AUTH_FILE"
+        fi
+
+        # =====================================================================
+        # 5. Enable high-speed networking kernel modules
+        # =====================================================================
         if [ ! -f /etc/modules-load.d/mitranet-network.conf ]; then
-            cat << 'EOF' > /etc/modules-load.d/mitranet-network.conf
+            cat << 'MODEOF' > /etc/modules-load.d/mitranet-network.conf
 tcp_bbr
 sch_fq
-EOF
+MODEOF
         fi
         modprobe tcp_bbr >/dev/null 2>&1 || true
         modprobe sch_fq >/dev/null 2>&1 || true
         sysctl --system >/dev/null 2>&1 || true
 
-        # Disable intrusive daily apt background timers on router appliance
+        # =====================================================================
+        # 6. Disable intrusive apt background timers (router appliance)
+        # =====================================================================
         if command -v systemctl >/dev/null 2>&1; then
             systemctl disable --now apt-daily.timer apt-daily-upgrade.timer >/dev/null 2>&1 || true
         fi
 
-        # Reload systemd daemon
+        # =====================================================================
+        # 7. Ensure /usr/bin/systemctl symlink exists (for power management)
+        # =====================================================================
+        if [ ! -f /usr/bin/systemctl ] && [ -f /bin/systemctl ]; then
+            ln -sf /bin/systemctl /usr/bin/systemctl || true
+        fi
+
+        # =====================================================================
+        # 8. Reload systemd and start mitranet-webui (must be last step)
+        # =====================================================================
         if command -v systemctl >/dev/null 2>&1; then
             systemctl daemon-reload || true
+            systemctl enable mitranet-webui.service || true
+            systemctl restart mitranet-webui.service || true
         fi
         ;;
     abort-upgrade|abort-remove|abort-deconfigure)

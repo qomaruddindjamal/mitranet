@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /*
  * interfaces_bridge.php - MitraNet Bridge Interfaces
  * Adapted from pfSense interfaces_bridge.php
@@ -118,7 +118,7 @@ if (!empty($err)) {
 							<td><?=htmlspecialchars(implode(', ', $b['members'] ?? []))?></td>
 							<td><?=!empty($b['stp']) ? 'Yes' : 'No'?></td>
 							<td>
-								<form method="post" style="display:inline;">
+								<form method="post" class="form-inline-action">
 									<input type="hidden" name="action" value="delete">
 									<input type="hidden" name="name" value="<?=htmlspecialchars($b['name'])?>">
 									<button type="submit" class="btn btn-xs btn-danger" title="<?=gettext('Delete bridge')?>"><i class="fa-solid fa-trash-can"></i></button>

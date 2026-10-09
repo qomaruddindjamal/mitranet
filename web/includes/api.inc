@@ -196,6 +196,14 @@ class MitraNetApi {
         return self::request('/system/update', 'POST', ['hostname' => $hostname]);
     }
 
+    public static function systemReboot() {
+        return self::request('/system/reboot', 'POST', []);
+    }
+
+    public static function systemHalt() {
+        return self::request('/system/halt', 'POST', []);
+    }
+
     public static function updateSystemSettings($data) {
         return self::request('/system/update', 'POST', $data);
     }

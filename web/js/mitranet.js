@@ -174,7 +174,7 @@ $(function() {
 	// the element value
 	$('.btn-danger, .fa-trash-can').on('click', function(e){
 		if (!($(this).hasClass('no-confirm')) && !($(this).hasClass('icon-embed-btn'))) {
-			// Anchors using the automatic get2post system (pfSenseHelpers.js) perform the confirmation dialog
+			// Anchors using the automatic get2post system (mitranetHelpers.js) perform the confirmation dialog
 			// in those functions
 			var attr = $(this).attr('usepost');
 			if (typeof attr === typeof undefined || attr === false) {
@@ -353,3 +353,100 @@ $(function() {
 		});
 	}(Plugin, $, window, document));
 }(jQuery, window, document));
+
+/* ==========================================================================
+ * Interface Assignments Table — enhancements
+ * Applies to .iface-assign-table (interfaces_assign.php)
+ * ========================================================================== */
+
+(function ($) {
+	'use strict';
+
+	// Only run on pages that have the interface assignment table
+	if (!$('.iface-assign-table').length) return;
+
+	/* ------------------------------------------------------------------
+	 * 1. Auto-refresh with countdown indicator
+	 * ------------------------------------------------------------------ */
+	var REFRESH_SECS = 30;
+	var $refreshBtn  = $('a[href="interfaces_assign.php"][role="button"]').first();
+
+	if ($refreshBtn.length) {
+		var $badge = $('<span class="badge iface-refresh-badge">' + REFRESH_SECS + 's</span>');
+		$refreshBtn.append('\u00a0').append($badge);
+
+		var remaining = REFRESH_SECS;
+		var timer = setInterval(function () {
+			remaining--;
+			$badge.text(remaining + 's');
+			if (remaining <= 5) $badge.addClass('iface-refresh-badge-urgent');
+			if (remaining <= 0) {
+				clearInterval(timer);
+				window.location.href = 'interfaces_assign.php';
+			}
+		}, 1000);
+
+		// Cancel auto-refresh if user clicks a button or form
+		$('form, .btn').one('click', function () {
+			clearInterval(timer);
+			$badge.text('\u2014').removeClass('iface-refresh-badge-urgent');
+		});
+	}
+
+	/* ------------------------------------------------------------------
+	 * 2. Row click → navigate to interface config page
+	 *    Skip clicks inside the Actions column
+	 * ------------------------------------------------------------------ */
+	$('.iface-assign-table tbody tr').each(function () {
+		var $row  = $(this);
+		var $link = $row.find('a.iface-name-link').first();
+		if (!$link.length) return;
+
+		$row.css('cursor', 'pointer').on('click', function (e) {
+			if ($(e.target).closest('td.iface-col-actions, button, form, a').length) return;
+			window.location.href = $link.attr('href');
+		});
+	});
+	$('.iface-assign-table tbody td.iface-col-actions').css('cursor', 'default');
+
+	/* ------------------------------------------------------------------
+	 * 3. Column header sort
+	 * ------------------------------------------------------------------ */
+	var sortDir = {};
+
+	$('.iface-assign-table thead th').each(function (colIdx) {
+		$(this).css({ cursor: 'pointer', userSelect: 'none' });
+	}).on('click', function () {
+		var colIdx = $(this).index();
+		var asc    = !sortDir[colIdx];
+		sortDir    = {};
+		sortDir[colIdx] = asc;
+
+		$('.iface-assign-table thead th .sort-ind').remove();
+		$(this).append('<span class="sort-ind text-muted" style="font-size:10px">' + (asc ? ' \u25b2' : ' \u25bc') + '</span>');
+
+		var $tbody = $('.iface-assign-table tbody');
+		var rows   = $tbody.find('tr').toArray();
+
+		rows.sort(function (a, b) {
+			var av = $('td', a).eq(colIdx).text().trim().toLowerCase();
+			var bv = $('td', b).eq(colIdx).text().trim().toLowerCase();
+			var an = parseFloat(av.replace(/[^0-9.]/g, ''));
+			var bn = parseFloat(bv.replace(/[^0-9.]/g, ''));
+			if (!isNaN(an) && !isNaN(bn)) return asc ? an - bn : bn - an;
+			return asc ? av.localeCompare(bv) : bv.localeCompare(av);
+		});
+
+		$.each(rows, function (i, row) { $tbody.append(row); });
+	});
+
+	/* ------------------------------------------------------------------
+	 * 4. Traffic badge tooltips
+	 * ------------------------------------------------------------------ */
+	$('.iface-assign-table .badge-traffic, .iface-assign-table .badge-pkts').tooltip({
+		placement: 'top',
+		trigger:   'hover',
+		container: 'body'
+	});
+
+}(jQuery));

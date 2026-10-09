@@ -7,18 +7,18 @@ Wants=network.target
 Type=simple
 User=root
 Group=root
-WorkingDirectory=/mitranet
+WorkingDirectory=/usr/share/mitranet
 ExecStart=/usr/bin/python3 -m mitranet.src.api.server
 Restart=always
 RestartSec=3
 KillMode=process
 
-# Security Hardening
-NoNewPrivileges=true
+# Process Configuration
+NoNewPrivileges=false
 PrivateTmp=true
-ProtectSystem=strict
+ProtectSystem=false
 ReadWritePaths=/etc/mitranet /var/lib/mitranet /var/log /run /tmp
-ProtectHome=true
+ProtectHome=false
 
 [Install]
 WantedBy=multi-user.target

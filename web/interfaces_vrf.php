@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /*
  * interfaces_vrf.php - MitraNet VRF Domains
  * Adapted from pfSense interfaces/vrf
@@ -81,7 +81,7 @@ if (!empty($err)) {
 							<td><span class="label label-info"><?=htmlspecialchars($v['table_id'])?></span></td>
 							<td><?=htmlspecialchars(implode(', ', $v['interfaces'] ?? []))?></td>
 							<td>
-								<form method="post" style="display:inline;">
+								<form method="post" class="form-inline-action">
 									<input type="hidden" name="action" value="delete">
 									<input type="hidden" name="name" value="<?=htmlspecialchars($v['name'])?>">
 									<button type="submit" class="btn btn-xs btn-danger" title="<?=gettext('Delete VRF')?>"><i class="fa-solid fa-trash-can"></i></button>

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /*
  * status_wireguard.php - MitraNet WireGuard Live Telemetry
  * Faithful port from pfSense /wg/status_wireguard.php
@@ -26,7 +26,7 @@ display_top_tabs($tab_array, false, 'pills');
 <div class="panel panel-default">
 	<div class="panel-heading"><h2 class="panel-title">WireGuard Status</h2></div>
 	<div class="table-responsive panel-body">
-		<table class="table table-hover table-striped table-condensed tree" style="overflow-x: visible;">
+		<table class="table table-hover table-striped table-condensed tree table-overflow-visible">
 			<thead>
 				<tr>
 					<th>Tunnel</th>
@@ -63,7 +63,7 @@ display_top_tabs($tab_array, false, 'pills');
 					<td><span class="label label-info">1.2 KiB</span></td>
 				</tr>
 				<tr class="treegrid-parent-tun_wg0">
-					<td style="font-weight: bold;">Peers</td>
+					<td class="td-bold">Peers</td>
 					<td class="contains-table" colspan="8">
 						<table class="table table-hover table-striped table-condensed">
 							<thead>

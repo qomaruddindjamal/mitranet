@@ -1,19 +1,43 @@
 # Git ignore for MitraNet
+# ── Binary / large files ──────────────────────────────────
 *.iso
 *.img
 *.qcow2
 *.vmdk
+*.deb
+*.tar.gz
+*.tar.bz2
+*.ppm
+*.ppm
+
+# ── Python bytecode ──────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
 .venv/
 env/
 dist/
-build/
 *.egg-info/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# ── Logs & temp ───────────────────────────────────────────
 *.log
 scratch/
 tmp/
+
+# ── Build one-off scripts (keep build_packages.sh) ────────
+build/
+
+# ── pfSense dumps & audit HTML (dev-only artifacts) ───────
+pfsense_*.html
+pfsense_*.json
+pfsense_*.png
+pfsense_*.xml
+pfsense_dumps/
+wg_*.html
+
+# ── Dev one-off scripts in project root ───────────────────
+patch_server.py
+run_server.py

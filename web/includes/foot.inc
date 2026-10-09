@@ -67,7 +67,7 @@
 				$('body').removeClass('sidebar-mobile-open');
 			});
 
-			// Desktop: Show & align MikroTik drop-right panel
+			// Desktop: Show & align sidebar drop-right panel
 			function showDropRight($item) {
 				if (!isDesktop()) return;
 				var $flyout = $item.children('.sidebar-flyout');
@@ -117,7 +117,7 @@
 				}
 			});
 
-			// Click handler: Mobile accordion toggle OR Desktop MikroTik click-to-pin
+			// Click handler: Mobile accordion toggle OR Desktop click-to-pin flyout
 			$('.sidebar-link').on('click', function(e) {
 				if ($(this).hasClass('direct-link')) {
 					if (!isDesktop()) {
@@ -146,17 +146,21 @@
 			});
 
 			// Close pinned drop-right when clicking outside on desktop
+			// NOTE: jangan tutup flyout saat link di dalamnya diklik (biarkan navigasi terjadi dulu)
 			$(document).on('click', function(e) {
-				if (isDesktop() && !$(e.target).closest('#pf-sidebar, .sidebar-flyout').length) {
-					$('.sidebar-item').removeClass('pinned open').find('.sidebar-flyout').hide();
-				}
+				if (!isDesktop()) return;
+				var $target = $(e.target);
+				// Jika klik terjadi di dalam sidebar atau flyout (termasuk link navlnk), jangan tutup
+				if ($target.closest('#pf-sidebar, .sidebar-flyout').length) return;
+				$('.sidebar-item').removeClass('pinned open').find('.sidebar-flyout').hide();
 			});
 
-			// Close mobile drawer when tapping any submenu link
+			// Close mobile drawer when tapping any submenu link (desktop: biarkan flyout tetap ada saat navigasi)
 			$('.sidebar-submenu a').on('click', function() {
 				if (!isDesktop()) {
 					$('body').removeClass('sidebar-mobile-open');
 				}
+				// Desktop: flyout tetap terbuka - browser akan navigasi dan page akan fresh
 			});
 
 			// Highlight active link and parent category

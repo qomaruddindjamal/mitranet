@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /*
  * status_logs.php - MitraNet System Logs Viewer
  * Adapted from pfSense status_logs.php
@@ -14,7 +14,7 @@ $logs = MitraNetApi::getLogs($cat);
 
 <h2>System Logs</h2>
 
-<ul class="nav nav-tabs" style="margin-bottom: 20px;">
+<ul class="nav nav-tabs mb-20">
 	<li class="<?=$cat==='system'?'active':''?>"><a href="/status_logs.php?cat=system">System</a></li>
 	<li class="<?=$cat==='firewall'?'active':''?>"><a href="/status_logs.php?cat=firewall">Firewall</a></li>
 	<li class="<?=$cat==='gateway'?'active':''?>"><a href="/status_logs.php?cat=gateway">Gateways</a></li>
@@ -23,9 +23,9 @@ $logs = MitraNetApi::getLogs($cat);
 
 <div class="panel panel-default">
 	<div class="panel-heading"><h3 class="panel-title"><i class="fa fa-terminal"></i> Log Output (Category: <?=htmlspecialchars(ucfirst($cat))?>)</h3></div>
-	<div class="panel-body" style="background-color: #1a1a1a; color: #00ff00; font-family: monospace; max-height: 500px; overflow-y: scroll; padding: 15px;">
+	<div class="panel-body log-panel-body">
 		<?php if (empty($logs)): ?>
-			<div class="text-muted" style="color: #888;">No recent log events found for category '<?=htmlspecialchars($cat)?>'.</div>
+			<div class="text-muted">No recent log events found for category '<?=htmlspecialchars($cat)?>'.</div>
 		<?php else: foreach ($logs as $line): ?>
 			<div><?=htmlspecialchars($line)?></div>
 		<?php endforeach; endif; ?>

@@ -119,8 +119,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 
-$pgtitle = array("DIRECT", "KVM");
-$selected_menu = "direct";
+$pgtitle = array("Services", "Virtual Machines (KVM)");
+$selected_menu = "kvm";
 require_once(__DIR__ . '/includes/head.inc');
 
 $kvmData = MitraNetApi::getKvmData();
@@ -171,16 +171,16 @@ foreach ($vms as $v) {
 </ul>
 
 <?php if (!empty($savemsg)): ?>
-    <div class="alert alert-success" style="margin-top: 15px;"><i class="fa-solid fa-check"></i> <?=$savemsg?></div>
+    <div class="alert alert-success mt-15"><i class="fa-solid fa-check"></i> <?=$savemsg?></div>
 <?php endif; ?>
 
 <?php if (!empty($err_msg)): ?>
-    <div class="alert alert-danger" style="margin-top: 15px;"><i class="fa-solid fa-triangle-exclamation"></i> <?=$err_msg?></div>
+    <div class="alert alert-danger mt-15"><i class="fa-solid fa-triangle-exclamation"></i> <?=$err_msg?></div>
 <?php endif; ?>
 
 <?php if ($tab === 'add'): ?>
 <!-- TAMBAH VM FORM -->
-<div class="panel panel-default" style="margin-top: 15px;">
+<div class="panel panel-default panel-mitranet mt-15">
     <div class="panel-heading">
         <h2 class="panel-title"><i class="fa-solid fa-plus-circle"></i> Tambah Virtual Machine Baru (KVM/QEMU)</h2>
     </div>
@@ -321,7 +321,7 @@ foreach ($vms as $v) {
             <div class="form-group">
                 <div class="col-sm-offset-3 col-sm-6">
                     <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Simpan & Buat VM</button>
-                    <a href="services_virtual.php" class="btn btn-default" style="margin-left: 5px;">Batal</a>
+                    <a href="services_virtual.php" class="btn btn-default ml-1">Batal</a>
                 </div>
             </div>
         </form>
@@ -330,7 +330,7 @@ foreach ($vms as $v) {
 
 <?php elseif ($tab === 'manage_aapanel'): ?>
 <!-- MANAGE AAPANEL (DEFAULT BUILT-IN VM) -->
-<div class="panel panel-default" style="margin-top: 15px;">
+<div class="panel panel-default panel-mitranet mt-15">
     <div class="panel-heading">
         <h2 class="panel-title">
             <i class="fa-solid fa-sliders text-info"></i> <?=gettext("Manage Built-in VM: aaPanel Linux Web Control Panel")?>
@@ -359,33 +359,33 @@ foreach ($vms as $v) {
             ?>
 
             <!-- AAPANEL ACCESS CREDENTIALS CARD (READ-ONLY) -->
-            <div class="panel panel-info" style="border-width: 2px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-                <div class="panel-heading" style="background: linear-gradient(135deg, #17a2b8 0%, #117a8b 100%); color: #fff; padding: 12px 18px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <h3 class="panel-title" style="font-weight: bold; font-size: 16px;">
+            <div class="panel panel-info panel-creds-card">
+                <div class="panel-heading panel-heading-teal">
+                    <div class="d-flex-between">
+                        <h3 class="panel-title panel-title-lg">
                             <i class="fa-solid fa-key"></i> Kredensial & Akses Masuk aaPanel
                         </h3>
-                        <a href="<?=htmlspecialchars($aapanelUrl)?>" target="_blank" class="btn btn-sm btn-default" style="font-weight: 600; color: #117a8b; background: #fff; border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">
+                        <a href="<?=htmlspecialchars($aapanelUrl)?>" target="_blank" class="btn btn-sm btn-aapanel-open">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i> Buka aaPanel Dashboard
                         </a>
                     </div>
                 </div>
-                <div class="panel-body" style="background-color: #fcfdfe; padding: 20px;">
+                <div class="panel-body panel-body-clean">
                     <div class="row">
                         <div class="col-md-12">
-                            <div class="alert alert-warning" style="margin-bottom: 20px; font-size: 13px;">
+                            <div class="alert alert-warning mb-20 fs-13">
                                 <i class="fa-solid fa-shield-halved"></i>
                                 <strong>Keamanan:</strong> Username dan Password di bawah ini bersifat <strong>Read-Only</strong> di MitraNet. Perubahan kredensial hanya dapat dilakukan langsung di dalam antarmuka web aaPanel. Kredensial baru yang Anda simpan di aaPanel akan langsung terbaca otomatis di sini.
                             </div>
                         </div>
 
                         <!-- Panel Entrance URL -->
-                        <div class="col-md-12" style="margin-bottom: 15px;">
-                            <label style="font-weight: 600; color: #333; margin-bottom: 5px;">
+                        <div class="col-md-12 mb-15">
+                            <label class="field-label">
                                 <i class="fa-solid fa-link text-primary"></i> URL Akses Masuk (Entrance Login):
                             </label>
                             <div class="input-group">
-                                <input type="text" id="aapanel_url_input" class="form-control" value="<?=htmlspecialchars($aapanelUrl)?>" readonly style="background-color: #fff; font-family: monospace; font-size: 13px; font-weight: bold; color: #0275d8;" />
+                                <input type="text" id="aapanel_url_input" class="form-control" value="<?=htmlspecialchars($aapanelUrl)?>" readonly class="input-mono-link" />
                                 <span class="input-group-btn">
                                     <button class="btn btn-default" type="button" onclick="navigator.clipboard.writeText(document.getElementById('aapanel_url_input').value); alert('URL login aaPanel berhasil disalin!');" title="Salin URL">
                                         <i class="fa-solid fa-copy"></i> Salin
@@ -395,18 +395,18 @@ foreach ($vms as $v) {
                                     </a>
                                 </span>
                             </div>
-                            <span class="help-block" style="margin-top: 4px; font-size: 11px;">
+                            <span class="help-block fs-11">
                                 Security Entrance Path: <code><?=htmlspecialchars($panelPath)?></code> (Port: <code><?=htmlspecialchars($panelPort)?></code>)
                             </span>
                         </div>
 
                         <!-- Username Field -->
-                        <div class="col-sm-6" style="margin-bottom: 15px;">
-                            <label style="font-weight: 600; color: #333; margin-bottom: 5px;">
+                        <div class="col-sm-6 mb-15">
+                            <label class="field-label">
                                 <i class="fa-solid fa-user text-info"></i> Username:
                             </label>
                             <div class="input-group">
-                                <input type="text" id="aapanel_user_input" class="form-control" value="<?=htmlspecialchars($aapanelCreds['username'] ?? 'mitranet')?>" readonly style="background-color: #fff; font-family: monospace; font-size: 14px; font-weight: bold;" />
+                                <input type="text" id="aapanel_user_input" class="form-control" value="<?=htmlspecialchars($aapanelCreds['username'] ?? 'mitranet')?>" readonly class="input-mono-cred" />
                                 <span class="input-group-btn">
                                     <button class="btn btn-default" type="button" onclick="navigator.clipboard.writeText(document.getElementById('aapanel_user_input').value); alert('Username aaPanel berhasil disalin!');" title="Salin Username">
                                         <i class="fa-solid fa-copy"></i> Salin
@@ -416,12 +416,12 @@ foreach ($vms as $v) {
                         </div>
 
                         <!-- Password Field -->
-                        <div class="col-sm-6" style="margin-bottom: 15px;">
-                            <label style="font-weight: 600; color: #333; margin-bottom: 5px;">
+                        <div class="col-sm-6 mb-15">
+                            <label class="field-label">
                                 <i class="fa-solid fa-lock text-info"></i> Password:
                             </label>
                             <div class="input-group">
-                                <input type="password" id="aapanel_pass_input" class="form-control" value="<?=htmlspecialchars($aapanelCreds['password'] ?? 'mitranet123')?>" readonly style="background-color: #fff; font-family: monospace; font-size: 14px; font-weight: bold; letter-spacing: 1px;" />
+                                <input type="password" id="aapanel_pass_input" class="form-control" value="<?=htmlspecialchars($aapanelCreds['password'] ?? 'mitranet123')?>" readonly class="input-mono-cred input-pass-spaced" />
                                 <span class="input-group-btn">
                                     <button class="btn btn-default" type="button" id="btn_toggle_pass" onclick="var p = document.getElementById('aapanel_pass_input'); var icon = this.querySelector('i'); if (p.type === 'password') { p.type = 'text'; icon.className = 'fa-solid fa-eye-slash'; } else { p.type = 'password'; icon.className = 'fa-solid fa-eye'; }" title="Tampilkan / Sembunyikan Password">
                                         <i class="fa-solid fa-eye"></i>
@@ -590,7 +590,7 @@ foreach ($vms as $v) {
                 <div class="form-group">
                     <div class="col-sm-offset-3 col-sm-6">
                         <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> <?=gettext("Simpan Konfigurasi aaPanel")?></button>
-                        <a href="services_virtual.php" class="btn btn-default" style="margin-left: 5px;"><?=gettext("Batal")?></a>
+                        <a href="services_virtual.php" class="btn btn-default ml-1"><?=gettext("Batal")?></a>
                     </div>
                 </div>
             </form>
@@ -600,24 +600,24 @@ foreach ($vms as $v) {
 
 <?php elseif ($tab === 'images'): ?>
 <!-- ISO & IMAGES MANAGER -->
-<div class="panel panel-default" style="margin-top: 15px;">
+<div class="panel panel-default panel-mitranet mt-15">
     <div class="panel-heading">
         <h2 class="panel-title"><i class="fa-solid fa-compact-disc"></i> ISO & Disk Images Repository</h2>
     </div>
     <div class="panel-body">
-        <div class="well well-sm" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <form method="post" action="services_virtual.php" enctype="multipart/form-data" class="form-inline" style="margin: 0;">
+        <div class="well well-sm d-flex-between">
+            <form method="post" action="services_virtual.php" enctype="multipart/form-data" class="form-inline mb-0">
                 <input type="hidden" name="act" value="upload_iso" />
                 <div class="form-group">
                     <label>Unggah File ISO Baru:</label>
-                    <input type="file" name="iso_file" class="form-control" accept=".iso,.img" style="margin-left: 10px;" required />
+                    <input type="file" name="iso_file" class="form-control ml-1" required />
                 </div>
-                <button type="submit" class="btn btn-primary" style="margin-left: 10px;">
+                <button type="submit" class="btn btn-primary ml-1">
                     <i class="fa-solid fa-upload"></i> Upload ISO
                 </button>
             </form>
             <div>
-                <form method="post" action="services_virtual.php" style="display: inline-block; margin: 0;" onsubmit="return confirm('Bersihkan seluruh file ISO yang tidak sedang digunakan oleh Virtual Machine? Tindakan ini akan membebaskan ruang disk.');">
+                <form method="post" action="services_virtual.php" class="d-inline-block mb-0" onsubmit="return confirm('Bersihkan seluruh file ISO yang tidak sedang digunakan oleh Virtual Machine? Tindakan ini akan membebaskan ruang disk.');">
                     <input type="hidden" name="act" value="clean_unused_isos" />
                     <button type="submit" class="btn btn-warning" title="Hapus seluruh ISO yang tidak sedang dipakai boot oleh VM manapun">
                         <i class="fa-solid fa-broom"></i> Bersihkan ISO Tak Terpakai
@@ -625,7 +625,7 @@ foreach ($vms as $v) {
                 </form>
             </div>
         </div>
-        <div style="font-size: 11px; color: #777; margin-top: -10px; margin-bottom: 15px;">
+        <div class="text-muted fs-11 mb-15">
             Direktori repositori: <code>/var/lib/mitranet/isos/</code>
         </div>
 
@@ -633,11 +633,11 @@ foreach ($vms as $v) {
             <table class="table table-striped table-hover table-condensed">
                 <thead>
                     <tr>
-                        <th style="width: 35%;">Nama File ISO</th>
-                        <th style="width: 15%;">Ukuran File</th>
-                        <th style="width: 25%;">Status Penggunaan (VM)</th>
-                        <th style="width: 15%;">Tanggal Modifikasi</th>
-                        <th style="width: 10%; text-align: right;">Aksi</th>
+                        <th class="col-w-35">Nama File ISO</th>
+                        <th>Ukuran File</th>
+                        <th>Status Penggunaan (VM)</th>
+                        <th>Tanggal Modifikasi</th>
+                        <th class="text-right">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -646,19 +646,19 @@ foreach ($vms as $v) {
                             <tr>
                                 <td>
                                     <strong><i class="fa-solid fa-compact-disc text-primary"></i> <?=htmlspecialchars($iso['filename'])?></strong>
-                                    <div style="font-size: 11px; color: #888;">Path: <code><?=htmlspecialchars($iso['path'])?></code></div>
+                                    <div class="text-muted fs-11">Path: <code><?=htmlspecialchars($iso['path'])?></code></div>
                                 </td>
-                                <td><span class="badge" style="background-color: #337ab7;"><?=htmlspecialchars($iso['size_str'])?></span></td>
+                                <td><span class="badge badge-primary"><?=htmlspecialchars($iso['size_str'])?></span></td>
                                 <td>
                                     <?php if (!empty($iso['is_used'])): ?>
                                         <span class="label label-info"><i class="fa-solid fa-link"></i> Dipakai oleh: <?=htmlspecialchars(implode(', ', $iso['used_by']))?></span>
                                     <?php else: ?>
-                                        <span class="label label-default" style="background-color: #777;"><i class="fa-solid fa-circle-check"></i> Tidak Digunakan (Bisa Dihapus)</span>
+                                        <span class="label label-default"><i class="fa-solid fa-circle-check"></i> Tidak Digunakan (Bisa Dihapus)</span>
                                     <?php endif; ?>
                                 </td>
                                 <td><?=date('Y-m-d H:i:s', $iso['mtime'])?></td>
-                                <td style="text-align: right;">
-                                    <form method="post" action="services_virtual.php" style="display: inline-block;" onsubmit="return confirm('Hapus file ISO ini dari penyimpanan?');">
+                                <td class="text-right">
+                                    <form method="post" action="services_virtual.php" class="d-inline-block" onsubmit="return confirm('Hapus file ISO ini dari penyimpanan?');">
                                         <input type="hidden" name="act" value="delete_iso" />
                                         <input type="hidden" name="filename" value="<?=htmlspecialchars($iso['filename'])?>" />
                                         <button type="submit" class="btn btn-xs btn-danger" title="Hapus ISO">
@@ -670,7 +670,7 @@ foreach ($vms as $v) {
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="5" class="text-center" style="padding: 20px; color: #888;">
+                            <td colspan="5" class="text-center td-empty-muted">
                                 <em>Belum ada ISO image di <code>/var/lib/mitranet/isos</code>.</em>
                             </td>
                         </tr>
@@ -684,14 +684,14 @@ foreach ($vms as $v) {
 
 <?php elseif ($tab === 'console'): ?>
 <!-- LIVE VNC CONSOLE (noVNC HTML5) -->
-<div class="panel panel-default" style="margin-top: 15px;">
-    <div class="panel-heading" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+<div class="panel panel-default panel-mitranet mt-15">
+    <div class="panel-heading d-flex-between">
         <h2 class="panel-title"><i class="fa-solid fa-desktop"></i> Remote Console: Web noVNC (HTML5 Remote Desktop)</h2>
         <div>
             <a href="http://192.168.56.101:6080/vnc.html?host=192.168.56.101&port=6080&autoconnect=true&resize=scale" target="_blank" class="btn btn-sm btn-primary">
                 <i class="fa-solid fa-arrow-up-right-from-square"></i> Buka Layar Penuh di Tab Baru
             </a>
-            <a href="services_virtual.php" class="btn btn-sm btn-default" style="margin-left: 5px;">
+            <a href="services_virtual.php" class="btn btn-sm btn-default ml-1">
                 <i class="fa-solid fa-arrow-left"></i> Kembali ke Daftar VM
             </a>
         </div>
@@ -706,17 +706,17 @@ foreach ($vms as $v) {
     }
     ?>
     <?php if (!empty($vms_with_iso)): ?>
-        <div style="background: #2a3b4c; border-bottom: 1px solid #1a2733; padding: 8px 15px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-            <div style="color: #cee5fd; font-size: 12px;">
+        <div class="vnc-eject-bar">
+            <div class="vnc-eject-info">
                 <i class="fa-solid fa-compact-disc"></i> <strong>Instalasi Selesai?</strong> Lepas media instalasi CD-ROM agar VM langsung boot dari virtual disk qcow2:
             </div>
-            <div style="display: flex; gap: 8px;">
+            <div class="d-flex-gap">
                 <?php foreach ($vms_with_iso as $vi): ?>
-                    <form method="post" action="services_virtual.php" style="display: inline-block; margin: 0;" onsubmit="return confirm('Instalasi VM <?=htmlspecialchars($vi['name'])?> telah selesai? Eject ISO dan hapus file installer dari disk?');">
+                    <form method="post" action="services_virtual.php" class="d-inline-block mb-0" onsubmit="return confirm('Instalasi VM <?=htmlspecialchars($vi['name'])?> telah selesai? Eject ISO dan hapus file installer dari disk?');">
                         <input type="hidden" name="act" value="eject_iso" />
                         <input type="hidden" name="vm_id" value="<?=htmlspecialchars($vi['id'])?>" />
                         <input type="hidden" name="delete_file" value="1" />
-                        <button type="submit" class="btn btn-xs btn-success" style="font-weight: bold;">
+                        <button type="submit" class="btn btn-xs btn-success fw-bold">
                             <i class="fa-solid fa-eject"></i> Selesai Instalasi <?=htmlspecialchars($vi['name'])?> (Eject & Hapus ISO)
                         </button>
                     </form>
@@ -724,41 +724,41 @@ foreach ($vms as $v) {
             </div>
         </div>
     <?php endif; ?>
-    <div class="panel-body" style="padding: 10px 15px; background: #222; color: #fff;">
+    <div class="panel-body vnc-panel-body">
 
-        <div style="font-size: 13px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+        <div class="vnc-info-bar">
             <div>
                 <span class="label label-success"><i class="fa-solid fa-signal"></i> noVNC Port 6080 Active</span>
-                <span style="margin-left: 10px; color: #bbb;">Klik di dalam layar monitor untuk mengarahkan keyboard & mouse ke sistem operasi VM.</span>
+                <span class="vnc-hint-text">Klik di dalam layar monitor untuk mengarahkan keyboard & mouse ke sistem operasi VM.</span>
             </div>
             <div>
-                <span style="color: #aaa; font-size: 11px;">Server: <code>192.168.56.101:6080</code> (WebSocket Proxy)</span>
+                <span class="text-muted fs-11">Server: <code>192.168.56.101:6080</code> (WebSocket Proxy)</span>
             </div>
         </div>
-        <div style="border: 2px solid #444; border-radius: 4px; overflow: hidden; background: #000; text-align: center;">
-            <iframe src="http://192.168.56.101:6080/vnc.html?host=192.168.56.101&port=6080&autoconnect=true&resize=scale" style="width: 100%; height: 620px; border: none; display: block;"></iframe>
+        <div class="vnc-frame-wrap">
+            <iframe src="http://192.168.56.101:6080/vnc.html?host=192.168.56.101&port=6080&autoconnect=true&resize=scale" class="vnc-iframe"></iframe>
         </div>
     </div>
 </div>
 
 <?php else: ?>
 <!-- MAIN DASHBOARD & VM LIST -->
-<div class="panel panel-default" style="margin-top: 15px;">
+<div class="panel panel-default panel-mitranet mt-15">
     <div class="panel-heading">
         <h2 class="panel-title">
             <i class="fa-solid fa-server"></i> Daftar Virtual Machine (KVM Hypervisor Appliance)
         </h2>
     </div>
     <div class="panel-body">
-        <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div class="mb-20 d-flex-between">
             <div>
                 <a href="services_virtual.php?act=add" class="btn btn-success">
                     <i class="fa-solid fa-plus"></i> Tambah Virtual Machine Baru
                 </a>
-                <a href="services_virtual.php?act=images" class="btn btn-default" style="margin-left: 5px;">
+                <a href="services_virtual.php?act=images" class="btn btn-default ml-1">
                     <i class="fa-solid fa-compact-disc text-primary"></i> Kelola ISO / Images (<?=count($isos)?>)
                 </a>
-                <a href="services_virtual.php?act=console" class="btn btn-default" style="margin-left: 5px;">
+                <a href="services_virtual.php?act=console" class="btn btn-default ml-1">
                     <i class="fa-solid fa-desktop text-success"></i> VNC Console
                 </a>
             </div>
@@ -776,7 +776,7 @@ foreach ($vms as $v) {
                 <a href="<?=htmlspecialchars($listAapanelUrl)?>" target="_blank" class="btn btn-info">
                     <i class="fa-solid fa-arrow-up-right-from-square"></i> Buka aaPanel Web
                 </a>
-                <a href="services_virtual.php?act=manage_aapanel" class="btn btn-default" style="margin-left: 5px;">
+                <a href="services_virtual.php?act=manage_aapanel" class="btn btn-default ml-1">
                     <i class="fa-solid fa-key text-warning"></i> Lihat User & Password
                 </a>
             </div>
@@ -786,11 +786,11 @@ foreach ($vms as $v) {
             <table class="table table-striped table-hover table-condensed">
                 <thead>
                     <tr>
-                        <th style="width: 22%;">Nama & Identitas</th>
-                        <th style="width: 20%;">Alokasi Resource</th>
-                        <th style="width: 20%;">Media & Network</th>
-                        <th style="width: 18%;">Status Hypervisor</th>
-                        <th style="width: 20%; text-align: right;">Aksi & Kontrol</th>
+                        <th class="col-w-22">Nama &amp; Identitas</th>
+                        <th class="col-w-20">Alokasi Resource</th>
+                        <th class="col-w-20">Media &amp; Network</th>
+                        <th class="col-w-18">Status Hypervisor</th>
+                        <th class="col-w-20 text-right">Aksi &amp; Kontrol</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -801,23 +801,23 @@ foreach ($vms as $v) {
                                 <td>
                                     <strong><i class="fa-solid fa-cubes"></i> <?=htmlspecialchars($vm['name'])?></strong>
                                     <?php if (!empty($vm['is_default'])): ?>
-                                        <span class="label label-primary" style="margin-left: 5px;"><i class="fa-solid fa-lock"></i> Built-in</span>
+                                        <span class="label label-primary ml-1"><i class="fa-solid fa-lock"></i> Built-in</span>
                                     <?php endif; ?>
-                                    <div style="font-size: 11px; color: #777; margin-top: 3px;">
+                                    <div class="vm-meta-muted">
                                         ID: <code><?=htmlspecialchars($vm['id'])?></code> - <?=htmlspecialchars($vm['description'])?>
                                     </div>
                                     <?php if ($isRunning && !empty($vm['pid'])): ?>
-                                        <div style="font-size: 11px; color: #28a745; margin-top: 2px;">
+                                        <div class="vm-meta-ok">
                                             <i class="fa-solid fa-microchip"></i> PID: <code><?=htmlspecialchars($vm['pid'])?></code>
                                         </div>
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <span class="badge" style="background-color: #5bc0de;"><?=htmlspecialchars($vm['vcpu'])?> vCPU</span>
-                                    <span class="badge" style="background-color: #337ab7;"><?=htmlspecialchars($vm['ram_mb'])?> MB RAM</span>
-                                    <span class="badge" style="background-color: #f0ad4e;"><?=htmlspecialchars($vm['disk_gb'])?> GB HDD</span>
+                                    <span class="badge badge-info-alt"><?=htmlspecialchars($vm['vcpu'])?> vCPU</span>
+                                    <span class="badge badge-primary"><?=htmlspecialchars($vm['ram_mb'])?> MB RAM</span>
+                                    <span class="badge badge-warn-alt"><?=htmlspecialchars($vm['disk_gb'])?> GB HDD</span>
                                     <?php if ($isRunning && !empty($vm['ram_rss_mb'])): ?>
-                                        <div style="font-size: 11px; color: #666; margin-top: 4px;">
+                                        <div class="vm-meta-sub">
                                             RSS: <strong><?=htmlspecialchars($vm['ram_rss_mb'])?> MB</strong> (Live QEMU)
                                         </div>
                                     <?php endif; ?>
@@ -825,40 +825,40 @@ foreach ($vms as $v) {
                                 <td>
                                     <div><i class="fa-solid fa-ethernet"></i> Net: <code><?=htmlspecialchars($vm['interface'])?></code></div>
                                     <?php if (!empty($vm['guest_ip'])): ?>
-                                        <div style="font-size: 11px; margin-top: 2px;">
+                                        <div class="vm-meta-row">
                                             <span class="label label-success"><i class="fa-solid fa-desktop"></i> IP: <?=htmlspecialchars($vm['guest_ip'])?></span>
                                         </div>
                                     <?php endif; ?>
-                                    <div style="font-size: 11px; margin-top: 2px;">
+                                    <div class="vm-meta-row">
                                         <span class="label label-info"><i class="fa-solid fa-network-wired"></i> FWD: Port <?=htmlspecialchars($vm['port_fwd'] ?? 8888)?></span>
                                     </div>
                                     <?php if (!empty($vm['iso'])): ?>
-                                        <div style="font-size: 10px; color: #888; margin-top: 2px;">
+                                        <div class="vm-meta-iso">
                                             <i class="fa-solid fa-compact-disc"></i> ISO: <?=htmlspecialchars(basename($vm['iso']))?>
                                         </div>
                                     <?php endif; ?>
                                 </td>
                                 <td>
                                     <?php if ($isRunning): ?>
-                                        <span class="label label-success" style="font-size: 12px; padding: 4px 8px;">
+                                        <span class="label label-success label-status">
                                             <i class="fa-solid fa-play"></i> RUNNING
                                         </span>
                                     <?php else: ?>
-                                        <span class="label label-default" style="font-size: 12px; padding: 4px 8px;">
+                                        <span class="label label-default label-status">
                                             <i class="fa-solid fa-stop"></i> STOPPED
                                         </span>
                                     <?php endif; ?>
                                 </td>
-                                <td style="text-align: right; white-space: nowrap;">
+                                <td class="text-right td-nowrap">
                                     <?php if ($isRunning): ?>
-                                        <form method="post" action="services_virtual.php" style="display: inline-block;">
+                                        <form method="post" action="services_virtual.php" class="d-inline-block">
                                             <input type="hidden" name="act" value="restart" />
                                             <input type="hidden" name="id" value="<?=htmlspecialchars($vm['id'])?>" />
                                             <button type="submit" class="btn btn-xs btn-warning" title="Restart Virtual Machine">
                                                 <i class="fa-solid fa-rotate-right"></i> Restart
                                             </button>
                                         </form>
-                                        <form method="post" action="services_virtual.php" style="display: inline-block; margin-left: 3px;">
+                                        <form method="post" action="services_virtual.php" class="d-inline-block ml-1">
                                             <input type="hidden" name="act" value="stop" />
                                             <input type="hidden" name="id" value="<?=htmlspecialchars($vm['id'])?>" />
                                             <button type="submit" class="btn btn-xs btn-danger" title="Hentikan Virtual Machine">
@@ -866,7 +866,7 @@ foreach ($vms as $v) {
                                             </button>
                                         </form>
                                     <?php else: ?>
-                                        <form method="post" action="services_virtual.php" style="display: inline-block;">
+                                        <form method="post" action="services_virtual.php" class="d-inline-block">
                                             <input type="hidden" name="act" value="start" />
                                             <input type="hidden" name="id" value="<?=htmlspecialchars($vm['id'])?>" />
                                             <button type="submit" class="btn btn-xs btn-success" title="Nyalakan Virtual Machine">
@@ -874,27 +874,27 @@ foreach ($vms as $v) {
                                             </button>
                                         </form>
                                     <?php endif; ?>
-                                    <a href="services_virtual.php?act=console" class="btn btn-xs btn-primary" style="margin-left: 3px;" title="VNC Console">
+                                    <a href="services_virtual.php?act=console" class="btn btn-xs btn-primary ml-1" title="VNC Console">
                                         <i class="fa-solid fa-desktop"></i>
                                     </a>
                                     <?php if (!empty($vm['is_default'])): ?>
-                                        <a href="services_virtual.php?act=manage_aapanel" class="btn btn-xs btn-info" style="margin-left: 3px;" title="Manage & Configure aaPanel">
+                                        <a href="services_virtual.php?act=manage_aapanel" class="btn btn-xs btn-info ml-1" title="Manage & Configure aaPanel">
                                             <i class="fa-solid fa-sliders"></i> Config
                                         </a>
                                     <?php endif; ?>
                                     <?php if (!empty($vm['iso'])): ?>
-                                        <form method="post" action="services_virtual.php" style="display: inline-block; margin-left: 3px;" onsubmit="return confirm('Instalasi selesai? Eject CD-ROM dan hapus file installer ISO dari disk?');">
+                                        <form method="post" action="services_virtual.php" class="d-inline-block ml-1" onsubmit="return confirm('Instalasi selesai? Eject CD-ROM dan hapus file installer ISO dari disk?');">
                                             <input type="hidden" name="act" value="eject_iso" />
                                             <input type="hidden" name="vm_id" value="<?=htmlspecialchars($vm['id'])?>" />
                                             <input type="hidden" name="delete_file" value="1" />
-                                            <button type="submit" class="btn btn-xs btn-success" style="font-weight: bold;" title="Selesai Instalasi: Eject CD-ROM dan Hapus File ISO untuk menghemat ruang disk">
+                                            <button type="submit" class="btn btn-xs btn-success fw-bold" title="Selesai Instalasi: Eject CD-ROM dan Hapus File ISO untuk menghemat ruang disk">
                                                 <i class="fa-solid fa-eject"></i> Eject & Bersihkan
                                             </button>
                                         </form>
                                     <?php endif; ?>
 
                                     <?php if (empty($vm['is_default'])): ?>
-                                        <form method="post" action="services_virtual.php" style="display: inline-block; margin-left: 3px;" onsubmit="return confirm('Hapus VM ini beserta disk virtualnya?');">
+                                        <form method="post" action="services_virtual.php" class="d-inline-block ml-1" onsubmit="return confirm('Hapus VM ini beserta disk virtualnya?');">
                                             <input type="hidden" name="act" value="delete_vm" />
                                             <input type="hidden" name="id" value="<?=htmlspecialchars($vm['id'])?>" />
                                             <button type="submit" class="btn btn-xs btn-danger" title="Hapus Virtual Machine">
@@ -907,7 +907,7 @@ foreach ($vms as $v) {
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="5" class="text-center" style="padding: 20px; color: #888;">
+                            <td colspan="5" class="text-center td-empty-muted">
                                 <em>Tidak ada Virtual Machine yang terkonfigurasi di <code>/var/lib/mitranet/vms</code>.</em>
                             </td>
                         </tr>

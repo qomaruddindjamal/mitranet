@@ -1414,6 +1414,7 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             self._send_json(200, res)
             return
 
+
         self._send_json(404, {"error": "Endpoint not found"})
 
 
@@ -1999,29 +2000,67 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
         # 15. Shell Command & Interactive Terminal Execution
         if path == "/api/v1/diagnostics/command":
             cmd_text = payload.get("command", "").strip()
-            cwd = payload.get("cwd", "/root")
+            cwd = payload.get("cwd", "").strip()
+
+            # Detect default installed user (UID 1000, e.g. citramedia / admin)
+            default_user = "admin"
+            home_dir = "/home/admin"
+            try:
+                import pwd
+                for p in pwd.getpwall():
+                    if p.pw_uid == 1000:
+                        default_user = p.pw_name
+                        home_dir = p.pw_dir
+                        break
+            except Exception:
+                pass
+
+            if not cwd or not os.path.isdir(cwd):
+                cwd = home_dir if os.path.isdir(home_dir) else "/root"
+
             if not cmd_text:
-                self._send_json(400, {"error": "Command is required"})
+                self._send_json(200, {
+                    "success": True,
+                    "output": "",
+                    "cwd": cwd,
+                    "user": default_user,
+                    "returncode": 0
+                })
                 return
 
             import subprocess
             try:
-                # Handle cd command
-                if cmd_text.startswith("cd "):
-                    target_dir = cmd_text[3:].strip()
+                # Handle cd command cleanly
+                if cmd_text == "cd" or cmd_text.startswith("cd "):
+                    target_dir = cmd_text[3:].strip() if len(cmd_text) > 2 else home_dir
                     if target_dir.startswith("~"):
-                        target_dir = os.path.expanduser(target_dir)
-                    new_cwd = os.path.normpath(os.path.join(cwd, target_dir))
-                    if os.path.isdir(new_cwd):
-                        self._send_json(200, {"success": True, "output": "", "cwd": new_cwd})
+                        target_dir = target_dir.replace("~", home_dir, 1)
+                    if not os.path.isabs(target_dir):
+                        target_dir = os.path.normpath(os.path.join(cwd, target_dir))
+                    if os.path.isdir(target_dir):
+                        self._send_json(200, {
+                            "success": True,
+                            "output": "",
+                            "cwd": target_dir,
+                            "user": default_user,
+                            "returncode": 0
+                        })
                     else:
-                        self._send_json(200, {"success": False, "output": f"cd: {target_dir}: No such file or directory\n", "cwd": cwd})
+                        self._send_json(200, {
+                            "success": False,
+                            "output": f"bash: cd: {target_dir}: No such file or directory\n",
+                            "cwd": cwd,
+                            "user": default_user,
+                            "returncode": 1
+                        })
                     return
 
+                # Execute as the installed non-root user via runuser/su
+                # If the user runs `sudo command`, sudoers config allows execution
+                exec_cmd = ["runuser", "-u", default_user, "--", "bash", "-c", cmd_text]
                 proc = subprocess.run(
-                    cmd_text,
-                    shell=True,
-                    cwd=cwd if os.path.isdir(cwd) else "/root",
+                    exec_cmd,
+                    cwd=cwd if os.path.isdir(cwd) else home_dir,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
                     text=True,
@@ -2031,12 +2070,25 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                     "success": (proc.returncode == 0),
                     "output": proc.stdout,
                     "cwd": cwd,
+                    "user": default_user,
                     "returncode": proc.returncode
                 })
             except subprocess.TimeoutExpired:
-                self._send_json(200, {"success": False, "output": "Command timed out after 30 seconds\n", "cwd": cwd})
+                self._send_json(200, {
+                    "success": False,
+                    "output": "Command timed out after 30 seconds\n",
+                    "cwd": cwd,
+                    "user": default_user,
+                    "returncode": 124
+                })
             except Exception as e:
-                self._send_json(500, {"success": False, "output": f"Error: {e}\n", "cwd": cwd})
+                self._send_json(200, {
+                    "success": False,
+                    "output": f"Error: {e}\n",
+                    "cwd": cwd,
+                    "user": default_user,
+                    "returncode": 1
+                })
             return
 
         # 16. User Management (Add / Delete / Password)
@@ -3008,6 +3060,41 @@ PrivateKey = {priv_key}
                 self._send_json(200, {"success": True, "message": f"Bridge '{name}' successfully deleted."})
             except Exception as e:
                 self._send_json(500, {"error": f"Failed deleting bridge: {e}"})
+            return
+
+        # 25. System Power Control (POST - destructive ops require POST method)
+        if path == "/api/v1/system/reboot":
+            import subprocess as _sp, threading as _th
+            _user = session.get("username", "unknown") if session else "loopback"
+            logger.warning("System REBOOT requested by user: %s", _user)
+            def _do_reboot():
+                import time as _t; _t.sleep(2)
+                try:
+                    _sp.run(["/usr/bin/systemctl", "reboot"], check=True)
+                except Exception:
+                    try:
+                        _sp.run(["/sbin/reboot", "-f"])
+                    except Exception as _e:
+                        logger.error("Reboot command failed: %s", _e)
+            _th.Thread(target=_do_reboot, daemon=True).start()
+            self._send_json(200, {"success": True, "message": "System is rebooting..."})
+            return
+
+        if path == "/api/v1/system/halt":
+            import subprocess as _sp, threading as _th
+            _user = session.get("username", "unknown") if session else "loopback"
+            logger.warning("System HALT (poweroff) requested by user: %s", _user)
+            def _do_halt():
+                import time as _t; _t.sleep(2)
+                try:
+                    _sp.run(["/usr/bin/systemctl", "poweroff"], check=True)
+                except Exception:
+                    try:
+                        _sp.run(["/sbin/poweroff", "-f"])
+                    except Exception as _e:
+                        logger.error("Poweroff command failed: %s", _e)
+            _th.Thread(target=_do_halt, daemon=True).start()
+            self._send_json(200, {"success": True, "message": "System is shutting down..."})
             return
 
         self._send_json(404, {"error": "Endpoint not found"})

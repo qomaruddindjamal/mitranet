@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /*
  * status_services.php - MitraNet Status: Services
  * Faithful port from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
@@ -78,9 +78,9 @@ foreach ($vms as $v) {
 						<td>WireGuard Fast Kernel VPN Service (wg-quick)</td>
 						<td>
 							<?php if ($wg_running): ?>
-								<i class="text-success fa-solid fa-check-circle fa-1x" title="Running"><span style="display: none">Running</span></i>
+								<i class="text-success fa-solid fa-check-circle fa-1x" title="Running"><span class="sr-only">Running</span></i>
 							<?php else: ?>
-								<i class="text-danger fa-solid fa-times-circle fa-1x" title="Stopped"><span style="display: none">Stopped</span></i>
+								<i class="text-danger fa-solid fa-times-circle fa-1x" title="Stopped"><span class="sr-only">Stopped</span></i>
 							<?php endif; ?>
 						</td>
 						<td>
@@ -101,9 +101,9 @@ foreach ($vms as $v) {
 						<td>Xray-core Multi-Protocol Anti-Censorship Service</td>
 						<td>
 							<?php if ($xray_running): ?>
-								<i class="text-success fa-solid fa-check-circle fa-1x" title="Running"><span style="display: none">Running</span></i>
+								<i class="text-success fa-solid fa-check-circle fa-1x" title="Running"><span class="sr-only">Running</span></i>
 							<?php else: ?>
-								<i class="text-danger fa-solid fa-times-circle fa-1x" title="Stopped"><span style="display: none">Stopped</span></i>
+								<i class="text-danger fa-solid fa-times-circle fa-1x" title="Stopped"><span class="sr-only">Stopped</span></i>
 							<?php endif; ?>
 						</td>
 						<td>
@@ -122,7 +122,7 @@ foreach ($vms as $v) {
 						<td><strong>dhcpd</strong></td>
 						<td>ISC / dnsmasq DHCP Server</td>
 						<td>
-							<i class="text-success fa-solid fa-check-circle fa-1x" title="Running"><span style="display: none">Running</span></i>
+							<i class="text-success fa-solid fa-check-circle fa-1x" title="Running"><span class="sr-only">Running</span></i>
 						</td>
 						<td>
 							<a href="#" id="restartservice-dhcpd" title="Restart Service"><i class="fa-solid fa-arrow-rotate-right"></i></a>
@@ -138,7 +138,7 @@ foreach ($vms as $v) {
 						<td><strong>dpinger</strong></td>
 						<td>Gateway Monitoring Daemon (mitranet-gateway-monitor)</td>
 						<td>
-							<i class="text-success fa-solid fa-check-circle fa-1x" title="Running"><span style="display: none">Running</span></i>
+							<i class="text-success fa-solid fa-check-circle fa-1x" title="Running"><span class="sr-only">Running</span></i>
 						</td>
 						<td>
 							<a href="#" id="restartservice-dpinger" title="Restart Service"><i class="fa-solid fa-arrow-rotate-right"></i></a>
@@ -153,7 +153,7 @@ foreach ($vms as $v) {
 						<td><strong>ntpd</strong></td>
 						<td>NTP Clock Synchronization (chrony)</td>
 						<td>
-							<i class="text-success fa-solid fa-check-circle fa-1x" title="Running"><span style="display: none">Running</span></i>
+							<i class="text-success fa-solid fa-check-circle fa-1x" title="Running"><span class="sr-only">Running</span></i>
 						</td>
 						<td>
 							<a href="#" id="restartservice-ntpd" title="Restart Service"><i class="fa-solid fa-arrow-rotate-right"></i></a>
@@ -168,7 +168,7 @@ foreach ($vms as $v) {
 						<td><strong>sshd</strong></td>
 						<td>OpenSSH Secure Shell Daemon</td>
 						<td>
-							<i class="text-success fa-solid fa-check-circle fa-1x" title="Running"><span style="display: none">Running</span></i>
+							<i class="text-success fa-solid fa-check-circle fa-1x" title="Running"><span class="sr-only">Running</span></i>
 						</td>
 						<td>
 							<a href="#" id="restartservice-sshd" title="Restart Service"><i class="fa-solid fa-arrow-rotate-right"></i></a>
@@ -182,7 +182,7 @@ foreach ($vms as $v) {
 						<td><strong>syslogd</strong></td>
 						<td>Systemd Journal / System Logger Daemon</td>
 						<td>
-							<i class="text-success fa-solid fa-check-circle fa-1x" title="Running"><span style="display: none">Running</span></i>
+							<i class="text-success fa-solid fa-check-circle fa-1x" title="Running"><span class="sr-only">Running</span></i>
 						</td>
 						<td>
 							<a href="#" id="restartservice-syslogd" title="Restart Service"><i class="fa-solid fa-arrow-rotate-right"></i></a>
@@ -196,7 +196,7 @@ foreach ($vms as $v) {
 						<td><strong>unbound</strong></td>
 						<td>Unbound DNS Validating Recursive Resolver</td>
 						<td>
-							<i class="text-success fa-solid fa-check-circle fa-1x" title="Running"><span style="display: none">Running</span></i>
+							<i class="text-success fa-solid fa-check-circle fa-1x" title="Running"><span class="sr-only">Running</span></i>
 						</td>
 						<td>
 							<a href="#" id="restartservice-unbound" title="Restart Service"><i class="fa-solid fa-arrow-rotate-right"></i></a>
@@ -212,9 +212,9 @@ foreach ($vms as $v) {
 						<td>Virtual Machine and aaPanel Micro-KVM Service</td>
 						<td>
 							<?php if ($vm_running): ?>
-								<i class="text-success fa-solid fa-check-circle fa-1x" title="Running"><span style="display: none">Running</span></i>
+								<i class="text-success fa-solid fa-check-circle fa-1x" title="Running"><span class="sr-only">Running</span></i>
 							<?php else: ?>
-								<i class="text-danger fa-solid fa-times-circle fa-1x" title="Stopped"><span style="display: none">Stopped</span></i>
+								<i class="text-danger fa-solid fa-times-circle fa-1x" title="Stopped"><span class="sr-only">Stopped</span></i>
 							<?php endif; ?>
 						</td>
 						<td>

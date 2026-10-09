@@ -451,7 +451,7 @@ $('[id^="showinfo"]').click(function() {
 // ------------------------------------------------------------------------------------------------
 
 // Put a dummy row into any empty table to keep IE happy
-// Commented out due to https://redmine.pfsense.org/issues/7504
+// Commented out - not needed for MitraNet (legacy IE compatibility issue)
 //$('tbody').each(function(){
 //	$(this).html($.trim($(this).html()))
 //});

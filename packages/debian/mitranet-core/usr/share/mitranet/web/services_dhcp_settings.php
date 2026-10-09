@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /*
  * services_dhcp_settings.php - MitraNet Services: DHCP Server Management
  * Multi-interface DHCP management (vEthernet, Bridge, LAN, VLAN)
@@ -180,13 +180,13 @@ if (!empty($err)) {
 }
 ?>
 
-<ul class="nav nav-tabs" style="margin-bottom: 20px;">
+<ul class="nav nav-tabs mb-20">
     <?php foreach ($eligible_ifaces as $if_key => $if_data): ?>
         <li role="presentation" class="<?=$current_if === $if_key ? 'active' : ''?>">
             <a href="services_dhcp_settings.php?if=<?=urlencode($if_key)?>">
                 <i class="fa-solid fa-network-wired"></i> <?=htmlspecialchars($if_data['label'])?>
                 <?php if (!empty($dhcp_configs[$if_key]['enabled'])): ?>
-                    <span class="badge" style="background-color: #5cb85c; font-size: 9px;">ON</span>
+                    <span class="badge badge-on-xs">ON</span>
                 <?php endif; ?>
             </a>
         </li>
@@ -274,7 +274,7 @@ if (!empty($err)) {
                     <button type="submit" class="btn btn-primary">
                         <i class="fa-solid fa-save"></i> <?=gettext("Simpan & Terapkan DHCP")?>
                     </button>
-                    <a href="status_dhcp_leases.php" class="btn btn-default" style="margin-left: 5px;">
+                    <a href="status_dhcp_leases.php" class="btn btn-default ml-1">
                         <i class="fa-solid fa-list-check"></i> <?=gettext("Lihat Status DHCP Leases")?>
                     </a>
                 </div>

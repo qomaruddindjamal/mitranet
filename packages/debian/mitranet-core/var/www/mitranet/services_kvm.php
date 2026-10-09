@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /*
  * services_kvm.php - MitraNet Services: KVM Subsystem Master Switch
  * Dedicated control page with pfSense-style Enable / Disable toggle
@@ -41,7 +41,7 @@ if (!empty($err_msg)) {
 <div class="panel panel-default">
     <div class="panel-heading">
         <h2 class="panel-title">
-            <i class="fa-solid fa-server" style="margin-right: 6px;"></i>
+            <i class="fa-solid fa-server" class="mr-1"></i>
             KVM Services Configuration
         </h2>
     </div>
@@ -54,13 +54,13 @@ if (!empty($err_msg)) {
                 <label class="col-sm-3 control-label">
                     <strong>Status Layanan KVM</strong>
                 </label>
-                <div class="col-sm-9" style="padding-top: 7px;">
+                <div class="col-sm-9 pt-7">
                     <?php if ($is_enabled): ?>
-                        <span class="label label-success" style="font-size: 13px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px;">
+                        <span class="label label-success" class="label-status-lg">
                             <i class="fa-solid fa-circle-check"></i> AKTIF (Enabled)
                         </span>
                     <?php else: ?>
-                        <span class="label label-default" style="font-size: 13px; padding: 6px 12px; background-color: #777; display: inline-flex; align-items: center; gap: 6px;">
+                        <span class="label label-default" class="label-status-lg label-status-off">
                             <i class="fa-solid fa-circle-xmark"></i> NONAKTIF (Disabled)
                         </span>
                     <?php endif; ?>
@@ -71,24 +71,24 @@ if (!empty($err_msg)) {
                 <label class="col-sm-3 control-label">
                     <strong>Informasi Layanan</strong>
                 </label>
-                <div class="col-sm-9" style="padding-top: 7px;">
-                    <p class="text-muted" style="margin-bottom: 8px;">
+                <div class="col-sm-9 pt-7">
+                    <p class="text-muted mb-8">
                         Secara default, <strong>Layanan KVM dinonaktifkan (Disabled)</strong> untuk menghemat alokasi RAM dan penggunaan CPU pada mesin atau router dengan spesifikasi rendah atau sedang.
                     </p>
-                    <ul class="text-muted" style="padding-left: 18px; margin-bottom: 0;">
+                    <ul class="text-muted ul-compact">
                         <li><strong>Saat Diaktifkan:</strong> Sub-sistem virtualisasi berjalan dan menu <strong>KVM</strong> akan tampil di sidebar untuk mengelola VM, aaPanel, dan file ISO.</li>
                         <li><strong>Saat Dinonaktifkan:</strong> Menu KVM disembunyikan dari sidebar navigasi dan seluruh VM dihentikan secara otomatis.</li>
                     </ul>
                 </div>
             </div>
 
-            <div class="form-group" style="margin-top: 25px; margin-bottom: 10px;">
+            <div class="form-group mt-25 mb-10">
                 <div class="col-sm-offset-3 col-sm-9">
                     <?php if ($is_enabled): ?>
                         <button type="submit" class="btn btn-danger">
                             <i class="fa-solid fa-power-off"></i> Nonaktifkan Layanan KVM
                         </button>
-                        <a href="services_virtual.php" class="btn btn-primary" style="margin-left: 10px;">
+                        <a href="services_virtual.php" class="btn btn-primary ml-2">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i> Buka Virtual Machines Manager
                         </a>
                     <?php else: ?>

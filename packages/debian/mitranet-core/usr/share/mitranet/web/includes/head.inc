@@ -45,12 +45,15 @@ $system_menu = array(
     array("General Setup", "/system.php"),
     array("High Availability", "/system_hasync.php"),
     array("Package Manager", "/pkg_mgr_installed.php"),
-    array("Register", "/system_register.php"),
     array("Routing", "/system_gateways.php"),
     array("Setup Wizard", "/wizard.php?xml=setup_wizard.xml"),
     array("Update", "/pkg_mgr_install.php?id=firmware"),
     array("User Manager", "/system_usermanager.php"),
     array("User Password Manager", "/system_usermanager_passwordmg.php"),
+    array("-DIVIDER-", ""),
+    array("Restart", "/system_reboot.php"),
+    array("Shutdown", "/system_halt.php"),
+    array("-DIVIDER-", ""),
     array("Logout (" . htmlspecialchars($_SESSION['username'] ?? 'admin') . ")", "/logout.php")
 );
 
@@ -97,7 +100,8 @@ $services_menu = array(
     array("Router Advertisement", "#"),
     array("SNMP", "#"),
     array("UPnP IGD &amp; PCP", "#"),
-    array("Wake-on-LAN", "#")
+    array("Wake-on-LAN", "#"),
+    array("KVM Services", "/services_kvm.php")
 );
 
 $vpn_menu = array(
@@ -180,14 +184,20 @@ $sidebar_structure = array(
     array('id' => 'firewall', 'name' => 'Firewall', 'icon' => 'fa-shield-halved', 'menu' => $firewall_menu),
     array('id' => 'services', 'name' => 'Services', 'icon' => 'fa-cubes', 'menu' => $services_menu),
     array('id' => 'vpn', 'name' => 'VPN', 'icon' => 'fa-key', 'menu' => $vpn_menu),
-    array('id' => 'xray', 'name' => 'Xray-core', 'icon' => 'fa-bolt', 'url' => '/vpn_xray.php', 'direct' => true),
-    array('id' => 'kvm', 'name' => 'KVM', 'icon' => 'fa-server', 'url' => '/services_virtual.php', 'direct' => true),
+    array('id' => 'xray', 'name' => 'Xray-core', 'icon' => 'fa-bolt', 'url' => '/vpn_xray.php', 'direct' => true)
+);
+
+if (MitraNetApi::isKvmEnabled()) {
+    $sidebar_structure[] = array('id' => 'kvm', 'name' => 'KVM', 'icon' => 'fa-server', 'url' => '/services_virtual.php', 'direct' => true);
+}
+
+$sidebar_structure = array_merge($sidebar_structure, array(
     array('id' => 'diagnostics', 'name' => 'Diagnostics', 'icon' => 'fa-toolbox', 'menu' => $diagnostics_menu),
     array('id' => 'terminal', 'name' => 'Terminal', 'icon' => 'fa-terminal', 'url' => '/diag_terminal.php', 'direct' => true),
     array('id' => 'tools', 'name' => 'Tools', 'icon' => 'fa-screwdriver-wrench', 'menu' => $tools_menu),
     array('id' => 'status', 'name' => 'Status', 'icon' => 'fa-chart-line', 'menu' => $status_menu),
     array('id' => 'help', 'name' => 'Help', 'icon' => 'fa-circle-question', 'menu' => $help_menu)
-);
+));
 
 ?>
 <!DOCTYPE html>
@@ -217,7 +227,7 @@ $sidebar_structure = array(
 					if (file_exists($logo_p)) {
 						include($logo_p);
 					} else {
-						echo '<span style="font-weight:900;font-size:22px;color:#fff;">MITRA<span style="color:#00bcd4;">NET</span></span>';
+						echo '<span class="logo-fallback-text">MITRA<span class="logo-fallback-accent">NET</span></span>';
 					}
 					?>
 				</a>
@@ -258,7 +268,7 @@ $sidebar_structure = array(
 <aside id="pf-sidebar">
 	<div class="sidebar-header-box">
 		<div class="sidebar-brand-title">
-			<i class="fa-solid fa-shield-halved" style="color: #337ab7; margin-right: 8px;"></i>
+			<i class="fa-solid fa-shield-halved sidebar-brand-icon"></i>
 			<span>MitraNet</span>
 		</div>
 		<button id="sidebar-close-btn" class="sidebar-close-btn" aria-label="Close Navigation">
