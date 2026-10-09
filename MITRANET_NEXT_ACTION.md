@@ -1,16 +1,16 @@
 # LANGKAH BERIKUTNYA MITRANET
 
-LANGKAH BERIKUTNYA: Eksekusi Automated Deployment Pipeline (Sync Mini PC, Rebuild ISO, Git Push) untuk modul Security Services
-ALASAN: Sub-menu Security Services pada menu Services telah diimplementasikan dengan tampilan identik MikroTik WinBox IP Services (services_security.php) dan teruji live di Mini PC. Sesuai Golden Rule, setiap pembaruan kode harus melewati 3 tahapan verifikasi & deployment resmi.
+LANGKAH BERIKUTNYA: Verifikasi operasional lanjutan dan monitoring tunnel WireGuard di WebUI & Mini PC
+ALASAN: Seluruh 10 tahap implementasi WireGuard (perbaikan PostUp/PostDown, WebUI Policy Routing, NAT Masquerade, Telemetri dinamis, Stale recovery, Peer MikroTik ROS v7 & QR code, pengujian regresi, deploy Mini PC, git push, dan ISO rebuild) telah tuntas diselesaikan dan diverifikasi.
 FILE ATAU SERVICE TERKAIT:
-- `web/services/services_security.php`
-- `web/includes/head.inc`
-- `deploy_pipeline.py`
+- `src/api/server.py`
+- `web/wg/status_wireguard.php`
+- `web/wg/vpn_wg_peers.php`
+- `web/wg/vpn_wg_tunnels_edit.php`
+- `iso/MitraNet-Rinjani-1.0.2-amd64.iso`
 PRASYARAT:
-- Sintaks `services_security.php` dan `head.inc` bebas error (STATUS: PASS)
-- Render WebUI di Mini PC terkonfirmasi sukses memuat badge Services dan entri tabel (STATUS: PASS)
-PERINTAH ATAU TINDAKAN YANG DIRENCANAKAN:
-1. Jalankan `python c:\mitranet\deploy_pipeline.py "feat(services): add Security Services sub-menu matching MikroTik WinBox IP Services"`
-2. Pastikan ISO `MitraNet-Rinjani-1.0.2-amd64.iso` ter-rebuild dengan exit code 0
-3. Pastikan git push ke origin/main sukses
-STATUS: READY_TO_EXECUTE
+- Semua unit test & regression test lulus (STATUS: PASS)
+- Mini PC service `mitranet-webui` dan `wg0` aktif normal (STATUS: PASS)
+- Git commit `9a64b1f` ter-push ke GitHub `origin/main` (STATUS: PASS)
+- ISO 1,017,139,200 bytes ter-generate dengan exit code 0 (STATUS: PASS)
+STATUS: TASK_COMPLETED

@@ -23,3 +23,7 @@ Ketika memulai conversation baru atau memulihkan pekerjaan setelah konteks terpo
 - **WebUI Port**: HTTP `8000` (`/mitranet/web`, dialihkan oleh PHP built-in server)
 - **Management API Port**: HTTP `8443` (Python REST API `/mitranet/src/api/server.py`)
 - **Aturan Operasional Wajib**: Ikuti batasan dan standar di `AGENTS.md`.
+- **Status WireGuard Terkini**:
+  - Tunnel `wg0` aktif dan terhubung ke MikroTik VPS `103.93.162.168:13231`.
+  - Routing dari interface `veth0` dan Outbound NAT (Masquerade) terkonfigurasi dan didukung penuh oleh WebUI dan Backend API.
+  - Script build ISO (`build/build_iso.py`) dan deploy pipeline (`deploy_pipeline.py`) terintegrasi penuh.

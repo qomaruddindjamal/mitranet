@@ -347,6 +347,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $err = "Gagal membuat vEther tunnel.";
             }
         }
+    } elseif ($action === 'create_macvlan') {
+        $name = trim($_POST['name'] ?? '');
+        $parent = trim($_POST['parent'] ?? 'enp1s0');
+        $mode = trim($_POST['mode'] ?? 'bridge');
+        $mac = trim($_POST['mac'] ?? '');
+        if (!empty($name) && !empty($parent)) {
+            $cmd = "ip link add link " . escapeshellarg($parent) . " name " . escapeshellarg($name) . " type macvlan mode " . escapeshellarg($mode);
+            if (!empty($mac)) {
+                $cmd .= " address " . escapeshellarg($mac);
+            }
+            exec($cmd, $out, $ret);
+            if ($ret === 0) {
+                exec("ip link set " . escapeshellarg($name) . " up");
+                // Optional auto dhcp if requested
+                if (!empty($_POST['auto_dhcp'])) {
+                    exec("dhcpcd -4 -n " . escapeshellarg($name) . " >/dev/null 2>&1 &");
+                }
+                $msg = "MACVLAN interface '{$name}' (parent: {$parent}, mode: {$mode}) berhasil dibuat.";
+            } else {
+                $err = "Gagal membuat MACVLAN interface: " . implode(" ", $out);
+            }
+        } else {
+            $err = "Nama interface dan parent interface wajib diisi.";
+        }
     } elseif ($action === 'create_vrf') {
         $name = trim($_POST['name'] ?? '');
         $table = (int)($_POST['table'] ?? 100);
@@ -613,7 +637,7 @@ $ifaces = array_filter($ifaces_raw, function($i) use ($current_tab) {
     } elseif ($current_tab === 'macsec') {
         return preg_match('/^macsec/i', $name);
     } elseif ($current_tab === 'macvlan') {
-        return preg_match('/^macvlan/i', $name);
+        return ($type === 'macvlan' || preg_match('/^(macvlan|mac[0-9])/i', $name));
     } elseif ($current_tab === 'vrrp') {
         return preg_match('/^vrrp/i', $name);
     }
@@ -1015,6 +1039,64 @@ if (!function_exists('fmt_pkts')) {
 </div>
 
 <!-- ============================================== -->
+<!-- MODAL: ADD NEW MACVLAN                         -->
+<!-- ============================================== -->
+<div id="modal-new-macvlan" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-md">
+        <form method="post" action="interfaces.php?tab=macvlan">
+            <input type="hidden" name="action" value="create_macvlan">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">
+                        <i class="fa-solid fa-network-wired text-primary"></i> <?=gettext("New MACVLAN Interface")?>
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label><span class="text-danger">*</span> <?=gettext("Interface Name:")?></label>
+                        <input type="text" name="name" class="form-control" placeholder="mac0" required>
+                    </div>
+                    <div class="form-group">
+                        <label><span class="text-danger">*</span> <?=gettext("Parent Physical Interface:")?></label>
+                        <select name="parent" class="form-control">
+                            <?php foreach ($ifaces_raw as $raw_if): ?>
+                                <?php if (!empty($raw_if['name']) && !preg_match('/^(lo|wg|tun|tap|macvlan)/i', $raw_if['name'])): ?>
+                                    <option value="<?=htmlspecialchars($raw_if['name'])?>"><?=htmlspecialchars($raw_if['name'])?></option>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label><?=gettext("MACVLAN Mode:")?></label>
+                        <select name="mode" class="form-control">
+                            <option value="bridge" selected>bridge (Komunikasi antar macvlan dan luar)</option>
+                            <option value="vepa">vepa (Virtual Ethernet Port Aggregator)</option>
+                            <option value="private">private (Isolasi penuh)</option>
+                            <option value="passthru">passthru (Direct pass-through)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label><?=gettext("Custom MAC Address:")?></label>
+                        <input type="text" name="mac" class="form-control" placeholder="02:42:0a:0a:42:01">
+                        <span class="help-block">Kosongkan untuk otomatis di-generate oleh kernel.</span>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="auto_dhcp" value="1" checked> <strong><?=gettext("Minta IP Address otomatis via DHCP (dhcpcd)")?></strong>
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-plus icon-embed-btn"></i> Create MACVLAN</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================== -->
 <!-- MODAL: ADD NEW LAGG / BONDING                  -->
 <!-- ============================================== -->
 <div id="modal-new-lagg" class="modal fade" role="dialog">
@@ -1111,6 +1193,7 @@ if (!function_exists('fmt_pkts')) {
                     <select class="form-control" id="new-iface-type">
                         <option value="bridge">Bridge Interface</option>
                         <option value="vlan">VLAN Interface</option>
+                        <option value="macvlan">MACVLAN Interface (Virtual MAC)</option>
                         <option value="vether">vEthernet (KVM / Host-Guest)</option>
                         <option value="vether_tunnel">vEther Tunnel</option>
                         <option value="lagg">Bonding / LAGG</option>
@@ -1426,6 +1509,8 @@ window.openNewModal = function() {
         $('#modal-new-bridge').modal('show');
     } else if (currentTab === 'vlan') {
         $('#modal-new-vlan').modal('show');
+    } else if (currentTab === 'macvlan') {
+        $('#modal-new-macvlan').modal('show');
     } else if (currentTab === 'vether') {
         $('#modal-new-vether').modal('show');
     } else if (currentTab === 'vether_tunnel') {
@@ -1447,6 +1532,8 @@ window.proceedToTypeModal = function() {
             $('#modal-new-bridge').modal('show');
         } else if (selectedType === 'vlan') {
             $('#modal-new-vlan').modal('show');
+        } else if (selectedType === 'macvlan') {
+            $('#modal-new-macvlan').modal('show');
         } else if (selectedType === 'vether') {
             $('#modal-new-vether').modal('show');
         } else if (selectedType === 'vether_tunnel') {
