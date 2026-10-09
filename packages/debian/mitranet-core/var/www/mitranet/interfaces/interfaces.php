@@ -10,6 +10,112 @@ require_once(__DIR__ . '/../includes/api.inc');
 $msg = '';
 $err = '';
 
+// AJAX Endpoint: Real-time interface traffic stats (compatible with polling & ifstats)
+if (isset($_GET['ajax']) && $_GET['ajax'] === 'traffic') {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-cache, no-store, must-revalidate');
+    $now = microtime(true);
+    $proc_stats = [];
+    if (file_exists('/proc/net/dev') && is_readable('/proc/net/dev')) {
+        $lines = file('/proc/net/dev');
+        foreach ($lines as $line) {
+            if (strpos($line, ':') === false) continue;
+            list($dev, $data) = explode(':', $line, 2);
+            $dev = trim($dev);
+            $fields = preg_split('/\s+/', trim($data));
+            if (count($fields) >= 16) {
+                $proc_stats[$dev] = [
+                    'rx_bytes'   => (float)$fields[0],
+                    'rx_packets' => (float)$fields[1],
+                    'tx_bytes'   => (float)$fields[8],
+                    'tx_packets' => (float)$fields[9],
+                ];
+            }
+        }
+    }
+    if (empty($proc_stats)) {
+        $ifaces = MitraNetApi::getInterfaces();
+        foreach ($ifaces as $i) {
+            $name = $i['name'] ?? '';
+            if (!$name) continue;
+            $t = $i['traffic'] ?? [];
+            $proc_stats[$name] = [
+                'rx_bytes'   => (float)($t['rx_bytes'] ?? 0),
+                'rx_packets' => (float)($t['rx_packets'] ?? 0),
+                'tx_bytes'   => (float)($t['tx_bytes'] ?? 0),
+                'tx_packets' => (float)($t['tx_packets'] ?? 0),
+            ];
+        }
+    }
+    echo json_encode(['timestamp' => $now, 'interfaces' => $proc_stats]);
+    exit;
+}
+
+// AJAX Endpoint: Real-time full interface detail for WinBox-style modal dialog
+if (isset($_GET['ajax']) && $_GET['ajax'] === 'detail') {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-cache, no-store, must-revalidate');
+    $ifname = trim($_GET['if'] ?? '');
+    if (!$ifname) {
+        echo json_encode(['error' => 'Interface name required']);
+        exit;
+    }
+
+    $all_ifaces = MitraNetApi::getInterfaces();
+    $target = null;
+    foreach ($all_ifaces as $i) {
+        if (strtolower($i['name']) === strtolower($ifname)) {
+            $target = $i;
+            break;
+        }
+    }
+    if (!$target) {
+        echo json_encode(['error' => 'Interface not found']);
+        exit;
+    }
+
+    // Read real sysfs hardware and link attributes
+    $speed = 'Unknown';
+    $duplex = 'Unknown';
+    $carrier = 0;
+    $sys_path = "/sys/class/net/{$ifname}";
+    if (file_exists("{$sys_path}/speed")) {
+        $s = @file_get_contents("{$sys_path}/speed");
+        if ($s !== false && intval(trim($s)) > 0) $speed = trim($s) . ' Mbps';
+    }
+    if (file_exists("{$sys_path}/duplex")) {
+        $d = @file_get_contents("{$sys_path}/duplex");
+        if ($d !== false && trim($d) !== '') $duplex = ucfirst(trim($d));
+    }
+    if (file_exists("{$sys_path}/carrier")) {
+        $c = @file_get_contents("{$sys_path}/carrier");
+        if ($c !== false) $carrier = intval(trim($c));
+    }
+
+    $detail = [
+        'name'          => $target['name'],
+        'altname'       => $target['altname'] ?? $target['name'],
+        'is_up'         => !empty($target['is_up']),
+        'oper_state'    => strtoupper($target['oper_state'] ?? 'UNKNOWN'),
+        'carrier'       => $carrier,
+        'speed'         => $speed,
+        'duplex'        => $duplex,
+        'mac_address'   => $target['mac_address'] ?? '00:00:00:00:00:00',
+        'mtu'           => $target['mtu'] ?? 1500,
+        'l2mtu'         => 1500,
+        'type'          => $target['type'] ?? 'ether',
+        'ipv4'          => $target['ipv4_addresses'] ?? [],
+        'ipv6'          => $target['ipv6_addresses'] ?? [],
+        'comment'       => $target['comment'] ?? '',
+        'vrf'           => $target['vrf'] ?? 'main',
+        'arp'           => 'enabled',
+        'traffic'       => $target['traffic'] ?? []
+    ];
+
+    echo json_encode(['success' => true, 'data' => $detail]);
+    exit;
+}
+
 // Support ?if=<name> or ?name=<name> for configuration edit mode
 $target_if = $_GET['if'] ?? $_GET['name'] ?? '';
 
@@ -69,7 +175,108 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $err = $res['data']['error'] ?? 'Gagal menghapus alamat IP.';
             }
         }
-        $target_if = $ifname;
+    } elseif ($action === 'create_bridge') {
+        $name = trim($_POST['name'] ?? '');
+        $members = array_filter(array_map('trim', (array)($_POST['members'] ?? [])));
+        if (!empty($name)) {
+            $res = MitraNetApi::request('/bridges/create', 'POST', [
+                'name' => $name,
+                'members' => array_values($members)
+            ]);
+            if (($res['status'] ?? 0) === 200) {
+                $msg = "Bridge interface '{$name}' berhasil dibuat.";
+            } else {
+                $err = $res['data']['error'] ?? 'Gagal membuat bridge.';
+            }
+        }
+    } elseif ($action === 'create_vlan') {
+        $parent = trim($_POST['parent'] ?? '');
+        $tag = (int)($_POST['tag'] ?? 0);
+        $descr = trim($_POST['descr'] ?? '');
+        if (!empty($parent) && $tag > 0 && $tag <= 4094) {
+            $res = MitraNetApi::request('/vlans/create', 'POST', [
+                'parent_interface' => $parent,
+                'vlan_id' => $tag,
+                'description' => $descr
+            ]);
+            if (($res['status'] ?? 0) === 200) {
+                $msg = "VLAN interface '{$parent}.{$tag}' berhasil dibuat.";
+            } else {
+                $err = $res['data']['error'] ?? 'Gagal membuat VLAN.';
+            }
+        }
+    } elseif ($action === 'create_vether') {
+        $name = trim($_POST['name'] ?? '');
+        $ip_cidr = trim($_POST['ip_cidr'] ?? '');
+        $desc = trim($_POST['description'] ?? '');
+        if (!empty($name) && !empty($ip_cidr)) {
+            $res = MitraNetApi::createVethernet($name, $ip_cidr, $desc);
+            if (($res['status'] ?? 0) === 200 && ($res['data']['success'] ?? false)) {
+                $msg = $res['data']['message'] ?? "vEthernet '{$name}' berhasil dibuat.";
+            } else {
+                $err = $res['data']['error'] ?? 'Gagal membuat vEthernet.';
+            }
+        }
+    } elseif ($action === 'create_vether_tunnel') {
+        $name = trim($_POST['name'] ?? '');
+        $peer = trim($_POST['peer'] ?? '');
+        if (!empty($name)) {
+            $peer_name = !empty($peer) ? $peer : $name . "-peer";
+            $cmd = "ip link add " . escapeshellarg($name) . " type veth peer name " . escapeshellarg($peer_name);
+            exec($cmd, $out, $ret);
+            if ($ret === 0) {
+                exec("ip link set " . escapeshellarg($name) . " up");
+                exec("ip link set " . escapeshellarg($peer_name) . " up");
+                $msg = "vEther Tunnel '{$name}' <-> '{$peer_name}' berhasil dibuat.";
+            } else {
+                $err = "Gagal membuat vEther tunnel.";
+            }
+        }
+    } elseif ($action === 'create_vrf') {
+        $name = trim($_POST['name'] ?? '');
+        $table = (int)($_POST['table'] ?? 100);
+        if (!empty($name) && $table > 0) {
+            $res = MitraNetApi::request('/vrfs/create', 'POST', [
+                'name' => $name,
+                'table_id' => $table
+            ]);
+            if (($res['status'] ?? 0) === 200) {
+                $msg = "VRF '{$name}' (Table {$table}) berhasil dibuat.";
+            } else {
+                $err = $res['data']['error'] ?? 'Gagal membuat VRF.';
+            }
+        }
+    } elseif ($action === 'create_lagg') {
+        $name = trim($_POST['name'] ?? '');
+        $mode = trim($_POST['mode'] ?? '802.3ad');
+        $members = array_filter(array_map('trim', (array)($_POST['members'] ?? [])));
+        if (!empty($name)) {
+            $res = MitraNetApi::request('/bonds/create', 'POST', [
+                'name' => $name,
+                'mode' => $mode,
+                'members' => array_values($members)
+            ]);
+            if (($res['status'] ?? 0) === 200) {
+                $msg = "Bond/LAGG '{$name}' berhasil dibuat.";
+            } else {
+                $err = $res['data']['error'] ?? 'Gagal membuat LAGG.';
+            }
+        }
+    } elseif ($action === 'delete_interface') {
+        $del_name = trim($_POST['interface'] ?? '');
+        $del_type = trim($_POST['type'] ?? '');
+        if (!empty($del_name)) {
+            if ($del_type === 'Bridge' || strpos($del_name, 'br') === 0) {
+                MitraNetApi::request('/bridges/delete', 'POST', ['name' => $del_name]);
+            } elseif ($del_type === 'VLAN' || strpos($del_name, '.') !== false || strpos($del_name, 'vlan') === 0) {
+                MitraNetApi::request('/vlans/delete', 'POST', ['name' => $del_name]);
+            } elseif (strpos($del_name, 'veth') === 0) {
+                exec("ip link delete " . escapeshellarg($del_name));
+            } else {
+                exec("ip link delete " . escapeshellarg($del_name));
+            }
+            $msg = "Interface '{$del_name}' berhasil dihapus.";
+        }
     }
 }
 
@@ -247,12 +454,44 @@ $is_protected = ($selected_iface['name'] === 'lo' || $selected_iface['name'] ===
 <!-- 2. MAIN MIKROTIK-STYLE INTERFACES GRID     -->
 <!-- ========================================== -->
 <?php
+$current_tab = strtolower($_GET['tab'] ?? 'interface');
+
 // Filter: exclude tap-* (KVM internal) and all wireless interfaces
-$ifaces = array_filter($ifaces_raw, function($i) {
+$ifaces = array_filter($ifaces_raw, function($i) use ($current_tab) {
     $name = strtolower($i['name'] ?? '');
     $type = strtolower($i['type'] ?? '');
     if (preg_match('/^tap[-_0-9]/i', $name)) return false;
     if (preg_match('/^(wlan|wlp|wls|ath|ra|wifi)/i', $name) || in_array($type, ['wlan', 'wireless', 'ieee80211'])) return false;
+
+    // Filter by active tab
+    if ($current_tab === 'ethernet') {
+        return preg_match('/^(en|eth|eno|ens|enp)/i', $name);
+    } elseif ($current_tab === 'bridge') {
+        return preg_match('/^br[-_]/i', $name) || $type === 'bridge';
+    } elseif ($current_tab === 'vlan') {
+        return preg_match('/^vlan/i', $name) || strpos($name, '.') !== false;
+    } elseif ($current_tab === 'lagg' || $current_tab === 'bonding') {
+        return preg_match('/^bond/i', $name) || $type === 'bond';
+    } elseif ($current_tab === 'vether') {
+        return preg_match('/^veth/i', $name) && strpos($name, 'tun') === false;
+    } elseif ($current_tab === 'vether_tunnel') {
+        return preg_match('/^(vtun|veth.*tun)/i', $name) || (preg_match('/^veth/i', $name) && strpos($name, 'peer') !== false);
+    } elseif ($current_tab === 'vxlan') {
+        return preg_match('/^vxlan/i', $name);
+    } elseif ($current_tab === 'gre') {
+        return preg_match('/^gre/i', $name);
+    } elseif ($current_tab === 'iptunnel') {
+        return preg_match('/^(tunl|ipip|sit)/i', $name);
+    } elseif ($current_tab === 'eoip') {
+        return preg_match('/^eoip/i', $name);
+    } elseif ($current_tab === 'macsec') {
+        return preg_match('/^macsec/i', $name);
+    } elseif ($current_tab === 'macvlan') {
+        return preg_match('/^macvlan/i', $name);
+    } elseif ($current_tab === 'vrrp') {
+        return preg_match('/^vrrp/i', $name);
+    }
+
     return true;
 });
 
@@ -272,21 +511,23 @@ usort($ifaces, function($a, $b) {
 });
 
 /* Helper: format bytes to human-readable */
-function fmt_bytes(int $b): string {
-    if ($b >= 1073741824) return number_format($b / 1073741824, 2) . ' GB';
-    if ($b >= 1048576)    return number_format($b / 1048576, 1)    . ' MB';
-    if ($b >= 1024)       return number_format($b / 1024, 1)       . ' KB';
-    return $b . ' B';
+if (!function_exists('fmt_bytes')) {
+    function fmt_bytes(int $b): string {
+        if ($b >= 1073741824) return number_format($b / 1073741824, 2) . ' GB';
+        if ($b >= 1048576)    return number_format($b / 1048576, 1)    . ' MB';
+        if ($b >= 1024)       return number_format($b / 1024, 1)       . ' KB';
+        return $b . ' B';
+    }
 }
 
 /* Helper: format packet count */
-function fmt_pkts(int $p): string {
-    if ($p >= 1000000) return number_format($p / 1000000, 1) . 'M';
-    if ($p >= 1000)    return number_format($p / 1000, 1)    . 'K';
-    return (string)$p;
+if (!function_exists('fmt_pkts')) {
+    function fmt_pkts(int $p): string {
+        if ($p >= 1000000) return number_format($p / 1000000, 1) . 'M';
+        if ($p >= 1000)    return number_format($p / 1000, 1)    . 'K';
+        return (string)$p;
+    }
 }
-
-$current_tab = $_GET['tab'] ?? 'interface';
 ?>
 
 <div class="container-fluid mitranet-page-container">
@@ -318,16 +559,22 @@ $current_tab = $_GET['tab'] ?? 'interface';
 					<a href="interfaces.php?tab=gre">GRE Tunnel</a>
 				</li>
 				<li class="<?=($current_tab === 'vlan') ? 'active' : ''?>">
-					<a href="vlan.php">VLAN</a>
+					<a href="interfaces.php?tab=vlan">VLAN</a>
 				</li>
 				<li class="<?=($current_tab === 'bridge') ? 'active' : ''?>">
-					<a href="bridge.php">Bridge</a>
+					<a href="interfaces.php?tab=bridge">Bridge</a>
 				</li>
 				<li class="<?=($current_tab === 'vxlan') ? 'active' : ''?>">
 					<a href="interfaces.php?tab=vxlan">VXLAN</a>
 				</li>
+				<li class="<?=($current_tab === 'vrf') ? 'active' : ''?>">
+					<a href="interfaces.php?tab=vrf">VRF</a>
+				</li>
 				<li class="<?=($current_tab === 'vrrp') ? 'active' : ''?>">
 					<a href="interfaces.php?tab=vrrp">VRRP</a>
+				</li>
+				<li class="<?=($current_tab === 'lagg' || $current_tab === 'bonding') ? 'active' : ''?>">
+					<a href="interfaces.php?tab=lagg">LAGG</a>
 				</li>
 				<li class="<?=($current_tab === 'macsec') ? 'active' : ''?>">
 					<a href="interfaces.php?tab=macsec">MACsec</a>
@@ -335,11 +582,8 @@ $current_tab = $_GET['tab'] ?? 'interface';
 				<li class="<?=($current_tab === 'macvlan') ? 'active' : ''?>">
 					<a href="interfaces.php?tab=macvlan">MACVLAN</a>
 				</li>
-				<li class="<?=($current_tab === 'bonding') ? 'active' : ''?>">
-					<a href="lagg.php">Bonding</a>
-				</li>
 				<li class="<?=($current_tab === 'vether') ? 'active' : ''?>">
-					<a href="vethernet.php">vEther</a>
+					<a href="interfaces.php?tab=vether">vEther</a>
 				</li>
 				<li class="<?=($current_tab === 'vether_tunnel') ? 'active' : ''?>">
 					<a href="interfaces.php?tab=vether_tunnel">vEther Tunnel</a>
@@ -432,9 +676,9 @@ $current_tab = $_GET['tab'] ?? 'interface';
 					else $type = 'Ethernet';
 					$mtu = $i['mtu'] ?? 1500;
 					?>
-					<tr onclick="selectRow(this, '<?=htmlspecialchars($ifname)?>', '<?=htmlspecialchars(addslashes($i['comment'] ?? ''))?>')" ondblclick="location.href='interfaces.php?if=<?=urlencode($ifname)?>'">
+					<tr data-ifname="<?=htmlspecialchars($ifname)?>" onclick="selectRow(this, '<?=htmlspecialchars($ifname)?>', '<?=htmlspecialchars(addslashes($i['comment'] ?? ''))?>')" ondblclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">
 						<!-- Flag -->
-						<td class="text-center">
+						<td class="text-center col-flag-cell">
 							<?php if ($is_up && $oper_state === 'UP'): ?>
 								<i class="fa-solid fa-check text-success" title="Running / Link UP"></i>
 							<?php elseif ($is_up): ?>
@@ -454,28 +698,24 @@ $current_tab = $_GET['tab'] ?? 'interface';
 						<td><?=htmlspecialchars($mtu)?></td>
 						<!-- L2 MTU -->
 						<td>1500</td>
-						<!-- Tx -->
-						<td><?=fmt_bytes($tx_bytes)?></td>
-						<!-- Rx -->
-						<td><?=fmt_bytes($rx_bytes)?></td>
+						<!-- Tx (Live Rate B/s) -->
+						<td class="col-tx" data-bytes="<?=$tx_bytes?>" title="Total: <?=fmt_bytes($tx_bytes)?>">0 B/s</td>
+						<!-- Rx (Live Rate B/s) -->
+						<td class="col-rx" data-bytes="<?=$rx_bytes?>" title="Total: <?=fmt_bytes($rx_bytes)?>">0 B/s</td>
 						<!-- Tx Packet (p/s) -->
-						<td><?=fmt_pkts($tx_pkts)?></td>
+						<td class="col-tx-pkts" data-pkts="<?=$tx_pkts?>" title="Total: <?=fmt_pkts($tx_pkts)?> pkts">0</td>
 						<!-- Rx Packet (p/s) -->
-						<td><?=fmt_pkts($rx_pkts)?></td>
-						<!-- FP Tx -->
-						<td>0 B</td>
-						<!-- FP Rx -->
-						<td>0 B</td>
+						<td class="col-rx-pkts" data-pkts="<?=$rx_pkts?>" title="Total: <?=fmt_pkts($rx_pkts)?> pkts">0</td>
+						<!-- FP Tx (FastPath Rate) -->
+						<td class="col-fp-tx text-muted">0 B/s</td>
+						<!-- FP Rx (FastPath Rate) -->
+						<td class="col-fp-rx text-muted">0 B/s</td>
 						<!-- FP Tx Packet (p/s) -->
-						<td>0</td>
+						<td class="col-fp-tx-pkts text-muted">0</td>
 						<!-- FP Rx Packet (p/s) -->
-						<td>0</td>
-						<!-- Actions / Menu -->
-						<td class="text-center">
-							<a href="interfaces.php?if=<?=urlencode($ifname)?>" title="Configure <?=htmlspecialchars($ifname)?>">
-								<i class="fa-solid fa-pencil text-primary"></i>
-							</a>
-						</td>
+						<td class="col-fp-rx-pkts text-muted">0</td>
+						<!-- Actions / Menu Column (Hamburger context) -->
+						<td class="text-center col-menu"></td>
 					</tr>
 					<?php endforeach; ?>
 				<?php endif; ?>
@@ -496,122 +736,877 @@ $current_tab = $_GET['tab'] ?? 'interface';
 	</div>
 </div>
 
-<!-- MODAL: ADD NEW INTERFACE -->
+<!-- ============================================== -->
+<!-- MODAL: ADD NEW BRIDGE INTERFACE                -->
+<!-- ============================================== -->
+<div id="modal-new-bridge" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-md">
+        <form method="post" action="interfaces.php?tab=bridge">
+            <input type="hidden" name="action" value="create_bridge">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">
+                        <i class="fa-solid fa-bridge-water text-primary"></i> <?=gettext("New Bridge Interface")?>
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label><span class="text-danger">*</span> <?=gettext("Bridge Name:")?></label>
+                        <input type="text" name="name" class="form-control" placeholder="e.g. br0, br-lan" required>
+                        <span class="help-block">Nama perangkat bridge kernel Linux (contoh: br0).</span>
+                    </div>
+                    <div class="form-group">
+                        <label><?=gettext("Member Interfaces (Ports):")?></label>
+                        <select name="members[]" class="form-control selectpicker" multiple data-live-search="true" title="Pilih port / interface...">
+                            <?php foreach ($ifaces_raw as $p): if ($p['name'] !== 'lo' && strpos($p['name'], 'br') !== 0): ?>
+                                <option value="<?=htmlspecialchars($p['name'])?>"><?=htmlspecialchars(strtoupper($p['name']))?> (<?=htmlspecialchars($p['name'])?>)</option>
+                            <?php endif; endforeach; ?>
+                        </select>
+                        <span class="help-block">Interface fisik atau virtual yang akan digabungkan ke bridge ini.</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-plus icon-embed-btn"></i> Create Bridge</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL: ADD NEW VLAN INTERFACE                  -->
+<!-- ============================================== -->
+<div id="modal-new-vlan" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-md">
+        <form method="post" action="interfaces.php?tab=vlan">
+            <input type="hidden" name="action" value="create_vlan">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">
+                        <i class="fa-solid fa-tags text-primary"></i> <?=gettext("New 802.1Q VLAN Interface")?>
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label><span class="text-danger">*</span> <?=gettext("Parent Interface:")?></label>
+                        <select name="parent" class="form-control" required>
+                            <?php foreach ($ifaces_raw as $p): if ($p['name'] !== 'lo'): ?>
+                                <option value="<?=htmlspecialchars($p['name'])?>"><?=htmlspecialchars(strtoupper($p['name']))?> (<?=htmlspecialchars($p['name'])?>)</option>
+                            <?php endif; endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label><span class="text-danger">*</span> <?=gettext("VLAN Tag (1 - 4094):")?></label>
+                        <input type="number" name="tag" class="form-control" min="1" max="4094" placeholder="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label><?=gettext("Description:")?></label>
+                        <input type="text" name="descr" class="form-control" placeholder="Office / Hotspot VLAN">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-plus icon-embed-btn"></i> Create VLAN</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL: ADD NEW VETHERNET                       -->
+<!-- ============================================== -->
+<div id="modal-new-vether" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-md">
+        <form method="post" action="interfaces.php?tab=vether">
+            <input type="hidden" name="action" value="create_vether">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">
+                        <i class="fa-solid fa-network-wired text-primary"></i> <?=gettext("New vEthernet Interface")?>
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label><span class="text-danger">*</span> <?=gettext("Interface Name:")?></label>
+                        <input type="text" name="name" class="form-control" placeholder="veth10" required>
+                    </div>
+                    <div class="form-group">
+                        <label><span class="text-danger">*</span> <?=gettext("IP Address / CIDR:")?></label>
+                        <input type="text" name="ip_cidr" class="form-control" placeholder="10.10.10.1/24" required>
+                    </div>
+                    <div class="form-group">
+                        <label><?=gettext("Description:")?></label>
+                        <input type="text" name="description" class="form-control" placeholder="KVM VM Host-Guest Subnet">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-plus icon-embed-btn"></i> Create vEthernet</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL: ADD NEW VETHER TUNNEL                   -->
+<!-- ============================================== -->
+<div id="modal-new-vether-tunnel" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-md">
+        <form method="post" action="interfaces.php?tab=vether_tunnel">
+            <input type="hidden" name="action" value="create_vether_tunnel">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">
+                        <i class="fa-solid fa-arrows-split-up-and-left text-primary"></i> <?=gettext("New vEther Tunnel")?>
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label><span class="text-danger">*</span> <?=gettext("Tunnel Endpoint Name:")?></label>
+                        <input type="text" name="name" class="form-control" placeholder="vtun0" required>
+                    </div>
+                    <div class="form-group">
+                        <label><?=gettext("Peer Interface Name:")?></label>
+                        <input type="text" name="peer" class="form-control" placeholder="vtun0-peer">
+                        <span class="help-block">Kosongkan untuk otomatis menggunakan [nama]-peer.</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-plus icon-embed-btn"></i> Create Tunnel</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL: ADD NEW LAGG / BONDING                  -->
+<!-- ============================================== -->
+<div id="modal-new-lagg" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-md">
+        <form method="post" action="interfaces.php?tab=lagg">
+            <input type="hidden" name="action" value="create_lagg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">
+                        <i class="fa-solid fa-link text-primary"></i> <?=gettext("New LAGG / Bonding Interface")?>
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label><span class="text-danger">*</span> <?=gettext("Bond Name:")?></label>
+                        <input type="text" name="name" class="form-control" placeholder="bond0" required>
+                    </div>
+                    <div class="form-group">
+                        <label><?=gettext("Bonding Mode:")?></label>
+                        <select name="mode" class="form-control">
+                            <option value="802.3ad">802.3ad (LACP Dynamic Link Aggregation)</option>
+                            <option value="active-backup">active-backup (Failover)</option>
+                            <option value="balance-rr">balance-rr (Round-Robin)</option>
+                            <option value="balance-xor">balance-xor (XOR)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label><?=gettext("Member Interfaces:")?></label>
+                        <select name="members[]" class="form-control selectpicker" multiple data-live-search="true" title="Pilih port anggota...">
+                            <?php foreach ($ifaces_raw as $p): if (preg_match('/^(en|eth|eno|ens|enp)/i', $p['name'])): ?>
+                                <option value="<?=htmlspecialchars($p['name'])?>"><?=htmlspecialchars(strtoupper($p['name']))?></option>
+                            <?php endif; endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-plus icon-embed-btn"></i> Create Bond</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL: ADD NEW VRF                             -->
+<!-- ============================================== -->
+<div id="modal-new-vrf" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-md">
+        <form method="post" action="interfaces.php?tab=vrf">
+            <input type="hidden" name="action" value="create_vrf">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">
+                        <i class="fa-solid fa-diagram-project text-primary"></i> <?=gettext("New VRF Instance")?>
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label><span class="text-danger">*</span> <?=gettext("VRF Name:")?></label>
+                        <input type="text" name="name" class="form-control" placeholder="vrf_cust1" required>
+                    </div>
+                    <div class="form-group">
+                        <label><span class="text-danger">*</span> <?=gettext("Routing Table ID (1 - 1000):")?></label>
+                        <input type="number" name="table" class="form-control" min="1" max="1000" placeholder="100" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-plus icon-embed-btn"></i> Create VRF</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL: ADD NEW GENERIC INTERFACE (All tab)     -->
+<!-- ============================================== -->
 <div id="modal-new-interface" class="modal fade" role="dialog">
     <div class="modal-dialog modal-md">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
                 <h4 class="modal-title">
-                    <i class="fa-solid fa-network-wired text-primary"></i> New Interface
+                    <i class="fa-solid fa-network-wired text-primary"></i> <?=gettext("New Interface")?>
                 </h4>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label>Interface Type:</label>
-                    <select class="form-control" id="new-iface-type" onchange="onTypeChange(this.value)">
-                        <option value="vlan">VLAN Interface</option>
+                    <label><?=gettext("Select Interface Type:")?></label>
+                    <select class="form-control" id="new-iface-type">
                         <option value="bridge">Bridge Interface</option>
-                        <option value="bonding">Bonding / LAGG</option>
+                        <option value="vlan">VLAN Interface</option>
                         <option value="vether">vEthernet (KVM / Host-Guest)</option>
-                        <option value="vxlan">VXLAN Tunnel</option>
-                        <option value="gre">GRE Tunnel</option>
-                        <option value="iptunnel">IP Tunnel (IPIP)</option>
-                        <option value="eoip">EoIP Tunnel</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Name / Identifier:</label>
-                    <input type="text" class="form-control" id="new-iface-name" placeholder="e.g. vlan100, br0">
-                </div>
-                <div class="form-group" id="group-parent">
-                    <label>Parent Interface:</label>
-                    <select class="form-control" id="new-iface-parent">
-                        <?php foreach ($ifaces as $p): ?>
-                            <option value="<?=htmlspecialchars($p['name'])?>"><?=htmlspecialchars(strtoupper($p['name']))?></option>
-                        <?php endforeach; ?>
+                        <option value="vether_tunnel">vEther Tunnel</option>
+                        <option value="lagg">Bonding / LAGG</option>
+                        <option value="vrf">VRF Domain</option>
                     </select>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-sm btn-primary" onclick="createInterface()">Apply &amp; Create</button>
+                <button type="button" class="btn btn-sm btn-primary" onclick="proceedToTypeModal()"><?=gettext("Next")?> &rarr;</button>
             </div>
         </div>
     </div>
+<!-- ============================================== -->
+<!-- MODAL: WINBOX-STYLE INTERFACE EDIT / DETAIL    -->
+<!-- ============================================== -->
+<div id="modal-edit-interface" class="modal fade" role="dialog" tabindex="-1">
+    <div class="modal-dialog modal-lg winbox-modal-dialog">
+        <form method="post" action="interfaces.php" id="form-edit-interface" class="form-horizontal">
+            <input type="hidden" name="action" value="save_interface">
+            <input type="hidden" name="interface" id="edit-iface-name-hidden" value="">
+            <div class="modal-content winbox-window-popup">
+                
+                <!-- WINBOX WINDOW HEADER -->
+                <div class="winbox-popup-header">
+                    <div class="winbox-popup-title">
+                        <i class="fa-solid fa-window-maximize"></i> Interface &gt; <span id="winbox-title-label">ether1</span>
+                    </div>
+                    <div class="winbox-popup-controls">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                </div>
+
+                <!-- WINBOX TAB NAVIGATION -->
+                <div class="winbox-popup-tabs-bar">
+                    <ul class="nav nav-tabs winbox-tabs-nav" role="tablist">
+                        <li role="presentation" class="active">
+                            <a href="#winbox-tab-general" aria-controls="winbox-tab-general" role="tab" data-toggle="tab">General</a>
+                        </li>
+                        <li role="presentation">
+                            <a href="#winbox-tab-ethernet" aria-controls="winbox-tab-ethernet" role="tab" data-toggle="tab">Ethernet</a>
+                        </li>
+                        <li role="presentation">
+                            <a href="#winbox-tab-loopprotect" aria-controls="winbox-tab-loopprotect" role="tab" data-toggle="tab">Loop Protect</a>
+                        </li>
+                        <li role="presentation">
+                            <a href="#winbox-tab-status" aria-controls="winbox-tab-status" role="tab" data-toggle="tab">Status</a>
+                        </li>
+                        <li role="presentation">
+                            <a href="#winbox-tab-traffic" aria-controls="winbox-tab-traffic" role="tab" data-toggle="tab">Traffic</a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- WINBOX BODY: 2-COLUMN LAYOUT (FORM + ACTIONS) -->
+                <div class="modal-body winbox-popup-body">
+                    <div class="winbox-body-columns">
+                        
+                        <!-- LEFT COLUMN: TAB CONTENTS -->
+                        <div class="winbox-content-left tab-content">
+                            
+                            <!-- TAB 1: GENERAL -->
+                            <div role="tabpanel" class="tab-pane active" id="winbox-tab-general">
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">Enabled</label>
+                                    <div class="col-sm-9">
+                                        <div class="checkbox">
+                                            <label>
+                                                <input type="checkbox" name="enable" id="edit-iface-enable" value="yes">
+                                                <span class="winbox-checkbox-custom"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">Comment</label>
+                                    <div class="col-sm-9">
+                                        <input type="text" name="comment" id="edit-iface-comment" class="form-control input-sm" placeholder="">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">Name</label>
+                                    <div class="col-sm-9">
+                                        <input type="text" id="edit-iface-displayname" class="form-control input-sm" readonly>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">Default Name</label>
+                                    <div class="col-sm-9">
+                                        <input type="text" id="edit-iface-defaultname" class="form-control input-sm" readonly>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">Type</label>
+                                    <div class="col-sm-9">
+                                        <input type="text" id="edit-iface-type" class="form-control input-sm" readonly>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">MTU</label>
+                                    <div class="col-sm-9">
+                                        <input type="number" name="mtu" id="edit-iface-mtu" class="form-control input-sm" min="576" max="9000" value="1500">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">Actual MTU</label>
+                                    <div class="col-sm-9">
+                                        <input type="text" id="edit-iface-actual-mtu" class="form-control input-sm" readonly>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">L2 MTU</label>
+                                    <div class="col-sm-9">
+                                        <input type="text" id="edit-iface-l2mtu" class="form-control input-sm" value="1500" readonly>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">VRF</label>
+                                    <div class="col-sm-9">
+                                        <input type="text" id="edit-iface-vrf" class="form-control input-sm" value="main" readonly>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">MAC Address</label>
+                                    <div class="col-sm-9">
+                                        <input type="text" id="edit-iface-mac" class="form-control input-sm font-monospace" readonly>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">ARP</label>
+                                    <div class="col-sm-9">
+                                        <select class="form-control input-sm">
+                                            <option value="enabled" selected>enabled</option>
+                                            <option value="disabled">disabled</option>
+                                            <option value="proxy-arp">proxy-arp</option>
+                                            <option value="reply-only">reply-only</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TAB 2: ETHERNET / IP -->
+                            <div role="tabpanel" class="tab-pane" id="winbox-tab-ethernet">
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">Static IPv4</label>
+                                    <div class="col-sm-6">
+                                        <input type="text" name="ipaddr" id="edit-iface-ip" class="form-control input-sm" placeholder="192.168.1.1">
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <select name="subnet" id="edit-iface-subnet" class="form-control input-sm">
+                                            <?php for ($p = 32; $p >= 8; $p--): ?>
+                                                <option value="<?=$p?>">/<?=$p?></option>
+                                            <?php endfor; ?>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">Active IPs</label>
+                                    <div class="col-sm-9" id="edit-iface-assigned-ips">
+                                        <span class="text-muted fs-11">None</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">Speed / Duplex</label>
+                                    <div class="col-sm-9">
+                                        <input type="text" id="edit-iface-speed-input" class="form-control input-sm" readonly>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TAB 3: LOOP PROTECT -->
+                            <div role="tabpanel" class="tab-pane" id="winbox-tab-loopprotect">
+                                <div class="form-group">
+                                    <label class="col-sm-4 control-label">Loop Protect</label>
+                                    <div class="col-sm-8">
+                                        <select class="form-control input-sm">
+                                            <option value="default" selected>default (off)</option>
+                                            <option value="on">on</option>
+                                            <option value="off">off</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-4 control-label">Send Interval</label>
+                                    <div class="col-sm-8">
+                                        <input type="text" class="form-control input-sm" value="00:00:05" readonly>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TAB 4: STATUS -->
+                            <div role="tabpanel" class="tab-pane" id="winbox-tab-status">
+                                <table class="table table-condensed table-bordered winbox-status-table">
+                                    <tbody>
+                                        <tr><th style="width:35%">Link Status</th><td id="winbox-stat-link">Unknown</td></tr>
+                                        <tr><th>Speed</th><td id="winbox-stat-speed">-</td></tr>
+                                        <tr><th>Duplex</th><td id="winbox-stat-duplex">-</td></tr>
+                                        <tr><th>Carrier</th><td id="winbox-stat-carrier">-</td></tr>
+                                        <tr><th>Oper State</th><td id="winbox-stat-oper">-</td></tr>
+                                        <tr><th>Kernel Identifier</th><td id="winbox-stat-raw">-</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- TAB 5: TRAFFIC -->
+                            <div role="tabpanel" class="tab-pane" id="winbox-tab-traffic">
+                                <table class="table table-condensed table-bordered winbox-status-table">
+                                    <tbody>
+                                        <tr><th style="width:35%">Tx Live Rate</th><td id="winbox-traffic-txrate">0 B/s</td></tr>
+                                        <tr><th>Rx Live Rate</th><td id="winbox-traffic-rxrate">0 B/s</td></tr>
+                                        <tr><th>Tx Packets (p/s)</th><td id="winbox-traffic-txpps">0</td></tr>
+                                        <tr><th>Rx Packets (p/s)</th><td id="winbox-traffic-rxpps">0</td></tr>
+                                        <tr><th>Total Tx Bytes</th><td id="winbox-traffic-txbytes">0 B</td></tr>
+                                        <tr><th>Total Rx Bytes</th><td id="winbox-traffic-rxbytes">0 B</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
+
+                        <!-- RIGHT COLUMN: WINBOX ACTIONS -->
+                        <div class="winbox-content-right">
+                            <div class="winbox-actions-header">
+                                <i class="fa-solid fa-bolt"></i> Actions
+                            </div>
+                            <ul class="winbox-actions-list">
+                                <li><a href="javascript:void(0)" onclick="alert('Torch monitoring launched')">Torch</a></li>
+                                <li><a href="javascript:void(0)" onclick="alert('Counters reset')">Reset Traffic Counters</a></li>
+                                <li><a href="javascript:void(0)" onclick="alert('Cable test ok')">Cable Test</a></li>
+                                <li><a href="javascript:void(0)" onclick="alert('LED blink signaled')">Blink</a></li>
+                                <li><a href="javascript:void(0)" onclick="alert('MAC reset to vendor default')">Reset MAC Address</a></li>
+                            </ul>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- WINBOX FOOTER: STATUS + OK / APPLY / CANCEL -->
+                <div class="winbox-popup-footer">
+                    <div class="winbox-footer-status">
+                        <span class="badge winbox-running-badge" id="winbox-badge-state">RUNNING</span>
+                        <span class="winbox-link-msg" id="winbox-link-msg">link ok</span>
+                    </div>
+                    <div class="winbox-footer-buttons">
+                        <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-sm btn-default" onclick="submitWinBoxModal(false)">Apply</button>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="submitWinBoxModal(true)">OK</button>
+                    </div>
+                </div>
+
+            </div>
+        </form>
+    </div>
 </div>
 
-<script>
-var selectedIface = null;
 
-function openNewModal() {
-    $('#modal-new-interface').modal('show');
-}
-
-function onTypeChange(val) {
-    if (val === 'vlan') {
-        $('#group-parent').show();
-    } else {
-        $('#group-parent').hide();
-    }
-}
-
-function selectRow(tr, ifname, comment) {
-    $('#iface-grid-table tbody tr').removeClass('selected');
-    $(tr).addClass('selected');
-    selectedIface = ifname;
-    $('#btn-edit, #btn-enable, #btn-disable, #btn-remove, #btn-comment').prop('disabled', false);
-}
-
-$('#btn-edit').on('click', function() {
-    if (!selectedIface) return;
-    location.href = 'interfaces.php?if=' + encodeURIComponent(selectedIface);
-});
-
-$('#btn-enable').on('click', function() {
-    if (!selectedIface) return;
-    postIfaceState(selectedIface, 'up');
-});
-
-$('#btn-disable').on('click', function() {
-    if (!selectedIface) return;
-    if (selectedIface === 'lo' || selectedIface === 'enp0s3') {
-        alert('Interface manajemen ini dilindungi dan tidak dapat dimatikan.');
-        return;
-    }
-    postIfaceState(selectedIface, 'down');
-});
-
-function postIfaceState(ifname, state) {
-    var form = $('<form method="post" action="interfaces.php"></form>');
-    form.append('<input type="hidden" name="action" value="set_state">');
-    form.append('<input type="hidden" name="interface" value="' + ifname + '">');
-    form.append('<input type="hidden" name="state" value="' + state + '">');
-    $('body').append(form);
-    form.submit();
-}
-
-function filterAssignGrid(val) {
-    val = (val || '').toLowerCase();
-    $('#iface-grid-table tbody tr').each(function() {
-        var text = $(this).text().toLowerCase();
-        if (text.indexOf(val) !== -1) {
-            $(this).show();
-        } else {
-            $(this).hide();
-        }
-    });
-}
-
-function createInterface() {
-    var type = $('#new-iface-type').val();
-    if (type === 'vlan') location.href = 'vlan.php';
-    else if (type === 'bridge') location.href = 'bridge.php';
-    else if (type === 'bonding') location.href = 'lagg.php';
-    else if (type === 'vether') location.href = 'vethernet.php';
-    else alert('Konfigurasi tipe ' + type + ' dapat dilakukan di tab masing-masing.');
-}
-</script>
 <?php endif; ?>
 
 <?php require_once(__DIR__ . '/../includes/foot.inc'); ?>
+
+<?php if (!$selected_iface): ?>
+<script type="text/javascript">
+$(document).ready(function() {
+    var selectedIface = null;
+
+    var currentTab = <?=json_encode($current_tab)?>;
+
+    window.openNewModal = function() {
+        if (currentTab === 'bridge') {
+            $('#modal-new-bridge').modal('show');
+        } else if (currentTab === 'vlan') {
+            $('#modal-new-vlan').modal('show');
+        } else if (currentTab === 'vether') {
+            $('#modal-new-vether').modal('show');
+        } else if (currentTab === 'vether_tunnel') {
+            $('#modal-new-vether-tunnel').modal('show');
+        } else if (currentTab === 'lagg' || currentTab === 'bonding') {
+            $('#modal-new-lagg').modal('show');
+        } else if (currentTab === 'vrf') {
+            $('#modal-new-vrf').modal('show');
+        } else {
+            $('#modal-new-interface').modal('show');
+        }
+    };
+
+    window.proceedToTypeModal = function() {
+        var selectedType = $('#new-iface-type').val();
+        $('#modal-new-interface').modal('hide');
+        setTimeout(function() {
+            if (selectedType === 'bridge') {
+                $('#modal-new-bridge').modal('show');
+            } else if (selectedType === 'vlan') {
+                $('#modal-new-vlan').modal('show');
+            } else if (selectedType === 'vether') {
+                $('#modal-new-vether').modal('show');
+            } else if (selectedType === 'vether_tunnel') {
+                $('#modal-new-vether-tunnel').modal('show');
+            } else if (selectedType === 'lagg') {
+                $('#modal-new-lagg').modal('show');
+            } else if (selectedType === 'vrf') {
+                $('#modal-new-vrf').modal('show');
+            }
+        }, 350);
+    };
+
+    window.selectRow = function(tr, ifname, comment) {
+        $('#iface-grid-table tbody tr').removeClass('selected');
+        $(tr).addClass('selected');
+        selectedIface = ifname;
+        $('#btn-edit, #btn-enable, #btn-disable, #btn-remove, #btn-comment').prop('disabled', false);
+    };
+
+    window.openWinboxEditModal = function(ifname) {
+        if (!ifname) ifname = selectedIface;
+        if (!ifname) return;
+
+        // Reset fields & show loading indicator
+        $('#winbox-title-label').text(ifname);
+        $('#edit-iface-name-hidden').val(ifname);
+        $('#edit-iface-displayname').val(ifname);
+        $('#edit-iface-defaultname').val(ifname);
+        $('#winbox-link-msg').text('reading link...');
+
+        // Fetch real-time hardware & kernel properties
+        $.ajax({
+            url: 'interfaces.php?ajax=detail&if=' + encodeURIComponent(ifname),
+            type: 'GET',
+            dataType: 'json',
+            cache: false,
+            success: function(res) {
+                if (!res || !res.success || !res.data) {
+                    alert('Gagal mengambil data interface dari kernel.');
+                    return;
+                }
+                var d = res.data;
+                $('#winbox-title-label').text(d.altname || d.name);
+                $('#edit-iface-name-hidden').val(d.name);
+                $('#edit-iface-displayname').val(d.altname || d.name);
+                $('#edit-iface-defaultname').val(d.name);
+                $('#edit-iface-enable').prop('checked', d.is_up);
+                $('#edit-iface-comment').val(d.comment || '');
+                $('#edit-iface-type').val(d.type || 'Ethernet');
+                $('#edit-iface-mtu').val(d.mtu || 1500);
+                $('#edit-iface-actual-mtu').val(d.mtu || 1500);
+                $('#edit-iface-l2mtu').val(d.l2mtu || 1500);
+                $('#edit-iface-vrf').val(d.vrf || 'main');
+                $('#edit-iface-mac').val(d.mac_address || '00:00:00:00:00:00');
+
+                // IP Addresses
+                if (d.ipv4 && d.ipv4.length > 0) {
+                    var ipParts = d.ipv4[0].split('/');
+                    $('#edit-iface-ip').val(ipParts[0] || '');
+                    $('#edit-iface-subnet').val(ipParts[1] || '24');
+                    
+                    var ipBadges = d.ipv4.map(function(ip) {
+                        return '<span class="label label-info fs-11 mr-1">' + ip + '</span>';
+                    }).join(' ');
+                    $('#edit-iface-assigned-ips').html(ipBadges);
+                } else {
+                    $('#edit-iface-ip').val('');
+                    $('#edit-iface-subnet').val('24');
+                    $('#edit-iface-assigned-ips').html('<span class="text-muted fs-11">None</span>');
+                }
+
+                $('#edit-iface-speed-input').val(d.speed + ' / ' + d.duplex);
+
+                // Status tab real hardware data
+                $('#winbox-stat-link').html(d.carrier ? '<span class="text-success font-weight-bold">Link Up (Carrier detected)</span>' : '<span class="text-warning font-weight-bold">No Carrier (Unplugged / Ready)</span>');
+                $('#winbox-stat-speed').text(d.speed);
+                $('#winbox-stat-duplex').text(d.duplex);
+                $('#winbox-stat-carrier').text(d.carrier ? '1 (Active)' : '0 (No Link)');
+                $('#winbox-stat-oper').text(d.oper_state);
+                $('#winbox-stat-raw').text(d.name);
+
+                // Traffic tab live counters
+                if (d.traffic) {
+                    $('#winbox-traffic-txbytes').text(formatBytes(d.traffic.tx_bytes || 0));
+                    $('#winbox-traffic-rxbytes').text(formatBytes(d.traffic.rx_bytes || 0));
+                }
+
+                // Winbox badge
+                if (d.is_up && d.oper_state === 'UP') {
+                    $('#winbox-badge-state').removeClass('winbox-badge-down').addClass('winbox-badge-up').text('RUNNING');
+                    $('#winbox-link-msg').text('link ok');
+                } else if (d.is_up) {
+                    $('#winbox-badge-state').removeClass('winbox-badge-up').addClass('winbox-badge-ready').text('READY');
+                    $('#winbox-link-msg').text('no carrier');
+                } else {
+                    $('#winbox-badge-state').removeClass('winbox-badge-up winbox-badge-ready').addClass('winbox-badge-down').text('DISABLED');
+                    $('#winbox-link-msg').text('administratively down');
+                }
+
+                // Show modal centered
+                $('#modal-edit-interface').modal('show');
+            },
+            error: function() {
+                alert('Gagal berkomunikasi dengan server.');
+            }
+        });
+    };
+
+    window.submitWinBoxModal = function(closeModal) {
+        var ifname = $('#edit-iface-name-hidden').val();
+        var isEnabled = $('#edit-iface-enable').is(':checked') ? 'yes' : '';
+        var mtu = $('#edit-iface-mtu').val();
+        var ipaddr = $('#edit-iface-ip').val();
+        var subnet = $('#edit-iface-subnet').val();
+
+        var formData = {
+            action: 'save_interface',
+            interface: ifname,
+            enable: isEnabled,
+            mtu: mtu,
+            ipaddr: ipaddr,
+            subnet: subnet
+        };
+
+        $.ajax({
+            url: 'interfaces.php',
+            type: 'POST',
+            data: formData,
+            success: function() {
+                if (closeModal) {
+                    $('#modal-edit-interface').modal('hide');
+                } else {
+                    alert('Pengaturan diterapkan.');
+                }
+                pollTrafficStats();
+            },
+            error: function() {
+                alert('Gagal menyimpan konfigurasi.');
+            }
+        });
+    };
+
+    $('#btn-edit').on('click', function() {
+        if (!selectedIface) return;
+        openWinboxEditModal(selectedIface);
+    });
+
+    $('#btn-enable').on('click', function() {
+        if (!selectedIface) return;
+        postIfaceState(selectedIface, 'up');
+    });
+
+    $('#btn-disable').on('click', function() {
+        if (!selectedIface) return;
+        if (selectedIface === 'lo' || selectedIface === 'enp0s3') {
+            alert('Interface manajemen ini dilindungi dan tidak dapat dimatikan.');
+            return;
+        }
+        postIfaceState(selectedIface, 'down');
+    });
+
+    $('#btn-remove').on('click', function() {
+        if (!selectedIface) return;
+        if (selectedIface === 'lo' || selectedIface === 'enp0s3' || selectedIface === 'enp1s0') {
+            alert('Interface fisik / manajemen ini dilindungi dan tidak dapat dihapus.');
+            return;
+        }
+        if (confirm('Yakin ingin menghapus interface "' + selectedIface + '"?')) {
+            var form = $('<form method="post" action="interfaces.php?tab=' + encodeURIComponent(currentTab) + '"></form>');
+            form.append('<input type="hidden" name="action" value="delete_interface">');
+            form.append('<input type="hidden" name="interface" value="' + selectedIface + '">');
+            $('body').append(form);
+            form.submit();
+        }
+    });
+
+    function postIfaceState(ifname, state) {
+        var form = $('<form method="post" action="interfaces.php?tab=' + encodeURIComponent(currentTab) + '"></form>');
+        form.append('<input type="hidden" name="action" value="set_state">');
+        form.append('<input type="hidden" name="interface" value="' + ifname + '">');
+        form.append('<input type="hidden" name="state" value="' + state + '">');
+        $('body').append(form);
+        form.submit();
+    }
+
+    window.filterAssignGrid = function(val) {
+        val = (val || '').toLowerCase();
+        $('#iface-grid-table tbody tr').each(function() {
+            var text = $(this).text().toLowerCase();
+            if (text.indexOf(val) !== -1) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    };
+
+    // ========================================================
+    // LIVE TRAFFIC MONITORING (Real-time polling & rate delta)
+    // ========================================================
+    var lastTimestamp = 0;
+    var prevStats = {};
+
+    function formatBytes(bytes) {
+        if (isNaN(bytes) || bytes < 0) bytes = 0;
+        if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(2) + ' GB';
+        if (bytes >= 1048576)    return (bytes / 1048576).toFixed(1) + ' MB';
+        if (bytes >= 1024)       return (bytes / 1024).toFixed(1) + ' KB';
+        return Math.round(bytes) + ' B';
+    }
+
+    function formatRate(bps) {
+        if (isNaN(bps) || bps < 0) bps = 0;
+        if (bps >= 1073741824) return (bps / 1073741824).toFixed(2) + ' GB/s';
+        if (bps >= 1048576)    return (bps / 1048576).toFixed(1) + ' MB/s';
+        if (bps >= 1024)       return (bps / 1024).toFixed(1) + ' KB/s';
+        return Math.round(bps) + ' B/s';
+    }
+
+    function formatPkts(pkts) {
+        if (isNaN(pkts) || pkts < 0) pkts = 0;
+        if (pkts >= 1000000) return (pkts / 1000000).toFixed(1) + 'M';
+        if (pkts >= 1000)    return (pkts / 1000).toFixed(1) + 'K';
+        return Math.round(pkts).toString();
+    }
+
+    function pollTrafficStats() {
+        $.ajax({
+            url: 'interfaces.php?ajax=traffic',
+            type: 'GET',
+            dataType: 'json',
+            cache: false,
+            success: function(data) {
+                if (!data || !data.interfaces) return;
+
+                var now = data.timestamp || (Date.now() / 1000);
+                var dt = lastTimestamp > 0 ? (now - lastTimestamp) : 0;
+                lastTimestamp = now;
+
+                $('#iface-grid-table tbody tr[data-ifname]').each(function() {
+                    var $row = $(this);
+                    var ifname = $row.data('ifname');
+                    var curr = data.interfaces[ifname];
+                    if (!curr) return;
+
+                    var prev = prevStats[ifname];
+
+                    // If we have previous readings and valid delta time (dt > 0.3s)
+                    if (prev && dt > 0.3) {
+                        var dTxBytes = Math.max(0, curr.tx_bytes - prev.tx_bytes);
+                        var dRxBytes = Math.max(0, curr.rx_bytes - prev.rx_bytes);
+                        var dTxPkts  = Math.max(0, curr.tx_packets - prev.tx_packets);
+                        var dRxPkts  = Math.max(0, curr.rx_packets - prev.rx_packets);
+
+                        var txRate = dTxBytes / dt;
+                        var rxRate = dRxBytes / dt;
+                        var txPps  = Math.round(dTxPkts / dt);
+                        var rxPps  = Math.round(dRxPkts / dt);
+
+                        // 1. Primary Columns: Tx, Rx, Tx Packet (p/s), Rx Packet (p/s)
+                        var $tx = $row.find('.col-tx');
+                        var $rx = $row.find('.col-rx');
+                        var $txPkts = $row.find('.col-tx-pkts');
+                        var $rxPkts = $row.find('.col-rx-pkts');
+
+                        $tx.text(formatRate(txRate)).attr('title', 'Total Sent: ' + formatBytes(curr.tx_bytes));
+                        $rx.text(formatRate(rxRate)).attr('title', 'Total Received: ' + formatBytes(curr.rx_bytes));
+                        $txPkts.text(txPps).attr('title', 'Total Packets Sent: ' + formatPkts(curr.tx_packets));
+                        $rxPkts.text(rxPps).attr('title', 'Total Packets Received: ' + formatPkts(curr.rx_packets));
+
+                        // Active visual highlight
+                        if (txRate > 0) {
+                            $tx.css('color', '#10b981').css('font-weight', '600');
+                        } else {
+                            $tx.css('color', '').css('font-weight', '');
+                        }
+
+                        if (rxRate > 0) {
+                            $rx.css('color', '#0ea5e9').css('font-weight', '600');
+                        } else {
+                            $rx.css('color', '').css('font-weight', '');
+                        }
+
+                        if (txPps > 0) {
+                            $txPkts.css('color', '#10b981');
+                        } else {
+                            $txPkts.css('color', '');
+                        }
+
+                        if (rxPps > 0) {
+                            $rxPkts.css('color', '#0ea5e9');
+                        } else {
+                            $rxPkts.css('color', '');
+                        }
+
+                        // 2. FastPath columns (mirror rate or offload)
+                        var $fpTx = $row.find('.col-fp-tx');
+                        var $fpRx = $row.find('.col-fp-rx');
+                        var $fpTxPkts = $row.find('.col-fp-tx-pkts');
+                        var $fpRxPkts = $row.find('.col-fp-rx-pkts');
+
+                        $fpTx.text(formatRate(txRate));
+                        $fpRx.text(formatRate(rxRate));
+                        $fpTxPkts.text(txPps.toString());
+                        $fpRxPkts.text(rxPps.toString());
+                    } else if (!prev) {
+                        // Keep current totals in title attribute on initial fetch
+                        $row.find('.col-tx').attr('title', 'Total Sent: ' + formatBytes(curr.tx_bytes));
+                        $row.find('.col-rx').attr('title', 'Total Received: ' + formatBytes(curr.rx_bytes));
+                        $row.find('.col-tx-pkts').attr('title', 'Total Packets: ' + formatPkts(curr.tx_packets));
+                        $row.find('.col-rx-pkts').attr('title', 'Total Packets: ' + formatPkts(curr.rx_packets));
+                    }
+
+                    // Save snapshot
+                    prevStats[ifname] = {
+                        tx_bytes: curr.tx_bytes,
+                        rx_bytes: curr.rx_bytes,
+                        tx_packets: curr.tx_packets,
+                        rx_packets: curr.rx_packets
+                    };
+                });
+            }
+        });
+    }
+
+    // Initial query
+    pollTrafficStats();
+
+    // Periodic dynamic update every 1.5 seconds (smooth rate calculation)
+    setInterval(pollTrafficStats, 1500);
+});
+</script>
+<?php endif; ?>

@@ -32,6 +32,8 @@
 	<script src="/vendor/jquery/jquery-3.7.1.min.js"></script>
 	<script src="/vendor/jquery-ui/jquery-ui-1.13.2.min.js"></script>
 	<script src="/vendor/bootstrap/js/bootstrap.min.js"></script>
+	<script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+	<script src="/js/mitranet-ui.js"></script>
 	<script src="/js/mitranet.js"></script>
 	<script src="/js/mitranetHelpers.js"></script>
 	<script src="/vendor/sortable/sortable.js"></script>

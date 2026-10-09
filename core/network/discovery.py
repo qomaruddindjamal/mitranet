@@ -57,6 +57,14 @@ class InterfaceDiscoveryService:
             info_kind = linkinfo.get("info_kind")
             final_type = info_kind if info_kind else link_type
 
+            import os
+            # Also check sysfs if info_kind was not in netlink linkinfo
+            if final_type in ["unknown", "ether"]:
+                if os.path.isdir(f"/sys/class/net/{ifname}/bridge"):
+                    final_type = "bridge"
+                elif os.path.isdir(f"/sys/class/net/{ifname}/bonding"):
+                    final_type = "bond"
+
             # Check if this interface is wireless (802.11) via sysfs, udev, driver or naming
             import os
             is_wireless_dev = (

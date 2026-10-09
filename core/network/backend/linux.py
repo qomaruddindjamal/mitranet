@@ -162,7 +162,7 @@ class LinuxNetworkBackend(NetworkBackend):
             raise BackendExecutionError(f"Linux kernel operation failed: {err_msg}")
 
     def get_link_info(self) -> List[Dict[str, Any]]:
-        return self._run_ip_json(["link", "show"])
+        return self._run_ip_json(["-d", "link", "show"])
 
     def get_addr_info(self) -> List[Dict[str, Any]]:
         return self._run_ip_json(["addr", "show"])

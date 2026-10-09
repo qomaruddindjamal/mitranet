@@ -40,19 +40,19 @@ $tabtitle = $pagetitle . " - " . htmlspecialchars($system_url);
 
 // Build pfSense-standard navigation menus matching live pfSense 2.9 sidebar
 $system_menu = array(
-    array("Advanced", "/system_advanced_admin.php"),
-    array("Certificates", "/system_camanager.php"),
-    array("General Setup", "/system.php"),
-    array("High Availability", "/system_hasync.php"),
-    array("Package Manager", "/pkg_mgr_installed.php"),
-    array("Routing", "/system_gateways.php"),
+    array("Advanced", "/system/advanced_admin.php"),
+    array("Certificates", "/system/camanager.php"),
+    array("General Setup", "/system/system.php"),
+    array("High Availability", "/system/hasync.php"),
+    array("Package Manager", "/packages/pkg_mgr_installed.php"),
+    array("Routing", "/system/gateways.php"),
     array("Setup Wizard", "/wizard.php?xml=setup_wizard.xml"),
-    array("Update", "/pkg_mgr_install.php?id=firmware"),
-    array("User Manager", "/system_usermanager.php"),
-    array("User Password Manager", "/system_usermanager_passwordmg.php"),
+    array("Update", "/packages/pkg_mgr_install.php?id=firmware"),
+    array("User Manager", "/system/usermanager.php"),
+    array("User Password Manager", "/system/usermanager_passwordmg.php"),
     array("-DIVIDER-", ""),
-    array("Restart", "/system_reboot.php"),
-    array("Shutdown", "/system_halt.php")
+    array("Restart", "/system/reboot.php"),
+    array("Shutdown", "/system/halt.php")
 );
 
 
@@ -74,92 +74,89 @@ $interfaces_menu[] = array("VRFs", "/interfaces/vrf.php");
 $interfaces_menu[] = array("vEthernet (KVM)", "/interfaces/vethernet.php");
 
 $firewall_menu = array(
-    array("Aliases", "/firewall_aliases.php"),
-    array("NAT", "/firewall_nat.php"),
-    array("Rules", "/firewall_rules.php"),
-    array("Schedules", "#"),
-    array("Traffic Shaper", "#"),
-    array("Virtual IPs", "#")
+    array("Aliases", "/firewall/aliases.php"),
+    array("NAT", "/firewall/nat.php"),
+    array("Rules", "/firewall/rules.php"),
+    array("Schedules", "/firewall/schedule.php"),
+    array("Traffic Shaper", "/firewall/shaper.php"),
+    array("Virtual IPs", "/firewall/virtual_ip.php")
 );
 
 $services_menu = array(
-    array("Auto Config Backup", "#"),
-    array("Captive Portal", "/services_captiveportal.php"),
-    array("DHCP Relay", "/services_dhcp_relay.php"),
-    array("DHCP Server", "/services_dhcp_settings.php"),
-    array("DHCPv6 Relay", "/services_dhcpv6_relay.php"),
-    array("DHCPv6 Server", "/services_dhcpv6_settings.php"),
-    array("DNS Forwarder", "#"),
-    array("DNS Resolver", "#"),
-    array("Dynamic DNS", "#"),
-    array("IGMP Proxy", "#"),
-    array("NTP", "#"),
-    array("PPPoE Server", "#"),
-    array("Router Advertisement", "#"),
-    array("SNMP", "#"),
-    array("UPnP IGD &amp; PCP", "#"),
-    array("Wake-on-LAN", "#"),
-    array("KVM Services", "/services_kvm.php")
+    array("Captive Portal", "/services/captiveportal.php"),
+    array("DHCP Relay", "/services/dhcp_relay.php"),
+    array("DHCP Server", "/services/dhcp_settings.php"),
+    array("DHCPv6 Relay", "/services/dhcpv6_relay.php"),
+    array("DHCPv6 Server", "/services/dhcpv6_settings.php"),
+    array("DNS Server", "/services/dns_server.php"),
+    array("Dynamic DNS", "/services/dyndns.php"),
+    array("IGMP Proxy", "/services/igmpproxy.php"),
+    array("NTP", "/services/ntpd.php"),
+    array("Router Advertisement", "/services/radvd.php"),
+    array("SNMP", "/services/snmp.php"),
+    array("Wake-on-LAN", "/services/wol.php"),
+    array("KVM Services", "/services/kvm.php")
 );
 
 $vpn_menu = array(
-    array("IPsec", "#"),
-    array("L2TP", "#"),
-    array("OpenVPN", "#")
+    array("IPsec", "/vpn/ipsec.php"),
+    array("L2TP", "/vpn/l2tp_server.php"),
+    array("OpenVPN", "/vpn/openvpn_server.php"),
+    array("PPTP", "/vpn/pptp_server.php")
 );
 
 $status_menu = array(
-    array("Captive Portal", "/services_captiveportal.php"),
-    array("CARP (failover)", "/status_carp.php"),
+    array("Captive Portal", "/status/captiveportal.php"),
+    array("CARP (failover)", "/status/carp.php"),
     array("Dashboard", "/index.php"),
-    array("DHCP Leases", "/status_dhcp_leases.php"),
-    array("DHCPv6 Leases", "/status_dhcpv6_leases.php"),
-    array("DNS Resolver", "/status_unbound.php"),
-    array("Filter Reload", "/status_filter_reload.php?user=true"),
-    array("Gateways", "/status_gateways.php"),
-    array("Interfaces", "/status_interfaces.php"),
-    array("IPsec", "/status_ipsec.php"),
-    array("Monitoring", "/status_monitoring.php"),
-    array("NTP", "/status_ntpd.php"),
-    array("OpenVPN", "/status_openvpn.php"),
-    array("Queues", "/status_queues.php"),
-    array("Services", "/status_services.php"),
-    array("System Logs", "/status_logs.php"),
-    array("Traffic Graph", "/status_graph.php"),
-    array("UPnP IGD &amp; PCP", "/status_upnp.php"),
+    array("DHCP Leases", "/status/dhcp_leases.php"),
+    array("DHCPv6 Leases", "/status/dhcpv6_leases.php"),
+    array("DNS Resolver", "/status/unbound.php"),
+    array("Filter Reload", "/status/filter_reload.php?user=true"),
+    array("Gateways", "/status/gateways.php"),
+    array("Interfaces", "/status/interfaces.php"),
+    array("IPsec", "/status/ipsec.php"),
+    array("Monitoring", "/status/monitoring.php"),
+    array("NTP", "/status/ntpd.php"),
+    array("OpenVPN", "/status/openvpn.php"),
+    array("Queues", "/status/queues.php"),
+    array("Services", "/status/services.php"),
+    array("System Logs", "/status/logs.php"),
+    array("Traffic Graph", "/status/graph.php"),
+    array("UPnP IGD &amp; PCP", "/status/upnp.php"),
     array("WireGuard", "/wg/status_wireguard.php")
 );
 
 $diagnostics_menu = array(
-    array("ARP Table", "/diag_arp.php"),
-    array("Authentication", "/diag_authentication.php"),
-    array("Backup &amp; Restore", "/diag_backup.php"),
-    array("Command Prompt", "/diag_command.php"),
-    array("DNS Lookup", "/diag_dns.php"),
-    array("Edit File", "/diag_edit.php"),
-    array("Factory Defaults", "/diag_defaults.php"),
-    array("Halt System", "/diag_halt.php"),
-    array("Limiter Info", "/diag_limiter_info.php"),
-    array("NDP Table", "/diag_ndp.php"),
-    array("Packet Capture", "/diag_packet_capture.php"),
-    array("pfInfo", "/diag_pf_info.php"),
-    array("pfTop", "/diag_pftop.php"),
-    array("Ping", "/diag_ping.php"),
-    array("Reboot", "/diag_reboot.php"),
-    array("Routes", "/diag_routes.php"),
-    array("S.M.A.R.T. Status", "/diag_smart.php"),
-    array("Sockets", "/diag_sockets.php"),
-    array("States", "/diag_dump_states.php"),
-    array("States Summary", "/diag_states_summary.php"),
-    array("System Activity", "/diag_system_activity.php"),
-    array("Tables", "/diag_tables.php"),
-    array("Terminal", "/diag_terminal.php"),
-    array("Test Port", "/diag_testport.php"),
-    array("Traceroute", "/diag_traceroute.php")
+    array("ARP Table", "/diagnostics/diag_arp.php"),
+    array("Authentication", "/diagnostics/diag_authentication.php"),
+    array("Backup &amp; Restore", "/diagnostics/diag_backup.php"),
+    array("Command Prompt", "/diagnostics/diag_command.php"),
+    array("DNS Lookup", "/diagnostics/diag_dns.php"),
+    array("Edit File", "/diagnostics/diag_edit.php"),
+    array("Factory Defaults", "/diagnostics/diag_defaults.php"),
+    array("Halt System", "/diagnostics/diag_halt.php"),
+    array("Limiter Info", "/diagnostics/diag_limiter_info.php"),
+    array("NDP Table", "/diagnostics/diag_ndp.php"),
+    array("Packet Capture", "/diagnostics/diag_packet_capture.php"),
+    array("pfInfo", "/diagnostics/diag_pf_info.php"),
+    array("pfTop", "/diagnostics/diag_pftop.php"),
+    array("Ping", "/diagnostics/diag_ping.php"),
+    array("Reboot", "/diagnostics/diag_reboot.php"),
+    array("Routes", "/diagnostics/diag_routes.php"),
+    array("S.M.A.R.T. Status", "/diagnostics/diag_smart.php"),
+    array("Sockets", "/diagnostics/diag_sockets.php"),
+    array("States", "/diagnostics/diag_dump_states.php"),
+    array("States Summary", "/diagnostics/diag_states_summary.php"),
+    array("System Activity", "/diagnostics/diag_system_activity.php"),
+    array("Tables", "/diagnostics/diag_tables.php"),
+    array("Terminal", "/terminal/terminal.php"),
+    array("Test Port", "/diagnostics/diag_testport.php"),
+    array("Traceroute", "/diagnostics/diag_traceroute.php")
 );
 
 $tools_menu = array(
-    array("Speedtest", "/tools_speedtest.php")
+    array("Speedtest", "/tools/speedtest.php")
 );
 
 
@@ -206,6 +203,7 @@ $sidebar_structure = array_merge($sidebar_structure, array(
 
 	<link rel="stylesheet" href="/vendor/font-awesome/css/all.min.css">
 	<link rel="stylesheet" href="/vendor/sortable/sortable-theme-bootstrap.css">
+	<link rel="stylesheet" href="/vendor/sweetalert2/sweetalert2.min.css">
 	<link rel="stylesheet" href="/css/mitranet.css">
 
 	<title><?=$tabtitle?></title>

@@ -1590,6 +1590,26 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 self._send_json(400, {"error": str(e)})
             return
 
+        if path == "/api/v1/bridges/port/add":
+            bridge_name = payload.get("bridge")
+            port_name = payload.get("interface")
+            try:
+                b = bridge_service.add_port(bridge_name, port_name)
+                self._send_json(200, {"success": True, "message": f"Port '{port_name}' added to bridge '{bridge_name}'", "bridge": b.model_dump()})
+            except Exception as e:
+                self._send_json(400, {"error": str(e)})
+            return
+
+        if path == "/api/v1/bridges/port/remove":
+            bridge_name = payload.get("bridge")
+            port_name = payload.get("interface")
+            try:
+                b = bridge_service.remove_port(bridge_name, port_name)
+                self._send_json(200, {"success": True, "message": f"Port '{port_name}' removed from bridge '{bridge_name}'", "bridge": b.model_dump()})
+            except Exception as e:
+                self._send_json(400, {"error": str(e)})
+            return
+
         # 7. VRF Mutations
         if path == "/api/v1/vrfs/create":
             name = payload.get("name")
