@@ -175,7 +175,6 @@ $help_menu = array(
 );
 
 $sidebar_structure = array(
-    array('id' => 'system', 'name' => 'System', 'icon' => 'fa-gears', 'menu' => $system_menu),
     array('id' => 'wifi', 'name' => 'Wireless', 'icon' => 'fa-wifi', 'url' => '/interfaces_wifi.php', 'direct' => true),
     array('id' => 'interfaces', 'name' => 'Interfaces', 'icon' => 'fa-network-wired', 'url' => '/interfaces_assign.php', 'direct' => true),
     array('id' => 'wireguard', 'name' => 'WireGuard', 'icon' => 'fa-circle-nodes', 'url' => '/wg/vpn_wg_tunnels.php', 'direct' => true),
@@ -194,7 +193,7 @@ $sidebar_structure = array_merge($sidebar_structure, array(
     array('id' => 'terminal', 'name' => 'Terminal', 'icon' => 'fa-terminal', 'url' => '/diag_terminal.php', 'direct' => true),
     array('id' => 'tools', 'name' => 'Tools', 'icon' => 'fa-screwdriver-wrench', 'menu' => $tools_menu),
     array('id' => 'status', 'name' => 'Status', 'icon' => 'fa-chart-line', 'menu' => $status_menu),
-    array('id' => 'help', 'name' => 'Help', 'icon' => 'fa-circle-question', 'menu' => $help_menu)
+    array('id' => 'system', 'name' => 'System', 'icon' => 'fa-gears', 'menu' => $system_menu)
 ));
 
 ?>
