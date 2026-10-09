@@ -217,6 +217,8 @@ window.MitraNet = window.MitraNet || {};
                 }
             }
         });
+    };
+
     // 6. SweetAlert Khusus REBOOT SISTEM (dengan countdown & redirect ke /login.php)
     MitraNet.rebootSystem = function() {
         if (typeof Swal === 'undefined') {

@@ -158,10 +158,11 @@
 			});
 
 			// Close mobile drawer when tapping any submenu link (desktop: biarkan flyout tetap ada saat navigasi)
-			$('.sidebar-submenu a').on('click', function(e) {
+			$(document).on('click', '.sidebar-submenu a, a.navlnk', function(e) {
 				var href = $(this).attr('href') || '';
 				if (href.indexOf('reboot.php') !== -1) {
 					e.preventDefault();
+					e.stopPropagation();
 					if (!isDesktop()) $('body').removeClass('sidebar-mobile-open');
 					$('.sidebar-item').removeClass('pinned open').find('.sidebar-flyout').hide();
 					MitraNet.rebootSystem();
@@ -169,6 +170,7 @@
 				}
 				if (href.indexOf('halt.php') !== -1) {
 					e.preventDefault();
+					e.stopPropagation();
 					if (!isDesktop()) $('body').removeClass('sidebar-mobile-open');
 					$('.sidebar-item').removeClass('pinned open').find('.sidebar-flyout').hide();
 					MitraNet.shutdownSystem();
