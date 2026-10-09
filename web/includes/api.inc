@@ -13,13 +13,13 @@ define('API_BASE_URL', 'http://127.0.0.1:8443/api/v1');
 
 class MitraNetApi {
 
-    public static function request($endpoint, $method = 'GET', $data = null) {
+    public static function request($endpoint, $method = 'GET', $data = null, $timeout = 5) {
         $url = API_BASE_URL . $endpoint;
         $ch = curl_init($url);
 
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
 
         $headers = ['Accept: application/json'];
         
@@ -336,7 +336,7 @@ class MitraNetApi {
             'engine' => $engine,
             'interface' => $interface,
             'server_id' => $serverId
-        ]);
+        ], 50);
     }
 
     public static function clearSpeedtestHistory() {
