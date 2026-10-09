@@ -56,82 +56,120 @@ display_top_tabs($tab_array, false, 'pills');
 </div>
 <?php endif; ?>
 
-<div class="panel panel-default">
-	<div class="panel-heading">
-        <h2 class="panel-title">WireGuard Tunnels</h2>
-    </div>
-	<div class="panel-body table-responsive">
-		<table class="table table-hover table-striped table-condensed">
-			<thead>
-				<tr>
-					<th>Name</th>
-					<th>Status</th>
-					<th>Mode</th>
-					<th>Description</th>
-					<th>Interface Address</th>
-					<th>Listen Port</th>
-					<th>Public Key</th>
-					<th>Peers</th>
-					<th style="width: 120px; text-align: center;">Actions</th>
-				</tr>
-			</thead>
-			<tbody>
-			<?php if (empty($tunnels)): ?>
-				<tr><td colspan="9" class="text-center text-muted" style="padding: 20px;">Belum ada tunnel WireGuard yang dikonfigurasi. Klik tombol "Add Tunnel" di bawah untuk membuat.</td></tr>
-			<?php else: ?>
-				<?php foreach ($tunnels as $tun): ?>
-				<?php 
-					$tname = $tun['name'] ?? 'wg0'; 
-					$is_srv = empty($tun['mode']) || $tun['mode'] === 'server';
-					$tun_up = !empty($tun['enabled']);
-				?>
-				<tr>
-					<td><strong><code><?=htmlspecialchars($tname)?></code></strong></td>
-					<td>
-						<?php if ($tun_up): ?>
-							<span class="label label-success"><i class="fa-solid fa-circle-check"></i> UP</span>
-						<?php else: ?>
-							<span class="label label-default"><i class="fa-solid fa-circle-stop"></i> DOWN</span>
-						<?php endif; ?>
-					</td>
-					<td>
-						<?php if ($is_srv): ?>
-							<span class="label label-primary"><i class="fa-solid fa-server"></i> Server</span>
-						<?php else: ?>
-							<span class="label label-info"><i class="fa-solid fa-network-wired"></i> Client Uplink</span>
-						<?php endif; ?>
-					</td>
-					<td><?=htmlspecialchars($tun['description'] ?? 'WireGuard Tunnel')?></td>
-					<td><code><?=htmlspecialchars($tun['address'] ?: '—')?></code></td>
-					<td><?=htmlspecialchars($tun['listen_port'] ?? '51820')?></td>
-					<td style="font-family:monospace;font-size:0.85em;cursor:pointer;"
-					    title="Klik untuk salin: <?=htmlspecialchars($tun['public_key'])?>"
-					    onclick="navigator.clipboard.writeText('<?=htmlspecialchars($tun['public_key'])?>');this.style.color='green';">
-						<?=htmlspecialchars(substr($tun['public_key'], 0, 16))?>...
-					</td>
-					<td><span class="badge"><?=count($tun['peers'] ?? [])?></span></td>
-					<td style="white-space:nowrap; text-align: center;">
-						<a class="btn btn-xs btn-success" href="/wg/vpn_wg_peers_edit.php?tun=<?=urlencode($tname)?>" title="Add Peer to <?=htmlspecialchars($tname)?>"><i class="fa-solid fa-user-plus"></i></a>
-						<a class="btn btn-xs btn-primary" href="/wg/vpn_wg_tunnels_edit.php?tun=<?=urlencode($tname)?>" title="Edit Tunnel"><i class="fa-solid fa-pencil"></i></a>
-						<a class="btn btn-xs btn-danger" href="?act=delete&amp;tun=<?=urlencode($tname)?>"
-						   onclick="return confirm('Hapus tunnel <?=htmlspecialchars($tname)?> beserta seluruh konfigurasinya?');"
-						   title="Delete Tunnel"><i class="fa-solid fa-trash-can"></i></a>
-					</td>
-				</tr>
-				<?php endforeach; ?>
-			<?php endif; ?>
-			</tbody>
-		</table>
-	</div>
-	<div class="panel-footer text-muted" style="font-size: 0.9em; background-color: #fcfcfc;">
-		<i class="fa-solid fa-circle-info text-info"></i> Layanan service daemon WireGuard (Start / Stop / Restart) dikelola secara terpusat di menu <a href="/status_services.php"><strong>Status: Services</strong></a>.
+<div class="container-fluid mitranet-page-container">
+	<div class="mitranet-window">
+		<!-- TOOLBAR -->
+		<div class="mitranet-toolbar">
+			<div class="mitranet-toolbar-left">
+				<a href="/wg/vpn_wg_tunnels_edit.php" class="mitranet-btn" title="Add New Tunnel">
+					<i class="fa-solid fa-plus text-primary"></i> <strong>New Tunnel</strong>
+				</a>
+			</div>
+			<div class="mitranet-toolbar-right">
+				<div class="mitranet-search-wrapper">
+					<i class="fa-solid fa-magnifying-glass"></i>
+					<input type="text" id="grid-search" placeholder="Find tunnel..." onkeyup="filterWgGrid(this.value)">
+				</div>
+				<button type="button" class="mitranet-btn" onclick="location.reload()" title="Refresh">
+					<i class="fa-solid fa-arrows-rotate"></i>
+				</button>
+			</div>
+		</div>
+
+		<!-- GRID -->
+		<div class="mitranet-grid-container">
+			<table class="mitranet-grid" id="wg-grid-table">
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Status</th>
+						<th>Mode</th>
+						<th>Description</th>
+						<th>Interface Address</th>
+						<th>Listen Port</th>
+						<th>Public Key</th>
+						<th>Peers</th>
+						<th class="text-center col-menu">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+				<?php if (empty($tunnels)): ?>
+					<tr><td colspan="9" class="text-center text-muted p-20">Belum ada tunnel WireGuard yang dikonfigurasi. Klik tombol "New Tunnel" di toolbar untuk membuat.</td></tr>
+				<?php else: ?>
+					<?php foreach ($tunnels as $tun): ?>
+					<?php 
+						$tname = $tun['name'] ?? 'wg0'; 
+						$is_srv = empty($tun['mode']) || $tun['mode'] === 'server';
+						$tun_up = !empty($tun['enabled']);
+					?>
+					<tr>
+						<td><strong><code><?=htmlspecialchars($tname)?></code></strong></td>
+						<td>
+							<?php if ($tun_up): ?>
+								<span class="label label-success"><i class="fa-solid fa-circle-check"></i> UP</span>
+							<?php else: ?>
+								<span class="label label-default"><i class="fa-solid fa-circle-stop"></i> DOWN</span>
+							<?php endif; ?>
+						</td>
+						<td>
+							<?php if ($is_srv): ?>
+								<span class="label label-primary"><i class="fa-solid fa-server"></i> Server</span>
+							<?php else: ?>
+								<span class="label label-info"><i class="fa-solid fa-network-wired"></i> Client Uplink</span>
+							<?php endif; ?>
+						</td>
+						<td><?=htmlspecialchars($tun['description'] ?? 'WireGuard Tunnel')?></td>
+						<td><code><?=htmlspecialchars($tun['address'] ?: '—')?></code></td>
+						<td><?=htmlspecialchars($tun['listen_port'] ?? '51820')?></td>
+						<td class="td-pubkey"
+						    title="Klik untuk salin: <?=htmlspecialchars($tun['public_key'])?>"
+						    onclick="navigator.clipboard.writeText('<?=htmlspecialchars($tun['public_key'])?>');this.style.color='green';">
+							<?=htmlspecialchars(substr($tun['public_key'], 0, 16))?>...
+						</td>
+						<td><span class="badge"><?=count($tun['peers'] ?? [])?></span></td>
+						<td class="text-center">
+							<a class="btn btn-xs btn-success" href="/wg/vpn_wg_peers_edit.php?tun=<?=urlencode($tname)?>" title="Add Peer to <?=htmlspecialchars($tname)?>"><i class="fa-solid fa-user-plus"></i></a>
+							<a class="btn btn-xs btn-primary" href="/wg/vpn_wg_tunnels_edit.php?tun=<?=urlencode($tname)?>" title="Edit Tunnel"><i class="fa-solid fa-pencil"></i></a>
+							<a class="btn btn-xs btn-danger" href="?act=delete&amp;tun=<?=urlencode($tname)?>"
+							   onclick="return confirm('Hapus tunnel <?=htmlspecialchars($tname)?> beserta seluruh konfigurasinya?');"
+							   title="Delete Tunnel"><i class="fa-solid fa-trash-can"></i></a>
+						</td>
+					</tr>
+					<?php endforeach; ?>
+				<?php endif; ?>
+				</tbody>
+			</table>
+		</div>
+
+		<!-- STATUSBAR -->
+		<div class="mitranet-statusbar">
+			<div>
+				<span><strong>Total:</strong> <?=count($tunnels)?> tunnels</span>
+			</div>
+			<div>
+				<span class="text-muted">WireGuard Subsystem</span>
+			</div>
+		</div>
+
 	</div>
 </div>
 
-<nav class="action-buttons">
-    <a href="/wg/vpn_wg_tunnels_edit.php" class="btn btn-success btn-sm">
-        <i class="fa-solid fa-plus icon-embed-btn"></i> Add Tunnel
-    </a>
-</nav>
+<div class="infoblock">
+	<i class="fa-solid fa-circle-info text-info"></i> Layanan service daemon WireGuard (Start / Stop / Restart) dikelola secara terpusat di menu <a href="/status_services.php"><strong>Status: Services</strong></a>.
+</div>
+
+<script>
+function filterWgGrid(val) {
+    val = (val || '').toLowerCase();
+    $('#wg-grid-table tbody tr').each(function() {
+        var text = $(this).text().toLowerCase();
+        if (text.indexOf(val) !== -1) {
+            $(this).show();
+        } else {
+            $(this).hide();
+        }
+    });
+}
+</script>
 
 <?php include(__DIR__ . '/../includes/foot.inc'); ?>

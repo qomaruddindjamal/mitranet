@@ -2788,11 +2788,74 @@ body.sidebar-collapsed #pf-main-content {
 }
 
 /* Dedicated Helper Classes for Clean MitraNet Pages */
-.mitranet-page-container {
+.mitranet-page-container,
+#pf-main-content > .container,
+#pf-main-content > .container-fluid {
     padding: 0 !important;
     flex: 1 1 auto !important;
     display: flex !important;
     flex-direction: column !important;
+}
+
+/* Global Form Controls & Inputs - Consistent with Modern WinBox / WebFig Density */
+.form-control,
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+select.form-control {
+    height: 26px !important;
+    padding: 3px 6px !important;
+    font-size: 11px !important;
+    border: 1px solid #9cb5cf !important;
+    border-radius: 3px !important;
+    color: #1e395b !important;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05) !important;
+}
+
+.form-control:focus,
+input:focus,
+select:focus {
+    border-color: #3b82f6 !important;
+    outline: 0 !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+.form-group {
+    margin-bottom: 8px !important;
+}
+
+.control-label {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #1e3c5f !important;
+    padding-top: 5px !important;
+}
+
+.help-block {
+    margin-top: 2px !important;
+    margin-bottom: 0 !important;
+    font-size: 10px !important;
+    color: #64748b !important;
+}
+
+/* Action buttons and infoblock styling */
+.action-buttons {
+    background: #eef4f9 !important;
+    background: linear-gradient(to bottom, #f6f9fc 0%, #e5eef6 100%) !important;
+    border-top: 1px solid #abc1da !important;
+    padding: 6px 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.infoblock {
+    padding: 8px 12px !important;
+    background: #f8fafc !important;
+    border-top: 1px solid #cbd5e1 !important;
+    font-size: 11px !important;
+    color: #475569 !important;
 }
 
 .mitranet-title-badge .fa-caret-down {

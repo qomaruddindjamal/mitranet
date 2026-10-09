@@ -90,15 +90,30 @@ if (!empty($err)) print_info_box($err, "danger");
 ?>
 
 <div class="container-fluid mitranet-page-container">
-	<div class="panel-heading">
-		<h2 class="panel-title">
-			<i class="fa-solid fa-network-wired text-primary"></i>
-			<?=gettext("Interface Assignments")?>
-		</h2>
-	</div>
-	<div class="panel-body">
-		<div class="table-responsive">
-			<table class="table table-striped table-hover table-condensed iface-assign-table">
+	<div class="mitranet-window">
+		<!-- TOOLBAR: REFRESH, FILTER, FIND -->
+		<div class="mitranet-toolbar">
+			<div class="mitranet-toolbar-left">
+				<a href="interfaces_vlan.php" class="mitranet-btn" title="Add VLAN">
+					<i class="fa-solid fa-plus text-primary"></i> <strong>New VLAN</strong>
+				</a>
+				<a href="interfaces_bridge.php" class="mitranet-btn" title="Add Bridge">
+					<i class="fa-solid fa-plus text-info"></i> <strong>New Bridge</strong>
+				</a>
+			</div>
+			<div class="mitranet-toolbar-right">
+				<div class="mitranet-search-wrapper">
+					<i class="fa-solid fa-magnifying-glass"></i>
+					<input type="text" id="grid-search" placeholder="Find interface..." onkeyup="filterAssignGrid(this.value)">
+				</div>
+				<button type="button" class="mitranet-btn" onclick="location.reload()" title="Refresh">
+					<i class="fa-solid fa-arrows-rotate"></i>
+				</button>
+			</div>
+		</div>
+
+		<div class="mitranet-grid-container">
+			<table class="mitranet-grid" id="iface-grid-table">
 				<thead>
 					<tr>
 						<!-- Flag -->
@@ -310,15 +325,19 @@ if (!empty($err)) print_info_box($err, "danger");
 				</tbody>
 			</table>
 		</div>
+
+		<!-- STATUSBAR -->
+		<div class="mitranet-statusbar">
+			<div>
+				<span><strong>Total:</strong> <?=count($ifaces)?> interfaces assigned</span>
+			</div>
+			<div>
+				<span class="text-muted">MitraNet Interface Subsystem</span>
+			</div>
+		</div>
+
 	</div>
 </div>
-
-<nav class="action-buttons">
-	<a href="interfaces_assign.php" role="button" class="btn btn-default btn-sm">
-		<i class="fa-solid fa-rotate icon-embed-btn"></i>
-		<?=gettext("Refresh")?>
-	</a>
-</nav>
 
 <div class="infoblock">
 <?php
@@ -330,5 +349,19 @@ print_info_box(
 );
 ?>
 </div>
+
+<script>
+function filterAssignGrid(val) {
+    val = (val || '').toLowerCase();
+    $('#iface-grid-table tbody tr').each(function() {
+        var text = $(this).text().toLowerCase();
+        if (text.indexOf(val) !== -1) {
+            $(this).show();
+        } else {
+            $(this).hide();
+        }
+    });
+}
+</script>
 
 <?php require_once(__DIR__ . '/includes/foot.inc'); ?>

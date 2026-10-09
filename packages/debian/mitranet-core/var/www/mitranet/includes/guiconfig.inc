@@ -38,7 +38,36 @@ function display_top_tabs(&$tab_array, $no_drop_down = false, $type = 'tabs', $u
         return;
     }
 
-    echo '<ul class="nav nav-' . htmlspecialchars($type) . '">';
+    global $pgtitle, $selected_menu;
+
+    $badge_title = "";
+    if (isset($pgtitle) && is_array($pgtitle)) {
+        $badge_title = end($pgtitle);
+    } elseif (isset($pgtitle) && is_string($pgtitle)) {
+        $badge_title = $pgtitle;
+    }
+
+    $icon_map = [
+        'interfaces' => 'fa-network-wired',
+        'firewall'   => 'fa-shield-halved',
+        'services'   => 'fa-cubes',
+        'vpn'        => 'fa-key',
+        'status'     => 'fa-chart-line',
+        'system'     => 'fa-gears',
+        'diagnostics'=> 'fa-toolbox',
+        'tools'      => 'fa-screwdriver-wrench'
+    ];
+    $icon = $icon_map[$selected_menu ?? ''] ?? 'fa-layer-group';
+
+    echo '<div class="mitranet-header">';
+    if (!empty($badge_title)) {
+        echo '<div class="mitranet-title-badge">';
+        echo '<i class="fa-solid ' . htmlspecialchars($icon) . '"></i> ' . htmlspecialchars($badge_title);
+        echo ' <i class="fa-solid fa-caret-down"></i>';
+        echo '</div>';
+    }
+
+    echo '<ul class="mitranet-tabs nav nav-' . htmlspecialchars($type) . '">';
     foreach ($tab_array as $ta) {
         $title = $ta[0];
         $active = !empty($ta[1]);
@@ -51,6 +80,7 @@ function display_top_tabs(&$tab_array, $no_drop_down = false, $type = 'tabs', $u
         echo '</a></li>';
     }
     echo '</ul>';
+    echo '</div>';
 }
 
 /**

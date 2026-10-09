@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /*
  * system.php - MitraNet System: General Setup
  * Faithful port from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
@@ -80,109 +80,135 @@ $timezones = [
     </div>
 <?php endif; ?>
 
-<form method="post" action="system.php" class="form-horizontal">
-    <div class="panel panel-default">
-        <div class="panel-heading"><h2 class="panel-title">System</h2></div>
-        <div class="panel-body">
-            <div class="form-group">
-                <label class="col-sm-2 control-label" for="hostname"><span class="element-required">Hostname</span></label>
-                <div class="col-sm-6">
-                    <input type="text" class="form-control" id="hostname" name="hostname" value="<?= htmlspecialchars($hostname) ?>" required>
-                    <span class="help-block">Name of the firewall host, without the domain part e.g. <em>mitranet</em></span>
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="col-sm-2 control-label" for="domain"><span class="element-required">Domain</span></label>
-                <div class="col-sm-6">
-                    <input type="text" class="form-control" id="domain" name="domain" value="<?= htmlspecialchars($domain) ?>" required>
-                    <span class="help-block">e.g. <em>home.arpa</em> or <em>corp.local</em></span>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="container-fluid mitranet-page-container">
+	<div class="mitranet-window">
+		<div class="mitranet-header">
+			<div class="mitranet-title-badge">
+				<i class="fa-solid fa-gears"></i> General Setup
+			</div>
+			<ul class="mitranet-tabs">
+				<li class="active"><a href="/system.php">General</a></li>
+				<li><a href="/system_advanced_admin.php">Advanced</a></li>
+			</ul>
+		</div>
 
-    <div class="panel panel-default">
-        <div class="panel-heading"><h2 class="panel-title">DNS Server Settings</h2></div>
-        <div class="panel-body">
-            <?php for ($i = 0; $i < 4; $i++): 
-                $val = $dns_servers[$i] ?? '';
-            ?>
-            <div class="form-group">
-                <label class="col-sm-2 control-label" for="dns<?= $i ?>">DNS Server <?= $i + 1 ?></label>
-                <div class="col-sm-6">
-                    <input type="text" class="form-control" id="dns<?= $i ?>" name="dns<?= $i ?>" value="<?= htmlspecialchars($val) ?>" placeholder="e.g. 1.1.1.1 or 8.8.8.8">
-                    <span class="help-block">IPv4 or IPv6 address for DNS server <?= $i + 1 ?>.</span>
-                </div>
-            </div>
-            <?php endfor; ?>
-            <div class="form-group">
-                <label class="col-sm-2 control-label">DNS Resolution Behavior</label>
-                <div class="col-sm-6">
-                    <div class="checkbox">
-                        <label>
-                            <input type="checkbox" name="dnslocalhost" value="yes" checked>
-                            <strong>Use local DNS (127.0.0.1)</strong>, fall back to remote DNS Servers
-                        </label>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+		<div class="p-20" style="flex: 1 1 auto; overflow-y: auto;">
+			<form method="post" action="system.php" class="form-horizontal">
+				<div class="panel panel-default">
+					<div class="panel-heading"><h2 class="panel-title">System Identification</h2></div>
+					<div class="panel-body">
+						<div class="form-group">
+							<label class="col-sm-2 control-label" for="hostname"><span class="element-required">Hostname</span></label>
+							<div class="col-sm-6">
+								<input type="text" class="form-control" id="hostname" name="hostname" value="<?= htmlspecialchars($hostname) ?>" required>
+								<span class="help-block">Name of the firewall host, without the domain part e.g. <em>mitranet</em></span>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="col-sm-2 control-label" for="domain"><span class="element-required">Domain</span></label>
+							<div class="col-sm-6">
+								<input type="text" class="form-control" id="domain" name="domain" value="<?= htmlspecialchars($domain) ?>" required>
+								<span class="help-block">e.g. <em>home.arpa</em> or <em>corp.local</em></span>
+							</div>
+						</div>
+					</div>
+				</div>
 
-    <div class="panel panel-default">
-        <div class="panel-heading"><h2 class="panel-title">Localization</h2></div>
-        <div class="panel-body">
-            <div class="form-group">
-                <label class="col-sm-2 control-label" for="timezone">Timezone</label>
-                <div class="col-sm-6">
-                    <select class="form-control" id="timezone" name="timezone">
-                        <?php foreach ($timezones as $tz_id => $tz_label): ?>
-                            <option value="<?= htmlspecialchars($tz_id) ?>" <?= ($tz_id === $current_tz) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($tz_label) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <span class="help-block">Select the operating system timezone.</span>
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="col-sm-2 control-label" for="timeservers">NTP Time Server</label>
-                <div class="col-sm-6">
-                    <input type="text" class="form-control" id="timeservers" name="timeservers" value="<?= htmlspecialchars($timeservers) ?>">
-                    <span class="help-block">Network Time Protocol pool or server address.</span>
-                </div>
-            </div>
-        </div>
-    </div>
+				<div class="panel panel-default">
+					<div class="panel-heading"><h2 class="panel-title">DNS Server Settings</h2></div>
+					<div class="panel-body">
+						<?php for ($i = 0; $i < 4; $i++): 
+							$val = $dns_servers[$i] ?? '';
+						?>
+						<div class="form-group">
+							<label class="col-sm-2 control-label" for="dns<?= $i ?>">DNS Server <?= $i + 1 ?></label>
+							<div class="col-sm-6">
+								<input type="text" class="form-control" id="dns<?= $i ?>" name="dns<?= $i ?>" value="<?= htmlspecialchars($val) ?>" placeholder="e.g. 1.1.1.1 or 8.8.8.8">
+								<span class="help-block">IPv4 or IPv6 address for DNS server <?= $i + 1 ?>.</span>
+							</div>
+						</div>
+						<?php endfor; ?>
+						<div class="form-group">
+							<label class="col-sm-2 control-label">DNS Resolution Behavior</label>
+							<div class="col-sm-6">
+								<div class="checkbox">
+									<label>
+										<input type="checkbox" name="dnslocalhost" value="yes" checked>
+										<strong>Use local DNS (127.0.0.1)</strong>, fall back to remote DNS Servers
+									</label>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
 
-    <div class="panel panel-default">
-        <div class="panel-heading"><h2 class="panel-title">webConfigurator</h2></div>
-        <div class="panel-body">
-            <div class="form-group">
-                <label class="col-sm-2 control-label">Theme</label>
-                <div class="col-sm-6">
-                    <select class="form-control" name="webguicss">
-                        <option value="pfSense.css" selected>pfSense (default)</option>
-                        <option value="pfSense-dark.css">pfSense-dark</option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="col-sm-2 control-label">Operating System Platform</label>
-                <div class="col-sm-6">
-                    <p class="form-control-static">
-                        <strong><?= htmlspecialchars($sys['pretty_name'] ?? 'MitraNet') ?></strong> (Kernel: <?= htmlspecialchars($sys['kernel'] ?? 'Linux') ?>)
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
+				<div class="panel panel-default">
+					<div class="panel-heading"><h2 class="panel-title">Localization</h2></div>
+					<div class="panel-body">
+						<div class="form-group">
+							<label class="col-sm-2 control-label" for="timezone">Timezone</label>
+							<div class="col-sm-6">
+								<select class="form-control" id="timezone" name="timezone">
+									<?php foreach ($timezones as $tz_id => $tz_label): ?>
+										<option value="<?= htmlspecialchars($tz_id) ?>" <?= ($tz_id === $current_tz) ? 'selected' : '' ?>>
+											<?= htmlspecialchars($tz_label) ?>
+										</option>
+									<?php endforeach; ?>
+								</select>
+								<span class="help-block">Select the operating system timezone.</span>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="col-sm-2 control-label" for="timeservers">NTP Time Server</label>
+							<div class="col-sm-6">
+								<input type="text" class="form-control" id="timeservers" name="timeservers" value="<?= htmlspecialchars($timeservers) ?>">
+								<span class="help-block">Network Time Protocol pool or server address.</span>
+							</div>
+						</div>
+					</div>
+				</div>
 
-    <div class="col-sm-10 col-sm-offset-2 mb-25">
-        <button type="submit" class="btn btn-primary" id="save" name="save">
-            <i class="fa-solid fa-save icon-embed-btn"></i> Save
-        </button>
-    </div>
-</form>
+				<div class="panel panel-default">
+					<div class="panel-heading"><h2 class="panel-title">webConfigurator</h2></div>
+					<div class="panel-body">
+						<div class="form-group">
+							<label class="col-sm-2 control-label">Theme</label>
+							<div class="col-sm-6">
+								<select class="form-control" name="webguicss">
+									<option value="pfSense.css" selected>pfSense (default)</option>
+									<option value="pfSense-dark.css">pfSense-dark</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="col-sm-2 control-label">Operating System Platform</label>
+							<div class="col-sm-6">
+								<p class="form-control-static">
+									<strong><?= htmlspecialchars($sys['pretty_name'] ?? 'MitraNet') ?></strong> (Kernel: <?= htmlspecialchars($sys['kernel'] ?? 'Linux') ?>)
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="action-buttons mb-25" style="border-radius: 4px;">
+					<button type="submit" class="btn btn-primary btn-sm" id="save" name="save">
+						<i class="fa-solid fa-save icon-embed-btn"></i> Save
+					</button>
+				</div>
+			</form>
+		</div>
+
+		<div class="mitranet-statusbar">
+			<div>
+				<span><strong>Host:</strong> <?= htmlspecialchars($hostname) ?>.<?= htmlspecialchars($domain) ?></span>
+			</div>
+			<div>
+				<span class="text-muted">MitraNet Core Identity</span>
+			</div>
+		</div>
+
+	</div>
+</div>
 
 <?php require_once(__DIR__ . '/includes/foot.inc'); ?>
