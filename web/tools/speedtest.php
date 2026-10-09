@@ -483,7 +483,7 @@ body.theme-dark .st-table tbody tr:hover {
                 </div>
                 <div class="col-md-2 col-sm-6" style="margin-bottom: 10px;">
                     <div class="speedtest-label">&nbsp;</div>
-                    <button type="button" id="btn-start" class="btn btn-run-speedtest btn-block">
+                    <button type="button" id="btn-start" class="btn btn-run-speedtest btn-block" onclick="if(typeof window.startSpeedtest==='function'){window.startSpeedtest();}">
                         <i class="fa-solid fa-play"></i> <span>Start Test</span>
                     </button>
                 </div>
@@ -601,9 +601,11 @@ body.theme-dark .st-table tbody tr:hover {
     </div>
 </div>
 
+<?php include(__DIR__ . '/../includes/foot.inc'); ?>
+
 <script type="text/javascript">
 function initSpeedtest() {
-    var currentUrl = window.location.pathname;
+    var currentUrl = '/tools/speedtest.php';
 
     // 1. Fetch Speedtest Servers
     $.ajax({
@@ -643,7 +645,7 @@ function initSpeedtest() {
                         tbody.html('<tr><td colspan="8" class="text-center text-muted" style="padding: 20px;">Belum ada riwayat pengujian. Silakan klik "Start Test".</td></tr>');
                     } else {
                         res.history.forEach(function(h) {
-                            var linkHtml = h.url ? '<a href="' + h.url + '" target="_blank" class="btn btn-xs btn-info"><i class="fa-solid fa-arrow-up-right-from-square"></i> Result</a>' : '-';
+                            var linkHtml = (h.url && h.url.indexOf('http') === 0) ? '<a href="' + h.url + '" target="_blank" class="btn btn-xs btn-info"><i class="fa-solid fa-arrow-up-right-from-square"></i> Result</a>' : '-';
                             var row = $('<tr>');
                             row.append($('<td>').text(h.timestamp));
                             row.append($('<td>').html('<span class="label label-default">' + h.engine + '</span>'));
@@ -833,5 +835,3 @@ function initSpeedtest() {
 
 $(document).ready(initSpeedtest);
 </script>
-
-<?php include(__DIR__ . '/../includes/foot.inc'); ?>

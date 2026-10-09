@@ -348,7 +348,7 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
 
             opener = urllib.request.build_opener(NoRedirectHandler)
             try:
-                resp = opener.open(req)
+                resp = opener.open(req, timeout=60)
                 status_code = resp.status
                 headers = resp.headers
                 content = resp.read()
@@ -3699,10 +3699,13 @@ def run_api_server(host: str = "0.0.0.0", port: int = 8443) -> None:
     if php_path and web_dir:
         try:
             logger.info("Spawning local PHP WebUI worker on 127.0.0.1:8000 (docroot: %s)", web_dir)
+            php_env = os.environ.copy()
+            php_env["PHP_CLI_SERVER_WORKERS"] = "4"
             php_proc = subprocess.Popen(
                 [php_path, "-S", "127.0.0.1:8000", "-t", web_dir],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
+                env=php_env
             )
             time.sleep(0.5)
         except Exception as e:
