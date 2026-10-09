@@ -88,22 +88,69 @@ class TestManagementApiEndpoints(unittest.TestCase):
         self.patcher = patch("mitranet.src.api.server.auth_mgr", self.auth)
         self.patcher.start()
 
+        # Mock discovery services so tests can run cross-platform without native Linux 'ip' command
+        mock_iface = MagicMock()
+        mock_iface.get_all_interfaces.return_value = []
+        self.patcher_iface = patch("mitranet.src.api.server.iface_discovery", mock_iface)
+        self.patcher_iface.start()
+
+        mock_route = MagicMock()
+        mock_route.get_all_routes.return_value = []
+        self.patcher_route = patch("mitranet.src.api.server.route_discovery", mock_route)
+        self.patcher_route.start()
+
+        mock_vlan = MagicMock()
+        mock_vlan.list_vlans.return_value = []
+        self.patcher_vlan = patch("mitranet.src.api.server.vlan_service", mock_vlan)
+        self.patcher_vlan.start()
+
+        mock_bridge = MagicMock()
+        mock_bridge.list_bridges.return_value = []
+        self.patcher_bridge = patch("mitranet.src.api.server.bridge_service", mock_bridge)
+        self.patcher_bridge.start()
+
+        mock_bond = MagicMock()
+        mock_bond.list_bonds.return_value = []
+        self.patcher_bond = patch("mitranet.src.api.server.bond_service", mock_bond)
+        self.patcher_bond.start()
+
+        mock_vrf = MagicMock()
+        mock_vrf.list_vrfs.return_value = []
+        self.patcher_vrf = patch("mitranet.src.api.server.vrf_service", mock_vrf)
+        self.patcher_vrf.start()
+
+        mock_fw = MagicMock()
+        mock_model = MagicMock()
+        mock_model.model_dump.return_value = {}
+        mock_fw.get_status.return_value = mock_model
+        mock_fw.running_config = mock_model
+        mock_fw.candidate_config = mock_model
+        self.patcher_fw = patch("mitranet.src.api.server.fw_engine", mock_fw)
+        self.patcher_fw.start()
+
         self.token = self.auth.create_session("admin")
         session = self.auth.validate_session(self.token)
         self.csrf_token = session["csrf_token"]
 
     def tearDown(self):
+        self.patcher_fw.stop()
+        self.patcher_vrf.stop()
+        self.patcher_bond.stop()
+        self.patcher_bridge.stop()
+        self.patcher_vlan.stop()
+        self.patcher_route.stop()
+        self.patcher_iface.stop()
         self.patcher.stop()
         shutil.rmtree(self.test_dir, ignore_errors=True)
 
-    def _make_handler(self, method: str, path: str, body: dict = None, headers: dict = None):
+    def _make_handler(self, method: str, path: str, body: dict = None, headers: dict = None, client_ip: str = "127.0.0.1"):
         """Constructs and returns an instantiated ManagementApiHandler with mocked I/O."""
         server = DummyServer()
         handler = ManagementApiHandler.__new__(ManagementApiHandler)
         handler.command = method
         handler.path = path
         handler.request_version = "HTTP/1.1"
-        handler.client_address = ("127.0.0.1", 54321)
+        handler.client_address = (client_ip, 54321)
         handler.server = server
         handler.close_connection = True
 
@@ -130,21 +177,21 @@ class TestManagementApiEndpoints(unittest.TestCase):
         handler.requestline = f"{method} {path} HTTP/1.1"
         return handler
 
-    def _execute_get(self, path: str, cookie: str = None):
+    def _execute_get(self, path: str, cookie: str = None, client_ip: str = "127.0.0.1"):
         headers = {}
         if cookie:
             headers["Cookie"] = f"mitranet_session={cookie}"
-        handler = self._make_handler("GET", path, headers=headers)
+        handler = self._make_handler("GET", path, headers=headers, client_ip=client_ip)
         handler.do_GET()
         return handler.wfile.getvalue().decode("utf-8", errors="ignore")
 
-    def _execute_post(self, path: str, body: dict = None, cookie: str = None, csrf: str = None):
+    def _execute_post(self, path: str, body: dict = None, cookie: str = None, csrf: str = None, client_ip: str = "127.0.0.1"):
         headers = {}
         if cookie:
             headers["Cookie"] = f"mitranet_session={cookie}"
         if csrf:
             headers["X-CSRF-Token"] = csrf
-        handler = self._make_handler("POST", path, body=body, headers=headers)
+        handler = self._make_handler("POST", path, body=body, headers=headers, client_ip=client_ip)
         handler.do_POST()
         return handler.wfile.getvalue().decode("utf-8", errors="ignore")
 
@@ -169,7 +216,7 @@ class TestManagementApiEndpoints(unittest.TestCase):
 
     def test_protected_endpoint_denied_without_auth(self):
         """GET /api/v1/system returns 401 Unauthorized if not authenticated."""
-        out = self._execute_get("/api/v1/system")
+        out = self._execute_get("/api/v1/system", client_ip="192.168.1.100")
         self.assertIn("401 Unauthorized", out)
 
     def test_protected_endpoints_succeed_with_auth(self):
@@ -195,9 +242,10 @@ class TestManagementApiEndpoints(unittest.TestCase):
         """Mutation endpoints reject requests missing CSRF token with 403 Forbidden."""
         out = self._execute_post(
             "/api/v1/interfaces/set-state",
-            body={"interface": "lo", "state": "up"},
+            body={"name": "lo", "state": "up"},
             cookie=self.token,
             csrf=None,  # No CSRF
+            client_ip="192.168.1.100",
         )
         self.assertIn("403 Forbidden", out)
 

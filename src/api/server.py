@@ -11,6 +11,7 @@ import json
 import time
 import socket
 import logging
+import pathlib
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from http import cookies
 from urllib.parse import urlparse, parse_qs
@@ -993,7 +994,6 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
 
         # 15b. WireGuard Client Config & QR Generator
         if path == "/api/v1/wireguard/client-config":
-            from urllib.parse import parse_qs
             qs = parse_qs(parsed.query)
             tun = qs.get("tunnel", ["wg0"])[0].strip()
             peer_pubkey = qs.get("peer", [""])[0].strip()
@@ -1074,7 +1074,6 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             server_host = endpoint_override or host_header or "127.0.0.1"
             if server_host in ("127.0.0.1", "localhost", "::1"):
                 try:
-                    import socket
                     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                     s.connect(("8.8.8.8", 80))
                     server_host = s.getsockname()[0]
@@ -1706,6 +1705,31 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             self._send_json(200, res)
             return
 
+
+        # System Power Control
+        if path == "/api/v1/system/reboot":
+            import subprocess as _sp, threading as _th
+            def _do_reboot():
+                import time as _t; _t.sleep(2)
+                try:
+                    _sp.run(["/usr/bin/systemctl", "reboot"], check=True)
+                except Exception:
+                    _sp.run(["/sbin/reboot", "-f"])
+            _th.Thread(target=_do_reboot, daemon=True).start()
+            self._send_json(200, {"success": True, "message": "System is rebooting..."})
+            return
+
+        if path == "/api/v1/system/halt":
+            import subprocess as _sp, threading as _th
+            def _do_halt():
+                import time as _t; _t.sleep(2)
+                try:
+                    _sp.run(["/usr/bin/systemctl", "poweroff"], check=True)
+                except Exception:
+                    _sp.run(["/sbin/poweroff", "-f"])
+            _th.Thread(target=_do_halt, daemon=True).start()
+            self._send_json(200, {"success": True, "message": "System is shutting down..."})
+            return
 
         self._send_json(404, {"error": "Endpoint not found"})
 
