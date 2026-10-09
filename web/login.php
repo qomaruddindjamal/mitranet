@@ -60,14 +60,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		</div>
 	<?php endif; ?>
 
-	<form method="post" action="/login.php">
+	<form method="post" action="/login.php" autocomplete="off">
 		<div class="form-group">
 			<label for="username">Username</label>
-			<input type="text" class="form-control" id="username" name="username" value="admin" required autofocus autocomplete="off">
+			<input type="text" class="form-control" id="username" name="username" placeholder="Enter username" required autofocus autocomplete="username">
 		</div>
 		<div class="form-group">
 			<label for="password">Password</label>
-			<input type="password" class="form-control" id="password" name="password" value="mitranet" required autocomplete="off">
+			<input type="password" class="form-control" id="password" name="password" placeholder="Enter password" required autocomplete="current-password">
 		</div>
 		<button type="submit" class="btn btn-signin">Sign In</button>
 	</form>
