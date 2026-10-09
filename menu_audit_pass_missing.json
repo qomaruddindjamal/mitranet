@@ -1,0 +1,635 @@
+{
+  "passed": [
+    {
+      "menu": "System",
+      "sub": "Advanced",
+      "url": "/system_advanced_admin.php",
+      "file": "system_advanced_admin.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "System",
+      "sub": "Certificates",
+      "url": "/system_camanager.php",
+      "file": "system_camanager.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "System",
+      "sub": "General Setup",
+      "url": "/system.php",
+      "file": "system.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "System",
+      "sub": "High Availability",
+      "url": "/system_hasync.php",
+      "file": "system_hasync.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "System",
+      "sub": "Package Manager",
+      "url": "/pkg_mgr_installed.php",
+      "file": "pkg_mgr_installed.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "System",
+      "sub": "Register",
+      "url": "/system_register.php",
+      "file": "system_register.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "System",
+      "sub": "Routing",
+      "url": "/system_gateways.php",
+      "file": "system_gateways.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "System",
+      "sub": "Setup Wizard",
+      "url": "/wizard.php?xml=setup_wizard.xml",
+      "file": "wizard.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "System",
+      "sub": "Update",
+      "url": "/pkg_mgr_install.php?id=firmware",
+      "file": "pkg_mgr_install.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "System",
+      "sub": "User Manager",
+      "url": "/system_usermanager.php",
+      "file": "system_usermanager.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "System",
+      "sub": "User Password Manager",
+      "url": "/system_usermanager_passwordmg.php",
+      "file": "system_usermanager_passwordmg.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "System",
+      "sub": "Logout (admin)",
+      "url": "/index.php?logout",
+      "file": "index.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "DIRECT",
+      "sub": "Wifi",
+      "url": "/interfaces_wifi.php",
+      "file": "interfaces_wifi.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Interfaces",
+      "sub": "Assignments",
+      "url": "/interfaces_assign.php",
+      "file": "interfaces_assign.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Interfaces",
+      "sub": "WAN",
+      "url": "/interfaces.php?if=wan",
+      "file": "interfaces.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Interfaces",
+      "sub": "LAN",
+      "url": "/interfaces.php?if=lan",
+      "file": "interfaces.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Interfaces",
+      "sub": "WGVPN",
+      "url": "/interfaces.php?if=opt1",
+      "file": "interfaces.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "DIRECT",
+      "sub": "WireGuard",
+      "url": "/wg/vpn_wg_tunnels.php",
+      "file": "vpn_wg_tunnels.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Firewall",
+      "sub": "Aliases",
+      "url": "/firewall_aliases.php",
+      "file": "firewall_aliases.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Firewall",
+      "sub": "NAT",
+      "url": "/firewall_nat.php",
+      "file": "firewall_nat.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Firewall",
+      "sub": "Rules",
+      "url": "/firewall_rules.php",
+      "file": "firewall_rules.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Firewall",
+      "sub": "Schedules",
+      "url": "/firewall_schedule.php",
+      "file": "firewall_schedule.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Firewall",
+      "sub": "Traffic Shaper",
+      "url": "/firewall_shaper.php",
+      "file": "firewall_shaper.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Firewall",
+      "sub": "Virtual IPs",
+      "url": "/firewall_virtual_ip.php",
+      "file": "firewall_virtual_ip.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Services",
+      "sub": "Auto Config Backup",
+      "url": "/services_acb_settings.php",
+      "file": "services_acb_settings.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Services",
+      "sub": "Captive Portal",
+      "url": "/services_captiveportal.php",
+      "file": "services_captiveportal.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Services",
+      "sub": "DHCP Relay",
+      "url": "/services_dhcp_relay.php",
+      "file": "services_dhcp_relay.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Services",
+      "sub": "DHCP Server",
+      "url": "/services_dhcp_settings.php",
+      "file": "services_dhcp_settings.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Services",
+      "sub": "DHCPv6 Relay",
+      "url": "/services_dhcpv6_relay.php",
+      "file": "services_dhcpv6_relay.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Services",
+      "sub": "DHCPv6 Server",
+      "url": "/services_dhcpv6_settings.php",
+      "file": "services_dhcpv6_settings.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Services",
+      "sub": "DNS Forwarder",
+      "url": "/services_dnsmasq.php",
+      "file": "services_dnsmasq.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Services",
+      "sub": "DNS Resolver",
+      "url": "/services_unbound.php",
+      "file": "services_unbound.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Services",
+      "sub": "Dynamic DNS",
+      "url": "/services_dyndns.php",
+      "file": "services_dyndns.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Services",
+      "sub": "IGMP Proxy",
+      "url": "/services_igmpproxy.php",
+      "file": "services_igmpproxy.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Services",
+      "sub": "NTP",
+      "url": "/services_ntpd.php",
+      "file": "services_ntpd.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Services",
+      "sub": "PPPoE Server",
+      "url": "/services_pppoe.php",
+      "file": "services_pppoe.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Services",
+      "sub": "Router Advertisement",
+      "url": "/services_radvd.php",
+      "file": "services_radvd.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Services",
+      "sub": "SNMP",
+      "url": "/services_snmp.php",
+      "file": "services_snmp.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Services",
+      "sub": "UPnP IGD &amp; PCP",
+      "url": "/pkg_edit.php?xml=miniupnpd.xml",
+      "file": "pkg_edit.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Services",
+      "sub": "Wake-on-LAN",
+      "url": "/services_wol.php",
+      "file": "services_wol.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "VPN",
+      "sub": "IPsec",
+      "url": "/vpn_ipsec.php",
+      "file": "vpn_ipsec.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "VPN",
+      "sub": "L2TP",
+      "url": "/vpn_l2tp.php",
+      "file": "vpn_l2tp.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "VPN",
+      "sub": "OpenVPN",
+      "url": "/vpn_openvpn_server.php",
+      "file": "vpn_openvpn_server.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "VPN",
+      "sub": "Xray-core",
+      "url": "/vpn_xray.php",
+      "file": "vpn_xray.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "DIRECT",
+      "sub": "KVM",
+      "url": "/services_virtual.php",
+      "file": "services_virtual.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "ARP Table",
+      "url": "/diag_arp.php",
+      "file": "diag_arp.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "Authentication",
+      "url": "/diag_authentication.php",
+      "file": "diag_authentication.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "Backup &amp; Restore",
+      "url": "/diag_backup.php",
+      "file": "diag_backup.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "Command Prompt",
+      "url": "/diag_command.php",
+      "file": "diag_command.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "DNS Lookup",
+      "url": "/diag_dns.php",
+      "file": "diag_dns.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "Edit File",
+      "url": "/diag_edit.php",
+      "file": "diag_edit.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "Factory Defaults",
+      "url": "/diag_defaults.php",
+      "file": "diag_defaults.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "Halt System",
+      "url": "/diag_halt.php",
+      "file": "diag_halt.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "Limiter Info",
+      "url": "/diag_limiter_info.php",
+      "file": "diag_limiter_info.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "NDP Table",
+      "url": "/diag_ndp.php",
+      "file": "diag_ndp.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "Packet Capture",
+      "url": "/diag_packet_capture.php",
+      "file": "diag_packet_capture.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "pfInfo",
+      "url": "/diag_pf_info.php",
+      "file": "diag_pf_info.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "pfTop",
+      "url": "/diag_pftop.php",
+      "file": "diag_pftop.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "Ping",
+      "url": "/diag_ping.php",
+      "file": "diag_ping.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "Reboot",
+      "url": "/diag_reboot.php",
+      "file": "diag_reboot.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "Routes",
+      "url": "/diag_routes.php",
+      "file": "diag_routes.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "S.M.A.R.T. Status",
+      "url": "/diag_smart.php",
+      "file": "diag_smart.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "Sockets",
+      "url": "/diag_sockets.php",
+      "file": "diag_sockets.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "States",
+      "url": "/diag_dump_states.php",
+      "file": "diag_dump_states.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "States Summary",
+      "url": "/diag_states_summary.php",
+      "file": "diag_states_summary.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "System Activity",
+      "url": "/diag_system_activity.php",
+      "file": "diag_system_activity.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "Tables",
+      "url": "/diag_tables.php",
+      "file": "diag_tables.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "Terminal",
+      "url": "/diag_terminal.php",
+      "file": "diag_terminal.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "Test Port",
+      "url": "/diag_testport.php",
+      "file": "diag_testport.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Diagnostics",
+      "sub": "Traceroute",
+      "url": "/diag_traceroute.php",
+      "file": "diag_traceroute.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "DIRECT",
+      "sub": "Terminal",
+      "url": "/diag_terminal.php",
+      "file": "diag_terminal.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Tools",
+      "sub": "Speedtest",
+      "url": "/tools_speedtest.php",
+      "file": "tools_speedtest.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Status",
+      "sub": "Captive Portal",
+      "url": "/status_captiveportal.php",
+      "file": "status_captiveportal.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Status",
+      "sub": "CARP (failover)",
+      "url": "/status_carp.php",
+      "file": "status_carp.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Status",
+      "sub": "Dashboard",
+      "url": "/index.php",
+      "file": "index.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Status",
+      "sub": "DHCP Leases",
+      "url": "/status_dhcp_leases.php",
+      "file": "status_dhcp_leases.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Status",
+      "sub": "DHCPv6 Leases",
+      "url": "/status_dhcpv6_leases.php",
+      "file": "status_dhcpv6_leases.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Status",
+      "sub": "DNS Resolver",
+      "url": "/status_unbound.php",
+      "file": "status_unbound.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Status",
+      "sub": "Filter Reload",
+      "url": "/status_filter_reload.php?user=true",
+      "file": "status_filter_reload.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Status",
+      "sub": "Gateways",
+      "url": "/status_gateways.php",
+      "file": "status_gateways.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Status",
+      "sub": "Interfaces",
+      "url": "/status_interfaces.php",
+      "file": "status_interfaces.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Status",
+      "sub": "IPsec",
+      "url": "/status_ipsec.php",
+      "file": "status_ipsec.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Status",
+      "sub": "Monitoring",
+      "url": "/status_monitoring.php",
+      "file": "status_monitoring.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Status",
+      "sub": "NTP",
+      "url": "/status_ntpd.php",
+      "file": "status_ntpd.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Status",
+      "sub": "OpenVPN",
+      "url": "/status_openvpn.php",
+      "file": "status_openvpn.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Status",
+      "sub": "Queues",
+      "url": "/status_queues.php",
+      "file": "status_queues.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Status",
+      "sub": "Services",
+      "url": "/status_services.php",
+      "file": "status_services.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Status",
+      "sub": "System Logs",
+      "url": "/status_logs.php",
+      "file": "status_logs.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Status",
+      "sub": "Traffic Graph",
+      "url": "/status_graph.php",
+      "file": "status_graph.php",
+      "status": "PASS"
+    },
+    {
+      "menu": "Status",
+      "sub": "UPnP IGD &amp; PCP",
+      "url": "/status_upnp.php",
+      "file": "status_upnp.php",
+      "status": "PASS"
+    }
+  ],
+  "missing": []
+}

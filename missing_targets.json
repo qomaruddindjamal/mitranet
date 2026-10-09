@@ -1,0 +1,404 @@
+[
+  {
+    "category": "System",
+    "name": "Advanced",
+    "url": "/system_advanced_admin.php",
+    "file": "system_advanced_admin.php"
+  },
+  {
+    "category": "System",
+    "name": "Certificates",
+    "url": "/system_camanager.php",
+    "file": "system_camanager.php"
+  },
+  {
+    "category": "System",
+    "name": "High Availability",
+    "url": "/system_hasync.php",
+    "file": "system_hasync.php"
+  },
+  {
+    "category": "System",
+    "name": "Register",
+    "url": "/system_register.php",
+    "file": "system_register.php"
+  },
+  {
+    "category": "System",
+    "name": "Setup Wizard",
+    "url": "/wizard.php?xml=setup_wizard.xml",
+    "file": "wizard.php"
+  },
+  {
+    "category": "System",
+    "name": "Update",
+    "url": "/pkg_mgr_install.php?id=firmware",
+    "file": "pkg_mgr_install.php"
+  },
+  {
+    "category": "System",
+    "name": "User Manager",
+    "url": "/system_usermanager.php",
+    "file": "system_usermanager.php"
+  },
+  {
+    "category": "System",
+    "name": "User Password Manager",
+    "url": "/system_usermanager_passwordmg.php",
+    "file": "system_usermanager_passwordmg.php"
+  },
+  {
+    "category": "DIRECT",
+    "name": "Wifi",
+    "url": "/interfaces_wifi.php",
+    "file": "interfaces_wifi.php"
+  },
+  {
+    "category": "Firewall",
+    "name": "Schedules",
+    "url": "/firewall_schedule.php",
+    "file": "firewall_schedule.php"
+  },
+  {
+    "category": "Firewall",
+    "name": "Traffic Shaper",
+    "url": "/firewall_shaper.php",
+    "file": "firewall_shaper.php"
+  },
+  {
+    "category": "Firewall",
+    "name": "Virtual IPs",
+    "url": "/firewall_virtual_ip.php",
+    "file": "firewall_virtual_ip.php"
+  },
+  {
+    "category": "Services",
+    "name": "Auto Config Backup",
+    "url": "/services_acb_settings.php",
+    "file": "services_acb_settings.php"
+  },
+  {
+    "category": "Services",
+    "name": "Captive Portal",
+    "url": "/services_captiveportal.php",
+    "file": "services_captiveportal.php"
+  },
+  {
+    "category": "Services",
+    "name": "DHCP Relay",
+    "url": "/services_dhcp_relay.php",
+    "file": "services_dhcp_relay.php"
+  },
+  {
+    "category": "Services",
+    "name": "DHCP Server",
+    "url": "/services_dhcp_settings.php",
+    "file": "services_dhcp_settings.php"
+  },
+  {
+    "category": "Services",
+    "name": "DHCPv6 Relay",
+    "url": "/services_dhcpv6_relay.php",
+    "file": "services_dhcpv6_relay.php"
+  },
+  {
+    "category": "Services",
+    "name": "DHCPv6 Server",
+    "url": "/services_dhcpv6_settings.php",
+    "file": "services_dhcpv6_settings.php"
+  },
+  {
+    "category": "Services",
+    "name": "DNS Forwarder",
+    "url": "/services_dnsmasq.php",
+    "file": "services_dnsmasq.php"
+  },
+  {
+    "category": "Services",
+    "name": "DNS Resolver",
+    "url": "/services_unbound.php",
+    "file": "services_unbound.php"
+  },
+  {
+    "category": "Services",
+    "name": "Dynamic DNS",
+    "url": "/services_dyndns.php",
+    "file": "services_dyndns.php"
+  },
+  {
+    "category": "Services",
+    "name": "IGMP Proxy",
+    "url": "/services_igmpproxy.php",
+    "file": "services_igmpproxy.php"
+  },
+  {
+    "category": "Services",
+    "name": "NTP",
+    "url": "/services_ntpd.php",
+    "file": "services_ntpd.php"
+  },
+  {
+    "category": "Services",
+    "name": "PPPoE Server",
+    "url": "/services_pppoe.php",
+    "file": "services_pppoe.php"
+  },
+  {
+    "category": "Services",
+    "name": "Router Advertisement",
+    "url": "/services_radvd.php",
+    "file": "services_radvd.php"
+  },
+  {
+    "category": "Services",
+    "name": "SNMP",
+    "url": "/services_snmp.php",
+    "file": "services_snmp.php"
+  },
+  {
+    "category": "Services",
+    "name": "UPnP IGD &amp; PCP",
+    "url": "/pkg_edit.php?xml=miniupnpd.xml",
+    "file": "pkg_edit.php"
+  },
+  {
+    "category": "Services",
+    "name": "Wake-on-LAN",
+    "url": "/services_wol.php",
+    "file": "services_wol.php"
+  },
+  {
+    "category": "VPN",
+    "name": "IPsec",
+    "url": "/vpn_ipsec.php",
+    "file": "vpn_ipsec.php"
+  },
+  {
+    "category": "VPN",
+    "name": "L2TP",
+    "url": "/vpn_l2tp.php",
+    "file": "vpn_l2tp.php"
+  },
+  {
+    "category": "VPN",
+    "name": "OpenVPN",
+    "url": "/vpn_openvpn_server.php",
+    "file": "vpn_openvpn_server.php"
+  },
+  {
+    "category": "DIRECT",
+    "name": "KVM",
+    "url": "/services_virtual.php",
+    "file": "services_virtual.php"
+  },
+  {
+    "category": "Diagnostics",
+    "name": "Authentication",
+    "url": "/diag_authentication.php",
+    "file": "diag_authentication.php"
+  },
+  {
+    "category": "Diagnostics",
+    "name": "Command Prompt",
+    "url": "/diag_command.php",
+    "file": "diag_command.php"
+  },
+  {
+    "category": "Diagnostics",
+    "name": "DNS Lookup",
+    "url": "/diag_dns.php",
+    "file": "diag_dns.php"
+  },
+  {
+    "category": "Diagnostics",
+    "name": "Edit File",
+    "url": "/diag_edit.php",
+    "file": "diag_edit.php"
+  },
+  {
+    "category": "Diagnostics",
+    "name": "Factory Defaults",
+    "url": "/diag_defaults.php",
+    "file": "diag_defaults.php"
+  },
+  {
+    "category": "Diagnostics",
+    "name": "Halt System",
+    "url": "/diag_halt.php",
+    "file": "diag_halt.php"
+  },
+  {
+    "category": "Diagnostics",
+    "name": "Limiter Info",
+    "url": "/diag_limiter_info.php",
+    "file": "diag_limiter_info.php"
+  },
+  {
+    "category": "Diagnostics",
+    "name": "NDP Table",
+    "url": "/diag_ndp.php",
+    "file": "diag_ndp.php"
+  },
+  {
+    "category": "Diagnostics",
+    "name": "Packet Capture",
+    "url": "/diag_packet_capture.php",
+    "file": "diag_packet_capture.php"
+  },
+  {
+    "category": "Diagnostics",
+    "name": "pfInfo",
+    "url": "/diag_pf_info.php",
+    "file": "diag_pf_info.php"
+  },
+  {
+    "category": "Diagnostics",
+    "name": "pfTop",
+    "url": "/diag_pftop.php",
+    "file": "diag_pftop.php"
+  },
+  {
+    "category": "Diagnostics",
+    "name": "Reboot",
+    "url": "/diag_reboot.php",
+    "file": "diag_reboot.php"
+  },
+  {
+    "category": "Diagnostics",
+    "name": "S.M.A.R.T. Status",
+    "url": "/diag_smart.php",
+    "file": "diag_smart.php"
+  },
+  {
+    "category": "Diagnostics",
+    "name": "Sockets",
+    "url": "/diag_sockets.php",
+    "file": "diag_sockets.php"
+  },
+  {
+    "category": "Diagnostics",
+    "name": "States Summary",
+    "url": "/diag_states_summary.php",
+    "file": "diag_states_summary.php"
+  },
+  {
+    "category": "Diagnostics",
+    "name": "System Activity",
+    "url": "/diag_system_activity.php",
+    "file": "diag_system_activity.php"
+  },
+  {
+    "category": "Diagnostics",
+    "name": "Tables",
+    "url": "/diag_tables.php",
+    "file": "diag_tables.php"
+  },
+  {
+    "category": "Diagnostics",
+    "name": "Terminal",
+    "url": "/diag_terminal.php",
+    "file": "diag_terminal.php"
+  },
+  {
+    "category": "Diagnostics",
+    "name": "Test Port",
+    "url": "/diag_testport.php",
+    "file": "diag_testport.php"
+  },
+  {
+    "category": "DIRECT",
+    "name": "Terminal",
+    "url": "/diag_terminal.php",
+    "file": "diag_terminal.php"
+  },
+  {
+    "category": "Tools",
+    "name": "Speedtest",
+    "url": "/tools_speedtest.php",
+    "file": "tools_speedtest.php"
+  },
+  {
+    "category": "Status",
+    "name": "Captive Portal",
+    "url": "/status_captiveportal.php",
+    "file": "status_captiveportal.php"
+  },
+  {
+    "category": "Status",
+    "name": "CARP (failover)",
+    "url": "/status_carp.php",
+    "file": "status_carp.php"
+  },
+  {
+    "category": "Status",
+    "name": "DHCP Leases",
+    "url": "/status_dhcp_leases.php",
+    "file": "status_dhcp_leases.php"
+  },
+  {
+    "category": "Status",
+    "name": "DHCPv6 Leases",
+    "url": "/status_dhcpv6_leases.php",
+    "file": "status_dhcpv6_leases.php"
+  },
+  {
+    "category": "Status",
+    "name": "DNS Resolver",
+    "url": "/status_unbound.php",
+    "file": "status_unbound.php"
+  },
+  {
+    "category": "Status",
+    "name": "Filter Reload",
+    "url": "/status_filter_reload.php?user=true",
+    "file": "status_filter_reload.php"
+  },
+  {
+    "category": "Status",
+    "name": "IPsec",
+    "url": "/status_ipsec.php",
+    "file": "status_ipsec.php"
+  },
+  {
+    "category": "Status",
+    "name": "Monitoring",
+    "url": "/status_monitoring.php",
+    "file": "status_monitoring.php"
+  },
+  {
+    "category": "Status",
+    "name": "NTP",
+    "url": "/status_ntpd.php",
+    "file": "status_ntpd.php"
+  },
+  {
+    "category": "Status",
+    "name": "OpenVPN",
+    "url": "/status_openvpn.php",
+    "file": "status_openvpn.php"
+  },
+  {
+    "category": "Status",
+    "name": "Queues",
+    "url": "/status_queues.php",
+    "file": "status_queues.php"
+  },
+  {
+    "category": "Status",
+    "name": "Services",
+    "url": "/status_services.php",
+    "file": "status_services.php"
+  },
+  {
+    "category": "Status",
+    "name": "Traffic Graph",
+    "url": "/status_graph.php",
+    "file": "status_graph.php"
+  },
+  {
+    "category": "Status",
+    "name": "UPnP IGD &amp; PCP",
+    "url": "/status_upnp.php",
+    "file": "status_upnp.php"
+  }
+]
