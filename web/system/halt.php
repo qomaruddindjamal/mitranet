@@ -8,15 +8,25 @@ require_once(__DIR__ . '/../includes/api.inc');
 $msg = '';
 $msg_type = '';
 
+$is_ajax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') || isset($_POST['ajax']);
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_halt'])) {
     $res = MitraNetApi::systemHalt();
     if ($res['status'] === 200 && !empty($res['data']['success'])) {
-        $msg = 'Perintah shutdown diterima. Perangkat akan mati dalam beberapa detik. Nyalakan kembali secara manual menggunakan tombol power.';
+        $msg = 'Perintah shutdown diterima. Perangkat sedang dimatikan...';
         $msg_type = 'success';
+        if ($is_ajax) {
+            echo json_encode(['success' => true, 'message' => $msg]);
+            exit;
+        }
     } else {
         $err = $res['data']['error'] ?? 'Gagal mengirim perintah shutdown.';
         $msg = htmlspecialchars($err);
         $msg_type = 'danger';
+        if ($is_ajax) {
+            echo json_encode(['success' => false, 'error' => $err]);
+            exit;
+        }
     }
 }
 
@@ -55,16 +65,14 @@ $selected_menu = 'system';
             <li>Perangkat harus dinyalakan secara manual (tombol power).</li>
             <li>Pastikan tidak ada pengguna aktif yang sedang terhubung.</li>
         </ul>
-        <form method="POST" action="/system_halt.php">
-            <div class="d-flex" style="gap:.75rem;">
-                <button type="submit" name="confirm_halt" value="1" class="btn btn-danger" style="flex:1;">
-                    <i class="fa-solid fa-power-off" style="margin-right:.4rem;"></i> Ya, Shutdown Sekarang
-                </button>
-                <a href="/index.php" class="btn btn-secondary" style="flex:1; text-align:center; display:inline-block; padding:.5rem 1rem;">
-                    <i class="fa-solid fa-xmark" style="margin-right:.4rem;"></i> Batal
-                </a>
-            </div>
-        </form>
+        <div class="d-flex" style="gap:.75rem;">
+            <button type="button" onclick="MitraNet.shutdownSystem()" class="btn btn-danger" style="flex:1;">
+                <i class="fa-solid fa-power-off" style="margin-right:.4rem;"></i> Ya, Shutdown Sekarang
+            </button>
+            <a href="/index.php" class="btn btn-secondary" style="flex:1; text-align:center; display:inline-block; padding:.5rem 1rem;">
+                <i class="fa-solid fa-xmark" style="margin-right:.4rem;"></i> Batal
+            </a>
+        </div>
         <?php endif; ?>
     </div>
 </div>

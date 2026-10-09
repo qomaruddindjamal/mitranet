@@ -217,6 +217,151 @@ window.MitraNet = window.MitraNet || {};
                 }
             }
         });
+    // 6. SweetAlert Khusus REBOOT SISTEM (dengan countdown & redirect ke /login.php)
+    MitraNet.rebootSystem = function() {
+        if (typeof Swal === 'undefined') {
+            if (confirm('Apakah Anda yakin ingin me-restart perangkat MitraNet?')) {
+                $.post('/system/reboot.php', { confirm_reboot: '1', ajax: 1 }, function() {
+                    window.location.href = '/login.php';
+                });
+            }
+            return;
+        }
+
+        Swal.fire({
+            title: 'Restart Sistem?',
+            html: `
+                <div style="text-align: left; font-size: 13px; color: #4b5563; line-height: 1.6;">
+                    <p style="margin-bottom: 8px;">Apakah Anda yakin ingin me-restart perangkat <b>MitraNet</b>?</p>
+                    <ul style="padding-left: 20px; margin-bottom: 0;">
+                        <li>Semua koneksi aktif akan terputus sementara.</li>
+                        <li>Proses reboot memerlukan waktu sekitar 1–2 menit.</li>
+                        <li>Setelah selesai, Anda akan diarahkan ke halaman login.</li>
+                    </ul>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#f59e0b',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fa-solid fa-rotate-right"></i> Ya, Restart Sekarang',
+            cancelButtonText: 'Batal',
+            showLoaderOnConfirm: true,
+            preConfirm: function() {
+                return $.ajax({
+                    url: '/system/reboot.php',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: { confirm_reboot: '1', ajax: 1 }
+                }).then(function(res) {
+                    if (!res || res.success === false) {
+                        throw new Error(res && res.error ? res.error : 'Gagal mengirim sinyal restart.');
+                    }
+                    return res;
+                }).catch(function(err) {
+                    Swal.showValidationMessage(err.message || 'Gagal berkomunikasi dengan server.');
+                });
+            },
+            allowOutsideClick: false
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                let timerInterval;
+                let countdownSec = 45;
+
+                Swal.fire({
+                    title: 'Perangkat Sedang Restart...',
+                    html: `
+                        <div style="padding: 10px 0; text-align: center;">
+                            <i class="fa-solid fa-spinner fa-spin fa-2x text-warning" style="margin-bottom: 15px;"></i>
+                            <p style="font-size: 14px; color: #374151; margin-bottom: 5px;">Menunggu perangkat online kembali...</p>
+                            <p style="font-size: 20px; font-weight: bold; color: #d97706;" id="swal-countdown">${countdownSec}s</p>
+                            <small class="text-muted">Akan dialihkan otomatis ke halaman login.</small>
+                        </div>
+                    `,
+                    timer: countdownSec * 1000,
+                    timerProgressBar: true,
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: function() {
+                        const b = document.getElementById('swal-countdown');
+                        timerInterval = setInterval(function() {
+                            countdownSec--;
+                            if (b) b.textContent = countdownSec + 's';
+                            if (countdownSec <= 0) {
+                                clearInterval(timerInterval);
+                            }
+                        }, 1000);
+                    },
+                    willClose: function() {
+                        clearInterval(timerInterval);
+                    }
+                }).then(function() {
+                    window.location.href = '/login.php';
+                });
+            }
+        });
+    };
+
+    // 7. SweetAlert Khusus SHUTDOWN SISTEM (redirect ke /login.php)
+    MitraNet.shutdownSystem = function() {
+        if (typeof Swal === 'undefined') {
+            if (confirm('Apakah Anda yakin ingin mematikan perangkat MitraNet?')) {
+                $.post('/system/halt.php', { confirm_halt: '1', ajax: 1 }, function() {
+                    window.location.href = '/login.php';
+                });
+            }
+            return;
+        }
+
+        Swal.fire({
+            title: 'Shutdown Sistem?',
+            html: `
+                <div style="text-align: left; font-size: 13px; color: #4b5563; line-height: 1.6;">
+                    <p style="margin-bottom: 8px;">Apakah Anda yakin ingin <b>mematikan</b> perangkat MitraNet sepenuhnya?</p>
+                    <ul style="padding-left: 20px; margin-bottom: 0;">
+                        <li>Semua antarmuka dan layanan jaringan akan berhenti.</li>
+                        <li>Perangkat harus dinyalakan kembali secara manual menggunakan tombol power fisik.</li>
+                    </ul>
+                </div>
+            `,
+            icon: 'error',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fa-solid fa-power-off"></i> Ya, Matikan Sekarang',
+            cancelButtonText: 'Batal',
+            showLoaderOnConfirm: true,
+            preConfirm: function() {
+                return $.ajax({
+                    url: '/system/halt.php',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: { confirm_halt: '1', ajax: 1 }
+                }).then(function(res) {
+                    if (!res || res.success === false) {
+                        throw new Error(res && res.error ? res.error : 'Gagal mengirim sinyal shutdown.');
+                    }
+                    return res;
+                }).catch(function(err) {
+                    Swal.showValidationMessage(err.message || 'Gagal berkomunikasi dengan server.');
+                });
+            },
+            allowOutsideClick: false
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Perangkat Dimatikan',
+                    text: 'Sinyal shutdown telah dikirim. Mengalihkan ke halaman login...',
+                    icon: 'info',
+                    timer: 3000,
+                    showConfirmButton: false,
+                    allowOutsideClick: false
+                }).then(function() {
+                    window.location.href = '/login.php';
+                });
+            }
+        });
     };
 
 })(jQuery);

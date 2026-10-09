@@ -8,15 +8,25 @@ require_once(__DIR__ . '/../includes/api.inc');
 $msg = '';
 $msg_type = '';
 
+$is_ajax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') || isset($_POST['ajax']);
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_reboot'])) {
     $res = MitraNetApi::systemReboot();
     if ($res['status'] === 200 && !empty($res['data']['success'])) {
-        $msg = 'Perintah restart diterima. Perangkat akan restart dalam beberapa detik...';
+        $msg = 'Perintah restart diterima. Perangkat sedang reboot...';
         $msg_type = 'success';
+        if ($is_ajax) {
+            echo json_encode(['success' => true, 'message' => $msg]);
+            exit;
+        }
     } else {
         $err = $res['data']['error'] ?? 'Gagal mengirim perintah restart.';
         $msg = htmlspecialchars($err);
         $msg_type = 'danger';
+        if ($is_ajax) {
+            echo json_encode(['success' => false, 'error' => $err]);
+            exit;
+        }
     }
 }
 
@@ -45,14 +55,14 @@ $selected_menu = 'system';
         <?php if ($msg_type === 'success'): ?>
         <div id="countdown-box" style="text-align:center; padding:1rem;">
             <i class="fa-solid fa-spinner fa-spin fa-2x" style="color:#d97706;"></i>
-            <p style="margin-top:.75rem; color:#92400e;">Menunggu perangkat kembali online... <span id="countdown">90</span> detik</p>
+            <p style="margin-top:.75rem; color:#92400e;">Menunggu perangkat kembali online... <span id="countdown">45</span> detik</p>
         </div>
         <script>
-        var c = 90;
+        var c = 45;
         var t = setInterval(function(){
             c--;
             document.getElementById('countdown').textContent = c;
-            if(c <= 0){ clearInterval(t); window.location.href = '/index.php'; }
+            if(c <= 0){ clearInterval(t); window.location.href = '/login.php'; }
         }, 1000);
         </script>
         <?php endif; ?>
@@ -61,18 +71,16 @@ $selected_menu = 'system';
         <ul style="color:#6b7280; font-size:.9rem; margin-bottom:1.5rem;">
             <li>Semua koneksi aktif akan terputus sementara.</li>
             <li>Proses restart membutuhkan waktu sekitar 1–2 menit.</li>
-            <li>Pastikan tidak ada konfigurasi yang sedang dalam proses.</li>
+            <li>Setelah selesai, Anda akan diarahkan ke halaman login.</li>
         </ul>
-        <form method="POST" action="/system_reboot.php">
-            <div class="d-flex" style="gap:.75rem;">
-                <button type="submit" name="confirm_reboot" value="1" class="btn btn-warning" style="flex:1;">
-                    <i class="fa-solid fa-rotate-right" style="margin-right:.4rem;"></i> Ya, Restart Sekarang
-                </button>
-                <a href="/index.php" class="btn btn-secondary" style="flex:1; text-align:center; display:inline-block; padding:.5rem 1rem;">
-                    <i class="fa-solid fa-xmark" style="margin-right:.4rem;"></i> Batal
-                </a>
-            </div>
-        </form>
+        <div class="d-flex" style="gap:.75rem;">
+            <button type="button" onclick="MitraNet.rebootSystem()" class="btn btn-warning" style="flex:1;">
+                <i class="fa-solid fa-rotate-right" style="margin-right:.4rem;"></i> Ya, Restart Sekarang
+            </button>
+            <a href="/index.php" class="btn btn-secondary" style="flex:1; text-align:center; display:inline-block; padding:.5rem 1rem;">
+                <i class="fa-solid fa-xmark" style="margin-right:.4rem;"></i> Batal
+            </a>
+        </div>
         <?php endif; ?>
     </div>
 </div>
