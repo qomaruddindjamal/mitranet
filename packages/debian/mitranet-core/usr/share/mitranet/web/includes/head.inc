@@ -52,9 +52,7 @@ $system_menu = array(
     array("User Password Manager", "/system_usermanager_passwordmg.php"),
     array("-DIVIDER-", ""),
     array("Restart", "/system_reboot.php"),
-    array("Shutdown", "/system_halt.php"),
-    array("-DIVIDER-", ""),
-    array("Logout (" . htmlspecialchars($_SESSION['username'] ?? 'admin') . ")", "/logout.php")
+    array("Shutdown", "/system_halt.php")
 );
 
 
@@ -250,11 +248,6 @@ $sidebar_structure = array_merge($sidebar_structure, array(
 			<li>
 				<a href="#" data-toggle="modal" data-target="#notices" class="header-btn-link" title="Notices">
 					<i class="fa-solid fa-bell"></i>
-				</a>
-			</li>
-			<li>
-				<a href="/logout.php" class="header-btn-link" title="Logout (<?=htmlspecialchars($_SESSION['username'] ?? 'admin')?>@<?=htmlspecialchars($system_url)?>)">
-					<i class="fa-solid fa-right-from-bracket"></i>
 				</a>
 			</li>
 		</ul>
