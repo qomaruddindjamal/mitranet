@@ -47,11 +47,15 @@ def sync_to_minipc():
     sftp_sync_dir(os.path.join(PROJECT_ROOT, "web"), "/usr/share/mitranet/web")
     sftp_sync_dir(os.path.join(PROJECT_ROOT, "core"), "/mitranet/core")
     sftp_sync_dir(os.path.join(PROJECT_ROOT, "src"), "/mitranet/src")
+
+    # Sync python package to /usr/lib/python3/dist-packages/mitranet
+    sftp_sync_dir(os.path.join(PROJECT_ROOT, "core"), "/usr/lib/python3/dist-packages/mitranet/core")
+    sftp_sync_dir(os.path.join(PROJECT_ROOT, "src"), "/usr/lib/python3/dist-packages/mitranet/src")
+    sftp_sync_dir(os.path.join(PROJECT_ROOT, "src", "api"), "/usr/lib/python3/dist-packages/mitranet/api")
     
-    # Restart API server if running
-    log("2.1/4 Restarting MitraNet API on Mini PC...")
-    ssh.exec_command("pkill -f 'src/api/server.py' 2>/dev/null; pkill -f 'python3 -m mitranet.api' 2>/dev/null")
-    ssh.exec_command("nohup python3 /mitranet/src/api/server.py > /tmp/api.log 2>&1 &")
+    # Restart API server & WebUI service cleanly
+    log("2.1/4 Restarting MitraNet WebUI & API on Mini PC...")
+    ssh.exec_command("systemctl restart mitranet-webui")
     
     sftp.close()
     ssh.close()

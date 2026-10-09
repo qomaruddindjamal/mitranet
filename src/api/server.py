@@ -236,8 +236,150 @@ def _update_hosts_managed_block(hosts_file: str, host_overrides: list) -> None:
             "Manual inspection required before proceeding."
         )
 
-    new_content = "\n".join(new_lines) + "\n"
-    _atomic_write(hosts_file, new_content)
+def parse_wireguard_conf(conf_path):
+    tunnel_info = {
+        "name": os.path.splitext(os.path.basename(conf_path))[0],
+        "address": "",
+        "listen_port": 51820,
+        "public_key": "",
+        "description": "WireGuard Tunnel",
+        "interface": "WGVPN (opt1)",
+        "enabled": False,
+        "mode": "server",
+        "route_interface": "",
+        "enable_nat": False,
+        "dns": "",
+        "mtu": 1420,
+        "custom_postup": [],
+        "custom_postdown": [],
+        "peers": []
+    }
+    if not os.path.isfile(conf_path):
+        return tunnel_info
+
+    try:
+        with open(conf_path, "r", encoding="utf-8", errors="ignore") as f:
+            lines = f.readlines()
+    except Exception:
+        return tunnel_info
+
+    cur_section = None
+    cur_peer = {}
+    pending_descr = ""
+
+    for raw in lines:
+        line = raw.strip()
+        if not line:
+            continue
+        if line.startswith("#"):
+            c = line.lstrip("#").strip()
+            if ":" in c:
+                tag, val = c.split(":", 1)
+                tag = tag.strip().lower()
+                val = val.strip()
+                if cur_section == "peer":
+                    if tag in ("desc", "description", "peer"):
+                        cur_peer["description"] = val
+                    elif tag in ("clientprivatekey", "client_private_key"):
+                        cur_peer["client_private_key"] = val
+                    elif tag in ("clientdns", "client_dns"):
+                        cur_peer["client_dns"] = val
+                elif cur_section == "interface":
+                    if tag in ("desc", "description"):
+                        tunnel_info["description"] = val
+                    elif tag == "mode":
+                        tunnel_info["mode"] = val
+                    elif tag in ("route_interface", "routeinterface", "routed_interface"):
+                        tunnel_info["route_interface"] = val
+                    elif tag in ("enable_nat", "enablenat", "nat"):
+                        tunnel_info["enable_nat"] = val.lower() in ("true", "1", "yes")
+                    elif tag in ("dns", "dns_servers"):
+                        tunnel_info["dns"] = val
+            else:
+                if cur_section == "peer" and not cur_peer.get("description"):
+                    cur_peer["description"] = c
+                elif not cur_section:
+                    pending_descr = c
+            continue
+
+        if line.startswith("[") and line.endswith("]"):
+            sec = line[1:-1].strip().lower()
+            if cur_section == "peer" and cur_peer.get("public_key"):
+                tunnel_info["peers"].append(cur_peer)
+            cur_section = sec
+            if sec == "interface":
+                pending_descr = ""
+            cur_peer = {
+                "public_key": "",
+                "description": pending_descr or "WireGuard Peer",
+                "client_private_key": "",
+                "client_dns": "",
+                "endpoint": "",
+                "allowed_ips": "",
+                "persistent_keepalive": "25",
+                "preshared_key": "",
+                "latest_handshake": "0",
+                "transfer_rx": "0",
+                "transfer_tx": "0"
+            }
+            pending_descr = ""
+            continue
+
+        if "=" in line:
+            k, v = line.split("=", 1)
+            k = k.strip().lower()
+            v = v.strip()
+            if cur_section == "interface":
+                if k == "address":
+                    tunnel_info["address"] = v
+                elif k == "listenport":
+                    tunnel_info["listen_port"] = int(v) if v.isdigit() else 51820
+                elif k == "mtu":
+                    tunnel_info["mtu"] = int(v) if v.isdigit() else 1420
+                elif k == "dns":
+                    tunnel_info["dns"] = v
+                elif k == "postup":
+                    if "iif " in v and "table" in v:
+                        try:
+                            m_iface = re.search(r'iif\s+([a-zA-Z0-9_\-]+)', v)
+                            if m_iface and not tunnel_info["route_interface"]:
+                                tunnel_info["route_interface"] = m_iface.group(1)
+                        except Exception:
+                            pass
+                    if "MASQUERADE" in v:
+                        tunnel_info["enable_nat"] = True
+                    is_auto = any(pattern in v for pattern in ("table 100", "table 101", "MASQUERADE", "net.ipv4.ip_forward=1"))
+                    if not is_auto and v not in tunnel_info["custom_postup"]:
+                        tunnel_info["custom_postup"].append(v)
+                elif k == "postdown":
+                    is_auto = any(pattern in v for pattern in ("table 100", "table 101", "MASQUERADE"))
+                    if not is_auto and v not in tunnel_info["custom_postdown"]:
+                        tunnel_info["custom_postdown"].append(v)
+                elif k == "privatekey":
+                    try:
+                        pk_proc = subprocess.run(["wg", "pubkey"], input=v, stdout=subprocess.PIPE, text=True, check=True)
+                        tunnel_info["public_key"] = pk_proc.stdout.strip()
+                    except Exception:
+                        pass
+            elif cur_section == "peer":
+                if k == "publickey":
+                    cur_peer["public_key"] = v
+                elif k == "allowedips":
+                    cur_peer["allowed_ips"] = v
+                elif k == "endpoint":
+                    cur_peer["endpoint"] = v
+                elif k == "persistentkeepalive":
+                    cur_peer["persistent_keepalive"] = v
+                elif k == "presharedkey":
+                    cur_peer["preshared_key"] = v
+
+    if cur_section == "peer" and cur_peer.get("public_key"):
+        tunnel_info["peers"].append(cur_peer)
+
+    return tunnel_info
+
+
+_parse_wg_conf = parse_wireguard_conf
 
 
 
@@ -793,120 +935,12 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"packages": packages})
             return
 
+
         # 15. WireGuard Status & Config
         if path == "/api/v1/wireguard":
             import subprocess
             tunnels = []
             wg_running = False
-
-            def _parse_wg_conf(conf_path):
-                tunnel_info = {
-                    "name": os.path.splitext(os.path.basename(conf_path))[0],
-                    "address": "",
-                    "listen_port": 51820,
-                    "public_key": "",
-                    "description": "WireGuard Tunnel",
-                    "interface": "WGVPN (opt1)",
-                    "enabled": False,
-                    "peers": []
-                }
-                if not os.path.isfile(conf_path):
-                    return tunnel_info
-
-                try:
-                    with open(conf_path, "r", encoding="utf-8", errors="ignore") as f:
-                        lines = f.readlines()
-                except Exception:
-                    return tunnel_info
-
-                cur_section = None
-                cur_peer = {}
-                pending_descr = ""
-
-                for raw in lines:
-                    line = raw.strip()
-                    if not line:
-                        continue
-                    if line.startswith("#"):
-                        c = line.lstrip("#").strip()
-                        if ":" in c:
-                            tag, val = c.split(":", 1)
-                            tag = tag.strip().lower()
-                            val = val.strip()
-                            if cur_section == "peer":
-                                if tag in ("desc", "description", "peer"):
-                                    cur_peer["description"] = val
-                                elif tag in ("clientprivatekey", "client_private_key"):
-                                    cur_peer["client_private_key"] = val
-                                elif tag in ("clientdns", "client_dns"):
-                                    cur_peer["client_dns"] = val
-                            elif cur_section == "interface":
-                                if tag in ("desc", "description"):
-                                    tunnel_info["description"] = val
-                                elif tag == "mode":
-                                    tunnel_info["mode"] = val
-                        else:
-                            if cur_section == "peer" and not cur_peer.get("description"):
-                                cur_peer["description"] = c
-                            elif not cur_section:
-                                pending_descr = c
-                        continue
-
-                    if line.startswith("[") and line.endswith("]"):
-                        sec = line[1:-1].strip().lower()
-                        if cur_section == "peer" and cur_peer.get("public_key"):
-                            tunnel_info["peers"].append(cur_peer)
-                        cur_section = sec
-                        if sec == "interface":
-                            pending_descr = ""
-                        cur_peer = {
-                            "public_key": "",
-                            "description": pending_descr or "WireGuard Peer",
-                            "client_private_key": "",
-                            "client_dns": "",
-                            "endpoint": "",
-                            "allowed_ips": "",
-                            "persistent_keepalive": "25",
-                            "preshared_key": "",
-                            "latest_handshake": "0",
-                            "transfer_rx": "0",
-                            "transfer_tx": "0"
-                        }
-                        pending_descr = ""
-                        continue
-
-                    if "=" in line:
-                        k, v = line.split("=", 1)
-                        k = k.strip().lower()
-                        v = v.strip()
-                        if cur_section == "interface":
-                            if k == "address":
-                                tunnel_info["address"] = v
-                            elif k == "listenport":
-                                tunnel_info["listen_port"] = int(v) if v.isdigit() else 51820
-                            elif k == "privatekey":
-                                try:
-                                    pk_proc = subprocess.run(["wg", "pubkey"], input=v, stdout=subprocess.PIPE, text=True, check=True)
-                                    tunnel_info["public_key"] = pk_proc.stdout.strip()
-                                except Exception:
-                                    pass
-                        elif cur_section == "peer":
-                            if k == "publickey":
-                                cur_peer["public_key"] = v
-                            elif k == "allowedips":
-                                cur_peer["allowed_ips"] = v
-                            elif k == "endpoint":
-                                cur_peer["endpoint"] = v
-                            elif k == "persistentkeepalive":
-                                cur_peer["persistent_keepalive"] = v
-                            elif k == "presharedkey":
-                                cur_peer["preshared_key"] = v
-
-                if cur_section == "peer" and cur_peer.get("public_key"):
-                    tunnel_info["peers"].append(cur_peer)
-
-                return tunnel_info
-
             wg_dir = "/etc/wireguard"
             conf_files = []
             if os.path.isdir(wg_dir):
@@ -942,8 +976,13 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                                     "listen_port": int(port) if port.isdigit() else 51820,
                                     "public_key": pub,
                                     "description": "WireGuard Tunnel",
-                                    "interface": "WGVPN (opt1)",
+                                    "interface": f"{dev.upper()}",
                                     "enabled": True,
+                                    "mode": "server",
+                                    "route_interface": "",
+                                    "enable_nat": False,
+                                    "dns": "",
+                                    "mtu": 1420,
                                     "peers": []
                                 }
                             else:
@@ -981,9 +1020,31 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 logger.warning("Error getting live wireguard status: %s", e)
 
+            # Sum total RX and TX per tunnel and read MTU from sysfs
             for t_name, t_data in tunnels_dict.items():
                 if wg_running and t_name == "wg0":
                     t_data["enabled"] = True
+                
+                # Check sysfs for live MTU
+                sysfs_mtu = f"/sys/class/net/{t_name}/mtu"
+                if os.path.exists(sysfs_mtu):
+                    try:
+                        with open(sysfs_mtu, "r") as mf:
+                            t_data["mtu"] = int(mf.read().strip())
+                    except Exception:
+                        pass
+
+                total_rx = 0
+                total_tx = 0
+                for peer in t_data.get("peers", []):
+                    try:
+                        total_rx += int(peer.get("transfer_rx") or 0)
+                        total_tx += int(peer.get("transfer_tx") or 0)
+                    except Exception:
+                        pass
+                t_data["transfer_rx"] = str(total_rx)
+                t_data["transfer_tx"] = str(total_tx)
+
                 tunnels.append(t_data)
 
             self._send_json(200, {
@@ -2198,20 +2259,41 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
         if path == "/api/v1/wireguard/service":
             action = str(payload.get("action") or "restart").strip().lower()
             tunnel = str(payload.get("tunnel") or "wg0").strip()
+            if not re.match(r'^[a-zA-Z0-9_\-]+$', tunnel):
+                self._send_json(400, {"error": "Invalid tunnel name"})
+                return
+
             if action not in ("start", "stop", "restart", "status"):
                 action = "restart"
 
             import subprocess
             try:
+                if action in ("start", "restart"):
+                    # Check if interface already exists in kernel
+                    chk_if = subprocess.run(["ip", "link", "show", tunnel], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    is_link_up = (chk_if.returncode == 0)
+                    chk_svc = subprocess.run(["systemctl", "is-active", f"wg-quick@{tunnel}"], stdout=subprocess.PIPE, text=True)
+                    is_svc_active = (chk_svc.stdout.strip() == "active")
+
+                    # If interface exists in kernel but systemd unit is inactive/failed (stale link)
+                    if is_link_up and not is_svc_active:
+                        logger.info("Cleaning up stale WireGuard interface %s before starting service", tunnel)
+                        subprocess.run(["wg-quick", "down", tunnel], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                        # Recheck if still exists
+                        chk_if2 = subprocess.run(["ip", "link", "show", tunnel], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                        if chk_if2.returncode == 0:
+                            subprocess.run(["ip", "link", "delete", tunnel], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
                 cmd = ["systemctl", action, f"wg-quick@{tunnel}"]
-                proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
+                proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=12)
                 is_active = (subprocess.run(["systemctl", "is-active", f"wg-quick@{tunnel}"], stdout=subprocess.PIPE, text=True).stdout.strip() == "active")
-                self._send_json(200, {
+                err_out = proc.stderr.strip() if proc.returncode != 0 else ""
+                self._send_json(200 if (proc.returncode == 0 or (action == "status")) else 500, {
                     "success": (proc.returncode == 0),
                     "action": action,
                     "tunnel": tunnel,
                     "running": is_active,
-                    "message": f"WireGuard service {action} for {tunnel} executed"
+                    "message": f"WireGuard service {action} for {tunnel} executed" + (f" ({err_out})" if err_out else "")
                 })
             except Exception as e:
                 self._send_json(500, {"error": f"WireGuard service action failed: {e}"})
@@ -2609,21 +2691,73 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             privkey = str(payload.get("private_key") or "").strip()
             descr = str(payload.get("descr") or "MitraNet WireGuard Tunnel").strip()
             mode = str(payload.get("mode") or "server").strip()
+            route_iface = str(payload.get("route_interface") or "").strip()
+            enable_nat = bool(payload.get("enable_nat", False))
+            dns_val = str(payload.get("dns") or "").strip()
+            mtu_val = str(payload.get("mtu") or "").strip()
 
-            if not name:
-                name = "wg0"
+            if not re.match(r'^[a-zA-Z0-9_\-]+$', name):
+                self._send_json(400, {"error": "Invalid tunnel interface name"})
+                return
+
+            if route_iface and not re.match(r'^[a-zA-Z0-9_\-]+$', route_iface):
+                self._send_json(400, {"error": "Invalid routed interface name"})
+                return
+
+            if not re.match(r'^[0-9a-fA-F\.\:\,\s\/]+$', address):
+                self._send_json(400, {"error": "Invalid IP address or CIDR format"})
+                return
+
+            if not listen_port.isdigit() or not (1 <= int(listen_port) <= 65535):
+                self._send_json(400, {"error": "Invalid listen port (must be 1-65535)"})
+                return
+
+            if mtu_val and (not mtu_val.isdigit() or not (576 <= int(mtu_val) <= 65535)):
+                self._send_json(400, {"error": "Invalid MTU value"})
+                return
 
             conf_path = f"/etc/wireguard/{name}.conf"
-            # If private key empty and conf exists, keep existing key
-            if not privkey and os.path.exists(conf_path):
+            existing_peers = []
+            custom_postup = []
+            custom_postdown = []
+
+            # If conf exists, read existing private key, peers, and any non-standard PostUp/PostDown hooks
+            if os.path.exists(conf_path):
                 try:
                     with open(conf_path, "r", encoding="utf-8", errors="ignore") as cf:
-                        for line in cf:
-                            if line.strip().lower().startswith("privatekey"):
-                                privkey = line.split("=", 1)[1].strip()
-                                break
-                except Exception:
-                    pass
+                        content = cf.read()
+
+                    parts = content.split("[Peer]")
+                    iface_block = parts[0]
+                    for pb in parts[1:]:
+                        if pb.strip():
+                            existing_peers.append("[Peer]" + pb)
+
+                    for raw_line in iface_block.splitlines():
+                        ln = raw_line.strip()
+                        if not ln or ln.startswith("#"):
+                            continue
+                        if "=" in ln:
+                            k, v = ln.split("=", 1)
+                            k = k.strip().lower()
+                            v = v.strip()
+                            if k == "privatekey" and not privkey:
+                                privkey = v
+                            elif k == "postup":
+                                # Exclude auto-generated routing/NAT hooks to prevent duplication
+                                is_auto = any(pattern in v for pattern in (
+                                    "table 100", "table 101", "MASQUERADE", "net.ipv4.ip_forward=1"
+                                ))
+                                if not is_auto and v not in custom_postup:
+                                    custom_postup.append(v)
+                            elif k == "postdown":
+                                is_auto = any(pattern in v for pattern in (
+                                    "table 100", "table 101", "MASQUERADE"
+                                ))
+                                if not is_auto and v not in custom_postdown:
+                                    custom_postdown.append(v)
+                except Exception as e:
+                    logger.warning("Error reading existing conf %s: %s", conf_path, e)
 
             if not privkey:
                 try:
@@ -2634,26 +2768,63 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                     self._send_json(500, {"error": f"Failed generating private key: {e}"})
                     return
 
-            # Read existing peers to preserve them
-            existing_peers = []
-            if os.path.exists(conf_path):
-                try:
-                    with open(conf_path, "r", encoding="utf-8", errors="ignore") as cf:
-                        lines = cf.read().split("[Peer]")
-                        for pblock in lines[1:]:
-                            existing_peers.append("[Peer]" + pblock)
-                except Exception:
-                    pass
-
             try:
-                new_conf = f"""[Interface]
-# Description: {descr}
-# Mode: {mode}
-Address = {address}
-ListenPort = {listen_port}
-PrivateKey = {privkey}
+                # Generate new configuration lines
+                iface_lines = [
+                    "[Interface]",
+                    f"# Description: {descr}",
+                    f"# Mode: {mode}",
+                    f"# RouteInterface: {route_iface}",
+                    f"# EnableNAT: {'true' if enable_nat else 'false'}"
+                ]
+                if dns_val:
+                    iface_lines.append(f"# DNS: {dns_val}")
+                iface_lines.append(f"Address = {address}")
+                iface_lines.append(f"ListenPort = {listen_port}")
+                iface_lines.append(f"PrivateKey = {privkey}")
+                if dns_val:
+                    iface_lines.append(f"DNS = {dns_val}")
+                if mtu_val and mtu_val.isdigit():
+                    iface_lines.append(f"MTU = {mtu_val}")
 
-"""
+                # Append routing and NAT hooks if requested
+                if route_iface:
+                    iface_lines.append("")
+                    iface_lines.append(f"# Policy routing and NAT from {route_iface} through {name}")
+                    iface_lines.append(f"PostUp = ip link set {route_iface} up")
+                    iface_lines.append("PostUp = sysctl -w net.ipv4.ip_forward=1")
+                    iface_lines.append(f"PostUp = ip rule add iif {route_iface} table 100")
+                    iface_lines.append(f"PostUp = ip route add default dev {name} table 100")
+                    iface_lines.append(f"PostUp = iptables -A FORWARD -i {route_iface} -o {name} -j ACCEPT")
+                    iface_lines.append(f"PostUp = iptables -A FORWARD -i {name} -o {route_iface} -m state --state ESTABLISHED,RELATED -j ACCEPT")
+                    if enable_nat:
+                        iface_lines.append(f"PostUp = iptables -t nat -A POSTROUTING -o {name} -j MASQUERADE")
+                    iface_lines.append("PostUp = ip route flush cache")
+
+                    iface_lines.append(f"PostDown = ip rule del iif {route_iface} table 100 2>/dev/null || true")
+                    iface_lines.append(f"PostDown = ip route del default dev {name} table 100 2>/dev/null || true")
+                    iface_lines.append(f"PostDown = iptables -D FORWARD -i {route_iface} -o {name} -j ACCEPT 2>/dev/null || true")
+                    iface_lines.append(f"PostDown = iptables -D FORWARD -i {name} -o {route_iface} -m state --state ESTABLISHED,RELATED -j ACCEPT 2>/dev/null || true")
+                    if enable_nat:
+                        iface_lines.append(f"PostDown = iptables -t nat -D POSTROUTING -o {name} -j MASQUERADE 2>/dev/null || true")
+                    iface_lines.append("PostDown = ip route flush cache")
+                elif enable_nat:
+                    iface_lines.append("")
+                    iface_lines.append("# Outbound NAT Masquerade")
+                    iface_lines.append("PostUp = sysctl -w net.ipv4.ip_forward=1")
+                    iface_lines.append(f"PostUp = iptables -t nat -A POSTROUTING -o {name} -j MASQUERADE")
+                    iface_lines.append(f"PostDown = iptables -t nat -D POSTROUTING -o {name} -j MASQUERADE 2>/dev/null || true")
+
+                # Preserve any user custom hooks
+                if custom_postup or custom_postdown:
+                    iface_lines.append("")
+                    iface_lines.append("# Custom User Directives")
+                    for cu in custom_postup:
+                        iface_lines.append(f"PostUp = {cu}")
+                    for cd in custom_postdown:
+                        iface_lines.append(f"PostDown = {cd}")
+
+                new_conf = "\n".join(iface_lines) + "\n\n"
                 for pb in existing_peers:
                     new_conf += pb.strip() + "\n\n"
 
@@ -2663,8 +2834,21 @@ PrivateKey = {privkey}
 
                 import subprocess
                 subprocess.run(["systemctl", "enable", f"wg-quick@{name}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                subprocess.run(["systemctl", "restart", f"wg-quick@{name}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                self._send_json(200, {"success": True, "message": f"Tunnel {name} saved and restarted successfully"})
+                
+                # Clean up any stale interface before restarting
+                chk_if = subprocess.run(["ip", "link", "show", name], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                chk_svc = subprocess.run(["systemctl", "is-active", f"wg-quick@{name}"], stdout=subprocess.PIPE, text=True)
+                if chk_if.returncode == 0 and chk_svc.stdout.strip() != "active":
+                    subprocess.run(["wg-quick", "down", name], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    if subprocess.run(["ip", "link", "show", name], stdout=subprocess.PIPE, stderr=subprocess.PIPE).returncode == 0:
+                        subprocess.run(["ip", "link", "delete", name], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                restart_res = subprocess.run(["systemctl", "restart", f"wg-quick@{name}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                err_msg = restart_res.stderr.strip() if restart_res.returncode != 0 else ""
+                self._send_json(200, {
+                    "success": (restart_res.returncode == 0),
+                    "message": f"Tunnel {name} saved" + (" and restarted successfully" if restart_res.returncode == 0 else f", restart notice: {err_msg}")
+                })
             except Exception as e:
                 self._send_json(500, {"error": f"Failed saving tunnel: {e}"})
             return

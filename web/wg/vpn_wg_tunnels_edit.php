@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /*
  * vpn_wg_tunnels_edit.php - MitraNet WireGuard Edit / Add Tunnel
  * Faithful port from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
@@ -60,13 +60,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['act']) && $_POST['act
     $descr = trim($_POST['descr'] ?? 'WireGuard Tunnel');
     $address = trim($_POST['address'] ?? '10.10.99.1/24');
     $mode = trim($_POST['mode'] ?? 'server');
+    $route_interface = trim($_POST['route_interface'] ?? '');
+    $enable_nat = isset($_POST['enable_nat']) && $_POST['enable_nat'] === 'yes';
+    $dns = trim($_POST['dns'] ?? '');
+    $mtu = trim($_POST['mtu'] ?? '1420');
 
     if (empty($name)) {
         $err_msg = "Nama tunnel wajib diisi (contoh: wg0).";
     } elseif (empty($address)) {
         $err_msg = "Interface Address (CIDR) wajib diisi (contoh: 10.10.99.1/24).";
     } else {
-        $res = MitraNetApi::saveWireGuardTunnel($name, $address, $listenport, $privatekey, $descr, $mode);
+        $res = MitraNetApi::saveWireGuardTunnel($name, $address, $listenport, $privatekey, $descr, $mode, $route_interface, $enable_nat, $dns, $mtu);
         if ($res['status'] === 200 && !empty($res['data']['success'])) {
             header('Location: /wg/vpn_wg_tunnels.php?savemsg=' . urlencode("Tunnel {$name} berhasil disimpan dan dijalankan."));
             exit;
@@ -88,6 +92,19 @@ $tab_array = array(
     array("Status", false, "/wg/status_wireguard.php")
 );
 display_top_tabs($tab_array, false, 'pills');
+
+// Fetch available local interfaces for policy routing
+$all_interfaces = MitraNetApi::getInterfaces();
+$candidate_ifaces = [];
+foreach ($all_interfaces as $k => $info) {
+    $dev = $info['device'] ?? $info['name'] ?? $k;
+    if ($dev && strpos($dev, 'wg') !== 0 && $dev !== 'lo') {
+        $candidate_ifaces[$dev] = $info['descr'] ?? $info['description'] ?? strtoupper($dev);
+    }
+}
+if (!isset($candidate_ifaces['veth0'])) {
+    $candidate_ifaces['veth0'] = 'Virtual Ethernet (veth0)';
+}
 ?>
 
 <?php if ($err_msg): ?>
@@ -168,6 +185,52 @@ display_top_tabs($tab_array, false, 'pills');
                 </div>
                 <div class="col-sm-2">
                     <button class="btn btn-default btn-sm" type="button" id="btn-genkeys"><i class="fa-solid fa-key"></i> Generate Keys</button>
+                </div>
+            </div>
+
+            <!-- Policy Routing & Outbound NAT Section -->
+            <div class="well well-sm well-config">
+                <strong class="text-dark-primary"><i class="fa-solid fa-route"></i> Advanced Policy Routing &amp; Outbound NAT (Masquerade)</strong>
+                <p class="fs-085 text-muted mt-5">
+                    Arahkan seluruh lalu lintas jaringan dari antarmuka lokal tertentu (misal: <code>veth0</code>, LAN, VM) agar otomatis di-routing keluar melalui tunnel WireGuard ini dengan NAT Masquerade.
+                </p>
+            </div>
+
+            <div class="form-group">
+                <label class="col-sm-2 control-label" for="route_interface">Route Local Interface</label>
+                <div class="col-sm-4">
+                    <select class="form-control" name="route_interface" id="route_interface">
+                        <option value="">-- Do Not Route Local Interface (Default Point-to-Point) --</option>
+                        <?php foreach ($candidate_ifaces as $if_name => $if_desc): ?>
+                            <option value="<?=htmlspecialchars($if_name)?>" <?=(($current_tun['route_interface'] ?? '') === $if_name)?'selected':''?>>
+                                <?=htmlspecialchars($if_name)?> (<?=htmlspecialchars($if_desc)?>)
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <span class="help-block">Pilih interface lokal yang seluruh lalu lintasnya akan dialihkan melewati WireGuard ini (menggunakan Policy-Based Routing).</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-sm-2 control-label">Outbound NAT</label>
+                <div class="checkbox col-sm-10">
+                    <label>
+                        <input name="enable_nat" id="enable_nat" type="checkbox" value="yes" <?=(!empty($current_tun['enable_nat']) || !empty($current_tun['route_interface']))?'checked':''?>>
+                        <strong>Enable Outbound NAT (Masquerade)</strong>
+                    </label>
+                    <span class="help-block">Aktifkan translasi alamat IP (SNAT/Masquerade) pada antarmuka WireGuard sehingga perangkat client mendapatkan akses internet penuh dari gateway remote.</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-sm-2 control-label" for="dns">DNS Servers</label>
+                <div class="col-sm-4">
+                    <input class="form-control" name="dns" id="dns" type="text" value="<?=htmlspecialchars($current_tun['dns'] ?? '')?>" placeholder="e.g. 1.1.1.1, 8.8.8.8" />
+                    <span class="help-block">DNS Resolver opsional untuk antarmuka WireGuard ini.</span>
+                </div>
+                <label class="col-sm-2 control-label" for="mtu">MTU</label>
+                <div class="col-sm-2">
+                    <input class="form-control" name="mtu" id="mtu" type="text" value="<?=htmlspecialchars($current_tun['mtu'] ?? '1420')?>" placeholder="1420" />
                 </div>
             </div>
         </div>

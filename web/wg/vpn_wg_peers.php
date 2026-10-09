@@ -149,6 +149,16 @@ display_top_tabs($tab_array, false, 'pills');
 					?>
 					</td>
 					<td class="td-nowrap">
+						<button class="btn btn-xs btn-default btn-show-ros"
+						        type="button"
+						        data-pubkey="<?=htmlspecialchars($p['public_key'])?>"
+						        data-allowed="<?=htmlspecialchars($p['allowed_ips'])?>"
+						        data-endpoint="<?=htmlspecialchars($p['endpoint'])?>"
+						        data-descr="<?=htmlspecialchars($p['description'] ?? 'Peer')?>"
+						        data-keepalive="<?=htmlspecialchars($p['persistent_keepalive'] ?? '25')?>"
+						        title="Copy MikroTik RouterOS v7 WireGuard Peer Command">
+							<i class="fa-solid fa-terminal"></i> ROS
+						</button>
 						<button class="btn btn-xs btn-info btn-show-qr" 
 						        type="button" 
 						        data-peer="<?=htmlspecialchars($p['public_key'])?>" 
@@ -318,6 +328,54 @@ $(document).ready(function() {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+    });
+
+    $('.btn-show-ros').click(function(e) {
+        e.preventDefault();
+        var pubkey = $(this).data('pubkey') || '';
+        var allowed = $(this).data('allowed') || '';
+        var ep = $(this).data('endpoint') || '';
+        var descr = $(this).data('descr') || 'WireGuard-Peer';
+        var keepalive = $(this).data('keepalive') || '25';
+
+        // Format MikroTik RouterOS v7 syntax
+        var rosCmd = '/interface wireguard peers add interface=wg0 public-key="' + pubkey + '" allowed-address=' + allowed;
+        if (ep && ep !== 'Dynamic' && ep !== '(none)') {
+            var epParts = ep.split(':');
+            rosCmd += ' endpoint-address=' + epParts[0];
+            if (epParts[1]) {
+                rosCmd += ' endpoint-port=' + epParts[1];
+            }
+        }
+        if (keepalive && parseInt(keepalive) > 0) {
+            rosCmd += ' persistent-keepalive=' + keepalive + 's';
+        }
+        rosCmd += ' comment="' + descr.replace(/"/g, '') + '"';
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '<i class="fa-solid fa-terminal"></i> MikroTik RouterOS v7 Command',
+                html: '<p class="text-left text-muted small">Jalankan perintah ini di Terminal MikroTik untuk menambahkan peer:</p>' +
+                      '<textarea id="swalRosCmd" class="form-control" rows="4" style="font-family: monospace; font-size: 12px; background: #222; color: #a6e22e; resize: vertical;" readonly>' + rosCmd + '</textarea>',
+                showCancelButton: true,
+                confirmButtonText: '<i class="fa-solid fa-copy"></i> Copy Command',
+                cancelButtonText: 'Tutup',
+                preConfirm: function() {
+                    var copyText = document.getElementById('swalRosCmd').value;
+                    navigator.clipboard.writeText(copyText);
+                }
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    if (typeof MitraNet !== 'undefined' && MitraNet.toast) {
+                        MitraNet.toast('success', 'Perintah MikroTik berhasil disalin ke clipboard');
+                    } else {
+                        alert('Perintah berhasil disalin ke clipboard!');
+                    }
+                }
+            });
+        } else {
+            prompt('Salin perintah MikroTik RouterOS v7 berikut:', rosCmd);
+        }
     });
 });
 </script>

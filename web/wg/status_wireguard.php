@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /*
  * status_wireguard.php - MitraNet WireGuard Live Telemetry
  * Faithful port from pfSense /wg/status_wireguard.php
@@ -50,19 +50,28 @@ display_top_tabs($tab_array, false, 'pills');
 					</td>
 				</tr>
 			<?php else: ?>
-				<?php foreach ($tunnels as $tun): ?>
+				<?php foreach ($tunnels as $tun): 
+					$t_name = $tun['name'] ?? 'wg0';
+					$t_desc = $tun['description'] ?: 'WireGuard Tunnel';
+					$t_addr = !empty($tun['address']) ? $tun['address'] : ($tun['interface'] ?? strtoupper($t_name));
+					$t_mtu = !empty($tun['mtu']) ? htmlspecialchars($tun['mtu']) : '1420';
+					$rx_bytes = floatval($tun['transfer_rx'] ?? 0);
+					$tx_bytes = floatval($tun['transfer_tx'] ?? 0);
+					$rx_fmt = $rx_bytes > 1048576 ? number_format($rx_bytes / 1048576, 2) . ' MiB' : number_format($rx_bytes / 1024, 2) . ' KiB';
+					$tx_fmt = $tx_bytes > 1048576 ? number_format($tx_bytes / 1048576, 2) . ' MiB' : number_format($tx_bytes / 1024, 2) . ' KiB';
+				?>
 				<tr>
-					<td><strong>tun_wg0</strong></td>
-					<td><?=htmlspecialchars($tun['description'] ?? 'Tunnel to MikroTik CHR VPS (103.93.162.168)')?></td>
+					<td><strong><?=htmlspecialchars($t_name)?></strong></td>
+					<td><?=htmlspecialchars($t_desc)?></td>
 					<td><?=count($tun['peers'] ?? [])?></td>
-					<td class="pubkey" title="<?=htmlspecialchars($tun['public_key'])?>"><?=htmlspecialchars(substr($tun['public_key'], 0, 16))?>...</td>
-					<td><a href="/interfaces.php?if=opt1">WGVPN (opt1)</a></td>
-					<td>1420</td>
+					<td class="pubkey" title="<?=htmlspecialchars($tun['public_key'] ?? '')?>"><?=htmlspecialchars(substr($tun['public_key'] ?? '', 0, 16))?><?=strlen($tun['public_key'] ?? '') > 16 ? '...' : ''?></td>
+					<td><code><?=htmlspecialchars($t_addr)?></code></td>
+					<td><?=$t_mtu?></td>
 					<td><?=htmlspecialchars($tun['listen_port'] ?? '51820')?></td>
-					<td><span class="label label-info">23.4 KiB</span></td>
-					<td><span class="label label-info">1.2 KiB</span></td>
+					<td><span class="label label-info"><?=$rx_fmt?></span></td>
+					<td><span class="label label-info"><?=$tx_fmt?></span></td>
 				</tr>
-				<tr class="treegrid-parent-tun_wg0">
+				<tr class="treegrid-parent-<?=htmlspecialchars($t_name)?>">
 					<td class="td-bold">Peers</td>
 					<td class="contains-table" colspan="8">
 						<table class="table table-hover table-striped table-condensed">
