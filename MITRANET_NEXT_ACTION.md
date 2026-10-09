@@ -1,20 +1,20 @@
 # LANGKAH BERIKUTNYA MITRANET
 
-LANGKAH BERIKUTNYA: Perluasan basis pengetahuan (knowledge base) dan memory proyek di `ai/knowledge/` untuk AI Assistant
-ALASAN: AI Assistant internal (`ai/ai-asistans.py`) telah aktif dan teruji di Windows maupun Mini PC. Tahap berikutnya adalah mengisi modul-modul panduan teknis operasional (Debian networking, nftables, service recovery, dan mapping menu WebUI) ke `ai/knowledge/` agar mode `ASK` dan `ANALYZE` dapat memberikan rekomendasi presisi tanpa ketergantungan cloud.
+LANGKAH BERIKUTNYA: Eksekusi Automated Deployment Pipeline (Sync Mini PC, Rebuild ISO, Git Push) untuk perubahan QoS Manager WinBox UI
+ALASAN: Modul QoS Manager (`web/qos/qos.php`) telah didesain ulang menyerupai jendela MikroTik WinBox Queues secara presisi dan terverifikasi live di Mini PC. Sesuai Golden Rule, setiap pembaruan kode harus melewati 3 tahapan deployment resmi.
 FILE ATAU SERVICE TERKAIT:
-- `c:\mitranet\ai\knowledge/`
-- `c:\mitranet\ai\memory/`
-- `ai/ai-asistans.py`
+- `web/qos/qos.php`
+- `deploy_pipeline.py`
+- `build/build_iso.py`
 PRASYARAT:
-- Struktur WebUI modular telah baku dan dikunci
-- Pipeline deployment (Mini PC, GitHub, ISO) berstatus hijau (100% verified)
+- Sintaks `qos.php` bebas error (STATUS: PASS)
+- Uji render HTML di Mini PC sukses memuat Simple Queues, Upload Max Limit, Download Max Limit (STATUS: PASS)
 PERINTAH ATAU TINDAKAN YANG DIRENCANAKAN:
-1. Dokumentasikan arsitektur modul jaringan MitraNet ke format terstruktur di `ai/knowledge/`
-2. Uji kemampuan retrieval assistant menggunakan query teknis
-3. Sinkronkan pembaruan ke Mini PC dan GitHub
+1. Jalankan `python c:\mitranet\deploy_pipeline.py "feat(qos): transform QoS Manager to MikroTik WinBox Queues UI matching reference"`
+2. Pastikan ISO `MitraNet-Rinjani-1.0.2-amd64.iso` ter-rebuild dengan exit code 0
+3. Pastikan git push ke origin/main sukses
 TES KEBERHASILAN:
-- `python ai/ai-asistans.py --mode ASK --query "firewall"` memberikan referensi konfigurasi nftables MitraNet yang tepat.
+- ISO ter-generate tanpa error, push commit tampil di GitHub, Mini PC tersinkronisasi 100%
 PROSEDUR ROLLBACK:
-- Manfaatkan version control Git jika dokumen perlu disesuaikan.
-STATUS: NOT STARTED
+- `git checkout -- web/qos/qos.php`
+STATUS: READY_TO_EXECUTE

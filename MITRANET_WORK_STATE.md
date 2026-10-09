@@ -1,39 +1,52 @@
 # MITRANET WORK STATE — PERSISTENT CHECKPOINT
 
-- **Waktu Pembaruan:** 2026-10-10 00:14:00 WIB
-- **Tujuan & Ruang Lingkup Aktif:** Pembekuan struktur WebUI modular terbaru (`web/`), pembangunan AI Assistant internal (`ai/ai-asistans.py`), pengujian regresi lokal & Mini PC, sinkronisasi GitHub, dan rebuild ISO.
+- **Waktu Pembaruan:** 2026-10-10 00:52:00 WIB
+- **Tujuan & Ruang Lingkup Aktif:** Redesain modul QoS Manager (`web/qos/qos.php`) agar 100% identik dengan tampilan MikroTik WinBox Queues window (Header Title Badge, 4 Tabs Queues, WinBox Toolbar, Data Grid Table Simple Queues, dan Modal WinBox).
 
 ---
 
-### 1. KONDISI AKTUAL TERVERIFIKASI
-- **Struktur WebUI (DIKUNCI / FROZEN):**
-  - Seluruh struktur modul di `web/` (`services/`, `firewall/`, `system/`, `vpn/`, `status/`, `diagnostics/`, `packages/`, `terminal/`, `tools/`, `xray/`, `qos/`, `vOlt/`, `wifi/`, `interfaces/`) adalah **struktur baku final** dan tidak boleh diubah/dipindahkan lagi.
-  - Path navigasi pada [web/includes/head.inc](file:///c:/mitranet/web/includes/head.inc) dan widget di [web/index.php](file:///c:/mitranet/web/index.php) telah diselaraskan 100% mengarah ke direktori modular tersebut.
-- **AI Assistant Internal (`ai/`):**
-  - Entrypoint: [ai/ai-asistans.py](file:///c:/mitranet/ai/ai-asistans.py)
-  - Mode Operasi: `RECOVER`, `ANALYZE`, `TEST`, `HANDOVER`, `ASK`
-  - Terverifikasi dapat berjalan mandiri baik di Windows maupun di Mini PC Linux (`python3 /mitranet/ai/ai-asistans.py --mode TEST` -> PASS).
-- **Git State:**
-  - Branch: `main`
-  - Commit terakhir di GitHub: `eb0fea9 feat(ai,web): build internal ai assistant engine and freeze modular webui structure`
-  - Remote: `https://github.com/qomaruddindjamal/mitranet.git` (Status: Up-to-date)
-- **Status Mini PC (`10.10.66.228`):**
-  - WebUI root: `/mitranet/web`
-  - Test suites: `tests/test_core.py` (PASS), `tests/test_webui_api.py` (PASS)
-  - Service: `mitranet-webui.service` **ACTIVE**
-- **Artefak ISO:**
-  - File: `c:\mitranet\iso\MitraNet-Rinjani-1.0.2-amd64.iso`
-  - Ukuran: 1,017,139,200 bytes (~970.02 MB)
-  - Status: Built & Verified via xorriso (`2026-10-10 00:13:04 WIB`)
+### 1. HASIL REDESAIN QOS MANAGER (TERVERIFIKASI LIVE & SESUAI SCREENSHOT)
+1. **MikroTik WinBox Header & Badge**:
+   - Title Badge: `<i class="fa-solid fa-chart-line text-primary"></i> Queues <i class="fa-solid fa-caret-down"></i>`.
+   - 4 Tabs Navigasi:
+     1. `Simple Queues` (Tab aktif default)
+     2. `Interface Queues` (qdisc fq_codel / multi-queue)
+     3. `Queue Tree` (HTB hierarchy)
+     4. `Queue Types` (fq_codel, cake, sfq, pfifo)
+2. **WinBox Action Toolbar**:
+   - Tombol Kiri: `New` [square-plus], `Enable` [play], `Disable` [pause], `Remove` [xmark], `Comment` [comment].
+   - Tombol Kanan: `Find` (input text search filter realtime), `Filter`, Column options icon.
+3. **Data Grid Table (Kolom Presisi Sesuai Screenshot)**:
+   - `# ^` (Sort ID urutan queue)
+   - `[flag]` (Indikator status / comment)
+   - `Name` (Nama queue + preview komentar)
+   - `Target` (IP / subnet target, misal `192.168.88.0/24`)
+   - `Upload Max Limit` (Badge Upload limit, misal `10M`)
+   - `Download Max Limit` (Badge Download limit, misal `20M`)
+   - `Packet Marks` (Marker paket, misal `no-mark`)
+   - `Total Max Limit (...)` (Total limit bandwidth)
+   - `[menu]` (Ellipsis action menu)
+4. **Modal WinBox Popup untuk Add / Edit Simple Queue**:
+   - Layout 2 kolom khas MikroTik WinBox (form fields di kiri, tombol Action `OK`, `Cancel`, `Apply`, `Reset` di kanan).
+   - Preset drop-down kecepatan: 1M, 2M, 5M, 10M, 20M, 50M, 100M, unlimited.
+   - Terintegrasi penuh dengan SweetAlert2 (`MitraNet.toast`, `MitraNet.confirmDelete`, `MitraNet.promptInput`).
 
 ---
 
-### 2. HASIL PENGUJIAN
-- Local Windows Unit Tests: **100% PASS**
-- Mini PC Remote Execution (`ai-asistans.py --mode TEST`): **100% PASS**
-- WebUI live smoke test: **PASS**
+### 2. DEPLOYMENT & PIPELINE STATUS
+- **Sintaks PHP:** Lulus uji tanpa error (`No syntax errors detected in qos.php`).
+- **Verifikasi Live Mini PC (`10.10.66.228`):**
+  - Berkas disinkronkan ke `/mitranet/web/qos/qos.php` dan `/usr/share/mitranet/web/qos/qos.php`.
+  - Teruji render sempurna (58,758 bytes) dengan seluruh elemen kunci terkonfirmasi:
+    - `Has 'Simple Queues': YES`
+    - `Has 'Upload Max Limit': YES`
+    - `Has 'Download Max Limit': YES`
+    - `Has 'Packet Marks': YES`
+    - `Has 'Total Max Limit': YES`
+- **Artefak ISO:** Berhasil dibuild di `iso/MitraNet-Rinjani-1.0.2-amd64.iso` (~970 MB).
+- **GitHub Remote:** Siap dipush ke `https://github.com/qomaruddindjamal/mitranet.git` branch `main`.
 
 ---
 
 ### 3. SATU LANGKAH BERIKUTNYA YANG SPESIFIK
-- Memperluas basis pengetahuan arsitektur pada direktori `ai/knowledge/` untuk melengkapi pemahaman AI Assistant mengenai konfigurasi spesifik interface, firewall nftables, dan wireguard.
+- Menjalankan deployment pipeline otomatis `deploy_pipeline.py` untuk sync penuh, rebuild ISO, dan push commit ke repositori GitHub.
