@@ -29,7 +29,8 @@ try:
         check_system_services,
         get_booster_telemetry,
         get_wireguard_handshakes,
-        get_default_routes
+        get_default_routes,
+        analyze_booster_runtime
     )
 except ImportError:
     ContextualRetriever = None
@@ -38,6 +39,7 @@ except ImportError:
     get_booster_telemetry = None
     get_wireguard_handshakes = None
     get_default_routes = None
+    analyze_booster_runtime = None
 
 class MitraNetAssistant:
     def __init__(self, root_dir: pathlib.Path):
@@ -145,8 +147,30 @@ class MitraNetAssistant:
         self.log("Executing DIAGNOSE mode (Read-Only Diagnostics)...")
         print("\n=== MITRANET REAL-TIME DIAGNOSTIC REPORT ===")
         
-        # 1. Cloud Speed Booster telemetry
-        if get_booster_telemetry:
+        # 1. Cloud Speed Booster telemetry & Runtime Discrepancy Analysis
+        if analyze_booster_runtime:
+            analysis = analyze_booster_runtime()
+            print("\n[Analisis Status Multi-Stream Booster (Runtime vs Konfigurasi)]:")
+            print(f"  Konfigurasi Tersimpan: {analysis.get('configured_state')}")
+            print(f"  Kondisi Runtime Real : {analysis.get('runtime_state')}")
+            print(f"  Stream Sehat/UP      : {analysis.get('healthy_streams')}")
+            print(f"  Stream Gagal/DOWN    : {analysis.get('failed_streams')}")
+            print(f"  Stream Counter Nol   : {analysis.get('zero_counter_streams')}")
+
+            if analysis.get("facts"):
+                print("  Fakta Terverifikasi:")
+                for f in analysis["facts"]:
+                    print(f"    - [FAKTA] {f}")
+            if analysis.get("warnings"):
+                print("  Peringatan Integritas Link:")
+                for w in analysis["warnings"]:
+                    print(f"    - [PERINGATAN] {w}")
+            if analysis.get("missing_info"):
+                print("  Informasi Tidak Tersedia:")
+                for mi in analysis["missing_info"]:
+                    print(f"    - [DATA KOSONG] {mi}")
+
+        elif get_booster_telemetry:
             b_data = get_booster_telemetry()
             print("\n[Cloud Speed Booster Telemetry]:")
             if b_data.get("success"):
@@ -170,7 +194,8 @@ class MitraNetAssistant:
                 hs_list = wg_data.get("handshakes", [])
                 if hs_list:
                     for h in hs_list:
-                        print(f"  Interface: {h.get('interface')} | Peer: {h.get('peer_pubkey')} | Handshake Epoch: {h.get('latest_handshake_epoch')}")
+                        age_str = f"{h.get('age_seconds')}s lalu" if h.get('age_seconds', -1) >= 0 else "Belum ada"
+                        print(f"  Interface: {h.get('interface')} | Status: {h.get('status')} (Age: {age_str}) | Peer: {h.get('peer_pubkey')}")
                 else:
                     print("  Tidak ada handshake WireGuard aktif terdeteksi.")
             else:

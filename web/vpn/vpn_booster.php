@@ -147,6 +147,7 @@ $current_cc = $booster['current_congestion_control'] ?? 'cubic';
                                         <div class="form-group">
                                             <label style="color:#d1d5db; font-size:12px;">Jumlah Parallel Streams</label>
                                             <select class="form-control input-sm" id="booster-streams">
+                                                <option value="1" <?=($stream_count===1?'selected':'')?>>1 Stream (Baseline / Single Stream)</option>
                                                 <option value="2" <?=($stream_count===2?'selected':'')?>>2 Streams (2x Port Agregasi)</option>
                                                 <option value="3" <?=($stream_count===3?'selected':'')?>>3 Streams (3x Port Agregasi)</option>
                                                 <option value="4" <?=($stream_count===4?'selected':'')?>>4 Streams (4x Port Agregasi)</option>

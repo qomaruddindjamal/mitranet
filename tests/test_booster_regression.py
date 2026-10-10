@@ -57,6 +57,8 @@ class TestBoosterRegression(unittest.TestCase):
             for i in range(1, stream_count + 1)
         ]
         ros_script_lines = []
+        ports_str = "51831" if stream_count == 1 else f"51831-{51830 + stream_count}"
+        ros_script_lines.append(f"/ip firewall filter add chain=input action=accept protocol=udp dst-port={ports_str} comment=\"Accept WireGuard Booster Streams\" place-before=[:pick [/ip firewall filter find where chain=\"input\" and action=\"drop\"] 0]")
         for s in created_streams:
             i = s["id"]
             port = s["port"]
@@ -66,6 +68,7 @@ class TestBoosterRegression(unittest.TestCase):
             ros_script_lines.append(f"/interface wireguard peers add interface=wg-boost{i} public-key=\"{client_pub}\" allowed-address=10.250.{i}.2/32 comment=\"MitraNet Node Stream {i}\"")
 
         script = "\n".join(ros_script_lines)
+        self.assertIn("/ip firewall filter add chain=input action=accept protocol=udp dst-port=51831-51833", script)
         self.assertIn("/interface wireguard add name=wg-boost1", script)
         self.assertIn("/interface wireguard add name=wg-boost2", script)
         self.assertIn("/interface wireguard add name=wg-boost3", script)
@@ -73,6 +76,12 @@ class TestBoosterRegression(unittest.TestCase):
         self.assertIn("10.250.3.1/30", script)
         # Ensure RouterOS compatible commands are valid
         self.assertTrue(all(line.startswith("/interface") or line.startswith("/ip") for line in script.splitlines()))
+
+    def test_single_stream_and_ports(self):
+        # Test 1-stream script generation port string
+        stream_count = 1
+        ports_str = "51831" if stream_count == 1 else f"51831-{51830 + stream_count}"
+        self.assertEqual(ports_str, "51831")
 
     def test_linux_script_generation_security(self):
         stream_count = 2

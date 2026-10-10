@@ -22,10 +22,10 @@ Ketika memulai conversation baru atau memulihkan pekerjaan setelah konteks terpo
 - **Target Hardware**: Mini PC x86_64 Debian GNU/Linux (`10.10.66.228`)
 - **WebUI Port**: HTTP `8000` (`/mitranet/web`, dialihkan oleh PHP built-in server)
 - **Management API Port**: HTTP `8443` (Python REST API `/mitranet/src/api/server.py`)
-- **Aturan Operasional Wajib**: Ikuti batasan dan standar di `AGENTS.md`.
-- **Status Cloud Speed Booster (Tahap 1)**:
-  - Halaman WebUI WinBox `web/vpn/vpn_booster.php` aktif dan terdaftar di menu VPN.
-  - REST API `/api/v1/vpn/booster/status`, `/apply`, dan `/stop` aktif di `src/api/server.py`.
-  - Generator skrip RouterOS-compatible dan Linux VPS server aktif dengan proteksi keamanan kunci privat.
-  - Multi-stream WireGuard (2/3/4 streams), ECMP multipath routing, DSCP AF41 marking, TCP MSS clamping 1360, dan TCP BBR/FQ terintegrasi.
-  - Pipeline deploy otomatis (`deploy_pipeline.py`) sukses men-deploy ke Mini PC, me-rebuild ISO, dan me-push ke GitHub.
+- **Aturan Operasional Wajib**: Ikuti batasan dan standar di `AGENTS.md` dan `RecoveryAgents.md`.
+- **Status Terkini**:
+  - Validasi tunnel primer `wg0` ke VPS `103.93.162.168:13231` terverifikasi (101.7 Mbps, 14 ms latency).
+  - Validasi live multi-stream Stream 1 (port 51831) dan Stream 2 (port 51832) terbukti sukses di VPS RouterOS nyata dengan handshake aktif dan counter bertambah.
+  - Failover Stream 2 dan pemulihan default gateway terverifikasi 100% aman; SSH Mini PC (`10.10.66.228`) tidak terputus.
+  - AI Assistant ditingkatkan dengan analisis perbedaan konfigurasi vs runtime, deteksi stale handshake, dan deteksi zero-counter.
+  - Seluruh unit & regression tests (4 suite) lulus.

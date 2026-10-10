@@ -1406,7 +1406,7 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             # Inspect actual live system telemetry
             streams = []
             stream_count = int(cfg.get("stream_count") or 2)
-            stream_count = min(max(stream_count, 2), 4)
+            stream_count = min(max(stream_count, 1), 4)
 
             # Check TCP BBR status
             current_cc = "cubic"
@@ -4255,7 +4255,7 @@ PrivateKey = {priv_key}
             import ipaddress
             vps_host = str(payload.get("vps_host", "")).strip()
             stream_count = int(payload.get("stream_count", 2))
-            stream_count = min(max(stream_count, 2), 4)
+            stream_count = min(max(stream_count, 1), 4)
             tunnel_type = str(payload.get("tunnel_type", "wireguard")).strip().lower()
             balancer_mode = str(payload.get("balancer_mode", "ecmp")).strip().lower()
             dscp_mode = str(payload.get("dscp_mode", "AF41")).strip().upper()
@@ -4436,6 +4436,13 @@ MTU = 1420
                 ""
             ]
 
+            # RouterOS Firewall Input Filter for Booster UDP ports
+            ports_str = "51831" if stream_count == 1 else f"51831-{51830 + stream_count}"
+            ros_script_lines.append("# 1. Firewall Input Filter Rule (Allow UDP Ports)")
+            ros_script_lines.append(f"/ip firewall filter add chain=input action=accept protocol=udp dst-port={ports_str} comment=\"Accept WireGuard Booster Streams\" place-before=[:pick [/ip firewall filter find where chain=\"input\" and action=\"drop\"] 0]")
+            ros_script_lines.append("")
+
+            ros_script_lines.append("# 2. WireGuard Interfaces & Peers")
             for s in created_streams:
                 i = s["id"]
                 port = s["port"]
@@ -4465,7 +4472,7 @@ MTU = 1420
                 linux_script_lines.append("")
 
             # RouterOS NAT Masquerade
-            ros_script_lines.append("# Outbound NAT Masquerade for Booster Subnets")
+            ros_script_lines.append("# 3. Outbound NAT Masquerade for Booster Subnets")
             for i in range(1, stream_count + 1):
                 ros_script_lines.append(f"/ip firewall nat add chain=srcnat src-address=10.250.{i}.0/30 action=masquerade comment=\"Booster NAT Stream {i}\"")
 

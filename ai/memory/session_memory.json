@@ -24,6 +24,18 @@
       "role": "assistant",
       "message": "=== JAWABAN BERDASARKAN BASIS PENGETAHUAN MITRANET ===\n\n[1. Golden Rules Deployment - Sumber: ai/knowledge/sop_deployment.md (Relevansi: 7.132)]:\n## 1. Golden Rules Deployment\nSetiap pembaruan kode sistem wajib mengikuti pipeline 3-langkah otomatis (`python c:\\mitranet\\deploy_pipeline.py \"<commit_message>\"`):\n1. **Sinkronisasi ke Mini PC (`10.10.66.228`)**:\n   - Berkas disinkronkan ke `/mitranet/web`, `/usr/share/mitranet/web`, `/mitranet/core`, `/mitranet/src`, dan `/usr/lib/python3/dist-packages/mitranet/`.\n   - Layanan `mitranet-webui.service` di-restart dan diperiksa kestabilannya.\n2. **Rebuild File ISO**:\n   - Menjalankan `build/build_iso.py` (`xorriso`).\n   - Memastikan file ISO kanonikal di `iso/MitraNet-Rinjani-1.0.2-amd64.iso` berhasil terbuat tanpa error (exit code 0).\n3. **Commit & Push GitHub**:\n   - Stage perubahan (`git add .`), commit dengan pesan deskriptif, dan push ke branch `main` repositori `https://github.com/qomaruddindjamal/mitranet.git`.\n\n[MitraNet Recovery, Safety, and Deployment SOP - Sumber: ai/knowledge/sop_deployment.md (Relevansi: 2.609)]:\n# MitraNet Recovery, Safety, and Deployment SOP\n",
       "meta": {}
+    },
+    {
+      "timestamp": "2026-10-10T14:35:52.639277",
+      "role": "user",
+      "message": "bagaimana mendeteksi handshake wireguard yang stale dan counter nol",
+      "meta": {}
+    },
+    {
+      "timestamp": "2026-10-10T14:35:52.641107",
+      "role": "assistant",
+      "message": "=== JAWABAN BERDASARKAN BASIS PENGETAHUAN MITRANET ===\n\n[4. Pola Diagnostik Live & Troubleshooting Multi-Stream - Sumber: ai/knowledge/booster_wireguard.md (Relevansi: 15.674)]:\n## 4. Pola Diagnostik Live & Troubleshooting Multi-Stream\n- **Status Handshake WireGuard**:\n  - Handshake dianggap sehat jika timestamp terjadi dalam 180 detik terakhir (<180s).\n  - Jika timestamp handshake > 180 detik atau 0, peer dinyatakan STALE atau NO_HANDSHAKE.\n  - Periksa port UDP VPS RouterOS (51831–51834) dan pastikan rule filter accept input aktif sebelum drop rule.\n- **Deteksi Zero-Counter (Trafik Nol)**:\n  - Jika interface tunnel UP tetapi byte Rx/Tx bernilai 0, hal ini menandakan mismatch AllowedIPs, firewall drop pada server, atau routing belum dilewatkan ke gateway peer.\n- **Perbedaan Status Konfigurasi vs Runtime**:\n  - Konfigurasi `enabled: true` di JSON hanya mencerminkan niat konfigurasi (intent).\n  - Status runtime aktual wajib divalidasi melalui interface kernel operstate, epoch handshake, dan byte transfer aktif.\n- **Prinsip Keselamatan AI**:\n  - AI Assistant beroperasi secara READ-ONLY dan dilarang mengubah routing tabel atau firewall secara otomatis tanpa intervensi pengguna.\n\n[Cloud Speed Booster & WireGuard Tunneling Knowledge - Sumber: ai/knowledge/booster_wireguard.md (Relevansi: 2.163)]:\n# Cloud Speed Booster & WireGuard Tunneling Knowledge\n",
+      "meta": {}
     }
   ]
 }

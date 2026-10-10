@@ -71,5 +71,20 @@ class TestAIAssistant(unittest.TestCase):
             self.assertNotIn("PRIVATE KEY", chunk["text"].upper())
             self.assertNotIn("BOOSTERPRIVATEKEY", chunk["text"].upper())
 
+    def test_stale_handshake_and_zero_counter_detection(self):
+        from tools.diagnostics import analyze_booster_runtime
+        # When no API is running, analyze_booster_runtime must return missing_info rather than crash or hallucinate
+        analysis = analyze_booster_runtime()
+        self.assertIn("configured_state", analysis)
+        self.assertIn("runtime_state", analysis)
+        self.assertTrue(len(analysis["missing_info"]) > 0 or analysis["runtime_state"] in ("FULL_AGGREGATION", "DEGRADED", "DOWN"))
+
+    def test_retriever_source_attribution_for_booster(self):
+        retriever = ContextualRetriever(AI_DIR / "knowledge")
+        results = retriever.search("handshake stale zero-counter")
+        self.assertTrue(len(results) > 0)
+        self.assertIn("booster_wireguard.md", results[0]["file"])
+        self.assertIn("Pola Diagnostik", results[0]["title"])
+
 if __name__ == "__main__":
     unittest.main()
