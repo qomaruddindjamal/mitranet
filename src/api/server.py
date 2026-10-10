@@ -2372,6 +2372,7 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             import subprocess
             import urllib.request
             import ssl
+            import time
 
             result_entry = None
             err_msg = ""
