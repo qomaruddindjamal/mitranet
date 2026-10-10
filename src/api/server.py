@@ -4663,7 +4663,7 @@ PersistentKeepalive = 10
 Address = {client_ip}/30
 ListenPort = {dev_port}
 PrivateKey = {s_priv}
-FwMark = 0xca6c
+Table = off
 MTU = 1420
 {peer_block}
 """
