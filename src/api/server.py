@@ -1573,9 +1573,9 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                     except Exception:
                         pass
 
-                # If interface exists, measure ping to gateway peer 10.250.{i}.1
+                # If interface exists, measure ping to gateway peer 10.250.{i}.1 through this specific stream
                 if os.path.exists(sys_net):
-                    p_cmd = ["ping", "-c", "2", "-W", "1", f"10.250.{i}.1"]
+                    p_cmd = ["ping", "-c", "2", "-W", "1", "-I", dev_name, f"10.250.{i}.1"]
                     p_res = subprocess.run(p_cmd, stdout=subprocess.PIPE, text=True)
                     if p_res.returncode == 0:
                         is_up = True
@@ -1605,8 +1605,8 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             cfg["streams"] = streams
             cfg["active"] = any_active
             cfg["current_congestion_control"] = current_cc
-            cfg["total_rx_formatted"] = fmt_bytes(total_rx_bytes) if any_active else "0 B"
-            cfg["total_tx_formatted"] = fmt_bytes(total_tx_bytes) if any_active else "0 B"
+            cfg["total_rx_formatted"] = fmt_bytes(total_rx_bytes)
+            cfg["total_tx_formatted"] = fmt_bytes(total_tx_bytes)
 
             self._send_json(200, {"success": True, "data": cfg})
             return
@@ -4686,6 +4686,17 @@ MTU = 1420
                         if orig_lines:
                             with open(gw_b_file, "w") as gwf:
                                 json.dump({"orig_defaults": orig_lines, "orig_default": orig_lines[0]}, gwf, indent=2)
+
+                    # Ensure VPS Public IP has explicit host route via physical gateway (preventing routing loop)
+                    if orig_lines:
+                        # Extract physical gateway IP
+                        gw_ip = ""
+                        for part in orig_lines[0].split():
+                            if part.replace(".", "").isdigit():
+                                gw_ip = part
+                                break
+                        if gw_ip:
+                            subprocess.run(["ip", "route", "replace", vps_host, "via", gw_ip], check=False)
 
                     ecmp_parts = []
                     for i in range(1, stream_count + 1):
