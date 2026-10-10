@@ -1385,6 +1385,7 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
         if path == "/api/v1/vpn/booster/status":
             b_cfg_file = "/etc/mitranet/secrets/booster_config.json"
             cfg = {
+                "role": "client",
                 "enabled": False,
                 "vps_host": "",
                 "stream_count": 2,
@@ -1394,6 +1395,11 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 "clamp_mss": 1360,
                 "enable_bbr": True,
                 "peer_public_key": "",
+                "server_enabled": False,
+                "server_listen_port_start": 51831,
+                "server_subnet": "10.250.0.0/16",
+                "server_public_key": "",
+                "server_peers": [],
                 "streams": []
             }
             if os.path.exists(b_cfg_file):
@@ -1405,10 +1411,26 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 except Exception:
                     pass
 
-            # Inspect actual live system telemetry
-            streams = []
-            stream_count = int(cfg.get("stream_count") or 2)
-            stream_count = min(max(stream_count, 1), 4)
+            # Ensure Server Keypair is generated even before server is active (so user can copy public key)
+            if not cfg.get("server_public_key") or not cfg.get("server_private_key"):
+                try:
+                    p_gen = subprocess.run(["wg", "genkey"], stdout=subprocess.PIPE, text=True, check=True)
+                    s_priv = p_gen.stdout.strip()
+                    pub_gen = subprocess.run(["wg", "pubkey"], input=s_priv, stdout=subprocess.PIPE, text=True, check=True)
+                    s_pub = pub_gen.stdout.strip()
+                    cfg["server_private_key"] = s_priv
+                    cfg["server_public_key"] = s_pub
+                    os.makedirs("/etc/mitranet/secrets", exist_ok=True)
+                    with open(b_cfg_file, "w") as bf:
+                        json.dump(cfg, bf, indent=2)
+                except Exception:
+                    pass
+
+            def fmt_bytes(n):
+                if n >= 1073741824: return f"{round(n/1073741824, 2)} GiB"
+                if n >= 1048576: return f"{round(n/1048576, 2)} MiB"
+                if n >= 1024: return f"{round(n/1024, 2)} KiB"
+                return f"{n} B"
 
             # Check TCP BBR status
             current_cc = "cubic"
@@ -1417,6 +1439,74 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 current_cc = res.stdout.strip()
             except Exception:
                 pass
+
+            # Inspect actual live system telemetry
+            streams = []
+            stream_count = int(cfg.get("stream_count") or 2)
+            stream_count = min(max(stream_count, 1), 4)
+
+            # Telemetry for Server Role
+            server_peers_telemetry = []
+            total_server_rx = 0
+            total_server_tx = 0
+            is_server_active = False
+
+            for i in range(1, stream_count + 1):
+                srv_dev = f"wgsrvboost{i}"
+                sys_net = f"/sys/class/net/{srv_dev}"
+                rx_b = 0
+                tx_b = 0
+                latest_hs = 0
+                if os.path.exists(sys_net):
+                    is_server_active = True
+                    try:
+                        with open(f"{sys_net}/statistics/rx_bytes", "r") as f_rx:
+                            rx_b = int(f_rx.read().strip())
+                        with open(f"{sys_net}/statistics/tx_bytes", "r") as f_tx:
+                            tx_b = int(f_tx.read().strip())
+                        total_server_rx += rx_b
+                        total_server_tx += tx_b
+                    except Exception:
+                        pass
+                    try:
+                        hs_res = subprocess.run(["wg", "show", srv_dev, "latest-handshakes"], stdout=subprocess.PIPE, text=True, stderr=subprocess.DEVNULL)
+                        if hs_res.returncode == 0 and hs_res.stdout.strip():
+                            for h_line in hs_res.stdout.splitlines():
+                                parts = h_line.strip().split()
+                                if len(parts) >= 2:
+                                    try:
+                                        ts = int(parts[1])
+                                        if ts > latest_hs: latest_hs = ts
+                                    except Exception:
+                                        pass
+                    except Exception:
+                        pass
+
+                # Peer info
+                matched_peer = None
+                for sp in cfg.get("server_peers", []):
+                    if sp.get("stream_id") == i:
+                        matched_peer = sp
+                        break
+
+                server_peers_telemetry.append({
+                    "stream_id": i,
+                    "interface": srv_dev,
+                    "listen_port": int(cfg.get("server_listen_port_start", 51831)) + (i - 1),
+                    "server_ip": f"10.250.{i}.1/30",
+                    "client_ip": f"10.250.{i}.2/30",
+                    "client_pubkey": matched_peer.get("client_pubkey", "") if matched_peer else "",
+                    "peer_name": matched_peer.get("name", f"Client-Stream-{i}") if matched_peer else f"Stream-{i}",
+                    "status": "UP" if (latest_hs > 0 and (int(time.time()) - latest_hs) < 180) else ("READY" if os.path.exists(sys_net) else "DOWN"),
+                    "rx_formatted": fmt_bytes(rx_b),
+                    "tx_formatted": fmt_bytes(tx_b),
+                    "latest_handshake": latest_hs
+                })
+
+            cfg["server_peers_telemetry"] = server_peers_telemetry
+            cfg["server_total_rx"] = fmt_bytes(total_server_rx)
+            cfg["server_total_tx"] = fmt_bytes(total_server_tx)
+            cfg["server_active"] = is_server_active
 
             total_rx_bytes = 0
             total_tx_bytes = 0
@@ -4291,15 +4381,180 @@ PrivateKey = {priv_key}
         # 26. Cloud Speed Booster - Apply Configuration & Multi-Stream Setup
         if path == "/api/v1/vpn/booster/apply":
             import ipaddress
-            vps_host = str(payload.get("vps_host", "")).strip()
+            role = str(payload.get("role", "client")).strip().lower()
             stream_count = int(payload.get("stream_count", 2))
             stream_count = min(max(stream_count, 1), 4)
+            enable_bbr = bool(payload.get("enable_bbr", True))
+
+            b_cfg_file = "/etc/mitranet/secrets/booster_config.json"
+            os.makedirs("/etc/mitranet/secrets", exist_ok=True)
+            os.makedirs("/etc/wireguard", exist_ok=True)
+
+            existing_cfg = {}
+            if os.path.exists(b_cfg_file):
+                try:
+                    with open(b_cfg_file, "r") as bf:
+                        existing_cfg = json.load(bf)
+                except Exception:
+                    pass
+
+            # Enable TCP BBR and FQ if requested
+            if enable_bbr:
+                try:
+                    subprocess.run(["sysctl", "-w", "net.core.default_qdisc=fq"], check=False)
+                    subprocess.run(["sysctl", "-w", "net.ipv4.tcp_congestion_control=bbr"], check=False)
+                except Exception:
+                    pass
+
+            # =========================================================
+            # ROLE: SERVER (AGGREGATION HUB CONCENTRATOR)
+            # =========================================================
+            if role == "server":
+                listen_port_start = int(payload.get("server_listen_port_start", 51831))
+                server_subnet = str(payload.get("server_subnet", "10.250.0.0/16")).strip()
+                server_peers = payload.get("server_peers", [])
+
+                # Generate or preserve server private/public key
+                srv_priv = existing_cfg.get("server_private_key")
+                srv_pub = existing_cfg.get("server_public_key")
+                if not srv_priv or not srv_pub:
+                    try:
+                        p_gen = subprocess.run(["wg", "genkey"], stdout=subprocess.PIPE, text=True, check=True)
+                        srv_priv = p_gen.stdout.strip()
+                        pub_gen = subprocess.run(["wg", "pubkey"], input=srv_priv, stdout=subprocess.PIPE, text=True, check=True)
+                        srv_pub = pub_gen.stdout.strip()
+                    except Exception:
+                        srv_priv = "BoosterServerPrivateKeyFakeKeyTesting1234567890="
+                        srv_pub = "BoosterServerPublicKeyFakeKeyTesting0987654321="
+
+                # Setup Linux IP Forwarding for Server
+                try:
+                    subprocess.run(["sysctl", "-w", "net.ipv4.ip_forward=1"], check=False)
+                except Exception:
+                    pass
+
+                created_server_streams = []
+                for i in range(1, stream_count + 1):
+                    srv_dev = f"wgsrvboost{i}"
+                    srv_port = listen_port_start + (i - 1)
+                    srv_ip = f"10.250.{i}.1/30"
+                    client_ip = f"10.250.{i}.2/32"
+
+                    # Match peer if configured
+                    client_pubkey = ""
+                    for p in server_peers:
+                        if p.get("stream_id") == i or str(p.get("stream_id")) == str(i):
+                            client_pubkey = str(p.get("client_pubkey", "")).strip()
+                            break
+
+                    conf_path = f"/etc/wireguard/{srv_dev}.conf"
+                    peer_block = ""
+                    if client_pubkey:
+                        peer_block = f"""
+[Peer]
+PublicKey = {client_pubkey}
+AllowedIPs = {client_ip}
+"""
+                    conf_content = f"""[Interface]
+Address = {srv_ip}
+ListenPort = {srv_port}
+PrivateKey = {srv_priv}
+PostUp = iptables -t nat -A POSTROUTING -s 10.250.{i}.0/30 -j MASQUERADE; iptables -A FORWARD -i {srv_dev} -j ACCEPT; iptables -A FORWARD -o {srv_dev} -m state --state ESTABLISHED,RELATED -j ACCEPT
+PostDown = iptables -t nat -D POSTROUTING -s 10.250.{i}.0/30 -j MASQUERADE; iptables -D FORWARD -i {srv_dev} -j ACCEPT; iptables -D FORWARD -o {srv_dev} -m state --state ESTABLISHED,RELATED -j ACCEPT
+{peer_block}
+"""
+                    try:
+                        with open(conf_path, "w") as cf:
+                            cf.write(conf_content)
+                        os.chmod(conf_path, 0o600)
+                    except Exception as ce:
+                        logger.warning("Failed writing server conf %s: %s", conf_path, ce)
+
+                    # Restart interface
+                    subprocess.run(["ip", "link", "del", srv_dev], stderr=subprocess.DEVNULL)
+                    subprocess.run(["wg-quick", "up", srv_dev], stderr=subprocess.DEVNULL)
+
+                    created_server_streams.append({
+                        "stream_id": i,
+                        "interface": srv_dev,
+                        "port": srv_port,
+                        "server_ip": srv_ip,
+                        "client_ip": client_ip,
+                        "client_pubkey": client_pubkey
+                    })
+
+                # Generate Client Setup Script (RouterOS & Linux) for clients connecting to this Server
+                srv_ros_script_lines = [
+                    "# ====================================================",
+                    "# MitraNet Cloud Speed Booster - Client Setup Script",
+                    f"# Server Public Key: {srv_pub}",
+                    "# Run on Client RouterOS (e.g. MikroTik at branch/customer)",
+                    "# ====================================================",
+                    ""
+                ]
+                srv_linux_script_lines = [
+                    "# ====================================================",
+                    "# MitraNet Cloud Speed Booster - Linux Client Setup",
+                    f"# Server Public Key: {srv_pub}",
+                    "# ====================================================",
+                    ""
+                ]
+                for s in created_server_streams:
+                    si = s["stream_id"]
+                    sport = s["port"]
+                    srv_ros_script_lines.append(f"# Stream {si}")
+                    srv_ros_script_lines.append(f"/interface wireguard add name=wg-boost{si} listen-port={sport} mtu=1420")
+                    srv_ros_script_lines.append(f"/ip address add address=10.250.{si}.2/30 interface=wg-boost{si}")
+                    srv_ros_script_lines.append(f"/interface wireguard peers add interface=wg-boost{si} public-key=\"{srv_pub}\" endpoint-address=YOUR_MITRANET_PUBLIC_IP endpoint-port={sport} allowed-address=0.0.0.0/0 persistent-keepalive=25")
+                    srv_ros_script_lines.append("")
+
+                    srv_linux_script_lines.append(f"# Client Stream {si} Config (/etc/wireguard/wgboost{si}.conf)")
+                    srv_linux_script_lines.append(f"[Interface]\nAddress = 10.250.{si}.2/30\nPrivateKey = CLIENT_PRIVATE_KEY_HERE\n\n[Peer]\nPublicKey = {srv_pub}\nEndpoint = YOUR_MITRANET_PUBLIC_IP:{sport}\nAllowedIPs = 0.0.0.0/0\nPersistentKeepalive = 25\n")
+
+                srv_scripts = {
+                    "routeros": "\n".join(srv_ros_script_lines),
+                    "linux": "\n".join(srv_linux_script_lines)
+                }
+
+                save_payload = {
+                    "role": "server",
+                    "server_enabled": True,
+                    "enabled": existing_cfg.get("enabled", False),
+                    "server_listen_port_start": listen_port_start,
+                    "server_subnet": server_subnet,
+                    "server_private_key": srv_priv,
+                    "server_public_key": srv_pub,
+                    "stream_count": stream_count,
+                    "enable_bbr": enable_bbr,
+                    "server_peers": server_peers,
+                    "created_server_streams": created_server_streams,
+                    "server_scripts": srv_scripts,
+                    "scripts": existing_cfg.get("scripts", {}),
+                    "vps_host": existing_cfg.get("vps_host", ""),
+                    "stream_keys": existing_cfg.get("stream_keys", {})
+                }
+                try:
+                    with open(b_cfg_file, "w") as bf:
+                        json.dump(save_payload, bf, indent=2)
+                except Exception as se:
+                    logger.warning("Failed saving booster server config: %s", se)
+
+                self._send_json(200, {
+                    "success": True,
+                    "message": f"Cloud Speed Booster Server Hub active ({stream_count} Listener Ports: {listen_port_start}–{listen_port_start + stream_count - 1}).",
+                    "data": save_payload
+                })
+                return
+
+            # =========================================================
+            # ROLE: CLIENT (UPLINK BOOSTER)
+            # =========================================================
+            vps_host = str(payload.get("vps_host", "")).strip()
             tunnel_type = str(payload.get("tunnel_type", "wireguard")).strip().lower()
             balancer_mode = str(payload.get("balancer_mode", "ecmp")).strip().lower()
             dscp_mode = str(payload.get("dscp_mode", "AF41")).strip().upper()
             clamp_mss = int(payload.get("clamp_mss", 1360))
             clamp_mss = min(max(clamp_mss, 1200), 1500)
-            enable_bbr = bool(payload.get("enable_bbr", True))
             peer_pubkey = str(payload.get("peer_public_key", "")).strip()
 
             # Validation
@@ -4307,7 +4562,6 @@ PrivateKey = {priv_key}
                 self._send_json(400, {"error": "VPS Host/IP address is required"})
                 return
 
-            # Validate VPS Host: either valid IPv4 or valid domain
             is_valid_host = False
             try:
                 ipaddress.IPv4Address(vps_host)
@@ -4323,18 +4577,6 @@ PrivateKey = {priv_key}
             if dscp_mode not in ("NONE", "AF41", "CS6", "EF"):
                 dscp_mode = "AF41"
 
-            b_cfg_file = "/etc/mitranet/secrets/booster_config.json"
-            os.makedirs("/etc/mitranet/secrets", exist_ok=True)
-            os.makedirs("/etc/wireguard", exist_ok=True)
-
-            existing_cfg = {}
-            if os.path.exists(b_cfg_file):
-                try:
-                    with open(b_cfg_file, "r") as bf:
-                        existing_cfg = json.load(bf)
-                except Exception:
-                    pass
-
             # Generate or preserve client keys per stream
             stream_keys = existing_cfg.get("stream_keys", {})
             for i in range(1, stream_count + 1):
@@ -4347,19 +4589,10 @@ PrivateKey = {priv_key}
                         pub = pub_gen.stdout.strip()
                         stream_keys[s_key] = {"privkey": priv, "pubkey": pub}
                     except Exception:
-                        # Fallback for systems without wg CLI during dry run
                         stream_keys[s_key] = {
                             "privkey": f"BoosterPrivateKeyStream{i}FakeKeyForTestingABCDEF=",
                             "pubkey": f"BoosterPublicKeyStream{i}FakeKeyForTestingXYZ123="
                         }
-
-            # Enable TCP BBR and FQ if requested
-            if enable_bbr:
-                try:
-                    subprocess.run(["sysctl", "-w", "net.core.default_qdisc=fq"], check=False)
-                    subprocess.run(["sysctl", "-w", "net.ipv4.tcp_congestion_control=bbr"], check=False)
-                except Exception:
-                    pass
 
             created_streams = []
             for i in range(1, stream_count + 1):
@@ -4397,7 +4630,6 @@ MTU = 1420
 
                 # Tear down stale dev if already exists
                 subprocess.run(["ip", "link", "del", dev_name], stderr=subprocess.DEVNULL)
-                # Bring up with wg-quick if valid peer provided
                 if peer_pubkey:
                     subprocess.run(["wg-quick", "up", dev_name], stderr=subprocess.DEVNULL)
 
@@ -4413,7 +4645,6 @@ MTU = 1420
             # Setup ECMP multipath route if peer key is set
             if peer_pubkey:
                 try:
-                    # Backup original default route if not already saved
                     gw_b_file = "/etc/mitranet/secrets/original_gateway.json"
                     if not os.path.exists(gw_b_file):
                         r_show = subprocess.run(["ip", "route", "show", "default"], stdout=subprocess.PIPE, text=True)
@@ -4426,9 +4657,7 @@ MTU = 1420
                     for i in range(1, stream_count + 1):
                         ecmp_parts.extend(["nexthop", "dev", f"wgboost{i}", "weight", "1"])
                     subprocess.run(["ip", "route", "replace", "default"] + ecmp_parts, check=False)
-                    # Also replace default in policy routing table 51820 used by non-marked outbound traffic
                     subprocess.run(["ip", "route", "replace", "default", "table", "51820"] + ecmp_parts, check=False)
-                    # Ensure sysctl fib_multipath_hash_policy is set to L4 (IP+Port)
                     subprocess.run(["sysctl", "-w", "net.ipv4.fib_multipath_hash_policy=1"], check=False)
                 except Exception as re_err:
                     logger.warning("ECMP route apply error: %s", re_err)
@@ -4446,10 +4675,8 @@ MTU = 1420
 
                     for i in range(1, stream_count + 1):
                         dev_name = f"wgboost{i}"
-                        # NAT Masquerade for Booster tunnels
                         subprocess.run(["iptables", "-t", "nat", "-D", "POSTROUTING", "-o", dev_name, "-j", "MASQUERADE"], stderr=subprocess.DEVNULL)
                         subprocess.run(["iptables", "-t", "nat", "-A", "POSTROUTING", "-o", dev_name, "-j", "MASQUERADE"], check=False)
-                        # Forwarding rules
                         subprocess.run(["iptables", "-D", "FORWARD", "-o", dev_name, "-j", "ACCEPT"], stderr=subprocess.DEVNULL)
                         subprocess.run(["iptables", "-A", "FORWARD", "-o", dev_name, "-j", "ACCEPT"], check=False)
                         subprocess.run(["iptables", "-D", "FORWARD", "-i", dev_name, "-m", "state", "--state", "ESTABLISHED,RELATED", "-j", "ACCEPT"], stderr=subprocess.DEVNULL)
@@ -4488,7 +4715,6 @@ MTU = 1420
                 ""
             ]
 
-            # RouterOS Firewall Input Filter for Booster UDP ports
             ports_str = "51831" if stream_count == 1 else f"51831-{51830 + stream_count}"
             ros_script_lines.append("# 1. Firewall Input Filter Rule (Allow UDP Ports)")
             ros_script_lines.append(f"/ip firewall filter add chain=input action=accept protocol=udp dst-port={ports_str} comment=\"Accept WireGuard Booster Streams\" place-before=[:pick [/ip firewall filter find where chain=\"input\" and action=\"drop\"] 0]")
@@ -4499,13 +4725,11 @@ MTU = 1420
                 i = s["id"]
                 port = s["port"]
                 client_pub = s["client_pubkey"]
-                # RouterOS commands
                 ros_script_lines.append(f"/interface wireguard add name=wg-boost{i} listen-port={port} comment=\"MitraNet Stream {i}\"")
                 ros_script_lines.append(f"/ip address add address=10.250.{i}.1/30 interface=wg-boost{i} network=10.250.{i}.0")
                 ros_script_lines.append(f"/interface wireguard peers add interface=wg-boost{i} public-key=\"{client_pub}\" allowed-address=10.250.{i}.2/32 comment=\"MitraNet Node Stream {i}\"")
                 ros_script_lines.append("")
 
-                # Linux commands
                 linux_script_lines.append(f"# Stream {i} Interface")
                 linux_script_lines.append(f"cat << 'EOF' > /etc/wireguard/wgboost{i}.conf")
                 linux_script_lines.append("[Interface]")
@@ -4523,7 +4747,6 @@ MTU = 1420
                 linux_script_lines.append(f"systemctl enable --now wg-quick@wgboost{i}")
                 linux_script_lines.append("")
 
-            # RouterOS NAT Masquerade
             ros_script_lines.append("# 3. Outbound NAT Masquerade for Booster Subnets")
             for i in range(1, stream_count + 1):
                 ros_script_lines.append(f"/ip firewall nat add chain=srcnat src-address=10.250.{i}.0/30 action=masquerade comment=\"Booster NAT Stream {i}\"")
@@ -4533,6 +4756,7 @@ MTU = 1420
 
             # Save configuration state
             save_payload = {
+                "role": "client",
                 "enabled": True,
                 "vps_host": vps_host,
                 "stream_count": stream_count,
@@ -4547,7 +4771,13 @@ MTU = 1420
                 "scripts": {
                     "routeros": ros_script,
                     "linux": linux_script
-                }
+                },
+                "server_enabled": existing_cfg.get("server_enabled", False),
+                "server_listen_port_start": existing_cfg.get("server_listen_port_start", 51831),
+                "server_subnet": existing_cfg.get("server_subnet", "10.250.0.0/16"),
+                "server_private_key": existing_cfg.get("server_private_key", ""),
+                "server_public_key": existing_cfg.get("server_public_key", ""),
+                "server_peers": existing_cfg.get("server_peers", [])
             }
 
             try:
@@ -4574,43 +4804,59 @@ MTU = 1420
                 except Exception:
                     pass
 
-            stream_count = int(cfg.get("stream_count", 4))
-            for i in range(1, stream_count + 1):
-                dev_name = f"wgboost{i}"
-                try:
-                    subprocess.run(["wg-quick", "down", dev_name], stderr=subprocess.DEVNULL)
-                except Exception:
-                    pass
-                try:
-                    subprocess.run(["ip", "link", "del", dev_name], stderr=subprocess.DEVNULL)
-                except Exception:
-                    pass
-                # Remove mangle rules
-                try:
-                    subprocess.run(["iptables", "-t", "mangle", "-D", "POSTROUTING", "-o", dev_name, "-j", "DSCP", "--set-dscp", "0x28"], stderr=subprocess.DEVNULL)
-                    subprocess.run(["iptables", "-t", "mangle", "-D", "POSTROUTING", "-o", dev_name, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1360"], stderr=subprocess.DEVNULL)
-                except Exception:
-                    pass
+            target_role = str(payload.get("role", "all")).strip().lower()
 
-            # Restore original default gateway route if saved
-            try:
-                gw_b_file = "/etc/mitranet/secrets/original_gateway.json"
-                if os.path.exists(gw_b_file):
-                    with open(gw_b_file, "r") as gwf:
-                        saved_data = json.load(gwf)
-                    defaults_to_restore = saved_data.get("orig_defaults") or []
-                    if not defaults_to_restore and saved_data.get("orig_default"):
-                        defaults_to_restore = [saved_data.get("orig_default")]
-                    for gw_route in defaults_to_restore:
-                        if gw_route:
-                            subprocess.run(f"ip route replace {gw_route}", shell=True)
-                # Restore wg0 in policy routing table 51820 if wg0 is up
-                subprocess.run(["ip", "route", "replace", "default", "dev", "wg0", "table", "51820"], stderr=subprocess.DEVNULL)
-            except Exception as r_err:
-                logger.warning("Failed restoring default route: %s", r_err)
+            # Teardown Client Streams
+            if target_role in ("client", "all"):
+                stream_count = int(cfg.get("stream_count", 4))
+                for i in range(1, stream_count + 1):
+                    dev_name = f"wgboost{i}"
+                    try:
+                        subprocess.run(["wg-quick", "down", dev_name], stderr=subprocess.DEVNULL)
+                    except Exception:
+                        pass
+                    try:
+                        subprocess.run(["ip", "link", "del", dev_name], stderr=subprocess.DEVNULL)
+                    except Exception:
+                        pass
+                    try:
+                        subprocess.run(["iptables", "-t", "mangle", "-D", "POSTROUTING", "-o", dev_name, "-j", "DSCP", "--set-dscp", "0x28"], stderr=subprocess.DEVNULL)
+                        subprocess.run(["iptables", "-t", "mangle", "-D", "POSTROUTING", "-o", dev_name, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1360"], stderr=subprocess.DEVNULL)
+                    except Exception:
+                        pass
 
-            # Update configuration to disabled
-            cfg["enabled"] = False
+                # Restore original default gateway route if saved
+                try:
+                    gw_b_file = "/etc/mitranet/secrets/original_gateway.json"
+                    if os.path.exists(gw_b_file):
+                        with open(gw_b_file, "r") as gwf:
+                            saved_data = json.load(gwf)
+                        defaults_to_restore = saved_data.get("orig_defaults") or []
+                        if not defaults_to_restore and saved_data.get("orig_default"):
+                            defaults_to_restore = [saved_data.get("orig_default")]
+                        for gw_route in defaults_to_restore:
+                            if gw_route:
+                                subprocess.run(f"ip route replace {gw_route}", shell=True)
+                    subprocess.run(["ip", "route", "replace", "default", "dev", "wg0", "table", "51820"], stderr=subprocess.DEVNULL)
+                except Exception as r_err:
+                    logger.warning("Failed restoring default route: %s", r_err)
+
+                cfg["enabled"] = False
+
+            # Teardown Server Streams
+            if target_role in ("server", "all"):
+                for i in range(1, 5):
+                    srv_dev = f"wgsrvboost{i}"
+                    try:
+                        subprocess.run(["wg-quick", "down", srv_dev], stderr=subprocess.DEVNULL)
+                    except Exception:
+                        pass
+                    try:
+                        subprocess.run(["ip", "link", "del", srv_dev], stderr=subprocess.DEVNULL)
+                    except Exception:
+                        pass
+                cfg["server_enabled"] = False
+
             try:
                 with open(b_cfg_file, "w") as bf:
                     json.dump(cfg, bf, indent=2)
@@ -4619,7 +4865,7 @@ MTU = 1420
 
             self._send_json(200, {
                 "success": True,
-                "message": "Cloud Speed Booster tunnels and routing rules have been stopped."
+                "message": "Cloud Speed Booster services have been stopped."
             })
             return
 
