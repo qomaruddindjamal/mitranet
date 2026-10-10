@@ -137,6 +137,36 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'detail') {
         }
     }
 
+    // VLAN details if VLAN
+    $vlan_id = null;
+    $vlan_parent = null;
+    if ($detected_type === 'vlan') {
+        // Method 1: parse name pattern like enp1s0.10 or vlan10
+        if (preg_match('/^([a-zA-Z0-9_-]+)\.([0-9]+)$/', $ifname, $m)) {
+            $vlan_parent = $m[1];
+            $vlan_id = (int)$m[2];
+        } elseif (preg_match('/^vlan([0-9]+)$/i', $ifname, $m)) {
+            $vlan_id = (int)$m[1];
+        }
+        // Method 2: sysfs lower_* link
+        $lowers = @glob("{$sys_path}/lower_*");
+        if (!empty($lowers)) {
+            $vlan_parent = preg_replace('/^.*\/lower_/', '', $lowers[0]);
+        }
+        // Method 3: /proc/net/vlan/config
+        if (file_exists('/proc/net/vlan/config')) {
+            $vlines = @file('/proc/net/vlan/config') ?: [];
+            foreach ($vlines as $vl) {
+                $parts = array_map('trim', explode('|', $vl));
+                if (count($parts) >= 3 && $parts[0] === $ifname) {
+                    $vlan_id = (int)$parts[1];
+                    $vlan_parent = $parts[2];
+                    break;
+                }
+            }
+        }
+    }
+
     $detail = [
         'name'          => $target['name'],
         'altname'       => $target['altname'] ?? $target['name'],
@@ -157,6 +187,8 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'detail') {
         'bridge_ports'  => $bridge_ports,
         'bridge_stp'    => $bridge_stp,
         'bridge_prio'   => $bridge_prio,
+        'vlan_id'       => $vlan_id,
+        'vlan_parent'   => $vlan_parent,
         'traffic'       => $target['traffic'] ?? []
     ];
 
@@ -803,6 +835,16 @@ if (!function_exists('fmt_pkts')) {
 					<tr>
 						<th class="text-center col-flag"><i class="fa-regular fa-flag"></i></th>
 						<th class="sortable col-name">Name <i class="fa-solid fa-caret-up"></i></th>
+						<?php if ($current_tab === 'vlan'): ?>
+						<th class="sortable" style="width: 100px;">VLAN ID</th>
+						<th class="sortable" style="width: 160px;">Interface (Parent)</th>
+						<th class="sortable col-mtu" style="width: 90px;">MTU</th>
+						<th class="sortable" style="width: 110px;">Tx</th>
+						<th class="sortable" style="width: 110px;">Rx</th>
+						<th class="sortable" style="width: 100px;">Tx Packet</th>
+						<th class="sortable" style="width: 100px;">Rx Packet</th>
+						<th class="sortable">Comment</th>
+						<?php else: ?>
 						<th class="sortable col-type">Type</th>
 						<th class="sortable col-mtu">Actual MTU</th>
 						<th class="sortable col-l2mtu">L2 MTU</th>
@@ -814,13 +856,14 @@ if (!function_exists('fmt_pkts')) {
 						<th class="sortable">FP Rx</th>
 						<th class="sortable">FP Tx Packet (p/s)</th>
 						<th class="sortable">FP Rx Packet (p/s)</th>
+						<?php endif; ?>
 						<th class="text-center col-menu"><i class="fa-solid fa-bars"></i></th>
 					</tr>
 				</thead>
 				<tbody>
 				<?php if (empty($ifaces)): ?>
 					<tr>
-						<td colspan="14" class="text-center text-muted">
+						<td colspan="<?=($current_tab === 'vlan' ? 11 : 14)?>" class="text-center text-muted">
 							<?=gettext("No interfaces found")?>
 						</td>
 					</tr>
@@ -836,17 +879,33 @@ if (!function_exists('fmt_pkts')) {
 					$tx_pkts    = (int)($traffic['tx_packets'] ?? 0);
 					$ifname     = $i['name'];
 					$altname    = $i['altname'] ?? $ifname;
-					if (is_dir("/sys/class/net/{$ifname}/bridge") || preg_match('/^br[-_]/i', $ifname) || $type === 'bridge') $type = 'Bridge';
-					elseif (is_dir("/sys/class/net/{$ifname}/bonding") || preg_match('/^bond/i', $ifname) || $type === 'bond') $type = 'Bonding';
-					elseif (preg_match('/^vlan/i', $ifname) || strpos($ifname, '.') !== false || $type === 'vlan') $type = 'VLAN';
-					elseif ($type === 'macvlan' || preg_match('/^(macvlan|mac[0-9])/i', $ifname)) $type = 'MACVLAN';
+					$comment_val = $i['comment'] ?? '';
+
+					// Extract VLAN ID and Parent Device if VLAN
+					$vlan_id_val = '-';
+					$parent_dev_val = '-';
+					if (preg_match('/^([a-zA-Z0-9_-]+)\.([0-9]+)$/', $ifname, $vm)) {
+						$parent_dev_val = $vm[1];
+						$vlan_id_val = $vm[2];
+					} elseif (preg_match('/^vlan([0-9]+)$/i', $ifname, $vm)) {
+						$vlan_id_val = $vm[1];
+					}
+					$lowers = @glob("/sys/class/net/{$ifname}/lower_*");
+					if (!empty($lowers)) {
+						$parent_dev_val = preg_replace('/^.*\/lower_/', '', $lowers[0]);
+					}
+
+					if (is_dir("/sys/class/net/{$ifname}/bridge") || preg_match('/^br[-_]/i', $ifname) || ($i['type'] ?? '') === 'bridge') $type = 'Bridge';
+					elseif (is_dir("/sys/class/net/{$ifname}/bonding") || preg_match('/^bond/i', $ifname) || ($i['type'] ?? '') === 'bond') $type = 'Bonding';
+					elseif (preg_match('/^vlan/i', $ifname) || strpos($ifname, '.') !== false || ($i['type'] ?? '') === 'vlan') $type = 'VLAN';
+					elseif (($i['type'] ?? '') === 'macvlan' || preg_match('/^(macvlan|mac[0-9])/i', $ifname)) $type = 'MACVLAN';
 					elseif (preg_match('/^wg/i', $ifname)) $type = 'WireGuard';
 					elseif (preg_match('/^veth/i', $ifname)) $type = 'vEthernet';
 					elseif ($ifname === 'lo') $type = 'Loopback';
 					else $type = 'Ethernet';
 					$mtu = $i['mtu'] ?? 1500;
 					?>
-					<tr data-ifname="<?=htmlspecialchars($ifname)?>" onclick="selectRow(this, '<?=htmlspecialchars($ifname)?>', '<?=htmlspecialchars(addslashes($i['comment'] ?? ''))?>')" ondblclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')" style="cursor: pointer;">
+					<tr data-ifname="<?=htmlspecialchars($ifname)?>" onclick="selectRow(this, '<?=htmlspecialchars($ifname)?>', '<?=htmlspecialchars(addslashes($comment_val))?>')" ondblclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')" style="cursor: pointer;">
 						<!-- Flag -->
 						<td class="text-center col-flag-cell" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">
 							<?php if ($is_up && $oper_state === 'UP'): ?>
@@ -862,6 +921,33 @@ if (!function_exists('fmt_pkts')) {
 							<strong class="text-primary" style="cursor: pointer;"><?=htmlspecialchars(strtoupper($altname))?></strong>
 							<span class="text-muted text-subname">(<?=htmlspecialchars($ifname)?>)</span>
 						</td>
+
+						<?php if ($current_tab === 'vlan'): ?>
+						<!-- VLAN ID -->
+						<td onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">
+							<span class="label label-primary font-monospace" style="font-size: 12px; padding: 2px 8px;"><?=htmlspecialchars($vlan_id_val)?></span>
+						</td>
+						<!-- Parent Interface -->
+						<td onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">
+							<i class="fa-solid fa-network-wired text-muted" style="margin-right: 4px;"></i>
+							<strong><?=htmlspecialchars(strtoupper($parent_dev_val))?></strong>
+							<span class="text-muted fs-11">(<?=htmlspecialchars($parent_dev_val)?>)</span>
+						</td>
+						<!-- MTU -->
+						<td onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')"><?=htmlspecialchars($mtu)?></td>
+						<!-- Tx (Live Rate B/s) -->
+						<td class="col-tx" data-bytes="<?=$tx_bytes?>" title="Total: <?=fmt_bytes($tx_bytes)?>" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">0 B/s</td>
+						<!-- Rx (Live Rate B/s) -->
+						<td class="col-rx" data-bytes="<?=$rx_bytes?>" title="Total: <?=fmt_bytes($rx_bytes)?>" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">0 B/s</td>
+						<!-- Tx Packet (p/s) -->
+						<td class="col-tx-pkts" data-pkts="<?=$tx_pkts?>" title="Total: <?=fmt_pkts($tx_pkts)?> pkts" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">0</td>
+						<!-- Rx Packet (p/s) -->
+						<td class="col-rx-pkts" data-pkts="<?=$rx_pkts?>" title="Total: <?=fmt_pkts($rx_pkts)?> pkts" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">0</td>
+						<!-- Comment -->
+						<td class="text-muted" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')" title="<?=htmlspecialchars($comment_val)?>">
+							<?=htmlspecialchars($comment_val ?: '-')?>
+						</td>
+						<?php else: ?>
 						<!-- Type -->
 						<td onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')"><span class="label label-default"><?=htmlspecialchars($type)?></span></td>
 						<!-- Actual MTU -->
@@ -884,6 +970,7 @@ if (!function_exists('fmt_pkts')) {
 						<td class="col-fp-tx-pkts text-muted" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">0</td>
 						<!-- FP Rx Packet (p/s) -->
 						<td class="col-fp-rx-pkts text-muted" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">0</td>
+						<?php endif; ?>
 						<!-- Actions / Menu Column (Hamburger context) -->
 						<td class="text-center col-menu" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')"></td>
 					</tr>
@@ -1261,6 +1348,9 @@ if (!function_exists('fmt_pkts')) {
                         <li role="presentation" class="active">
                             <a href="#winbox-tab-general" aria-controls="winbox-tab-general" role="tab" data-toggle="tab">General</a>
                         </li>
+                        <li role="presentation" id="li-winbox-tab-vlan" style="display: none;">
+                            <a href="#winbox-tab-vlan" aria-controls="winbox-tab-vlan" role="tab" data-toggle="tab">VLAN</a>
+                        </li>
                         <li role="presentation" id="li-winbox-tab-bridge" style="display: none;">
                             <a href="#winbox-tab-bridge" aria-controls="winbox-tab-bridge" role="tab" data-toggle="tab">Bridge</a>
                         </li>
@@ -1366,7 +1456,31 @@ if (!function_exists('fmt_pkts')) {
                                 </div>
                             </div>
 
-                            <!-- TAB 2: BRIDGE CONFIGURATION & PORTS -->
+                            <!-- TAB 2: VLAN SPECIFIC CONFIGURATION -->
+                            <div role="tabpanel" class="tab-pane" id="winbox-tab-vlan">
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">VLAN ID</label>
+                                    <div class="col-sm-9">
+                                        <input type="text" id="edit-vlan-id-input" class="form-control input-sm font-monospace" style="font-weight: bold; color: #2563eb;" readonly>
+                                        <span class="help-block fs-11">802.1Q IEEE VLAN Tag (1 - 4094).</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">Interface (Parent)</label>
+                                    <div class="col-sm-9">
+                                        <input type="text" id="edit-vlan-parent-input" class="form-control input-sm" readonly>
+                                        <span class="help-block fs-11">Port fisik atau induk tempat VLAN trunking ditumpangkan.</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">Protocol</label>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control input-sm" value="802.1Q" readonly>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TAB 3: BRIDGE CONFIGURATION & PORTS -->
                             <div role="tabpanel" class="tab-pane" id="winbox-tab-bridge">
                                 <div class="form-group">
                                     <label class="col-sm-3 control-label">STP Protocol</label>
@@ -1620,6 +1734,19 @@ window.openWinboxEditModal = function(ifname) {
                     $('#edit-iface-arp').val(d.arp);
                 } else {
                     $('#edit-iface-arp').val('enabled');
+                }
+
+                // VLAN Sub-tab & Properties
+                var isVlan = (d.type && d.type.toLowerCase() === 'vlan') || !!d.vlan_id;
+                if (isVlan) {
+                    $('#li-winbox-tab-vlan').show();
+                    $('#edit-vlan-id-input').val(d.vlan_id || '-');
+                    $('#edit-vlan-parent-input').val(d.vlan_parent || '-');
+                } else {
+                    $('#li-winbox-tab-vlan').hide();
+                    if ($('#li-winbox-tab-vlan').hasClass('active')) {
+                        $('.winbox-tabs-nav a[href="#winbox-tab-general"]').tab('show');
+                    }
                 }
 
                 // Bridge Sub-tab & Member Ports
