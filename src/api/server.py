@@ -533,6 +533,7 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
     # =========================================================================
 
     def do_GET(self) -> None:
+        import subprocess
         parsed = urlparse(self.path)
         path = parsed.path
 
