@@ -224,9 +224,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $new_subnet = intval($_POST['subnet'] ?? 24);
         $comment = trim($_POST['comment'] ?? '');
 
-        // 1. Rename device if name changed and valid
+        // 1. Check if interface is a VLAN and parent or vlan_id changed
+        $req_vlan_id = isset($_POST['vlan_id']) ? intval($_POST['vlan_id']) : 0;
+        $req_vlan_parent = trim($_POST['vlan_parent'] ?? '');
+        $is_vlan_dev = (is_dir("/sys/class/net/{$ifname}") && (file_exists("/proc/net/vlan/config") || !empty(glob("/sys/class/net/{$ifname}/lower_*")) || strpos($ifname, '.') !== false));
+        
         $active_name = $ifname;
-        if (!empty($new_name) && $new_name !== $ifname && preg_match('/^[a-zA-Z0-9_.-]+$/', $new_name)) {
+        if ($is_vlan_dev && $req_vlan_id > 0 && !empty($req_vlan_parent)) {
+            // Find current vlan_id and parent
+            $curr_vlan_id = 0;
+            $curr_vlan_parent = '';
+            if (preg_match('/^([a-zA-Z0-9_-]+)\.([0-9]+)$/', $ifname, $vm)) {
+                $curr_vlan_parent = $vm[1];
+                $curr_vlan_id = (int)$vm[2];
+            }
+            $lowers = @glob("/sys/class/net/{$ifname}/lower_*");
+            if (!empty($lowers)) {
+                $curr_vlan_parent = preg_replace('/^.*\/lower_/', '', $lowers[0]);
+            }
+            
+            // If vlan_id or parent changed
+            if ($req_vlan_id !== $curr_vlan_id || $req_vlan_parent !== $curr_vlan_parent) {
+                // Determine target name
+                $target_vlan_name = "{$req_vlan_parent}.{$req_vlan_id}";
+                if (!empty($new_name) && $new_name !== $ifname && $new_name !== "{$curr_vlan_parent}.{$curr_vlan_id}") {
+                    $target_vlan_name = $new_name;
+                }
+                
+                // Get existing IP addresses to migrate
+                $old_ips = [];
+                $ip_out = shell_exec("ip -4 addr show dev " . escapeshellarg($ifname) . " 2>/dev/null") ?: '';
+                if (preg_match_all('/inet\s+([0-9.]+)\/([0-9]+)/', $ip_out, $ipm, PREG_SET_ORDER)) {
+                    foreach ($ipm as $iprow) {
+                        $old_ips[] = "{$iprow[1]}/{$iprow[2]}";
+                    }
+                }
+                
+                // Delete old VLAN interface
+                MitraNetApi::request('/vlans/delete', 'POST', ['name' => $ifname]);
+                exec("ip link delete " . escapeshellarg($ifname) . " 2>/dev/null");
+                
+                // Create new VLAN interface
+                MitraNetApi::request('/vlans/create', 'POST', [
+                    'name' => $target_vlan_name,
+                    'parent' => $req_vlan_parent,
+                    'parent_interface' => $req_vlan_parent,
+                    'vlan_id' => $req_vlan_id
+                ]);
+                exec("ip link add link " . escapeshellarg($req_vlan_parent) . " name " . escapeshellarg($target_vlan_name) . " type vlan id " . escapeshellarg($req_vlan_id) . " 2>/dev/null");
+                exec("ip link set " . escapeshellarg($target_vlan_name) . " up 2>/dev/null");
+                
+                // Re-apply preserved IPs if no new IP specified
+                if (empty($new_ip)) {
+                    foreach ($old_ips as $oip) {
+                        MitraNetApi::addInterfaceAddress($target_vlan_name, $oip);
+                    }
+                }
+                $active_name = $target_vlan_name;
+            }
+        }
+
+        // 2. Rename device if name changed and not already handled
+        if ($active_name === $ifname && !empty($new_name) && $new_name !== $ifname && preg_match('/^[a-zA-Z0-9_.-]+$/', $new_name)) {
             // Cannot rename protected management interface
             if ($ifname !== 'lo' && $ifname !== 'enp1s0') {
                 exec("ip link set dev " . escapeshellarg($ifname) . " down 2>/dev/null");
@@ -1461,14 +1520,18 @@ if (!function_exists('fmt_pkts')) {
                                 <div class="form-group">
                                     <label class="col-sm-3 control-label">VLAN ID</label>
                                     <div class="col-sm-9">
-                                        <input type="text" id="edit-vlan-id-input" class="form-control input-sm font-monospace" style="font-weight: bold; color: #2563eb;" readonly>
-                                        <span class="help-block fs-11">802.1Q IEEE VLAN Tag (1 - 4094).</span>
+                                        <input type="number" name="vlan_id" id="edit-vlan-id-input" class="form-control input-sm font-monospace" min="1" max="4094" placeholder="e.g. 10" style="font-weight: bold; color: #2563eb;">
+                                        <span class="help-block fs-11">802.1Q IEEE VLAN Tag (1 - 4094). Dapat diubah langsung.</span>
                                     </div>
                                 </div>
                                 <div class="form-group">
                                     <label class="col-sm-3 control-label">Interface (Parent)</label>
                                     <div class="col-sm-9">
-                                        <input type="text" id="edit-vlan-parent-input" class="form-control input-sm" readonly>
+                                        <select name="vlan_parent" id="edit-vlan-parent-select" class="form-control input-sm">
+                                            <?php foreach ($ifaces_raw as $p): if ($p['name'] !== 'lo' && strpos($p['name'], '.') === false && !preg_match('/^(vlan|wg)/i', $p['name'])): ?>
+                                                <option value="<?=htmlspecialchars($p['name'])?>"><?=htmlspecialchars(strtoupper($p['altname'] ?? $p['name']))?> (<?=htmlspecialchars($p['name'])?>)</option>
+                                            <?php endif; endforeach; ?>
+                                        </select>
                                         <span class="help-block fs-11">Port fisik atau induk tempat VLAN trunking ditumpangkan.</span>
                                     </div>
                                 </div>
@@ -1740,8 +1803,10 @@ window.openWinboxEditModal = function(ifname) {
                 var isVlan = (d.type && d.type.toLowerCase() === 'vlan') || !!d.vlan_id;
                 if (isVlan) {
                     $('#li-winbox-tab-vlan').show();
-                    $('#edit-vlan-id-input').val(d.vlan_id || '-');
-                    $('#edit-vlan-parent-input').val(d.vlan_parent || '-');
+                    $('#edit-vlan-id-input').val(d.vlan_id || '');
+                    if (d.vlan_parent) {
+                        $('#edit-vlan-parent-select').val(d.vlan_parent);
+                    }
                 } else {
                     $('#li-winbox-tab-vlan').hide();
                     if ($('#li-winbox-tab-vlan').hasClass('active')) {
@@ -1918,6 +1983,8 @@ window.openWinboxEditModal = function(ifname) {
         var comment = $('#edit-iface-comment').val();
         var ipaddr = $('#edit-iface-ip').val();
         var subnet = $('#edit-iface-subnet').val();
+        var vlan_id = $('#edit-vlan-id-input').val();
+        var vlan_parent = $('#edit-vlan-parent-select').val();
 
         var formData = {
             action: 'save_interface',
@@ -1929,6 +1996,8 @@ window.openWinboxEditModal = function(ifname) {
             comment: comment,
             ipaddr: ipaddr,
             subnet: subnet,
+            vlan_id: vlan_id,
+            vlan_parent: vlan_parent,
             ajax: 1
         };
 
