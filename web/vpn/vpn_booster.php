@@ -68,7 +68,7 @@ $active_mode = (isset($_GET['mode']) && strtolower($_GET['mode']) === 'server') 
                     <a href="vpn.php?tab=interface"><i class="fa-solid fa-network-wired"></i> VPN Interfaces</a>
                 </li>
                 <li>
-                    <a href="/firewall/wireguard.php"><i class="fa-solid fa-shield-halved"></i> WireGuard Peers</a>
+                    <a href="/wg/vpn_wg_peers.php"><i class="fa-solid fa-shield-halved"></i> WireGuard Peers</a>
                 </li>
                 <li>
                     <a href="/tools/speedtest.php?tab=benchmark" class="text-success"><i class="fa-solid fa-chart-line"></i> Benchmark & Speedtest</a>
