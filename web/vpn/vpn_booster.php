@@ -68,7 +68,7 @@ $active_mode = (isset($_GET['mode']) && strtolower($_GET['mode']) === 'server') 
                     <a href="vpn.php?tab=interface"><i class="fa-solid fa-network-wired"></i> VPN Interfaces</a>
                 </li>
                 <li>
-                    <a href="vpn.php?tab=secrets"><i class="fa-solid fa-user-lock"></i> Secrets</a>
+                    <a href="/firewall/wireguard.php"><i class="fa-solid fa-shield-halved"></i> WireGuard Peers</a>
                 </li>
                 <li>
                     <a href="/tools/speedtest.php?tab=benchmark" class="text-success"><i class="fa-solid fa-chart-line"></i> Benchmark & Speedtest</a>
@@ -76,21 +76,16 @@ $active_mode = (isset($_GET['mode']) && strtolower($_GET['mode']) === 'server') 
             </ul>
         </div>
 
-        <!-- SUB-TOOLBAR: DUAL ROLE SELECTOR & ACTIONS -->
+        <!-- SUB-TOOLBAR: CLIENT BOOSTER ACTIONS -->
         <div class="mitranet-toolbar">
             <div class="mitranet-toolbar-left" style="display:flex; align-items:center; gap:8px;">
-                <!-- DUAL ROLE SWITCH PILLS -->
-                <div class="btn-group btn-group-sm" role="group" style="margin-right:10px;">
-                    <button type="button" class="btn <?=($active_mode==='client'?'btn-primary active':'btn-default')?>" onclick="switchBoosterRole('client')" style="font-weight:600;">
-                        <i class="fa-solid fa-cloud-arrow-up"></i> Client Mode (Uplink Booster)
-                    </button>
-                    <button type="button" class="btn <?=($active_mode==='server'?'btn-primary active':'btn-default')?>" onclick="switchBoosterRole('server')" style="font-weight:600;">
-                        <i class="fa-solid fa-server"></i> Server Mode (Aggregation Hub)
-                    </button>
-                </div>
+                <!-- ROLE BADGE INDICATOR -->
+                <span class="badge" style="background:#1f6feb; border:1px solid #388bfd; padding:5px 10px; font-size:11px; margin-right:4px;">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Role: <strong>Client Uplink Booster</strong>
+                </span>
 
                 <!-- ROLE SPECIFIC ACTION BUTTONS -->
-                <div id="toolbar-actions-client" style="<?=$active_mode==='client'?'display:inline-flex; gap:6px;':'display:none;'?>">
+                <div id="toolbar-actions-client" style="display:inline-flex; gap:6px;">
                     <button type="button" class="mitranet-btn text-success" onclick="applyBoosterConfig()" title="Terapkan Konfigurasi Client Multi-Stream">
                         <i class="fa-solid fa-circle-check"></i> <strong>Terapkan Client Booster</strong>
                     </button>
@@ -102,17 +97,11 @@ $active_mode = (isset($_GET['mode']) && strtolower($_GET['mode']) === 'server') 
                     </button>
                 </div>
 
-                <div id="toolbar-actions-server" style="<?=$active_mode==='server'?'display:inline-flex; gap:6px;':'display:none;'?>">
-                    <button type="button" class="mitranet-btn text-success" onclick="applyServerBoosterConfig()" title="Aktifkan Aggregation Hub Server">
-                        <i class="fa-solid fa-circle-check"></i> <strong>Aktifkan Server Hub</strong>
-                    </button>
-                    <button type="button" class="mitranet-btn text-danger" onclick="stopBoosterConfig('server')" title="Hentikan Aggregation Hub Server">
-                        <i class="fa-solid fa-circle-stop"></i> Hentikan Server Hub
-                    </button>
-                    <button type="button" class="mitranet-btn text-info" onclick="showServerClientScripts()" title="Salin Skrip untuk Router Client MikroTik/Linux">
-                        <i class="fa-solid fa-file-code"></i> Skrip Client MikroTik
-                    </button>
-                </div>
+                <?php if ($server_enabled): ?>
+                    <a href="vpn.php?tab=interface" class="mitranet-btn text-warning" title="Server Hub Aktif di Sistem">
+                        <i class="fa-solid fa-server"></i> Server Hub: <strong>Aktif</strong>
+                    </a>
+                <?php endif; ?>
 
                 <a href="/tools/speedtest.php?tab=benchmark" class="mitranet-btn text-warning" title="Uji Kecepatan Agregasi">
                     <i class="fa-solid fa-bolt"></i> Uji Kecepatan
