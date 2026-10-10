@@ -1080,72 +1080,70 @@ if (!function_exists('fmt_pkts')) {
 					?>
 					<tr data-ifname="<?=htmlspecialchars($ifname)?>" onclick="selectRow(this, '<?=htmlspecialchars($ifname)?>', '<?=htmlspecialchars(addslashes($comment_val))?>')" ondblclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')" style="cursor: pointer;">
 						<!-- Flag -->
-						<td class="text-center col-flag-cell" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">
-							<?php if ($is_up && $oper_state === 'UP'): ?>
+						<td class="text-center col-flag-cell">
+							<?php if ($is_up): ?>
 								<i class="fa-solid fa-check text-success" title="Running / Link UP"></i>
-							<?php elseif ($is_up): ?>
-								<i class="fa-solid fa-circle-half-stroke text-warning" title="No Carrier"></i>
 							<?php else: ?>
 								<i class="fa-solid fa-minus text-muted" title="Disabled"></i>
 							<?php endif; ?>
 						</td>
-						<!-- Name (Clickable) -->
-						<td onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')" title="Klik untuk membuka detail <?=htmlspecialchars($altname)?>">
-							<strong class="text-primary" style="cursor: pointer;"><?=htmlspecialchars(strtoupper($altname))?></strong>
+						<!-- Name -->
+						<td>
+							<strong class="text-primary"><?=htmlspecialchars(strtoupper($altname))?></strong>
 							<span class="text-muted text-subname">(<?=htmlspecialchars($ifname)?>)</span>
 						</td>
 
 						<?php if ($current_tab === 'vlan'): ?>
 						<!-- VLAN ID -->
-						<td onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">
+						<td>
 							<span class="label label-primary font-monospace" style="font-size: 12px; padding: 2px 8px;"><?=htmlspecialchars($vlan_id_val)?></span>
 						</td>
 						<!-- Parent Interface -->
-						<td onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">
+						<td>
 							<i class="fa-solid fa-network-wired text-muted" style="margin-right: 4px;"></i>
 							<strong><?=htmlspecialchars(strtoupper($parent_dev_val))?></strong>
 							<span class="text-muted fs-11">(<?=htmlspecialchars($parent_dev_val)?>)</span>
 						</td>
 						<!-- MTU -->
-						<td onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')"><?=htmlspecialchars($mtu)?></td>
+						<td><?=htmlspecialchars($mtu)?></td>
 						<!-- Tx (Live Rate B/s) -->
-						<td class="col-tx" data-bytes="<?=$tx_bytes?>" title="Total: <?=fmt_bytes($tx_bytes)?>" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">0 B/s</td>
+						<td class="col-tx" data-bytes="<?=$tx_bytes?>" title="Total: <?=fmt_bytes($tx_bytes)?>">0 B/s</td>
 						<!-- Rx (Live Rate B/s) -->
-						<td class="col-rx" data-bytes="<?=$rx_bytes?>" title="Total: <?=fmt_bytes($rx_bytes)?>" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">0 B/s</td>
+						<td class="col-rx" data-bytes="<?=$rx_bytes?>" title="Total: <?=fmt_bytes($rx_bytes)?>">0 B/s</td>
 						<!-- Tx Packet (p/s) -->
-						<td class="col-tx-pkts" data-pkts="<?=$tx_pkts?>" title="Total: <?=fmt_pkts($tx_pkts)?> pkts" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">0</td>
+						<td class="col-tx-pkts" data-pkts="<?=$tx_pkts?>" title="Total: <?=fmt_pkts($tx_pkts)?> pkts">0</td>
 						<!-- Rx Packet (p/s) -->
-						<td class="col-rx-pkts" data-pkts="<?=$rx_pkts?>" title="Total: <?=fmt_pkts($rx_pkts)?> pkts" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">0</td>
+						<td class="col-rx-pkts" data-pkts="<?=$rx_pkts?>" title="Total: <?=fmt_pkts($rx_pkts)?> pkts">0</td>
 						<!-- Comment -->
-						<td class="text-muted" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')" title="<?=htmlspecialchars($comment_val)?>">
+						<td class="text-muted" title="<?=htmlspecialchars($comment_val)?>">
 							<?=htmlspecialchars($comment_val ?: '-')?>
 						</td>
 						<?php else: ?>
 						<!-- Type -->
-						<td onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')"><span class="label label-default"><?=htmlspecialchars($type)?></span></td>
+						<td><span class="label label-default"><?=htmlspecialchars($type)?></span></td>
 						<!-- Actual MTU -->
-						<td onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')"><?=htmlspecialchars($mtu)?></td>
+						<td><?=htmlspecialchars($mtu)?></td>
 						<!-- L2 MTU -->
-						<td onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">1500</td>
+						<td>1500</td>
 						<!-- Tx (Live Rate B/s) -->
-						<td class="col-tx" data-bytes="<?=$tx_bytes?>" title="Total: <?=fmt_bytes($tx_bytes)?>" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">0 B/s</td>
+						<td class="col-tx" data-bytes="<?=$tx_bytes?>" title="Total: <?=fmt_bytes($tx_bytes)?>">0 B/s</td>
 						<!-- Rx (Live Rate B/s) -->
-						<td class="col-rx" data-bytes="<?=$rx_bytes?>" title="Total: <?=fmt_bytes($rx_bytes)?>" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">0 B/s</td>
+						<td class="col-rx" data-bytes="<?=$rx_bytes?>" title="Total: <?=fmt_bytes($rx_bytes)?>">0 B/s</td>
 						<!-- Tx Packet (p/s) -->
-						<td class="col-tx-pkts" data-pkts="<?=$tx_pkts?>" title="Total: <?=fmt_pkts($tx_pkts)?> pkts" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">0</td>
+						<td class="col-tx-pkts" data-pkts="<?=$tx_pkts?>" title="Total: <?=fmt_pkts($tx_pkts)?> pkts">0</td>
 						<!-- Rx Packet (p/s) -->
-						<td class="col-rx-pkts" data-pkts="<?=$rx_pkts?>" title="Total: <?=fmt_pkts($rx_pkts)?> pkts" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">0</td>
+						<td class="col-rx-pkts" data-pkts="<?=$rx_pkts?>" title="Total: <?=fmt_pkts($rx_pkts)?> pkts">0</td>
 						<!-- FP Tx (FastPath Rate) -->
-						<td class="col-fp-tx text-muted" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">0 B/s</td>
+						<td class="col-fp-tx text-muted">0 B/s</td>
 						<!-- FP Rx (FastPath Rate) -->
-						<td class="col-fp-rx text-muted" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">0 B/s</td>
+						<td class="col-fp-rx text-muted">0 B/s</td>
 						<!-- FP Tx Packet (p/s) -->
-						<td class="col-fp-tx-pkts text-muted" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">0</td>
+						<td class="col-fp-tx-pkts text-muted">0</td>
 						<!-- FP Rx Packet (p/s) -->
-						<td class="col-fp-rx-pkts text-muted" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')">0</td>
+						<td class="col-fp-rx-pkts text-muted">0</td>
 						<?php endif; ?>
 						<!-- Actions / Menu Column (Hamburger context) -->
-						<td class="text-center col-menu" onclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')"></td>
+						<td class="text-center col-menu"></td>
 					</tr>
 					<?php endforeach; ?>
 				<?php endif; ?>
