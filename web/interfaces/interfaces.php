@@ -639,6 +639,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
             }
         }
+    } elseif ($action === 'save_interface_list') {
+        $list_name = strtoupper(trim($_POST['list_name'] ?? ''));
+        $members = $_POST['members'] ?? [];
+        $comment = trim($_POST['comment'] ?? '');
+        if (!empty($list_name)) {
+            $res = MitraNetApi::saveInterfaceList($list_name, (array)$members, $comment);
+            if (($res['status'] ?? 0) === 200 && ($res['data']['success'] ?? false)) {
+                $msg = "Interface List '{$list_name}' berhasil disimpan.";
+                if ($is_ajax) { echo json_encode(['success' => true, 'message' => $msg]); exit; }
+            } else {
+                $err = $res['data']['error'] ?? 'Gagal menyimpan Interface List.';
+                if ($is_ajax) { echo json_encode(['success' => false, 'error' => $err]); exit; }
+            }
+        } else {
+            $err = "Nama Interface List wajib diisi.";
+            if ($is_ajax) { echo json_encode(['success' => false, 'error' => $err]); exit; }
+        }
+    } elseif ($action === 'delete_interface_list') {
+        $list_name = strtoupper(trim($_POST['list_name'] ?? ''));
+        if (!empty($list_name)) {
+            $res = MitraNetApi::deleteInterfaceList($list_name);
+            if (($res['status'] ?? 0) === 200 && ($res['data']['success'] ?? false)) {
+                $msg = "Interface List '{$list_name}' berhasil dihapus.";
+                if ($is_ajax) { echo json_encode(['success' => true, 'message' => $msg]); exit; }
+            } else {
+                $err = $res['data']['error'] ?? 'Gagal menghapus Interface List.';
+                if ($is_ajax) { echo json_encode(['success' => false, 'error' => $err]); exit; }
+            }
+        }
     }
 }
 
@@ -652,6 +681,7 @@ $ifaces_raw = MitraNetApi::getInterfaces();
 $vlans   = MitraNetApi::getVlans();
 $bridges = MitraNetApi::getBridges();
 $bonds   = MitraNetApi::getBonds();
+$interface_lists = MitraNetApi::getInterfaceLists();
 
 // Check if a specific interface is selected for configuration
 $selected_iface = null;
@@ -997,6 +1027,82 @@ if (!function_exists('fmt_pkts')) {
 			</div>
 		</div>
 
+		<?php if ($current_tab === 'interface_list'): ?>
+		<!-- ============================================== -->
+		<!-- INTERFACE LIST DATA GRID (MikroTik Standard)   -->
+		<!-- ============================================== -->
+		<div class="mitranet-grid-container">
+			<table class="mitranet-grid" id="iface-list-grid-table">
+				<thead>
+					<tr>
+						<th class="text-center col-flag" style="width: 35px;"><i class="fa-regular fa-flag"></i></th>
+						<th class="sortable" style="width: 220px;">List Name</th>
+						<th class="sortable">Member Interfaces</th>
+						<th class="sortable" style="width: 260px;">Comment / Usage</th>
+						<th class="text-center" style="width: 90px;">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+				<?php if (empty($interface_lists)): ?>
+					<tr>
+						<td colspan="5" class="text-center text-muted" style="padding: 24px;">
+							<i class="fa-solid fa-list-check fs-18 mb-2"></i><br>
+							Belum ada Interface List yang dibuat. Klik tombol <strong>New</strong> di toolbar untuk membuat group antarmuka (misal: WAN, LAN, VPN).
+						</td>
+					</tr>
+				<?php else: ?>
+					<?php foreach ($interface_lists as $il): ?>
+					<?php
+					$il_name = htmlspecialchars($il['name'] ?? '');
+					$il_members = (array)($il['members'] ?? []);
+					$il_comment = htmlspecialchars($il['comment'] ?? '');
+					?>
+					<tr data-listname="<?=$il_name?>">
+						<td class="text-center col-flag-cell">
+							<i class="fa-solid fa-layer-group text-primary" title="Interface Group List"></i>
+						</td>
+						<td>
+							<strong class="text-primary fs-13"><i class="fa-solid fa-folder-tree mr-1"></i> <?=$il_name?></strong>
+						</td>
+						<td>
+							<div style="display: flex; flex-wrap: wrap; gap: 5px; align-items: center;">
+							<?php if (empty($il_members)): ?>
+								<span class="text-muted fs-11"><em>(Kosong - Belum ada interface anggota)</em></span>
+							<?php else: ?>
+								<?php foreach ($il_members as $m): ?>
+									<span class="label label-info font-monospace" style="display: inline-flex; align-items: center; padding: 4px 8px; font-size: 11px;">
+										<i class="fa-solid fa-network-wired mr-1" style="font-size: 10px;"></i> <?=htmlspecialchars($m)?>
+									</span>
+								<?php endforeach; ?>
+							<?php endif; ?>
+							</div>
+						</td>
+						<td class="text-muted">
+							<?=$il_comment ? $il_comment : '<span class="text-muted">-</span>'?>
+						</td>
+						<td class="text-center">
+							<button type="button" class="btn btn-xs btn-danger" onclick="deleteInterfaceListClick('<?=$il_name?>')" title="Hapus Interface List">
+								<i class="fa-solid fa-trash-can"></i>
+							</button>
+						</td>
+					</tr>
+					<?php endforeach; ?>
+				<?php endif; ?>
+				</tbody>
+			</table>
+		</div>
+
+		<!-- STATUSBAR INTERFACE LIST -->
+		<div class="mitranet-statusbar">
+			<div>
+				<span><strong>Total:</strong> <?=count($interface_lists)?> interface lists</span>
+			</div>
+			<div>
+				<span class="text-muted">MikroTik RouterOS Interface Grouping Standard</span>
+			</div>
+		</div>
+
+		<?php else: ?>
 		<!-- DATA GRID TABLE (MATCHING SCREENSHOT COLUMNS) -->
 		<div class="mitranet-grid-container">
 			<table class="mitranet-grid" id="iface-grid-table">
@@ -1160,7 +1266,7 @@ if (!function_exists('fmt_pkts')) {
 				<span class="text-muted">MitraNet Interface Subsystem</span>
 			</div>
 		</div>
-
+		<?php endif; ?>
 	</div>
 </div>
 
@@ -1748,6 +1854,49 @@ if (!function_exists('fmt_pkts')) {
 </div>
 
 <!-- ============================================== -->
+<!-- MODAL: ADD NEW INTERFACE LIST                  -->
+<!-- ============================================== -->
+<div id="modal-new-interface-list" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-md">
+        <form method="post" action="interfaces.php?tab=interface_list">
+            <input type="hidden" name="action" value="save_interface_list">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">
+                        <i class="fa-solid fa-layer-group text-primary"></i> <?=gettext("New Interface List (Group)")?>
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label><span class="text-danger">*</span> <?=gettext("List Name:")?></label>
+                        <input type="text" name="list_name" class="form-control" placeholder="e.g. WAN, LAN, VPN_GROUP, ISOLATED" required style="text-transform: uppercase;">
+                        <span class="help-block">Nama group / list antarmuka (huruf kapital, contoh: WAN, LAN).</span>
+                    </div>
+                    <div class="form-group">
+                        <label><?=gettext("Member Interfaces:")?></label>
+                        <select name="members[]" class="form-control selectpicker" multiple data-live-search="true" title="Pilih interface anggota...">
+                            <?php foreach ($ifaces_raw as $p): if ($p['name'] !== 'lo'): ?>
+                                <option value="<?=htmlspecialchars($p['name'])?>"><?=htmlspecialchars(strtoupper($p['altname'] ?? $p['name']))?> (<?=htmlspecialchars($p['name'])?>)</option>
+                            <?php endif; endforeach; ?>
+                        </select>
+                        <span class="help-block">Daftar interface yang dimasukkan ke dalam group list ini.</span>
+                    </div>
+                    <div class="form-group">
+                        <label><?=gettext("Comment / Description:")?></label>
+                        <input type="text" name="comment" class="form-control" placeholder="Deskripsi pemakaian list (misal: Uplink ISP & Failover)">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-plus icon-embed-btn"></i> Create List</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================== -->
 <!-- MODAL: ADD NEW GENERIC INTERFACE (All tab)     -->
 <!-- ============================================== -->
 <div id="modal-new-interface" class="modal fade" role="dialog">
@@ -2049,12 +2198,28 @@ if (!function_exists('fmt_pkts')) {
                                 </table>
                             </div>
 
-                            <!-- TAB 5: TRAFFIC -->
+                            <!-- TAB 5: TRAFFIC (WINBOX REAL-TIME GRAPH + COUNTERS) -->
                             <div role="tabpanel" class="tab-pane" id="winbox-tab-traffic">
+                                <!-- Real-time Canvas Area Chart -->
+                                <div style="background: #1e293b; border: 1px solid #334155; border-radius: 4px; padding: 10px; margin-bottom: 12px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 11px;">
+                                        <div style="display: flex; gap: 12px;">
+                                            <span style="color: #10b981; font-weight: 600;"><i class="fa-solid fa-square" style="color: #10b981;"></i> Tx: <span id="winbox-graph-tx-cur">0 B/s</span></span>
+                                            <span style="color: #0ea5e9; font-weight: 600;"><i class="fa-solid fa-square" style="color: #0ea5e9;"></i> Rx: <span id="winbox-graph-rx-cur">0 B/s</span></span>
+                                        </div>
+                                        <div style="color: #94a3b8; font-size: 10px;">
+                                            <span>Peak: <span id="winbox-graph-peak" style="color: #f8fafc;">0 B/s</span></span> | <span>Window: 60s</span>
+                                        </div>
+                                    </div>
+                                    <div style="position: relative; width: 100%; height: 140px; background: #0f172a; border-radius: 3px; overflow: hidden;">
+                                        <canvas id="winbox-traffic-canvas" width="550" height="140" style="width: 100%; height: 100%; display: block;"></canvas>
+                                    </div>
+                                </div>
+
                                 <table class="table table-condensed table-bordered winbox-status-table">
                                     <tbody>
-                                        <tr><th style="width:35%">Tx Live Rate</th><td id="winbox-traffic-txrate">0 B/s</td></tr>
-                                        <tr><th>Rx Live Rate</th><td id="winbox-traffic-rxrate">0 B/s</td></tr>
+                                        <tr><th style="width:35%">Tx Live Rate</th><td id="winbox-traffic-txrate" class="font-weight-bold" style="color: #10b981;">0 B/s</td></tr>
+                                        <tr><th>Rx Live Rate</th><td id="winbox-traffic-rxrate" class="font-weight-bold" style="color: #0ea5e9;">0 B/s</td></tr>
                                         <tr><th>Tx Packets (p/s)</th><td id="winbox-traffic-txpps">0</td></tr>
                                         <tr><th>Rx Packets (p/s)</th><td id="winbox-traffic-rxpps">0</td></tr>
                                         <tr><th>Total Tx Bytes</th><td id="winbox-traffic-txbytes">0 B</td></tr>
@@ -2112,7 +2277,9 @@ var selectedIface = null;
 
 window.openNewModal = function() {
     var currentTab = <?=json_encode($current_tab)?>;
-    if (currentTab === 'eoip') {
+    if (currentTab === 'interface_list') {
+        $('#modal-new-interface-list').modal('show');
+    } else if (currentTab === 'eoip') {
         $('#modal-new-eoip').modal('show');
     } else if (currentTab === 'gre') {
         $('#modal-new-gre').modal('show');
@@ -2143,7 +2310,9 @@ window.proceedToTypeModal = function() {
     var selectedType = $('#new-iface-type').val();
     $('#modal-new-interface').modal('hide');
     setTimeout(function() {
-        if (selectedType === 'eoip') {
+        if (selectedType === 'interface_list') {
+            $('#modal-new-interface-list').modal('show');
+        } else if (selectedType === 'eoip') {
             $('#modal-new-eoip').modal('show');
         } else if (selectedType === 'gre') {
             $('#modal-new-gre').modal('show');
@@ -2167,6 +2336,20 @@ window.proceedToTypeModal = function() {
             $('#modal-new-vrf').modal('show');
         }
     }, 350);
+};
+
+window.deleteInterfaceListClick = function(listName) {
+    if (!listName) return;
+    MitraNet.confirmDelete({
+        title: 'Hapus Interface List?',
+        name: listName,
+        warning: 'Grup antarmuka ini akan dihapus dari konfigurasi sistem.',
+        url: 'interfaces.php?tab=interface_list',
+        data: { action: 'delete_interface_list', list_name: listName },
+        onSuccess: function() {
+            location.reload();
+        }
+    });
 };
 
 window.selectRow = function(tr, ifname, comment) {
@@ -2583,6 +2766,125 @@ window.openWinboxEditModal = function(ifname) {
         return Math.round(pkts).toString();
     }
 
+    // ========================================================
+    // WINBOX REALTIME TRAFFIC GRAPH (CANVAS AREA CHART)
+    // ========================================================
+    var activeModalIface = null;
+    var trafficHistory = {}; // ifname -> { tx: [60], rx: [60] }
+    var MAX_GRAPH_POINTS = 60;
+
+    function initTrafficHistory(ifname) {
+        if (!trafficHistory[ifname]) {
+            trafficHistory[ifname] = {
+                tx: new Array(MAX_GRAPH_POINTS).fill(0),
+                rx: new Array(MAX_GRAPH_POINTS).fill(0)
+            };
+        }
+    }
+
+    function pushTrafficPoint(ifname, txRate, rxRate) {
+        initTrafficHistory(ifname);
+        trafficHistory[ifname].tx.push(txRate);
+        trafficHistory[ifname].rx.push(rxRate);
+        if (trafficHistory[ifname].tx.length > MAX_GRAPH_POINTS) trafficHistory[ifname].tx.shift();
+        if (trafficHistory[ifname].rx.length > MAX_GRAPH_POINTS) trafficHistory[ifname].rx.shift();
+    }
+
+    function renderWinboxTrafficGraph(ifname) {
+        var canvas = document.getElementById('winbox-traffic-canvas');
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        initTrafficHistory(ifname);
+        var txData = trafficHistory[ifname].tx;
+        var rxData = trafficHistory[ifname].rx;
+
+        var curTx = txData[txData.length - 1] || 0;
+        var curRx = rxData[rxData.length - 1] || 0;
+        $('#winbox-graph-tx-cur').text(formatRate(curTx));
+        $('#winbox-graph-rx-cur').text(formatRate(curRx));
+
+        var maxVal = 1024; // baseline min scale 1 KB/s
+        for (var i = 0; i < txData.length; i++) {
+            if (txData[i] > maxVal) maxVal = txData[i];
+            if (rxData[i] > maxVal) maxVal = rxData[i];
+        }
+        maxVal = maxVal * 1.15; // 15% headroom
+        $('#winbox-graph-peak').text(formatRate(maxVal / 1.15));
+
+        var w = canvas.width;
+        var h = canvas.height;
+
+        // Clear canvas
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, w, h);
+
+        // Draw horizontal grid lines
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 1;
+        for (var gl = 1; gl <= 3; gl++) {
+            var gy = (h / 4) * gl;
+            ctx.beginPath();
+            ctx.moveTo(0, gy);
+            ctx.lineTo(w, gy);
+            ctx.stroke();
+        }
+
+        var step = w / (MAX_GRAPH_POINTS - 1);
+
+        // Helper to draw filled area curve
+        function drawArea(data, strokeColor, fillColor) {
+            ctx.beginPath();
+            ctx.moveTo(0, h);
+            for (var idx = 0; idx < data.length; idx++) {
+                var x = idx * step;
+                var y = h - ((data[idx] / maxVal) * (h - 10));
+                ctx.lineTo(x, y);
+            }
+            ctx.lineTo(w, h);
+            ctx.closePath();
+            ctx.fillStyle = fillColor;
+            ctx.fill();
+
+            // Stroke line
+            ctx.beginPath();
+            for (var idx2 = 0; idx2 < data.length; idx2++) {
+                var x2 = idx2 * step;
+                var y2 = h - ((data[idx2] / maxVal) * (h - 10));
+                if (idx2 === 0) ctx.moveTo(x2, y2);
+                else ctx.lineTo(x2, y2);
+            }
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = 1.8;
+            ctx.stroke();
+        }
+
+        // Draw Rx Area (Cyan/Blue layer)
+        drawArea(rxData, '#0ea5e9', 'rgba(14, 165, 233, 0.25)');
+        // Draw Tx Area (Emerald/Green layer)
+        drawArea(txData, '#10b981', 'rgba(16, 185, 129, 0.35)');
+    }
+
+    // Modal open event hook
+    $('#modal-edit-interface').on('shown.bs.modal', function() {
+        activeModalIface = $('#edit-iface-name-hidden').val();
+        if (activeModalIface) {
+            renderWinboxTrafficGraph(activeModalIface);
+        }
+    }).on('hidden.bs.modal', function() {
+        activeModalIface = null;
+    });
+
+    $('a[href="#winbox-tab-traffic"]').on('shown.bs.tab', function() {
+        if (activeModalIface) {
+            renderWinboxTrafficGraph(activeModalIface);
+        }
+    });
+
+    // --------------------------------------------------------
+    // Realtime Polling Loop
+    // --------------------------------------------------------
     function pollTrafficStats() {
         $.ajax({
             url: 'interfaces.php?ajax=traffic',
@@ -2615,6 +2917,9 @@ window.openWinboxEditModal = function(ifname) {
                         var rxRate = dRxBytes / dt;
                         var txPps  = Math.round(dTxPkts / dt);
                         var rxPps  = Math.round(dRxPkts / dt);
+
+                        // Push to Rolling Traffic History for Graph
+                        pushTrafficPoint(ifname, txRate, rxRate);
 
                         // 1. Primary Columns: Tx, Rx, Tx Packet (p/s), Rx Packet (p/s)
                         var $tx = $row.find('.col-tx');
@@ -2662,12 +2967,24 @@ window.openWinboxEditModal = function(ifname) {
                         $fpRx.text(formatRate(rxRate));
                         $fpTxPkts.text(txPps.toString());
                         $fpRxPkts.text(rxPps.toString());
+
+                        // 3. Update Modal Traffic Graph & Counters if this interface is currently open in modal
+                        if (activeModalIface === ifname) {
+                            $('#winbox-traffic-txrate').text(formatRate(txRate));
+                            $('#winbox-traffic-rxrate').text(formatRate(rxRate));
+                            $('#winbox-traffic-txpps').text(txPps.toString());
+                            $('#winbox-traffic-rxpps').text(rxPps.toString());
+                            $('#winbox-traffic-txbytes').text(formatBytes(curr.tx_bytes));
+                            $('#winbox-traffic-rxbytes').text(formatBytes(curr.rx_bytes));
+                            renderWinboxTrafficGraph(ifname);
+                        }
                     } else if (!prev) {
                         // Keep current totals in title attribute on initial fetch
                         $row.find('.col-tx').attr('title', 'Total Sent: ' + formatBytes(curr.tx_bytes));
                         $row.find('.col-rx').attr('title', 'Total Received: ' + formatBytes(curr.rx_bytes));
                         $row.find('.col-tx-pkts').attr('title', 'Total Packets: ' + formatPkts(curr.tx_packets));
                         $row.find('.col-rx-pkts').attr('title', 'Total Packets: ' + formatPkts(curr.rx_packets));
+                        initTrafficHistory(ifname);
                     }
 
                     // Save snapshot

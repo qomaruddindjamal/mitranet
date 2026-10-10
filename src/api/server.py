@@ -806,6 +806,29 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 self._send_json(500, {"error": f"VRF query failed: {e}"})
             return
 
+        # 7b. Interface Lists (MikroTik Standard Interface Grouping)
+        if path == "/api/v1/interface-lists":
+            conf_file = "/etc/mitranet/network/interface_lists.json"
+            if not os.path.exists(conf_file):
+                # Default baseline: WAN and LAN lists
+                os.makedirs("/etc/mitranet/network", exist_ok=True)
+                default_lists = {
+                    "WAN": {"name": "WAN", "members": ["enp1s0"], "comment": "Internet / Uplink interfaces"},
+                    "LAN": {"name": "LAN", "members": ["veth0", "mac0", "vxlan100"], "comment": "Local network / Bridge members"}
+                }
+                try:
+                    with open(conf_file, "w") as cf:
+                        json.dump(default_lists, cf, indent=2)
+                except Exception:
+                    pass
+            try:
+                with open(conf_file, "r") as cf:
+                    lists_db = json.load(cf)
+                self._send_json(200, list(lists_db.values()))
+            except Exception as e:
+                self._send_json(500, {"error": f"Gagal membaca interface lists: {e}"})
+            return
+
         # 8. Firewall
         if path == "/api/v1/firewall":
             try:
@@ -2289,6 +2312,52 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 self._send_json(200, {"success": True, "message": f"VRF '{name}' deleted"})
             except Exception as e:
                 self._send_json(400, {"error": str(e)})
+            return
+
+        # 7b. Interface Lists Mutations
+        if path == "/api/v1/interface-lists/save":
+            name = payload.get("name", "").strip().upper()
+            members = payload.get("members", [])
+            comment = payload.get("comment", "").strip()
+            if not name:
+                self._send_json(400, {"error": "Nama Interface List wajib diisi."})
+                return
+            conf_file = "/etc/mitranet/network/interface_lists.json"
+            os.makedirs("/etc/mitranet/network", exist_ok=True)
+            try:
+                lists_db = {}
+                if os.path.exists(conf_file):
+                    with open(conf_file, "r") as cf:
+                        lists_db = json.load(cf)
+                lists_db[name] = {
+                    "name": name,
+                    "members": list(dict.fromkeys(members)),
+                    "comment": comment
+                }
+                with open(conf_file, "w") as cf:
+                    json.dump(lists_db, cf, indent=2)
+                self._send_json(200, {"success": True, "message": f"Interface List '{name}' berhasil disimpan.", "data": lists_db[name]})
+            except Exception as e:
+                self._send_json(500, {"error": f"Gagal menyimpan Interface List: {e}"})
+            return
+
+        if path == "/api/v1/interface-lists/delete":
+            name = payload.get("name", "").strip().upper()
+            if not name:
+                self._send_json(400, {"error": "Nama Interface List wajib diisi."})
+                return
+            conf_file = "/etc/mitranet/network/interface_lists.json"
+            try:
+                if os.path.exists(conf_file):
+                    with open(conf_file, "r") as cf:
+                        lists_db = json.load(cf)
+                    if name in lists_db:
+                        del lists_db[name]
+                        with open(conf_file, "w") as cf:
+                            json.dump(lists_db, cf, indent=2)
+                self._send_json(200, {"success": True, "message": f"Interface List '{name}' berhasil dihapus."})
+            except Exception as e:
+                self._send_json(500, {"error": f"Gagal menghapus Interface List: {e}"})
             return
 
         # 8. Firewall Mutations

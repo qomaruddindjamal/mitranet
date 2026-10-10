@@ -174,6 +174,23 @@ class MitraNetApi {
         return $res['status'] === 200 ? $res['data'] : [];
     }
 
+    public static function getInterfaceLists() {
+        $res = self::request('/interface-lists');
+        return $res['status'] === 200 ? $res['data'] : [];
+    }
+
+    public static function saveInterfaceList($name, $members = [], $comment = '') {
+        return self::request('/interface-lists/save', 'POST', [
+            'name' => $name,
+            'members' => $members,
+            'comment' => $comment
+        ]);
+    }
+
+    public static function deleteInterfaceList($name) {
+        return self::request('/interface-lists/delete', 'POST', ['name' => $name]);
+    }
+
     public static function getArpTable() {
         $res = self::request('/arp');
         return $res['status'] === 200 ? $res['data'] : [];
