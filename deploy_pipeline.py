@@ -48,6 +48,7 @@ def sync_to_minipc():
     sftp_sync_dir(os.path.join(PROJECT_ROOT, "core"), "/mitranet/core")
     sftp_sync_dir(os.path.join(PROJECT_ROOT, "src"), "/mitranet/src")
     sftp_sync_dir(os.path.join(PROJECT_ROOT, "ai"), "/mitranet/ai")
+    sftp_sync_dir(os.path.join(PROJECT_ROOT, "tests"), "/mitranet/tests")
 
     # Sync python package to /usr/lib/python3/dist-packages/mitranet
     sftp_sync_dir(os.path.join(PROJECT_ROOT, "core"), "/usr/lib/python3/dist-packages/mitranet/core")
