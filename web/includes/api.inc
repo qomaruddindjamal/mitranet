@@ -349,6 +349,25 @@ class MitraNetApi {
         return self::request('/tools/speedtest/clear-history', 'POST', []);
     }
 
+    public static function getBenchmarkHistory() {
+        $res = self::request('/tools/benchmark/history');
+        return $res['status'] === 200 ? ($res['data']['history'] ?? []) : [];
+    }
+
+    public static function runBenchmark($mode = 'cdn', $interface = '', $sizeMb = 25, $targetHost = '103.93.162.168', $targetPort = 5201) {
+        return self::request('/tools/benchmark/run', 'POST', [
+            'mode' => $mode,
+            'interface' => $interface,
+            'size_mb' => $sizeMb,
+            'target_host' => $targetHost,
+            'target_port' => $targetPort
+        ], 35);
+    }
+
+    public static function clearBenchmarkHistory() {
+        return self::request('/tools/benchmark/clear-history', 'POST', []);
+    }
+
     public static function execCommand($command, $cwd = '/root') {
         return self::request('/diagnostics/command', 'POST', ['command' => $command, 'cwd' => $cwd]);
     }

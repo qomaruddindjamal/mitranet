@@ -52,6 +52,12 @@ $pgtitle = array("Tools", "Speedtest");
 $selected_menu = "tools";
 require_once(__DIR__ . '/../includes/head.inc');
 
+$tab_array = array(
+    array("Internet Speedtest", true, "/tools/speedtest.php"),
+    array("Bandwidth & Hardware Benchmark", false, "/tools/benchmark.php")
+);
+display_top_tabs($tab_array, false, 'pills');
+
 $ifaces = MitraNetApi::getInterfaces();
 ?>
 

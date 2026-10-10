@@ -158,7 +158,8 @@ $diagnostics_menu = array(
 );
 
 $tools_menu = array(
-    array("Speedtest", "/tools/speedtest.php")
+    array("Speedtest", "/tools/speedtest.php"),
+    array("Benchmark", "/tools/benchmark.php")
 );
 
 

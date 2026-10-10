@@ -1312,6 +1312,18 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"success": True, "history": history})
             return
 
+        if path == "/api/v1/tools/benchmark/history":
+            hist_file = "/etc/mitranet/secrets/benchmark_history.json"
+            history = []
+            if os.path.exists(hist_file):
+                try:
+                    with open(hist_file, "r") as f:
+                        history = json.load(f)
+                except Exception:
+                    history = []
+            self._send_json(200, {"success": True, "history": history})
+            return
+
         # 18b. Virtual Ethernet (vEthernet / Host-Guest Subnets) - Live Inspection
         if path == "/api/v1/interfaces/vethernet":
             import subprocess
@@ -2527,6 +2539,174 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 except Exception:
                     pass
             self._send_json(200, {"success": True, "message": "History cleared"})
+            return
+
+        # 18d. Bandwidth & Hardware Benchmark Runner
+        if path == "/api/v1/tools/benchmark/run":
+            import subprocess, time, json
+            mode = str(payload.get("mode") or "cdn").strip().lower() # cdn, iperf3, pps
+            iface = str(payload.get("interface") or "").strip()
+            size_mb = int(payload.get("size_mb") or 25)
+            streams = int(payload.get("streams") or 4)
+            iperf_host = str(payload.get("target_host") or "103.93.162.168").strip()
+            iperf_port = int(payload.get("target_port") or 5201)
+
+            if iface and not re.match(r'^[a-zA-Z0-9_\-]+$', iface):
+                self._send_json(400, {"error": "Invalid interface name"})
+                return
+
+            entry = {}
+            try:
+                # Mode 1: HTTP Multi-Stream High-Throughput Pipe Stress
+                if mode == "cdn":
+                    cf_url = f"https://speed.cloudflare.com/__down?bytes={min(max(size_mb, 5), 100) * 1000000}"
+                    curl_cmd = [
+                        "curl", "-s", "-o", "/dev/null", "-w",
+                        "%{time_total}:%{speed_download}:%{size_download}",
+                        "--max-time", "25", cf_url
+                    ]
+                    if iface:
+                        curl_cmd.extend(["--interface", iface])
+
+                    t0 = time.time()
+                    proc = subprocess.run(curl_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=28)
+                    t_elapsed = round(time.time() - t0, 2)
+                    dl_mbps = 0.0
+                    bytes_down = 0
+
+                    if proc.returncode == 0 and ":" in proc.stdout:
+                        parts = proc.stdout.strip().split(":")
+                        if len(parts) >= 2:
+                            bytes_sec = float(parts[1])
+                            dl_mbps = round((bytes_sec * 8) / 1000000.0, 2)
+                            bytes_down = int(float(parts[2])) if len(parts) >= 3 else 0
+
+                    # Ping / Latency test to verify jitter during stress
+                    ping_val = 0.0
+                    p_cmd = ["ping", "-c", "3", "-i", "0.2", "8.8.8.8"]
+                    if iface: p_cmd.extend(["-I", iface])
+                    p_res = subprocess.run(p_cmd, stdout=subprocess.PIPE, text=True, timeout=4)
+                    if p_res.returncode == 0:
+                        for l in p_res.stdout.splitlines():
+                            if "rtt min/avg/max" in l:
+                                ping_val = round(float(l.split("=")[1].split("/")[1]), 1)
+
+                    entry = {
+                        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                        "mode": "CDN Edge Multi-Stream Stress",
+                        "interface": iface or "Default Route",
+                        "throughput": f"{dl_mbps} Mbps",
+                        "throughput_val": dl_mbps,
+                        "latency": f"{ping_val} ms",
+                        "transferred": f"{round(bytes_down / (1024*1024), 2)} MB",
+                        "duration": f"{t_elapsed} s",
+                        "target": "Cloudflare Global Edge High-Capacity",
+                        "status": "PASS" if dl_mbps > 0 else "FAIL"
+                    }
+
+                # Mode 2: iPerf3 Point-to-Point Benchmark
+                elif mode == "iperf3":
+                    # Check if iperf3 binary exists
+                    has_iperf3 = shutil.which("iperf3") is not None
+                    if not has_iperf3:
+                        # Fallback to python socket TCP benchmark or prompt install
+                        entry = {
+                            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                            "mode": "iPerf3 Client Point-to-Point",
+                            "interface": iface or "Default Route",
+                            "throughput": "N/A (iperf3 not installed)",
+                            "latency": "N/A",
+                            "target": f"{iperf_host}:{iperf_port}",
+                            "status": "ERROR",
+                            "notes": "Package 'iperf3' can be installed on Debian system."
+                        }
+                    else:
+                        ip_cmd = ["iperf3", "-c", iperf_host, "-p", str(iperf_port), "-t", "5", "-J"]
+                        if iface:
+                            # Bind to interface IP if found
+                            ip_cmd.extend(["-B", iface])
+                        ip_proc = subprocess.run(ip_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=12)
+                        if ip_proc.returncode == 0:
+                            data = json.loads(ip_proc.stdout)
+                            bps = data.get("end", {}).get("sum_received", {}).get("bits_per_second", 0)
+                            mbps = round(bps / 1000000.0, 2)
+                            entry = {
+                                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                                "mode": "iPerf3 Point-to-Point",
+                                "interface": iface or "Default Route",
+                                "throughput": f"{mbps} Mbps",
+                                "throughput_val": mbps,
+                                "latency": f"{round(data.get('end', {}).get('sum_sent', {}).get('sender_tcp_congestion', 0), 1)} ms",
+                                "transferred": f"{round(data.get('end', {}).get('sum_received', {}).get('bytes', 0) / (1024*1024), 2)} MB",
+                                "duration": "5 s",
+                                "target": f"{iperf_host}:{iperf_port}",
+                                "status": "PASS"
+                            }
+                        else:
+                            entry = {
+                                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                                "mode": "iPerf3 Point-to-Point",
+                                "interface": iface or "Default Route",
+                                "throughput": "Connection Refused / Timeout",
+                                "latency": "Timeout",
+                                "target": f"{iperf_host}:{iperf_port}",
+                                "status": "TIMEOUT",
+                                "notes": ip_proc.stderr.strip()[:100]
+                            }
+
+                # Mode 3: Hardware CPU & Packet-Per-Second (PPS) Mangle Stress
+                elif mode == "pps":
+                    t0 = time.time()
+                    # Execute fast packet generation burst to loopback/gateway to measure packet processing rate
+                    ping_stress = ["ping", "-f", "-c", "2000", "-s", "64", "127.0.0.1"]
+                    proc = subprocess.run(ping_stress, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=6)
+                    t_elapsed = round(time.time() - t0, 3)
+                    pps_val = round(2000 / t_elapsed) if t_elapsed > 0 else 50000
+
+                    entry = {
+                        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                        "mode": "Packet-Per-Second (PPS) Kernel Benchmark",
+                        "interface": "Kernel Mangle Loopback",
+                        "throughput": f"{pps_val:,} PPS",
+                        "latency": f"{round(t_elapsed * 1000 / 2000, 3)} ms/pkt",
+                        "transferred": "2,000 Packets",
+                        "duration": f"{t_elapsed} s",
+                        "target": "Debian Linux Netfilter Engine",
+                        "status": "PASS"
+                    }
+
+                # Save history
+                if entry:
+                    b_file = "/etc/mitranet/secrets/benchmark_history.json"
+                    b_hist = []
+                    if os.path.exists(b_file):
+                        try:
+                            with open(b_file, "r") as bf:
+                                b_hist = json.load(bf)
+                        except Exception:
+                            b_hist = []
+                    b_hist.insert(0, entry)
+                    b_hist = b_hist[:25]
+                    os.makedirs(os.path.dirname(b_file), exist_ok=True)
+                    with open(b_file, "w") as bf:
+                        json.dump(b_hist, bf, indent=2)
+
+                    self._send_json(200, {"success": True, "data": entry})
+                else:
+                    self._send_json(500, {"success": False, "error": "Benchmark execution produced no data"})
+            except Exception as ex:
+                logger.exception("Benchmark test failed: %s", ex)
+                self._send_json(500, {"success": False, "error": f"Benchmark error: {ex}"})
+            return
+
+        if path == "/api/v1/tools/benchmark/clear-history":
+            b_file = "/etc/mitranet/secrets/benchmark_history.json"
+            if os.path.exists(b_file):
+                try:
+                    os.remove(b_file)
+                except Exception:
+                    pass
+            self._send_json(200, {"success": True, "message": "Benchmark history cleared"})
             return
 
         # 15. Shell Command & Interactive Terminal Execution
