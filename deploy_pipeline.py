@@ -42,11 +42,12 @@ def sync_to_minipc():
                 except Exception as e:
                     print(f"  Fail to put {rp}: {e}")
 
-    log("2/4 Syncing web/, core/, src/ to Mini PC...")
+    log("2/4 Syncing web/, core/, src/, ai/ to Mini PC...")
     sftp_sync_dir(os.path.join(PROJECT_ROOT, "web"), "/mitranet/web")
     sftp_sync_dir(os.path.join(PROJECT_ROOT, "web"), "/usr/share/mitranet/web")
     sftp_sync_dir(os.path.join(PROJECT_ROOT, "core"), "/mitranet/core")
     sftp_sync_dir(os.path.join(PROJECT_ROOT, "src"), "/mitranet/src")
+    sftp_sync_dir(os.path.join(PROJECT_ROOT, "ai"), "/mitranet/ai")
 
     # Sync python package to /usr/lib/python3/dist-packages/mitranet
     sftp_sync_dir(os.path.join(PROJECT_ROOT, "core"), "/usr/lib/python3/dist-packages/mitranet/core")

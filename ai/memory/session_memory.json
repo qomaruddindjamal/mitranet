@@ -1,0 +1,29 @@
+{
+  "session_id": "default",
+  "history": [
+    {
+      "timestamp": "2026-10-10T14:17:14.485342",
+      "role": "user",
+      "message": "bagaimana arsitektur cloud speed booster",
+      "meta": {}
+    },
+    {
+      "timestamp": "2026-10-10T14:17:14.486896",
+      "role": "assistant",
+      "message": "=== JAWABAN BERDASARKAN BASIS PENGETAHUAN MITRANET ===\n\n[1. Arsitektur Cloud Speed Booster - Sumber: ai/knowledge/booster_wireguard.md (Relevansi: 10.556)]:\n## 1. Arsitektur Cloud Speed Booster\nCloud Speed Booster dirancang untuk mengatasi pembatasan bandwidth per-koneksi/per-flow (misalnya 5 Mbps) yang diterapkan oleh ISP pada port tertentu.\n\n[Cloud Speed Booster & WireGuard Tunneling Knowledge - Sumber: ai/knowledge/booster_wireguard.md (Relevansi: 7.541)]:\n# Cloud Speed Booster & WireGuard Tunneling Knowledge\n",
+      "meta": {}
+    },
+    {
+      "timestamp": "2026-10-10T14:17:19.770488",
+      "role": "user",
+      "message": "bagaimana langkah deployment pipeline",
+      "meta": {}
+    },
+    {
+      "timestamp": "2026-10-10T14:17:19.771492",
+      "role": "assistant",
+      "message": "=== JAWABAN BERDASARKAN BASIS PENGETAHUAN MITRANET ===\n\n[1. Golden Rules Deployment - Sumber: ai/knowledge/sop_deployment.md (Relevansi: 7.132)]:\n## 1. Golden Rules Deployment\nSetiap pembaruan kode sistem wajib mengikuti pipeline 3-langkah otomatis (`python c:\\mitranet\\deploy_pipeline.py \"<commit_message>\"`):\n1. **Sinkronisasi ke Mini PC (`10.10.66.228`)**:\n   - Berkas disinkronkan ke `/mitranet/web`, `/usr/share/mitranet/web`, `/mitranet/core`, `/mitranet/src`, dan `/usr/lib/python3/dist-packages/mitranet/`.\n   - Layanan `mitranet-webui.service` di-restart dan diperiksa kestabilannya.\n2. **Rebuild File ISO**:\n   - Menjalankan `build/build_iso.py` (`xorriso`).\n   - Memastikan file ISO kanonikal di `iso/MitraNet-Rinjani-1.0.2-amd64.iso` berhasil terbuat tanpa error (exit code 0).\n3. **Commit & Push GitHub**:\n   - Stage perubahan (`git add .`), commit dengan pesan deskriptif, dan push ke branch `main` repositori `https://github.com/qomaruddindjamal/mitranet.git`.\n\n[MitraNet Recovery, Safety, and Deployment SOP - Sumber: ai/knowledge/sop_deployment.md (Relevansi: 2.609)]:\n# MitraNet Recovery, Safety, and Deployment SOP\n",
+      "meta": {}
+    }
+  ]
+}

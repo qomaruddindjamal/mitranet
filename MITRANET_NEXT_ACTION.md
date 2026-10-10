@@ -1,16 +1,15 @@
 # LANGKAH BERIKUTNYA MITRANET
 
-LANGKAH BERIKUTNYA: Verifikasi operasional lanjutan dan monitoring tunnel WireGuard di WebUI & Mini PC
-ALASAN: Seluruh 10 tahap implementasi WireGuard (perbaikan PostUp/PostDown, WebUI Policy Routing, NAT Masquerade, Telemetri dinamis, Stale recovery, Peer MikroTik ROS v7 & QR code, pengujian regresi, deploy Mini PC, git push, dan ISO rebuild) telah tuntas diselesaikan dan diverifikasi.
+LANGKAH BERIKUTNYA: Pengujian lapangan end-to-end penembusan bandwidth ISP shaper bersama VPS live pengguna
+ALASAN: Tahap 1 Cloud Speed Booster (WebUI, REST API, Stream Generator, Script RouterOS & Linux VPS, ECMP Multipath, DSCP AF41, TCP MSS Clamping, dan BBR) telah berhasil diimplementasikan, diuji, disinkronkan ke Mini PC, di-push ke GitHub, dan dibuat ISO-nya. Langkah selanjutnya adalah memasukkan IP VPS dan Public Key pada WebUI untuk menghubungkan stream nyata.
 FILE ATAU SERVICE TERKAIT:
+- `web/vpn/vpn_booster.php`
 - `src/api/server.py`
-- `web/wg/status_wireguard.php`
-- `web/wg/vpn_wg_peers.php`
-- `web/wg/vpn_wg_tunnels_edit.php`
+- `web/tools/speedtest.php`
 - `iso/MitraNet-Rinjani-1.0.2-amd64.iso`
 PRASYARAT:
-- Semua unit test & regression test lulus (STATUS: PASS)
-- Mini PC service `mitranet-webui` dan `wg0` aktif normal (STATUS: PASS)
-- Git commit `9a64b1f` ter-push ke GitHub `origin/main` (STATUS: PASS)
-- ISO 1,017,139,200 bytes ter-generate dengan exit code 0 (STATUS: PASS)
-STATUS: TASK_COMPLETED
+- Unit & regression tests lulus (STATUS: PASS - 4/4 tests OK)
+- Mini PC API & WebUI booster endpoint siap (STATUS: PASS)
+- Git commit `239eb5b` ter-push ke GitHub (STATUS: PASS)
+- ISO 1,017,139,200 bytes ter-generate dengan sukses (STATUS: PASS)
+STATUS: STAGE_1_COMPLETED

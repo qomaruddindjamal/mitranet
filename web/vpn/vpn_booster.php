@@ -241,7 +241,7 @@ $current_cc = $booster['current_congestion_control'] ?? 'cubic';
                                         <th>Stream</th>
                                         <th>Interface</th>
                                         <th>Alamat IP</th>
-                                        <th>Port Port</th>
+                                        <th>Port</th>
                                         <th>Status Link</th>
                                         <th>Latency RTT</th>
                                         <th>RX Terukur</th>

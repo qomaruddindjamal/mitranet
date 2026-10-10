@@ -23,7 +23,9 @@ Ketika memulai conversation baru atau memulihkan pekerjaan setelah konteks terpo
 - **WebUI Port**: HTTP `8000` (`/mitranet/web`, dialihkan oleh PHP built-in server)
 - **Management API Port**: HTTP `8443` (Python REST API `/mitranet/src/api/server.py`)
 - **Aturan Operasional Wajib**: Ikuti batasan dan standar di `AGENTS.md`.
-- **Status WireGuard Terkini**:
-  - Tunnel `wg0` aktif dan terhubung ke MikroTik VPS `103.93.162.168:13231`.
-  - Routing dari interface `veth0` dan Outbound NAT (Masquerade) terkonfigurasi dan didukung penuh oleh WebUI dan Backend API.
-  - Script build ISO (`build/build_iso.py`) dan deploy pipeline (`deploy_pipeline.py`) terintegrasi penuh.
+- **Status Cloud Speed Booster (Tahap 1)**:
+  - Halaman WebUI WinBox `web/vpn/vpn_booster.php` aktif dan terdaftar di menu VPN.
+  - REST API `/api/v1/vpn/booster/status`, `/apply`, dan `/stop` aktif di `src/api/server.py`.
+  - Generator skrip RouterOS-compatible dan Linux VPS server aktif dengan proteksi keamanan kunci privat.
+  - Multi-stream WireGuard (2/3/4 streams), ECMP multipath routing, DSCP AF41 marking, TCP MSS clamping 1360, dan TCP BBR/FQ terintegrasi.
+  - Pipeline deploy otomatis (`deploy_pipeline.py`) sukses men-deploy ke Mini PC, me-rebuild ISO, dan me-push ke GitHub.

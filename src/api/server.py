@@ -1430,11 +1430,31 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 tx_str = "0 B"
                 lat_str = "--"
 
-                # Check interface state from /sys/class/net/<dev>/operstate
+                # Check interface state from /sys/class/net/<dev>/operstate and wireguard handshake
                 sys_net = f"/sys/class/net/{dev_name}"
+                latest_hs = 0
                 if os.path.exists(sys_net):
-                    is_up = True
-                    any_active = True
+                    try:
+                        # Wireguard interface exists
+                        hs_res = subprocess.run(["wg", "show", dev_name, "latest-handshakes"], stdout=subprocess.PIPE, text=True, stderr=subprocess.DEVNULL)
+                        if hs_res.returncode == 0 and hs_res.stdout.strip():
+                            for h_line in hs_res.stdout.splitlines():
+                                parts = h_line.strip().split()
+                                if len(parts) >= 2:
+                                    try:
+                                        ts = int(parts[1])
+                                        if ts > latest_hs:
+                                            latest_hs = ts
+                                    except Exception:
+                                        pass
+                        # Consider UP if interface exists and has handshake within last 180s, or ping response
+                        now_ts = int(time.time())
+                        if latest_hs > 0 and (now_ts - latest_hs) < 180:
+                            is_up = True
+                            any_active = True
+                    except Exception:
+                        pass
+
                     try:
                         with open(f"{sys_net}/statistics/rx_bytes", "r") as f_rx:
                             rx_b = int(f_rx.read().strip())
@@ -1454,11 +1474,13 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                     except Exception:
                         pass
 
-                # If up, measure ping to gateway peer 10.250.{i}.1
-                if is_up:
+                # If interface exists, measure ping to gateway peer 10.250.{i}.1
+                if os.path.exists(sys_net):
                     p_cmd = ["ping", "-c", "2", "-W", "1", f"10.250.{i}.1"]
                     p_res = subprocess.run(p_cmd, stdout=subprocess.PIPE, text=True)
                     if p_res.returncode == 0:
+                        is_up = True
+                        any_active = True
                         for l in p_res.stdout.splitlines():
                             if "rtt min/avg/max" in l or "round-trip min/avg/max" in l:
                                 try:
@@ -1477,7 +1499,8 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                     "tx_bytes": tx_b,
                     "rx_formatted": rx_str,
                     "tx_formatted": tx_str,
-                    "latency": lat_str
+                    "latency": lat_str,
+                    "latest_handshake": latest_hs
                 })
 
             cfg["streams"] = streams
@@ -4351,6 +4374,15 @@ MTU = 1420
             # Setup ECMP multipath route if peer key is set
             if peer_pubkey:
                 try:
+                    # Backup original default route if not already saved
+                    gw_b_file = "/etc/mitranet/secrets/original_gateway.json"
+                    if not os.path.exists(gw_b_file):
+                        r_show = subprocess.run(["ip", "route", "show", "default"], stdout=subprocess.PIPE, text=True)
+                        orig_line = r_show.stdout.strip()
+                        if orig_line and "wgboost" not in orig_line:
+                            with open(gw_b_file, "w") as gwf:
+                                json.dump({"orig_default": orig_line}, gwf)
+
                     ecmp_parts = []
                     for i in range(1, stream_count + 1):
                         ecmp_parts.extend(["nexthop", "dev", f"wgboost{i}", "weight", "1"])
@@ -4500,6 +4532,18 @@ MTU = 1420
                     subprocess.run(["iptables", "-t", "mangle", "-D", "POSTROUTING", "-o", dev_name, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", "1360"], stderr=subprocess.DEVNULL)
                 except Exception:
                     pass
+
+            # Restore original default gateway route if saved
+            try:
+                gw_b_file = "/etc/mitranet/secrets/original_gateway.json"
+                if os.path.exists(gw_b_file):
+                    with open(gw_b_file, "r") as gwf:
+                        saved_gw = json.load(gwf).get("orig_default", "")
+                    if saved_gw:
+                        # e.g., "default via 10.10.66.254 dev enp1s0 metric 1002"
+                        subprocess.run(f"ip route replace {saved_gw}", shell=True)
+            except Exception as r_err:
+                logger.warning("Failed restoring default route: %s", r_err)
 
             # Update configuration to disabled
             cfg["enabled"] = False

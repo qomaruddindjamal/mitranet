@@ -5,7 +5,7 @@ Version: 1.0.2-rinjani
 Licensed under Apache License 2.0.
 
 Provides autonomous indexing, architecture analysis, Linux command planning,
-safe testing, crash-recovery, and handover packaging for MitraNet Rinjani.
+safe testing, crash-recovery, and contextual handover for MitraNet Rinjani.
 """
 
 import os
@@ -19,6 +19,26 @@ import re
 
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent
 
+# Add ai directory to sys.path for local module imports
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+
+try:
+    from retriever import ContextualRetriever
+    from memory_manager import MemoryManager
+    from tools.diagnostics import (
+        check_system_services,
+        get_booster_telemetry,
+        get_wireguard_handshakes,
+        get_default_routes
+    )
+except ImportError:
+    ContextualRetriever = None
+    MemoryManager = None
+    check_system_services = None
+    get_booster_telemetry = None
+    get_wireguard_handshakes = None
+    get_default_routes = None
+
 class MitraNetAssistant:
     def __init__(self, root_dir: pathlib.Path):
         self.root = root_dir
@@ -28,6 +48,10 @@ class MitraNetAssistant:
         self.knowledge_dir = self.root / "ai" / "knowledge"
         self.memory_dir = self.root / "ai" / "memory"
         self.logs_dir = self.root / "ai" / "logs"
+        self.logs_dir.mkdir(parents=True, exist_ok=True)
+
+        self.retriever = ContextualRetriever(self.knowledge_dir) if ContextualRetriever else None
+        self.memory = MemoryManager(self.memory_dir) if MemoryManager else None
 
     def log(self, msg: str, level: str = "INFO"):
         ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -95,7 +119,12 @@ class MitraNetAssistant:
         env = os.environ.copy()
         env["PYTHONPATH"] = str(self.root.parent)
         
-        tests = ["tests/test_core.py", "tests/test_webui_api.py"]
+        tests = [
+            "tests/test_core.py",
+            "tests/test_webui_api.py",
+            "tests/test_booster_regression.py",
+            "ai/tests/test_ai_assistant.py"
+        ]
         all_passed = True
         for t in tests:
             t_path = self.root / t
@@ -111,7 +140,56 @@ class MitraNetAssistant:
                 all_passed = False
         return all_passed
 
-    # 4. Mode: HANDOVER (Generate Handover Package)
+    # 4. Mode: DIAGNOSE (Live Read-Only System & Booster Telemetry)
+    def run_diagnose(self):
+        self.log("Executing DIAGNOSE mode (Read-Only Diagnostics)...")
+        print("\n=== MITRANET REAL-TIME DIAGNOSTIC REPORT ===")
+        
+        # 1. Cloud Speed Booster telemetry
+        if get_booster_telemetry:
+            b_data = get_booster_telemetry()
+            print("\n[Cloud Speed Booster Telemetry]:")
+            if b_data.get("success"):
+                d = b_data.get("data", {})
+                active = d.get("active", False)
+                print(f"  Status Agregasi : {'AKTIF (MULTI-PATH)' if active else 'NON-AKTIF'}")
+                print(f"  Jumlah Streams  : {d.get('stream_count', 0)}")
+                print(f"  Algoritma       : {d.get('balancer_mode', 'ecmp').upper()}")
+                print(f"  Bypass DSCP/MSS : {d.get('dscp_mode', 'NONE')} / {d.get('clamp_mss', 1360)}")
+                print(f"  Total Throughput: RX {d.get('total_rx_formatted', '0 B')} | TX {d.get('total_tx_formatted', '0 B')}")
+                for s in d.get("streams", []):
+                    print(f"    - Stream #{s.get('id')}: {s.get('interface')} ({s.get('ip')}:{s.get('port')}) | Link: {s.get('status')} | RTT: {s.get('latency')} | RX: {s.get('rx_formatted')} | TX: {s.get('tx_formatted')}")
+            else:
+                print(f"  API Booster tidak dapat dijangkau: {b_data.get('error')}")
+
+        # 2. WireGuard Handshakes
+        if get_wireguard_handshakes:
+            wg_data = get_wireguard_handshakes()
+            print("\n[WireGuard Live Handshakes]:")
+            if wg_data.get("success"):
+                hs_list = wg_data.get("handshakes", [])
+                if hs_list:
+                    for h in hs_list:
+                        print(f"  Interface: {h.get('interface')} | Peer: {h.get('peer_pubkey')} | Handshake Epoch: {h.get('latest_handshake_epoch')}")
+                else:
+                    print("  Tidak ada handshake WireGuard aktif terdeteksi.")
+            else:
+                print(f"  Status wg: {wg_data.get('error')}")
+
+        # 3. Default Routes
+        if get_default_routes:
+            r_data = get_default_routes()
+            print("\n[Active Default Route]:")
+            if r_data.get("success"):
+                for r in r_data.get("default_route", []):
+                    print(f"  {r}")
+            else:
+                print(f"  Error: {r_data.get('error')}")
+
+        print("\n============================================")
+        return True
+
+    # 5. Mode: HANDOVER (Generate Handover Package)
     def run_handover(self):
         self.log("Executing HANDOVER mode...")
         state_summary = "No state file found."
@@ -138,34 +216,41 @@ Instruksi: Baca MITRANET_RESUME.md, verifikasi kondisi aktual, dan lanjutkan tug
         print("==============================")
         return prompt
 
-    # 5. Mode: ASK (Q&A and Architecture Knowledge)
+    # 6. Mode: ASK (Contextual Retrieval + Verified Knowledge Q&A)
     def run_ask(self, query: str):
         self.log(f"Executing ASK mode: '{query}'")
-        query_l = query.lower()
-        if "arsitektur" in query_l or "architecture" in query_l:
-            ans = """[MitraNet Architecture]:
-1. Frontend: PHP 8.4 WebUI (WinBox theme, jQuery, Bootstrap, SweetAlert2) served via PHP built-in server on 127.0.0.1:8000.
-2. Management API: Python REST API (src/api/server.py) listening on port 8443, proxying frontend requests and managing core networking.
-3. Core Engine: Subsystem networking Debian di core/ (discovery, routing, vlan, bridge, bonding, VRF, and nftables firewall).
-4. Appliance Target: Mini PC x86_64 Debian GNU/Linux 13 (Trixie)."""
-        elif "deploy" in query_l or "golden rule" in query_l:
-            ans = """[MitraNet Golden Rules / Deployment Pipeline]:
-Setiap perubahan kode wajib melalui 3 tahapan (deploy_pipeline.py):
-1. Sync ke Mini PC (10.10.66.228) -> /usr/share/mitranet/web dan /mitranet/
-2. Rebuild ISO -> build/build_iso.py (xorriso)
-3. Git commit & push -> https://github.com/qomaruddindjamal/mitranet.git"""
-        elif "dns" in query_l:
-            ans = """[MitraNet DNS Server]:
-Dikelola oleh dnsmasq (port 53) dengan isolasi modul service restart atomic di /etc/dnsmasq.conf."""
+        
+        # 1. Search knowledge base via contextual retriever
+        retrieved_chunks = []
+        if self.retriever:
+            retrieved_chunks = self.retriever.search(query, top_k=2)
+
+        # 2. Record turn to session memory
+        if self.memory:
+            self.memory.record_turn("user", query)
+
+        # 3. Synthesize answer with source attribution
+        if retrieved_chunks:
+            ans_parts = [f"=== JAWABAN BERDASARKAN BASIS PENGETAHUAN MITRANET ===\n"]
+            for ch in retrieved_chunks:
+                ans_parts.append(f"[{ch['title']} - Sumber: ai/knowledge/{ch['file']} (Relevansi: {ch['score']})]:")
+                ans_parts.append(ch['text'])
+                ans_parts.append("")
+            ans = "\n".join(ans_parts)
         else:
-            ans = f"Assistant query: '{query}'. Silakan gunakan parameter --mode ANALYZE, TEST, atau RECOVER untuk aksi kontekstual."
+            # Fallback jika query tidak memiliki data cukup di knowledge base
+            ans = f"[Informasi Belum Tersedia di Basis Pengetahuan]:\nTidak ditemukan dokumen yang cukup relevan untuk query '{query}'. AI MitraNet menolak mengarang data faktual tanpa sumber terverifikasi."
+
+        if self.memory:
+            self.memory.record_turn("assistant", ans)
+
         print(f"\n{ans}\n")
         return ans
 
 
 def main():
     parser = argparse.ArgumentParser(description="MitraNet Internal AI Assistant")
-    parser.add_argument("--mode", choices=["ASK", "ANALYZE", "PLAN", "TEST", "REPAIR", "RECOVER", "HANDOVER", "DEPLOY"], default="RECOVER", help="Operational mode")
+    parser.add_argument("--mode", choices=["ASK", "ANALYZE", "PLAN", "TEST", "DIAGNOSE", "REPAIR", "RECOVER", "HANDOVER", "DEPLOY"], default="RECOVER", help="Operational mode")
     parser.add_argument("--query", type=str, default="", help="Query text for ASK mode")
 
     args = parser.parse_args()
@@ -178,6 +263,8 @@ def main():
     elif args.mode == "TEST":
         success = assistant.run_test()
         sys.exit(0 if success else 1)
+    elif args.mode == "DIAGNOSE":
+        assistant.run_diagnose()
     elif args.mode == "HANDOVER":
         assistant.run_handover()
     elif args.mode == "ASK":
