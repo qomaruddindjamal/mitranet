@@ -53,6 +53,12 @@ $dscp_mode = $booster['dscp_mode'] ?? 'AF41';
 $clamp_mss = intval($booster['clamp_mss'] ?? 1360);
 $enable_bbr = isset($booster['enable_bbr']) ? (bool)$booster['enable_bbr'] : true;
 $peer_pubkey = $booster['peer_public_key'] ?? '';
+$peer_pubkeys = $booster['peer_public_keys'] ?? [];
+if (!empty($peer_pubkeys) && is_array($peer_pubkeys)) {
+    $peer_pubkey_display = implode("\n", $peer_pubkeys);
+} else {
+    $peer_pubkey_display = $peer_pubkey;
+}
 $streams = $booster['streams'] ?? [];
 $scripts = $booster['scripts'] ?? [];
 $ros_script = $scripts['routeros'] ?? '';
@@ -286,8 +292,8 @@ $active_mode = (isset($_GET['mode']) && strtolower($_GET['mode']) === 'server') 
 
                                         <div class="form-group">
                                             <label style="color:#d1d5db; font-size:12px;">Public Key Server VPS (Peer Public Key)</label>
-                                            <input type="text" class="form-control input-sm font-monospace booster-input-client" id="booster-peer-key" value="<?=htmlspecialchars($peer_pubkey)?>" placeholder="Masukkan Public Key dari VPS (kosongkan jika sedang generate)" <?=$enabled ? 'readonly style="background-color:#21262d; color:#8b949e; cursor:not-allowed;"' : ''?>>
-                                            <small class="text-muted" style="font-size:11px;">Public Key server VPS tujuan untuk handshake WireGuard.</small>
+                                            <textarea rows="2" class="form-control input-sm font-monospace booster-input-client" id="booster-peer-key" placeholder="Masukkan Public Key VPS (1 per baris jika per-stream berbeda)" <?=$enabled ? 'readonly style="background-color:#21262d; color:#8b949e; cursor:not-allowed;"' : ''?>><?=htmlspecialchars($peer_pubkey_display)?></textarea>
+                                            <small class="text-muted" style="font-size:11px;">Public Key server VPS tujuan handshake WireGuard (1 baris per stream jika port berbeda interface di RouterOS).</small>
                                         </div>
                                     </fieldset>
 
@@ -737,6 +743,9 @@ function applyBoosterConfig() {
         return;
     }
 
+    var rawPeerKeys = $('#booster-peer-key').val().trim();
+    var peerKeyList = rawPeerKeys.split(/[\r\n,]+/).map(function(s){ return s.trim(); }).filter(Boolean);
+
     var payload = {
         role: 'client',
         vps_host: vpsHost,
@@ -746,7 +755,8 @@ function applyBoosterConfig() {
         dscp_mode: $('#booster-dscp').val(),
         clamp_mss: parseInt($('#booster-mss').val()),
         enable_bbr: $('#booster-bbr').is(':checked'),
-        peer_public_key: $('#booster-peer-key').val().trim()
+        peer_public_key: rawPeerKeys,
+        peer_public_keys: peerKeyList
     };
 
     Swal.fire({

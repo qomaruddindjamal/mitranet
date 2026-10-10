@@ -4590,6 +4590,11 @@ PostDown = iptables -t nat -D POSTROUTING -s 10.250.{i}.0/30 -j MASQUERADE; ipta
             clamp_mss = int(payload.get("clamp_mss", 1360))
             clamp_mss = min(max(clamp_mss, 1200), 1500)
             peer_pubkey = str(payload.get("peer_public_key", "")).strip()
+            peer_pubkeys_list = payload.get("peer_public_keys") or []
+            if isinstance(peer_pubkeys_list, str):
+                peer_pubkeys_list = [k.strip() for k in re.split(r'[\n,]+', peer_pubkeys_list) if k.strip()]
+            if not peer_pubkeys_list and peer_pubkey:
+                peer_pubkeys_list = [k.strip() for k in re.split(r'[\n,]+', peer_pubkey) if k.strip()]
 
             # Validation
             if not vps_host:
@@ -4637,12 +4642,19 @@ PostDown = iptables -t nat -D POSTROUTING -s 10.250.{i}.0/30 -j MASQUERADE; ipta
                 s_priv = stream_keys[str(i)]["privkey"]
                 s_pub = stream_keys[str(i)]["pubkey"]
 
+                # Determine peer key for this specific stream
+                stream_peer_key = ""
+                if i - 1 < len(peer_pubkeys_list):
+                    stream_peer_key = peer_pubkeys_list[i - 1]
+                elif peer_pubkey:
+                    stream_peer_key = peer_pubkey
+
                 conf_path = f"/etc/wireguard/{dev_name}.conf"
                 peer_block = ""
-                if peer_pubkey:
+                if stream_peer_key:
                     peer_block = f"""
 [Peer]
-PublicKey = {peer_pubkey}
+PublicKey = {stream_peer_key}
 Endpoint = {vps_host}:{dev_port}
 AllowedIPs = 0.0.0.0/0
 PersistentKeepalive = 10
@@ -4664,7 +4676,7 @@ MTU = 1420
 
                 # Tear down stale dev if already exists
                 subprocess.run(["ip", "link", "del", dev_name], stderr=subprocess.DEVNULL)
-                if peer_pubkey:
+                if stream_peer_key:
                     subprocess.run(["wg-quick", "up", dev_name], stderr=subprocess.DEVNULL)
 
                 created_streams.append({
@@ -4813,6 +4825,7 @@ MTU = 1420
                 "clamp_mss": clamp_mss,
                 "enable_bbr": enable_bbr,
                 "peer_public_key": peer_pubkey,
+                "peer_public_keys": peer_pubkeys_list,
                 "stream_keys": stream_keys,
                 "created_streams": created_streams,
                 "scripts": {
