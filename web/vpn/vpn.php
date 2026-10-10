@@ -230,6 +230,9 @@ function saveVpnConfig($configFile, $config) {
 }
 
 $vpnConfig = loadVpnConfig($configFile);
+$boosterStatus = MitraNetApi::getBoosterStatus();
+$boosterServerEnabled = !empty($boosterStatus['server_enabled']);
+
 $current_tab = isset($_GET['tab']) ? strtolower(trim(strip_tags($_GET['tab']))) : 'interface';
 $valid_tabs = ['interface', 'pppoe_servers', 'ovpn_servers', 'secrets', 'profiles', 'active', 'l2tp_ethernet', 'l2tp_secrets'];
 if (!in_array($current_tab, $valid_tabs)) {
@@ -665,6 +668,9 @@ $interfaces = $vpnConfig['interfaces'] ?? [];
                     <button type="button" class="mitranet-btn <?=!empty($vpnConfig['ovpn_server']['enabled']) ? 'mitranet-btn-active' : ''?>" onclick="openServerModal('ovpn')" title="Konfigurasi OpenVPN Server">
                         <i class="fa-solid fa-globe text-primary"></i> <strong>OpenVPN Server</strong>
                     </button>
+                    <button type="button" class="mitranet-btn <?=$boosterServerEnabled ? 'mitranet-btn-active' : ''?>" onclick="openServerModal('booster')" title="Konfigurasi Cloud Speed Booster Aggregation Server (Hub)">
+                        <i class="fa-solid fa-bolt text-warning"></i> <strong>Booster Server</strong>
+                    </button>
 
                     <span style="display:inline-block; width: 1px; height: 16px; background: #cbd5e1; margin: 0 4px;"></span>
 
@@ -695,6 +701,9 @@ $interfaces = $vpnConfig['interfaces'] ?? [];
                 <?php elseif ($current_tab === 'ovpn_servers'): ?>
                     <button type="button" class="mitranet-btn <?=!empty($vpnConfig['ovpn_server']['enabled']) ? 'mitranet-btn-active' : ''?>" onclick="openServerModal('ovpn')" title="Konfigurasi OpenVPN Server Global">
                         <i class="fa-solid fa-globe text-primary"></i> <strong>OpenVPN Server</strong>
+                    </button>
+                    <button type="button" class="mitranet-btn <?=$boosterServerEnabled ? 'mitranet-btn-active' : ''?>" onclick="openServerModal('booster')" title="Konfigurasi Cloud Speed Booster Aggregation Server (Hub)">
+                        <i class="fa-solid fa-bolt text-warning"></i> <strong>Booster Server</strong>
                     </button>
 
                 <?php elseif ($current_tab === 'secrets'): ?>
@@ -1598,6 +1607,141 @@ $interfaces = $vpnConfig['interfaces'] ?? [];
 </div>
 
 <!-- ============================================================== -->
+<!-- WINBOX MODAL: CLOUD SPEED BOOSTER SERVER SETUP                 -->
+<!-- ============================================================== -->
+<div id="modal-server-booster" class="modal fade" role="dialog" tabindex="-1">
+    <div class="modal-dialog modal-md winbox-modal-dialog" style="max-width: 580px;">
+        <form id="form-server-booster-modal" class="form-horizontal">
+            <div class="modal-content winbox-window-popup">
+                <div class="winbox-popup-header">
+                    <div class="winbox-popup-title">
+                        <i class="fa-solid fa-bolt text-warning"></i> Cloud Speed Booster Server (Aggregation Hub)
+                    </div>
+                    <div class="winbox-popup-controls">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                </div>
+                <div class="modal-body winbox-popup-body" style="padding: 15px 20px;">
+                    <div class="alert alert-info" style="padding: 8px 12px; margin-bottom: 12px; font-size: 11px; background: #132238; border: 1px solid #1f3a60; color: #79c0ff;">
+                        <i class="fa-solid fa-circle-info"></i> Mode default Cloud Speed Booster adalah <strong>Client</strong>. Aktifkan server ini jika router ini berfungsi sebagai <strong>Aggregation Hub / VPS Gateway</strong> untuk router cabang/client.
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">Server Status</label>
+                        <div class="col-sm-8">
+                            <?php if ($boosterServerEnabled): ?>
+                                <span class="label label-success" style="font-size: 11px;"><i class="fa-solid fa-circle-check"></i> AKTIF (Hub Running)</span>
+                            <?php else: ?>
+                                <span class="label label-default" style="font-size: 11px;"><i class="fa-solid fa-circle-pause"></i> NONAKTIF (Client Only Mode)</span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- SERVER PUBLIC KEY BOX -->
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">Server Public Key</label>
+                        <div class="col-sm-8">
+                            <div class="input-group">
+                                <input type="text" id="modal-srv-public-key" class="form-control input-sm font-monospace" value="<?=htmlspecialchars($boosterStatus['server_public_key'] ?? '')?>" readonly style="background:#0d1117; color:#58a6ff; font-weight:bold;">
+                                <span class="input-group-btn">
+                                    <button type="button" class="btn btn-sm btn-default" onclick="copyBoosterModalKey()" title="Salin Public Key Server">
+                                        <i class="fa-solid fa-copy"></i>
+                                    </button>
+                                </span>
+                            </div>
+                            <span class="help-block" style="font-size: 10px; margin-bottom: 0;">Salin key ini ke sisi Client Booster / MikroTik cabang.</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">Listener Streams</label>
+                        <div class="col-sm-8">
+                            <?php $currStreamCount = intval($boosterStatus['server_stream_count'] ?? $boosterStatus['stream_count'] ?? 2); ?>
+                            <select id="modal-srv-stream-count" class="form-control input-sm" onchange="onModalBoosterStreamsChange()">
+                                <option value="1" <?=$currStreamCount===1?'selected':''?>>1 Port Stream (51831)</option>
+                                <option value="2" <?=$currStreamCount===2?'selected':''?>>2 Parallel Ports (51831–51832)</option>
+                                <option value="3" <?=$currStreamCount===3?'selected':''?>>3 Parallel Ports (51831–51833)</option>
+                                <option value="4" <?=$currStreamCount===4?'selected':''?>>4 Parallel Ports (51831–51834)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">Port Awal (UDP)</label>
+                        <div class="col-sm-8">
+                            <input type="number" id="modal-srv-port-start" class="form-control input-sm font-monospace" value="<?=intval($boosterStatus['server_listen_port_start'] ?? 51831)?>" min="1024" max="65500">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">Subnet Hub Pool</label>
+                        <div class="col-sm-8">
+                            <input type="text" id="modal-srv-subnet" class="form-control input-sm font-monospace" value="<?=htmlspecialchars($boosterStatus['server_subnet'] ?? '10.250.0.0/16')?>" placeholder="10.250.0.0/16">
+                            <span class="help-block" style="font-size: 10px; margin-bottom: 0;">Format CIDR pool untuk point-to-point tunnel client.</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-sm-4 control-label">TCP BBR Server</label>
+                        <div class="col-sm-8">
+                            <label style="font-weight: normal; margin-top: 5px;">
+                                <input type="checkbox" id="modal-srv-enable-bbr" checked>
+                                Aktifkan Akselerasi BBR + FQ Kernel
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- CLIENT PEERS PUBLIC KEYS REGISTRATION -->
+                    <div style="border-top: 1px solid #30363d; padding-top: 10px; margin-top: 10px;">
+                        <label style="font-size: 11px; text-transform: uppercase; color: #e3b341; margin-bottom: 6px; display: block;">
+                            <i class="fa-solid fa-users"></i> Registrasi Public Key Client:
+                        </label>
+                        <?php 
+                        $serverPeersList = $boosterStatus['server_peers'] ?? [];
+                        for ($i = 1; $i <= 4; $i++): 
+                            $cPub = '';
+                            foreach ($serverPeersList as $sp) {
+                                if (intval($sp['stream_id'] ?? 0) === $i) {
+                                    $cPub = $sp['client_pubkey'] ?? '';
+                                    break;
+                                }
+                            }
+                        ?>
+                            <div class="form-group modal-booster-peer-row" id="modal-booster-peer-<?=$i?>" style="margin-bottom: 8px; <?=$i > $currStreamCount ? 'display:none;' : ''?>">
+                                <label class="col-sm-4 control-label font-monospace" style="font-size: 11px;">Client Key #<?=$i?></label>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control input-sm font-monospace modal-srv-peer-key" data-stream="<?=$i?>" id="modal-srv-client-pubkey-<?=$i?>" value="<?=htmlspecialchars($cPub)?>" placeholder="Public Key Client Stream #<?=$i?>">
+                                </div>
+                            </div>
+                        <?php endfor; ?>
+                    </div>
+                </div>
+                <div class="winbox-popup-footer">
+                    <div class="winbox-footer-buttons" style="display:flex; justify-content:space-between; width:100%;">
+                        <div>
+                            <?php if ($boosterServerEnabled): ?>
+                                <button type="button" class="btn btn-sm btn-danger" onclick="stopBoosterServerModal()">
+                                    <i class="fa-solid fa-stop"></i> Hentikan Server
+                                </button>
+                            <?php endif; ?>
+                            <a href="vpn_booster.php?mode=server" class="btn btn-sm btn-default" title="Buka Dasbor Lengkap Booster Hub">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Dasbor Penuh
+                            </a>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Tutup</button>
+                            <button type="button" class="btn btn-sm btn-success" onclick="applyBoosterServerModal()">
+                                <i class="fa-solid fa-circle-check"></i> Simpan & Jalankan Server
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================================== -->
 <!-- WINBOX MODAL: PPPoE SERVER SETUP                               -->
 <!-- ============================================================== -->
 <div id="modal-server-pppoe" class="modal fade" role="dialog" tabindex="-1">
@@ -2027,6 +2171,133 @@ function submitServerForm(type, closeModal) {
         },
         error: function() {
             MitraNet.toast('error', 'Error communicating with server');
+        }
+    });
+}
+
+// Handler khusus untuk Modal Booster Server
+function onModalBoosterStreamsChange() {
+    var count = parseInt($('#modal-srv-stream-count').val()) || 1;
+    for (var i = 1; i <= 4; i++) {
+        if (i <= count) {
+            $('#modal-booster-peer-' + i).show();
+        } else {
+            $('#modal-booster-peer-' + i).hide();
+        }
+    }
+}
+
+function copyBoosterModalKey() {
+    var key = $('#modal-srv-public-key').val();
+    if (!key) {
+        MitraNet.toast('warning', 'Public key server belum digenerate.');
+        return;
+    }
+    navigator.clipboard.writeText(key).then(function() {
+        MitraNet.toast('success', 'Public Key Server berhasil disalin ke clipboard!');
+    }).catch(function() {
+        $('#modal-srv-public-key').select();
+        document.execCommand('copy');
+        MitraNet.toast('success', 'Public Key Server disalin!');
+    });
+}
+
+function applyBoosterServerModal() {
+    var portStart = parseInt($('#modal-srv-port-start').val()) || 51831;
+    var streamCount = parseInt($('#modal-srv-stream-count').val()) || 2;
+    var subnet = $('#modal-srv-subnet').val().trim() || '10.250.0.0/16';
+    var enableBbr = $('#modal-srv-enable-bbr').is(':checked');
+
+    var serverPeers = [];
+    for (var i = 1; i <= streamCount; i++) {
+        var key = $('#modal-srv-client-pubkey-' + i).val().trim();
+        serverPeers.push({
+            stream_id: i,
+            name: 'Client-Stream-' + i,
+            client_pubkey: key
+        });
+    }
+
+    var payload = {
+        role: 'server',
+        server_listen_port_start: portStart,
+        stream_count: streamCount,
+        server_subnet: subnet,
+        enable_bbr: enableBbr,
+        server_peers: serverPeers
+    };
+
+    Swal.fire({
+        title: 'Aktifkan Aggregation Hub Server?',
+        text: 'MitraNet akan membuka ' + streamCount + ' port UDP listener (' + portStart + '–' + (portStart + streamCount - 1) + ') dan mengaktifkan IP Forwarding & NAT.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#27ae60',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, Jalankan Server',
+        cancelButtonText: 'Batal'
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            Swal.showLoading();
+            $.ajax({
+                url: '/api/v1/vpn/booster/apply',
+                type: 'POST',
+                data: JSON.stringify(payload),
+                contentType: 'application/json',
+                success: function(resp) {
+                    Swal.close();
+                    if (resp.success) {
+                        MitraNet.toast('success', resp.message || 'Server Hub Booster berhasil diaktifkan.');
+                        $('#modal-server-booster').modal('hide');
+                        setTimeout(function() { location.reload(); }, 900);
+                    } else {
+                        MitraNet.toast('error', resp.error || 'Gagal mengaktifkan Server Hub.');
+                    }
+                },
+                error: function(xhr) {
+                    Swal.close();
+                    var errMsg = (xhr.responseJSON && xhr.responseJSON.error) ? xhr.responseJSON.error : 'Terjadi kesalahan sistem.';
+                    MitraNet.toast('error', errMsg);
+                }
+            });
+        }
+    });
+}
+
+function stopBoosterServerModal() {
+    Swal.fire({
+        title: 'Hentikan Booster Server?',
+        text: 'Seluruh listener port server hub akan ditutup dan router kembali ke Client Only mode.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Ya, Hentikan',
+        cancelButtonText: 'Batal'
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            Swal.showLoading();
+            $.ajax({
+                url: '/api/v1/vpn/booster/stop',
+                type: 'POST',
+                data: JSON.stringify({ role: 'server' }),
+                contentType: 'application/json',
+                success: function(resp) {
+                    Swal.close();
+                    if (resp.success) {
+                        MitraNet.toast('success', resp.message || 'Booster Server berhasil dihentikan.');
+                        $('#modal-server-booster').modal('hide');
+                        setTimeout(function() { location.reload(); }, 900);
+                    } else {
+                        MitraNet.toast('error', resp.error || 'Gagal menghentikan server.');
+                    }
+                },
+                error: function(xhr) {
+                    Swal.close();
+                    var errMsg = (xhr.responseJSON && xhr.responseJSON.error) ? xhr.responseJSON.error : 'Terjadi kesalahan sistem.';
+                    MitraNet.toast('error', errMsg);
+                }
+            });
         }
     });
 }

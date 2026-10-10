@@ -47,8 +47,8 @@ $server_scripts = $booster['server_scripts'] ?? [];
 $srv_ros_script = $server_scripts['routeros'] ?? '';
 $srv_linux_script = $server_scripts['linux'] ?? '';
 
-// Active mode tab (from query param or last saved role)
-$active_mode = isset($_GET['mode']) ? strtolower($_GET['mode']) : ($server_enabled && !$enabled ? 'server' : 'client');
+// Active mode tab: Default mutlak adalah 'client' (Uplink Booster). Server mode hanya aktif jika diminta via ?mode=server
+$active_mode = (isset($_GET['mode']) && strtolower($_GET['mode']) === 'server') ? 'server' : 'client';
 ?>
 
 <div class="container-fluid mitranet-page-container">
