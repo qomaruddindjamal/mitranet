@@ -1081,7 +1081,7 @@ if (!function_exists('fmt_pkts')) {
 				<button type="button" class="mitranet-btn" onclick="openNewModal()" title="Add New Interface">
 					<i class="fa-solid fa-folder-plus text-primary"></i> <strong>New</strong>
 				</button>
-				<button type="button" class="mitranet-btn" id="btn-edit" disabled title="Configure / Edit Selected" onclick="if(selectedIface) openWinboxEditModal(selectedIface)">
+				<button type="button" class="mitranet-btn" id="btn-edit" disabled title="Configure / Edit Selected">
 					<i class="fa-solid fa-pencil text-muted"></i> Edit
 				</button>
 				<button type="button" class="mitranet-btn" id="btn-enable" disabled title="Enable Selected">
@@ -1123,13 +1123,12 @@ if (!function_exists('fmt_pkts')) {
 						<th class="sortable" style="width: 220px;">List Name</th>
 						<th class="sortable">Member Interfaces</th>
 						<th class="sortable" style="width: 260px;">Comment / Usage</th>
-						<th class="text-center" style="width: 90px;">Actions</th>
 					</tr>
 				</thead>
 				<tbody>
 				<?php if (empty($interface_lists)): ?>
 					<tr>
-						<td colspan="5" class="text-center text-muted" style="padding: 24px;">
+						<td colspan="4" class="text-center text-muted" style="padding: 24px;">
 							<i class="fa-solid fa-list-check fs-18 mb-2"></i><br>
 							Belum ada Interface List yang dibuat. Klik tombol <strong>New</strong> di toolbar untuk membuat group antarmuka (misal: WAN, LAN, VPN).
 						</td>
@@ -1141,7 +1140,7 @@ if (!function_exists('fmt_pkts')) {
 					$il_members = (array)($il['members'] ?? []);
 					$il_comment = htmlspecialchars($il['comment'] ?? '');
 					?>
-					<tr data-listname="<?=$il_name?>">
+					<tr data-listname="<?=$il_name?>" onclick="selectListRow(this, '<?=$il_name?>', '<?=addslashes($il_comment)?>', <?=htmlspecialchars(json_encode(array_values($il_members)))?>)" ondblclick="editInterfaceListClick('<?=$il_name?>', '<?=addslashes($il_comment)?>', <?=htmlspecialchars(json_encode(array_values($il_members)))?>)" style="cursor: pointer;">
 						<td class="text-center col-flag-cell">
 							<i class="fa-solid fa-layer-group text-primary" title="Interface Group List"></i>
 						</td>
@@ -1163,11 +1162,6 @@ if (!function_exists('fmt_pkts')) {
 						</td>
 						<td class="text-muted">
 							<?=$il_comment ? $il_comment : '<span class="text-muted">-</span>'?>
-						</td>
-						<td class="text-center">
-							<button type="button" class="btn btn-xs btn-danger" onclick="deleteInterfaceListClick('<?=$il_name?>')" title="Hapus Interface List">
-								<i class="fa-solid fa-trash-can"></i>
-							</button>
 						</td>
 					</tr>
 					<?php endforeach; ?>
@@ -2218,27 +2212,28 @@ if (!function_exists('fmt_pkts')) {
 
 <!-- ============================================== -->
 <!-- MODAL: ADD NEW INTERFACE LIST                  -->
+<!-- MODAL: ADD / EDIT INTERFACE LIST               -->
 <!-- ============================================== -->
 <div id="modal-new-interface-list" class="modal fade" role="dialog">
     <div class="modal-dialog modal-md">
-        <form method="post" action="interfaces.php?tab=interface_list">
+        <form method="post" action="interfaces.php?tab=interface_list" id="form-interface-list">
             <input type="hidden" name="action" value="save_interface_list">
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">
+                    <h4 class="modal-title" id="modal-interface-list-title">
                         <i class="fa-solid fa-layer-group text-primary"></i> <?=gettext("New Interface List (Group)")?>
                     </h4>
                 </div>
                 <div class="modal-body">
                     <div class="form-group">
                         <label><span class="text-danger">*</span> <?=gettext("List Name:")?></label>
-                        <input type="text" name="list_name" class="form-control" placeholder="e.g. WAN, LAN, VPN_GROUP, ISOLATED" required style="text-transform: uppercase;">
+                        <input type="text" name="list_name" id="modal-iface-list-name" class="form-control" placeholder="e.g. WAN, LAN, VPN_GROUP, ISOLATED" required style="text-transform: uppercase;">
                         <span class="help-block">Nama group / list antarmuka (huruf kapital, contoh: WAN, LAN).</span>
                     </div>
                     <div class="form-group">
                         <label><?=gettext("Member Interfaces:")?></label>
-                        <select name="members[]" class="form-control selectpicker" multiple data-live-search="true" title="Pilih interface anggota...">
+                        <select name="members[]" id="modal-iface-list-members" class="form-control selectpicker" multiple data-live-search="true" title="Pilih interface anggota...">
                             <?php foreach ($ifaces_raw as $p): if ($p['name'] !== 'lo'): ?>
                                 <option value="<?=htmlspecialchars($p['name'])?>"><?=htmlspecialchars(strtoupper($p['altname'] ?? $p['name']))?> (<?=htmlspecialchars($p['name'])?>)</option>
                             <?php endif; endforeach; ?>
@@ -2247,12 +2242,12 @@ if (!function_exists('fmt_pkts')) {
                     </div>
                     <div class="form-group">
                         <label><?=gettext("Comment / Description:")?></label>
-                        <input type="text" name="comment" class="form-control" placeholder="Deskripsi pemakaian list (misal: Uplink ISP & Failover)">
+                        <input type="text" name="comment" id="modal-iface-list-comment" class="form-control" placeholder="Deskripsi pemakaian list (misal: Uplink ISP & Failover)">
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-plus icon-embed-btn"></i> Create List</button>
+                    <button type="submit" class="btn btn-sm btn-primary" id="btn-submit-iface-list"><i class="fa-solid fa-plus icon-embed-btn"></i> <?=gettext("Create List")?></button>
                 </div>
             </div>
         </form>
@@ -2639,10 +2634,60 @@ if (!function_exists('fmt_pkts')) {
 <script type="text/javascript">
 // Define globally so any onclick in HTML works immediately
 var selectedIface = null;
+var selectedListName = null;
+var selectedListComment = '';
+var selectedListMembers = [];
+
+window.selectListRow = function(tr, listName, comment, members) {
+    $('#iface-list-grid-table tbody tr').removeClass('selected');
+    $(tr).addClass('selected');
+    selectedListName = listName;
+    selectedListComment = comment || '';
+    selectedListMembers = Array.isArray(members) ? members : [];
+    selectedIface = null; // Clear iface selection when selecting interface list
+
+    // Aktifkan tombol toolbar WinBox: Edit, Remove, Comment
+    $('#btn-edit, #btn-remove, #btn-comment').prop('disabled', false);
+    // Tombol Enable & Disable dinonaktifkan untuk logical group list
+    $('#btn-enable, #btn-disable').prop('disabled', true);
+};
+
+window.editInterfaceListClick = function(listName, comment, members) {
+    if (!listName) listName = selectedListName;
+    if (!listName) return;
+
+    if (comment === undefined && selectedListName === listName) comment = selectedListComment;
+    if (members === undefined && selectedListName === listName) members = selectedListMembers;
+
+    $('#modal-interface-list-title').html('<i class="fa-solid fa-layer-group text-primary"></i> Edit Interface List: ' + listName);
+    $('#modal-iface-list-name').val(listName).prop('readonly', true);
+    $('#modal-iface-list-comment').val(comment || '');
+
+    var memArray = Array.isArray(members) ? members : [];
+    $('#modal-iface-list-members').val(memArray);
+    if ($.fn.selectpicker) {
+        $('#modal-iface-list-members').selectpicker('refresh');
+    }
+
+    $('#btn-submit-iface-list').html('<i class="fa-solid fa-check icon-embed-btn"></i> Save Changes');
+    $('#modal-new-interface-list').modal('show');
+};
+
+window.resetInterfaceListModal = function() {
+    $('#modal-interface-list-title').html('<i class="fa-solid fa-layer-group text-primary"></i> ' + <?=json_encode(gettext("New Interface List (Group)"))?>);
+    $('#modal-iface-list-name').val('').prop('readonly', false);
+    $('#modal-iface-list-comment').val('');
+    $('#modal-iface-list-members').val([]);
+    if ($.fn.selectpicker) {
+        $('#modal-iface-list-members').selectpicker('refresh');
+    }
+    $('#btn-submit-iface-list').html('<i class="fa-solid fa-plus icon-embed-btn"></i> ' + <?=json_encode(gettext("Create List"))?>);
+};
 
 window.openNewModal = function() {
     var currentTab = <?=json_encode($current_tab)?>;
     if (currentTab === 'interface_list') {
+        resetInterfaceListModal();
         $('#modal-new-interface-list').modal('show');
     } else if (currentTab === 'eoip') {
         $('#modal-new-eoip').modal('show');
@@ -2772,8 +2817,12 @@ window.deleteMacsecClick = function(msName) {
 
 window.selectRow = function(tr, ifname, comment) {
     $('#iface-grid-table tbody tr').removeClass('selected');
+    $('#iface-list-grid-table tbody tr').removeClass('selected');
     $(tr).addClass('selected');
     selectedIface = ifname;
+    selectedListName = null;
+    selectedListComment = '';
+    selectedListMembers = [];
     $('#btn-edit, #btn-enable, #btn-disable, #btn-remove, #btn-comment').prop('disabled', false);
 };
 
@@ -3071,16 +3120,24 @@ window.openWinboxEditModal = function(ifname) {
 
         // Edit button click
         $('#btn-edit').on('click', function() {
+            if (currentTab === 'interface_list' || selectedListName) {
+                if (selectedListName) {
+                    editInterfaceListClick(selectedListName, selectedListComment, selectedListMembers);
+                }
+                return;
+            }
             if (!selectedIface) return;
             openWinboxEditModal(selectedIface);
         });
 
         $('#btn-enable').on('click', function() {
+            if (currentTab === 'interface_list') return;
             if (!selectedIface) return;
             postIfaceState(selectedIface, 'up');
         });
 
         $('#btn-disable').on('click', function() {
+            if (currentTab === 'interface_list') return;
             if (!selectedIface) return;
             if (selectedIface === 'lo' || selectedIface === 'enp0s3' || selectedIface === 'enp1s0') {
                 MitraNet.alert('Protected Interface', 'Interface manajemen ini dilindungi dan tidak dapat dimatikan.', 'error');
@@ -3099,6 +3156,12 @@ window.openWinboxEditModal = function(ifname) {
         });
 
         $('#btn-remove').on('click', function() {
+            if (currentTab === 'interface_list' || selectedListName) {
+                if (selectedListName) {
+                    deleteInterfaceListClick(selectedListName);
+                }
+                return;
+            }
             if (!selectedIface) return;
             if (selectedIface === 'lo' || selectedIface === 'enp0s3' || selectedIface === 'enp1s0') {
                 MitraNet.alert('Protected Interface', 'Interface fisik / manajemen ini dilindungi dan tidak dapat dihapus.', 'error');
@@ -3119,6 +3182,27 @@ window.openWinboxEditModal = function(ifname) {
         });
 
         $('#btn-comment').on('click', function() {
+            if (currentTab === 'interface_list' || selectedListName) {
+                if (selectedListName) {
+                    MitraNet.promptInput({
+                        title: 'Set Comment: Interface List ' + selectedListName,
+                        placeholder: 'Masukkan catatan atau tujuan penggunaan grup ' + selectedListName + '...',
+                        value: selectedListComment,
+                        url: 'interfaces.php?tab=interface_list',
+                        data: {
+                            action: 'save_interface_list',
+                            list_name: selectedListName,
+                            members: selectedListMembers
+                        },
+                        inputKey: 'comment',
+                        successMsg: 'Komentar Interface List berhasil disimpan',
+                        onSuccess: function() {
+                            location.reload();
+                        }
+                    });
+                }
+                return;
+            }
             if (!selectedIface) return;
             MitraNet.promptInput({
                 title: 'Set Comment: ' + selectedIface,
@@ -3145,7 +3229,7 @@ window.openWinboxEditModal = function(ifname) {
 
     window.filterAssignGrid = function(val) {
         val = (val || '').toLowerCase();
-        $('#iface-grid-table tbody tr').each(function() {
+        $('#iface-grid-table tbody tr, #iface-list-grid-table tbody tr').each(function() {
             var text = $(this).text().toLowerCase();
             if (text.indexOf(val) !== -1) {
                 $(this).show();
