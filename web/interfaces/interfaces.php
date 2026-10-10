@@ -207,13 +207,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'set_state' && !empty($ifname)) {
         $state = strtolower($_POST['state'] ?? 'up');
+        $success = false;
+        $msg = '';
+        $err = '';
+
+        // Attempt 1: Call MitraNet REST API Daemon
         $res = MitraNetApi::setInterfaceState($ifname, $state);
         if (($res['status'] ?? 0) === 200 && ($res['data']['success'] ?? false)) {
-            $msg = "Interface '{$ifname}' berhasil diatur ke " . strtoupper($state);
-            if ($is_ajax) { echo json_encode(['success' => true, 'message' => $msg]); exit; }
+            $success = true;
+            $msg = "Interface '{$ifname}' berhasil diatur ke " . strtoupper($state) . " (via API).";
         } else {
-            $err = $res['data']['error'] ?? 'Gagal mengubah status interface.';
-            if ($is_ajax) { echo json_encode(['success' => false, 'error' => $err]); exit; }
+            $api_err = $res['data']['error'] ?? 'API error';
+            // Attempt 2: Direct Linux kernel fallback (ip link set dev ... up/down)
+            $cmd_state = ($state === 'down') ? 'down' : 'up';
+            exec("ip link set dev " . escapeshellarg($ifname) . " {$cmd_state} 2>&1", $exec_out, $exec_ret);
+            if ($exec_ret === 0) {
+                $success = true;
+                $msg = "Interface '{$ifname}' berhasil diatur ke " . strtoupper($state) . " (via Kernel).";
+            } else {
+                $err = !empty($exec_out) ? implode(" ", $exec_out) : $api_err;
+            }
+        }
+
+        if ($is_ajax) {
+            echo json_encode(['success' => $success, 'message' => $msg, 'error' => $err]);
+            exit;
         }
     } elseif ($action === 'save_interface' && !empty($ifname)) {
         $new_name = trim($_POST['new_name'] ?? $ifname);
@@ -1464,7 +1482,7 @@ if (!function_exists('fmt_pkts')) {
 					else $type = 'Ethernet';
 					$mtu = $i['mtu'] ?? 1500;
 					?>
-					<tr data-ifname="<?=htmlspecialchars($ifname)?>" onclick="selectRow(this, '<?=htmlspecialchars($ifname)?>', '<?=htmlspecialchars(addslashes($comment_val))?>')" ondblclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')" style="cursor: pointer;">
+					<tr data-ifname="<?=htmlspecialchars($ifname)?>" data-isup="<?=$is_up ? '1' : '0'?>" onclick="selectRow(this, '<?=htmlspecialchars($ifname)?>', '<?=htmlspecialchars(addslashes($comment_val))?>', <?=$is_up ? 'true' : 'false'?>)" ondblclick="openWinboxEditModal('<?=htmlspecialchars($ifname)?>')" style="cursor: pointer;">
 						<!-- Flag -->
 						<td class="text-center col-flag-cell">
 							<?php if ($is_up): ?>
@@ -2941,7 +2959,7 @@ window.deleteMacsecClick = function(msName) {
     });
 };
 
-window.selectRow = function(tr, ifname, comment) {
+window.selectRow = function(tr, ifname, comment, isUp) {
     $('#iface-grid-table tbody tr').removeClass('selected');
     $('#iface-list-grid-table tbody tr').removeClass('selected');
     $(tr).addClass('selected');
@@ -2949,7 +2967,28 @@ window.selectRow = function(tr, ifname, comment) {
     selectedListName = null;
     selectedListComment = '';
     selectedListMembers = [];
-    $('#btn-edit, #btn-enable, #btn-disable, #btn-remove, #btn-comment').prop('disabled', false);
+    
+    // Determine isUp state if not explicitly passed
+    if (isUp === undefined) {
+        var attrIsUp = $(tr).attr('data-isup');
+        if (attrIsUp !== undefined) {
+            isUp = (attrIsUp === '1' || attrIsUp === 'true');
+        }
+    }
+    window.selectedIfaceIsUp = (isUp === true || isUp === 1);
+
+    $('#btn-edit, #btn-remove, #btn-comment').prop('disabled', false);
+
+    // Dynamic Enable/Disable button state based on link status
+    if (window.selectedIfaceIsUp) {
+        // Link is UP -> Enable is inactive, Disable is active
+        $('#btn-enable').addClass('disabled').prop('disabled', true);
+        $('#btn-disable').removeClass('disabled').prop('disabled', false);
+    } else {
+        // Link is DOWN -> Enable is active, Disable is inactive
+        $('#btn-enable').removeClass('disabled').prop('disabled', false);
+        $('#btn-disable').addClass('disabled').prop('disabled', true);
+    }
 };
 
 window.openWinboxEditModal = function(ifname) {
@@ -3235,7 +3274,8 @@ window.openWinboxEditModal = function(ifname) {
         // Table row click -> select row
         $(document).on('click', '#iface-grid-table tbody tr[data-ifname]', function(e) {
             var ifname = $(this).data('ifname');
-            selectRow(this, ifname, '');
+            var isUp = $(this).attr('data-isup') === '1';
+            selectRow(this, ifname, '', isUp);
         });
 
         // Table row double click -> open WinBox edit modal
@@ -3264,7 +3304,16 @@ window.openWinboxEditModal = function(ifname) {
                 return;
             }
             if (!selectedIface) return;
-            postIfaceState(selectedIface, 'up');
+            MitraNet.confirmAction({
+                title: 'Aktifkan Interface?',
+                html: 'Apakah Anda yakin ingin mengaktifkan interface <b>' + selectedIface + '</b>?',
+                icon: 'question',
+                confirmColor: '#3b82f6',
+                confirmText: 'Enable',
+                url: 'interfaces.php?tab=' + encodeURIComponent(currentTab),
+                data: { action: 'set_state', interface: selectedIface, state: 'up' },
+                onSuccess: function() { location.reload(); }
+            });
         });
 
         $('#btn-disable').on('click', function() {
