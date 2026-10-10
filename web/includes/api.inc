@@ -206,11 +206,19 @@ class MitraNetApi {
         return $res['status'] === 200 ? $res['data'] : [];
     }
 
-    public static function saveInterfaceList($name, $members = [], $comment = '') {
+    public static function saveInterfaceList($name, $members = [], $comment = '', $disabled = false) {
         return self::request('/interface-lists/save', 'POST', [
             'name' => $name,
             'members' => $members,
-            'comment' => $comment
+            'comment' => $comment,
+            'disabled' => (bool)$disabled
+        ]);
+    }
+
+    public static function setInterfaceListState($name, $state = 'enable') {
+        return self::request('/interface-lists/set-state', 'POST', [
+            'name' => $name,
+            'state' => $state
         ]);
     }
 

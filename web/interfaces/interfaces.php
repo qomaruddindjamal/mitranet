@@ -738,6 +738,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $err = "Nama Interface List wajib diisi.";
             if ($is_ajax) { echo json_encode(['success' => false, 'error' => $err]); exit; }
         }
+    } elseif ($action === 'set_interface_list_state') {
+        $list_name = strtoupper(trim($_POST['list_name'] ?? ''));
+        $state = strtolower(trim($_POST['state'] ?? 'enable'));
+        if (!empty($list_name)) {
+            $res = MitraNetApi::setInterfaceListState($list_name, $state);
+            if (($res['status'] ?? 0) === 200 && ($res['data']['success'] ?? false)) {
+                $status_txt = in_array($state, ['disable', 'down', 'disabled']) ? 'dinonaktifkan (disabled)' : 'diaktifkan (enabled)';
+                $msg = "Interface List '{$list_name}' berhasil {$status_txt}.";
+                if ($is_ajax) { echo json_encode(['success' => true, 'message' => $msg]); exit; }
+            } else {
+                $err = $res['data']['error'] ?? 'Gagal mengubah status Interface List.';
+                if ($is_ajax) { echo json_encode(['success' => false, 'error' => $err]); exit; }
+            }
+        } else {
+            $err = "Nama Interface List tidak valid.";
+            if ($is_ajax) { echo json_encode(['success' => false, 'error' => $err]); exit; }
+        }
     } elseif ($action === 'delete_interface_list') {
         $list_name = strtoupper(trim($_POST['list_name'] ?? ''));
         if (!empty($list_name)) {
@@ -1139,13 +1156,23 @@ if (!function_exists('fmt_pkts')) {
 					$il_name = htmlspecialchars($il['name'] ?? '');
 					$il_members = (array)($il['members'] ?? []);
 					$il_comment = htmlspecialchars($il['comment'] ?? '');
+					$il_disabled = !empty($il['disabled']);
 					?>
-					<tr data-listname="<?=$il_name?>" onclick="selectListRow(this, '<?=$il_name?>', '<?=addslashes($il_comment)?>', <?=htmlspecialchars(json_encode(array_values($il_members)))?>)" ondblclick="editInterfaceListClick('<?=$il_name?>', '<?=addslashes($il_comment)?>', <?=htmlspecialchars(json_encode(array_values($il_members)))?>)" style="cursor: pointer;">
+					<tr data-listname="<?=$il_name?>" data-disabled="<?=$il_disabled ? '1' : '0'?>" onclick="selectListRow(this, '<?=$il_name?>', '<?=addslashes($il_comment)?>', <?=htmlspecialchars(json_encode(array_values($il_members)))?>, <?=$il_disabled ? 'true' : 'false'?>)" ondblclick="editInterfaceListClick('<?=$il_name?>', '<?=addslashes($il_comment)?>', <?=htmlspecialchars(json_encode(array_values($il_members)))?>, <?=$il_disabled ? 'true' : 'false'?>)" style="cursor: pointer; <?=$il_disabled ? 'opacity: 0.6;' : ''?>">
 						<td class="text-center col-flag-cell">
-							<i class="fa-solid fa-layer-group text-primary" title="Interface Group List"></i>
+							<?php if ($il_disabled): ?>
+								<span class="badge" style="background: #e2e8f0; color: #64748b; font-size: 10px; font-weight: 700; padding: 2px 4px; border: 1px solid #cbd5e1;" title="Disabled (X)">X</span>
+							<?php else: ?>
+								<i class="fa-solid fa-layer-group text-primary" title="Enabled (Active Group)"></i>
+							<?php endif; ?>
 						</td>
 						<td>
-							<strong class="text-primary fs-13"><i class="fa-solid fa-folder-tree mr-1"></i> <?=$il_name?></strong>
+							<strong class="<?=$il_disabled ? 'text-muted' : 'text-primary'?> fs-13">
+								<i class="fa-solid fa-folder-tree mr-1"></i> <?=$il_name?>
+								<?php if ($il_disabled): ?>
+									<span class="label label-default" style="font-size: 10px; margin-left: 5px; font-weight: normal; background-color: #94a3b8;">disabled</span>
+								<?php endif; ?>
+							</strong>
 						</td>
 						<td>
 							<div style="display: flex; flex-wrap: wrap; gap: 5px; align-items: center;">
@@ -1153,7 +1180,7 @@ if (!function_exists('fmt_pkts')) {
 								<span class="text-muted fs-11"><em>(Kosong - Belum ada interface anggota)</em></span>
 							<?php else: ?>
 								<?php foreach ($il_members as $m): ?>
-									<span class="label label-info font-monospace" style="display: inline-flex; align-items: center; padding: 4px 8px; font-size: 11px;">
+									<span class="label <?=$il_disabled ? 'label-default' : 'label-info'?> font-monospace" style="display: inline-flex; align-items: center; padding: 4px 8px; font-size: 11px;">
 										<i class="fa-solid fa-network-wired mr-1" style="font-size: 10px;"></i> <?=htmlspecialchars($m)?>
 									</span>
 								<?php endforeach; ?>
@@ -2233,19 +2260,19 @@ if (!function_exists('fmt_pkts')) {
                     </div>
                     <div class="form-group">
                         <label><?=gettext("Member Interfaces:")?></label>
-                        <div class="input-group">
-                            <select id="modal-iface-select-picker" class="form-control">
+                        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
+                            <select id="modal-iface-select-picker" class="form-control" style="flex: 1; height: 36px; border-radius: 4px;">
                                 <option value="">-- <?=gettext("Pilih interface untuk ditambahkan...")?> --</option>
                                 <?php foreach ($ifaces_raw as $p): if ($p['name'] !== 'lo'): ?>
                                     <option value="<?=htmlspecialchars($p['name'])?>"><?=htmlspecialchars(strtoupper($p['altname'] ?? $p['name']))?> (<?=htmlspecialchars($p['name'])?>)</option>
                                 <?php endif; endforeach; ?>
                             </select>
-                            <span class="input-group-btn">
-                                <button type="button" class="btn btn-default" onclick="addListMemberItem()"><i class="fa-solid fa-plus text-primary"></i> <?=gettext("Add")?></button>
-                            </span>
+                            <button type="button" class="btn btn-primary" onclick="addListMemberItem()" style="height: 36px; padding: 0 16px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 500; border-radius: 4px; white-space: nowrap;">
+                                <i class="fa-solid fa-plus"></i> <?=gettext("Add")?>
+                            </button>
                         </div>
-                        <span class="help-block" style="margin-bottom: 6px;">Pilih antarmuka lalu klik Add untuk memasukkannya ke grup list ini.</span>
-                        <div id="modal-iface-members-badge-list" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 38px; padding: 6px 10px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; align-items: center;">
+                        <span class="help-block" style="margin-bottom: 8px;">Pilih antarmuka lalu klik Add untuk memasukkannya ke grup list ini.</span>
+                        <div id="modal-iface-members-badge-list" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 42px; padding: 8px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; align-items: center;">
                             <span class="text-muted fs-11" id="modal-iface-members-empty"><em>(Belum ada interface anggota)</em></span>
                         </div>
                         <div id="modal-iface-members-hidden-inputs"></div>
@@ -2647,19 +2674,57 @@ var selectedIface = null;
 var selectedListName = null;
 var selectedListComment = '';
 var selectedListMembers = [];
+var selectedListDisabled = false;
 
-window.selectListRow = function(tr, listName, comment, members) {
+window.selectListRow = function(tr, listName, comment, members, isDisabled) {
     $('#iface-list-grid-table tbody tr').removeClass('selected');
     $(tr).addClass('selected');
     selectedListName = listName;
     selectedListComment = comment || '';
     selectedListMembers = Array.isArray(members) ? members : [];
+    selectedListDisabled = !!isDisabled;
     selectedIface = null; // Clear iface selection when selecting interface list
 
-    // Aktifkan tombol toolbar WinBox: Edit, Remove, Comment
+    // Aktifkan tombol toolbar WinBox: Edit, Enable, Disable, Remove, Comment
     $('#btn-edit, #btn-remove, #btn-comment').prop('disabled', false);
-    // Tombol Enable & Disable dinonaktifkan untuk logical group list
-    $('#btn-enable, #btn-disable').prop('disabled', true);
+    $('#btn-enable, #btn-disable').prop('disabled', false);
+
+    // Visual state indication for enable/disable buttons
+    if (selectedListDisabled) {
+        $('#btn-enable').removeClass('disabled').prop('disabled', false);
+        $('#btn-disable').addClass('disabled').prop('disabled', true);
+    } else {
+        $('#btn-enable').addClass('disabled').prop('disabled', true);
+        $('#btn-disable').removeClass('disabled').prop('disabled', false);
+    }
+};
+
+window.toggleInterfaceListState = function(listName, state) {
+    if (!listName) listName = selectedListName;
+    if (!listName) return;
+
+    var isDisableAction = (state === 'disable' || state === 'down');
+    var actionTitle = isDisableAction ? 'Nonaktifkan Interface List?' : 'Aktifkan Interface List?';
+    var actionVerb = isDisableAction ? 'Disable' : 'Enable';
+    var actionColor = isDisableAction ? '#f59e0b' : '#3b82f6';
+    var actionIcon = isDisableAction ? 'warning' : 'question';
+
+    MitraNet.confirmAction({
+        title: actionTitle,
+        html: 'Apakah Anda yakin ingin ' + (isDisableAction ? 'menonaktifkan' : 'mengaktifkan') + ' group interface list <b>' + listName + '</b>?',
+        icon: actionIcon,
+        confirmColor: actionColor,
+        confirmText: actionVerb,
+        url: 'interfaces.php?tab=interface_list',
+        data: {
+            action: 'set_interface_list_state',
+            list_name: listName,
+            state: isDisableAction ? 'disable' : 'enable'
+        },
+        onSuccess: function() {
+            location.reload();
+        }
+    });
 };
 
 var currentModalMembers = [];
@@ -2715,7 +2780,7 @@ window.removeListMemberItem = function(val) {
     renderModalListMembers();
 };
 
-window.editInterfaceListClick = function(listName, comment, members) {
+window.editInterfaceListClick = function(listName, comment, members, isDisabled) {
     if (!listName) listName = selectedListName;
     if (!listName) return;
 
@@ -3192,13 +3257,23 @@ window.openWinboxEditModal = function(ifname) {
         });
 
         $('#btn-enable').on('click', function() {
-            if (currentTab === 'interface_list') return;
+            if (currentTab === 'interface_list' || selectedListName) {
+                if (selectedListName) {
+                    toggleInterfaceListState(selectedListName, 'enable');
+                }
+                return;
+            }
             if (!selectedIface) return;
             postIfaceState(selectedIface, 'up');
         });
 
         $('#btn-disable').on('click', function() {
-            if (currentTab === 'interface_list') return;
+            if (currentTab === 'interface_list' || selectedListName) {
+                if (selectedListName) {
+                    toggleInterfaceListState(selectedListName, 'disable');
+                }
+                return;
+            }
             if (!selectedIface) return;
             if (selectedIface === 'lo' || selectedIface === 'enp0s3' || selectedIface === 'enp1s0') {
                 MitraNet.alert('Protected Interface', 'Interface manajemen ini dilindungi dan tidak dapat dimatikan.', 'error');

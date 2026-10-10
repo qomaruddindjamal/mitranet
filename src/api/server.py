@@ -813,8 +813,8 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 # Default baseline: WAN and LAN lists
                 os.makedirs("/etc/mitranet/network", exist_ok=True)
                 default_lists = {
-                    "WAN": {"name": "WAN", "members": ["enp1s0"], "comment": "Internet / Uplink interfaces"},
-                    "LAN": {"name": "LAN", "members": ["veth0", "mac0", "vxlan100"], "comment": "Local network / Bridge members"}
+                    "WAN": {"name": "WAN", "members": ["enp1s0"], "comment": "Internet / Uplink interfaces", "disabled": False},
+                    "LAN": {"name": "LAN", "members": ["veth0", "mac0", "vxlan100"], "comment": "Local network / Bridge members", "disabled": False}
                 }
                 try:
                     with open(conf_file, "w") as cf:
@@ -2474,6 +2474,7 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             name = payload.get("name", "").strip().upper()
             members = payload.get("members", [])
             comment = payload.get("comment", "").strip()
+            disabled = bool(payload.get("disabled", False))
             if not name:
                 self._send_json(400, {"error": "Nama Interface List wajib diisi."})
                 return
@@ -2484,16 +2485,43 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 if os.path.exists(conf_file):
                     with open(conf_file, "r") as cf:
                         lists_db = json.load(cf)
+                old_entry = lists_db.get(name, {})
                 lists_db[name] = {
                     "name": name,
                     "members": list(dict.fromkeys(members)),
-                    "comment": comment
+                    "comment": comment,
+                    "disabled": disabled if "disabled" in payload else old_entry.get("disabled", False)
                 }
                 with open(conf_file, "w") as cf:
                     json.dump(lists_db, cf, indent=2)
                 self._send_json(200, {"success": True, "message": f"Interface List '{name}' berhasil disimpan.", "data": lists_db[name]})
             except Exception as e:
                 self._send_json(500, {"error": f"Gagal menyimpan Interface List: {e}"})
+            return
+
+        if path == "/api/v1/interface-lists/set-state":
+            name = payload.get("name", "").strip().upper()
+            state = str(payload.get("state", "enable")).strip().lower()
+            if not name:
+                self._send_json(400, {"error": "Nama Interface List wajib diisi."})
+                return
+            is_disabled = (state in ["disable", "down", "disabled"])
+            conf_file = "/etc/mitranet/network/interface_lists.json"
+            try:
+                lists_db = {}
+                if os.path.exists(conf_file):
+                    with open(conf_file, "r") as cf:
+                        lists_db = json.load(cf)
+                if name not in lists_db:
+                    self._send_json(404, {"error": f"Interface List '{name}' tidak ditemukan."})
+                    return
+                lists_db[name]["disabled"] = is_disabled
+                with open(conf_file, "w") as cf:
+                    json.dump(lists_db, cf, indent=2)
+                status_label = "dinonaktifkan (disabled)" if is_disabled else "diaktifkan (enabled)"
+                self._send_json(200, {"success": True, "message": f"Interface List '{name}' berhasil {status_label}.", "data": lists_db[name]})
+            except Exception as e:
+                self._send_json(500, {"error": f"Gagal mengubah status Interface List: {e}"})
             return
 
         if path == "/api/v1/interface-lists/delete":
