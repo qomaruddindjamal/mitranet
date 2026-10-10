@@ -77,9 +77,20 @@ if (isset($_REQUEST['ajax']) && $_REQUEST['ajax'] == '1') {
     exit;
 }
 
-$pgtitle = array("Tools", "Speedtest");
+$active_tab = $_GET['tab'] ?? 'speedtest';
+if (!in_array($active_tab, ['speedtest', 'benchmark'])) {
+    $active_tab = 'speedtest';
+}
+
+$pgtitle = array("Tools", "Speedtest", $active_tab === 'benchmark' ? "Hardware & Bandwidth Benchmark" : "Internet Speedtest");
 $selected_menu = "tools";
 require_once(__DIR__ . '/../includes/head.inc');
+
+$tab_array = array(
+    array("Internet Speedtest", $active_tab === 'speedtest', "/tools/speedtest.php?tab=speedtest"),
+    array("Hardware & Bandwidth Benchmark", $active_tab === 'benchmark', "/tools/speedtest.php?tab=benchmark")
+);
+display_top_tabs($tab_array, false, 'pills');
 
 $ifaces = MitraNetApi::getInterfaces();
 ?>
@@ -466,6 +477,7 @@ body.theme-dark .st-table tbody tr:hover {
 </style>
 
 <div class="speedtest-page">
+    <?php if ($active_tab === 'speedtest'): ?>
     <div class="speedtest-panel">
         <!-- WinBox Header -->
         <div class="speedtest-header">
@@ -628,13 +640,15 @@ body.theme-dark .st-table tbody tr:hover {
         </div>
 
     </div>
+    <?php endif; ?>
 
-    <!-- Bandwidth & Hardware Benchmark Panel (Directly Below Speedtest) -->
-    <div class="speedtest-panel" style="margin-top: 25px;">
+    <?php if ($active_tab === 'benchmark'): ?>
+    <!-- Bandwidth & Hardware Benchmark Panel -->
+    <div class="speedtest-panel">
         <div class="speedtest-header" style="background: #eef2ff;">
             <h3 class="speedtest-title">
                 <i class="fa-solid fa-microchip text-primary"></i>
-                <span>Bandwidth &amp; Hardware Benchmark (Throughput Stress &amp; PPS Testing)</span>
+                <span>Hardware &amp; Bandwidth Benchmark (Throughput Stress &amp; PPS Testing)</span>
             </h3>
             <div>
                 <span class="label label-primary"><i class="fa-solid fa-gauge-high"></i> High-Throughput Engine</span>
@@ -771,6 +785,7 @@ body.theme-dark .st-table tbody tr:hover {
             </div>
         </div>
     </div>
+    <?php endif; ?>
 </div>
 
 <?php include(__DIR__ . '/../includes/foot.inc'); ?>
