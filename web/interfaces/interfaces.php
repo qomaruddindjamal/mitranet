@@ -2233,12 +2233,22 @@ if (!function_exists('fmt_pkts')) {
                     </div>
                     <div class="form-group">
                         <label><?=gettext("Member Interfaces:")?></label>
-                        <select name="members[]" id="modal-iface-list-members" class="form-control selectpicker" multiple data-live-search="true" title="Pilih interface anggota...">
-                            <?php foreach ($ifaces_raw as $p): if ($p['name'] !== 'lo'): ?>
-                                <option value="<?=htmlspecialchars($p['name'])?>"><?=htmlspecialchars(strtoupper($p['altname'] ?? $p['name']))?> (<?=htmlspecialchars($p['name'])?>)</option>
-                            <?php endif; endforeach; ?>
-                        </select>
-                        <span class="help-block">Daftar interface yang dimasukkan ke dalam group list ini.</span>
+                        <div class="input-group">
+                            <select id="modal-iface-select-picker" class="form-control">
+                                <option value="">-- <?=gettext("Pilih interface untuk ditambahkan...")?> --</option>
+                                <?php foreach ($ifaces_raw as $p): if ($p['name'] !== 'lo'): ?>
+                                    <option value="<?=htmlspecialchars($p['name'])?>"><?=htmlspecialchars(strtoupper($p['altname'] ?? $p['name']))?> (<?=htmlspecialchars($p['name'])?>)</option>
+                                <?php endif; endforeach; ?>
+                            </select>
+                            <span class="input-group-btn">
+                                <button type="button" class="btn btn-default" onclick="addListMemberItem()"><i class="fa-solid fa-plus text-primary"></i> <?=gettext("Add")?></button>
+                            </span>
+                        </div>
+                        <span class="help-block" style="margin-bottom: 6px;">Pilih antarmuka lalu klik Add untuk memasukkannya ke grup list ini.</span>
+                        <div id="modal-iface-members-badge-list" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 38px; padding: 6px 10px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; align-items: center;">
+                            <span class="text-muted fs-11" id="modal-iface-members-empty"><em>(Belum ada interface anggota)</em></span>
+                        </div>
+                        <div id="modal-iface-members-hidden-inputs"></div>
                     </div>
                     <div class="form-group">
                         <label><?=gettext("Comment / Description:")?></label>
@@ -2652,6 +2662,59 @@ window.selectListRow = function(tr, listName, comment, members) {
     $('#btn-enable, #btn-disable').prop('disabled', true);
 };
 
+var currentModalMembers = [];
+
+window.renderModalListMembers = function() {
+    var $badgeContainer = $('#modal-iface-members-badge-list');
+    var $hiddenContainer = $('#modal-iface-members-hidden-inputs');
+    $badgeContainer.empty();
+    $hiddenContainer.empty();
+
+    if (!currentModalMembers || currentModalMembers.length === 0) {
+        $badgeContainer.html('<span class="text-muted fs-11" id="modal-iface-members-empty"><em>(Belum ada interface anggota)</em></span>');
+        return;
+    }
+
+    currentModalMembers.forEach(function(m) {
+        var badge = $(
+            '<span class="label label-info font-monospace" style="display:inline-flex; align-items:center; padding:5px 8px; font-size:12px; gap:6px;">' +
+                '<i class="fa-solid fa-network-wired" style="font-size:10px;"></i> ' +
+                '<span>' + $('<div>').text(m).html() + '</span>' +
+                '<button type="button" class="btn btn-xs btn-link text-white" style="padding:0 2px; color:#fff; line-height:1; opacity:0.85; text-decoration:none;" title="Hapus ' + $('<div>').text(m).html() + '">&times;</button>' +
+            '</span>'
+        );
+        badge.find('button').on('click', function(e) {
+            e.preventDefault();
+            removeListMemberItem(m);
+        });
+        $badgeContainer.append(badge);
+
+        $hiddenContainer.append($('<input type="hidden" name="members[]">').val(m));
+    });
+};
+
+window.addListMemberItem = function() {
+    var val = $('#modal-iface-select-picker').val();
+    if (!val) {
+        MitraNet.toast('Pilih antarmuka terlebih dahulu.', 'warning');
+        return;
+    }
+    if (currentModalMembers.indexOf(val) !== -1) {
+        MitraNet.toast('Interface ' + val + ' sudah ada dalam list.', 'info');
+        return;
+    }
+    currentModalMembers.push(val);
+    $('#modal-iface-select-picker').val('');
+    renderModalListMembers();
+};
+
+window.removeListMemberItem = function(val) {
+    currentModalMembers = currentModalMembers.filter(function(item) {
+        return item !== val;
+    });
+    renderModalListMembers();
+};
+
 window.editInterfaceListClick = function(listName, comment, members) {
     if (!listName) listName = selectedListName;
     if (!listName) return;
@@ -2662,12 +2725,11 @@ window.editInterfaceListClick = function(listName, comment, members) {
     $('#modal-interface-list-title').html('<i class="fa-solid fa-layer-group text-primary"></i> Edit Interface List: ' + listName);
     $('#modal-iface-list-name').val(listName).prop('readonly', true);
     $('#modal-iface-list-comment').val(comment || '');
+    $('#modal-iface-select-picker').val('');
 
-    var memArray = Array.isArray(members) ? members : [];
-    $('#modal-iface-list-members').val(memArray);
-    if ($.fn.selectpicker) {
-        $('#modal-iface-list-members').selectpicker('refresh');
-    }
+    var memArray = Array.isArray(members) ? members.slice() : [];
+    currentModalMembers = memArray;
+    renderModalListMembers();
 
     $('#btn-submit-iface-list').html('<i class="fa-solid fa-check icon-embed-btn"></i> Save Changes');
     $('#modal-new-interface-list').modal('show');
@@ -2677,10 +2739,9 @@ window.resetInterfaceListModal = function() {
     $('#modal-interface-list-title').html('<i class="fa-solid fa-layer-group text-primary"></i> ' + <?=json_encode(gettext("New Interface List (Group)"))?>);
     $('#modal-iface-list-name').val('').prop('readonly', false);
     $('#modal-iface-list-comment').val('');
-    $('#modal-iface-list-members').val([]);
-    if ($.fn.selectpicker) {
-        $('#modal-iface-list-members').selectpicker('refresh');
-    }
+    $('#modal-iface-select-picker').val('');
+    currentModalMembers = [];
+    renderModalListMembers();
     $('#btn-submit-iface-list').html('<i class="fa-solid fa-plus icon-embed-btn"></i> ' + <?=json_encode(gettext("Create List"))?>);
 };
 
