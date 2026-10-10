@@ -16,7 +16,8 @@ $booster = MitraNetApi::getBoosterStatus();
 // Client role variables
 $enabled = !empty($booster['enabled']);
 $vps_host = $booster['vps_host'] ?? '';
-$stream_count = intval($booster['stream_count'] ?? 2);
+$client_stream_count = intval($booster['client_stream_count'] ?? $booster['stream_count'] ?? 2);
+$stream_count = $client_stream_count;
 $tunnel_type = $booster['tunnel_type'] ?? 'wireguard';
 $balancer_mode = $booster['balancer_mode'] ?? 'ecmp';
 $dscp_mode = $booster['dscp_mode'] ?? 'AF41';
@@ -34,6 +35,7 @@ $current_cc = $booster['current_congestion_control'] ?? 'cubic';
 // Server role variables
 $server_enabled = !empty($booster['server_enabled']);
 $server_listen_port_start = intval($booster['server_listen_port_start'] ?? 51831);
+$server_stream_count = intval($booster['server_stream_count'] ?? $booster['stream_count'] ?? 2);
 $server_subnet = $booster['server_subnet'] ?? '10.250.0.0/16';
 $server_public_key = $booster['server_public_key'] ?? '';
 $server_peers_telemetry = $booster['server_peers_telemetry'] ?? [];
@@ -137,18 +139,18 @@ $active_mode = isset($_GET['mode']) ? strtolower($_GET['mode']) : ($server_enabl
                     <div class="col-xs-12 col-sm-3 col-md-3">
                         <div style="background:#1c2938; border:1px solid #2f435a; border-radius:4px; padding:10px; margin-bottom:8px;">
                             <div style="font-size:11px; text-transform:uppercase; color:#8899a6; font-weight:600;">Status Client Agregasi</div>
-                            <div style="font-size:18px; font-weight:700; margin-top:4px;" class="<?=$enabled ? 'text-success' : 'text-danger'?>">
+                            <div id="hud-client-status" style="font-size:18px; font-weight:700; margin-top:4px;" class="<?=$enabled ? 'text-success' : 'text-danger'?>">
                                 <i class="fa-solid <?=$enabled ? 'fa-circle-check' : 'fa-circle-xmark'?>"></i> <?=$enabled ? 'AKTIF (MULTI-PATH)' : 'NON-AKTIF'?>
                             </div>
                             <div style="font-size:11px; color:#aaa; margin-top:2px;">
-                                Alokasi: <strong><?=$stream_count?> Parallel Streams</strong>
+                                Alokasi: <strong id="hud-client-streams"><?=$stream_count?> Parallel Streams</strong>
                             </div>
                         </div>
                     </div>
                     <div class="col-xs-12 col-sm-3 col-md-3">
                         <div style="background:#1c2938; border:1px solid #2f435a; border-radius:4px; padding:10px; margin-bottom:8px;">
                             <div style="font-size:11px; text-transform:uppercase; color:#8899a6; font-weight:600;">Total RX Client (Masuk)</div>
-                            <div style="font-size:18px; font-weight:700; margin-top:4px; color:#00d2be;">
+                            <div id="hud-client-rx" style="font-size:18px; font-weight:700; margin-top:4px; color:#00d2be;">
                                 <i class="fa-solid fa-arrow-down"></i> <?=htmlspecialchars($total_rx)?>
                             </div>
                             <div style="font-size:11px; color:#aaa; margin-top:2px;">Akumulasi seluruh stream</div>
@@ -157,7 +159,7 @@ $active_mode = isset($_GET['mode']) ? strtolower($_GET['mode']) : ($server_enabl
                     <div class="col-xs-12 col-sm-3 col-md-3">
                         <div style="background:#1c2938; border:1px solid #2f435a; border-radius:4px; padding:10px; margin-bottom:8px;">
                             <div style="font-size:11px; text-transform:uppercase; color:#8899a6; font-weight:600;">Total TX Client (Keluar)</div>
-                            <div style="font-size:18px; font-weight:700; margin-top:4px; color:#58a6ff;">
+                            <div id="hud-client-tx" style="font-size:18px; font-weight:700; margin-top:4px; color:#58a6ff;">
                                 <i class="fa-solid fa-arrow-up"></i> <?=htmlspecialchars($total_tx)?>
                             </div>
                             <div style="font-size:11px; color:#aaa; margin-top:2px;">Akumulasi seluruh stream</div>
@@ -299,7 +301,7 @@ $active_mode = isset($_GET['mode']) ? strtolower($_GET['mode']) : ($server_enabl
                                             <th>TX Terukur</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody id="tbody-client-streams">
                                         <?php if (empty($streams)): ?>
                                             <tr>
                                                 <td colspan="8" class="text-center text-muted" style="padding:20px;">
@@ -358,18 +360,18 @@ $active_mode = isset($_GET['mode']) ? strtolower($_GET['mode']) : ($server_enabl
                     <div class="col-xs-12 col-sm-3 col-md-3">
                         <div style="background:#1c2938; border:1px solid #2f435a; border-radius:4px; padding:10px; margin-bottom:8px;">
                             <div style="font-size:11px; text-transform:uppercase; color:#8899a6; font-weight:600;">Status Aggregation Hub</div>
-                            <div style="font-size:18px; font-weight:700; margin-top:4px;" class="<?=$server_enabled ? 'text-success' : 'text-danger'?>">
+                            <div id="hud-server-status" style="font-size:18px; font-weight:700; margin-top:4px;" class="<?=$server_enabled ? 'text-success' : 'text-danger'?>">
                                 <i class="fa-solid <?=$server_enabled ? 'fa-circle-check' : 'fa-circle-xmark'?>"></i> <?=$server_enabled ? 'SERVER LISTENING' : 'NON-AKTIF'?>
                             </div>
                             <div style="font-size:11px; color:#aaa; margin-top:2px;">
-                                Listener Range: <strong><?=$server_listen_port_start?>–<?=($server_listen_port_start + max(1, $stream_count) - 1)?></strong>
+                                Listener Range: <strong id="hud-server-range"><?=$server_listen_port_start?>–<?=($server_listen_port_start + max(1, $server_stream_count) - 1)?></strong>
                             </div>
                         </div>
                     </div>
                     <div class="col-xs-12 col-sm-3 col-md-3">
                         <div style="background:#1c2938; border:1px solid #2f435a; border-radius:4px; padding:10px; margin-bottom:8px;">
                             <div style="font-size:11px; text-transform:uppercase; color:#8899a6; font-weight:600;">Total RX Hub (Diterima dari Client)</div>
-                            <div style="font-size:18px; font-weight:700; margin-top:4px; color:#00d2be;">
+                            <div id="hud-server-rx" style="font-size:18px; font-weight:700; margin-top:4px; color:#00d2be;">
                                 <i class="fa-solid fa-arrow-down"></i> <?=htmlspecialchars($server_total_rx)?>
                             </div>
                             <div style="font-size:11px; color:#aaa; margin-top:2px;">Akumulasi seluruh port listener</div>
@@ -378,7 +380,7 @@ $active_mode = isset($_GET['mode']) ? strtolower($_GET['mode']) : ($server_enabl
                     <div class="col-xs-12 col-sm-3 col-md-3">
                         <div style="background:#1c2938; border:1px solid #2f435a; border-radius:4px; padding:10px; margin-bottom:8px;">
                             <div style="font-size:11px; text-transform:uppercase; color:#8899a6; font-weight:600;">Total TX Hub (Dikirim ke Client/Internet)</div>
-                            <div style="font-size:18px; font-weight:700; margin-top:4px; color:#58a6ff;">
+                            <div id="hud-server-tx" style="font-size:18px; font-weight:700; margin-top:4px; color:#58a6ff;">
                                 <i class="fa-solid fa-arrow-up"></i> <?=htmlspecialchars($server_total_tx)?>
                             </div>
                             <div style="font-size:11px; color:#aaa; margin-top:2px;">Akumulasi seluruh port listener</div>
@@ -387,7 +389,7 @@ $active_mode = isset($_GET['mode']) ? strtolower($_GET['mode']) : ($server_enabl
                     <div class="col-xs-12 col-sm-3 col-md-3">
                         <div style="background:#1c2938; border:1px solid #2f435a; border-radius:4px; padding:10px; margin-bottom:8px;">
                             <div style="font-size:11px; text-transform:uppercase; color:#8899a6; font-weight:600;">Subnet Pool Booster</div>
-                            <div style="font-size:14px; font-weight:700; margin-top:4px; color:#2ecc71;">
+                            <div id="hud-server-subnet" style="font-size:14px; font-weight:700; margin-top:4px; color:#2ecc71;">
                                 <i class="fa-solid fa-network-wired"></i> <?=htmlspecialchars($server_subnet)?>
                             </div>
                             <div style="font-size:11px; color:#aaa; margin-top:2px;">NAT Forwarding: <strong>MASQUERADE Enabled</strong></div>
@@ -435,10 +437,10 @@ $active_mode = isset($_GET['mode']) ? strtolower($_GET['mode']) : ($server_enabl
                                             <div class="form-group">
                                                 <label style="color:#d1d5db; font-size:12px;">Jumlah Listener Ports</label>
                                                 <select class="form-control input-sm" id="srv-stream-count">
-                                                    <option value="1" <?=($stream_count===1?'selected':'')?>>1 Port (51831)</option>
-                                                    <option value="2" <?=($stream_count===2?'selected':'')?>>2 Ports (51831–51832)</option>
-                                                    <option value="3" <?=($stream_count===3?'selected':'')?>>3 Ports (51831–51833)</option>
-                                                    <option value="4" <?=($stream_count===4?'selected':'')?>>4 Ports (51831–51834)</option>
+                                                    <option value="1" <?=($server_stream_count===1?'selected':'')?>>1 Port (51831)</option>
+                                                    <option value="2" <?=($server_stream_count===2?'selected':'')?>>2 Ports (51831–51832)</option>
+                                                    <option value="3" <?=($server_stream_count===3?'selected':'')?>>3 Ports (51831–51833)</option>
+                                                    <option value="4" <?=($server_stream_count===4?'selected':'')?>>4 Ports (51831–51834)</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -478,7 +480,7 @@ $active_mode = isset($_GET['mode']) ? strtolower($_GET['mode']) : ($server_enabl
                                                 }
                                             }
                                         ?>
-                                            <div class="form-group srv-peer-input-row" id="row-srv-peer-<?=$i?>" style="margin-bottom:8px; <?=$i > $stream_count ? 'display:none;' : ''?>">
+                                            <div class="form-group srv-peer-input-row" id="row-srv-peer-<?=$i?>" style="margin-bottom:8px; <?=$i > $server_stream_count ? 'display:none;' : ''?>">
                                                 <div style="display:flex; justify-content:space-between; font-size:11px; color:#95afc0;">
                                                     <span>Stream #<?=$i?> (Port <?=$server_listen_port_start + $i - 1?>, Client IP: 10.250.<?=$i?>.2):</span>
                                                 </div>
@@ -521,7 +523,7 @@ $active_mode = isset($_GET['mode']) ? strtolower($_GET['mode']) : ($server_enabl
                                             <th>TX Hub</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody id="tbody-server-streams">
                                         <?php if (empty($server_peers_telemetry)): ?>
                                             <tr>
                                                 <td colspan="8" class="text-center text-muted" style="padding:20px;">
@@ -887,6 +889,95 @@ function copyToClipboard(elementId, successMsg) {
         MitraNet.toast('success', successMsg || 'Teks berhasil disalin ke clipboard.');
     });
 }
+
+// -------------------------------------------------------------
+// Live Auto-Polling Telemetry (Setiap 3 Detik)
+// -------------------------------------------------------------
+var isPollingActive = true;
+function pollBoosterTelemetry() {
+    if (!isPollingActive || document.hidden) return;
+
+    $.ajax({
+        url: '/api/v1/vpn/booster/status',
+        type: 'GET',
+        dataType: 'json',
+        success: function(resp) {
+            if (resp && resp.success && resp.data) {
+                var d = resp.data;
+
+                // Update Client Telemetry
+                if (d.enabled) {
+                    $('#hud-client-status').html('<i class="fa-solid fa-circle-check"></i> AKTIF (MULTI-PATH)').removeClass('text-danger').addClass('text-success');
+                } else {
+                    $('#hud-client-status').html('<i class="fa-solid fa-circle-xmark"></i> NON-AKTIF').removeClass('text-success').addClass('text-danger');
+                }
+                $('#hud-client-streams').text((d.client_stream_count || d.stream_count || 2) + ' Parallel Streams');
+                $('#hud-client-rx').html('<i class="fa-solid fa-arrow-down"></i> ' + (d.total_rx_formatted || '0 B'));
+                $('#hud-client-tx').html('<i class="fa-solid fa-arrow-up"></i> ' + (d.total_tx_formatted || '0 B'));
+
+                // Update Client Stream Table
+                if (d.streams && d.streams.length > 0) {
+                    var cHtml = '';
+                    d.streams.forEach(function(s) {
+                        var isUp = (s.status === 'UP');
+                        var badgeCls = isUp ? 'label-success' : 'label-danger';
+                        var icon = isUp ? 'fa-check' : 'fa-times';
+                        cHtml += '<tr>' +
+                            '<td><strong>Stream #' + s.id + '</strong></td>' +
+                            '<td><span class="label label-default" style="font-family:monospace;">' + s.interface + '</span></td>' +
+                            '<td><code>' + s.ip + '/30</code></td>' +
+                            '<td><span class="badge" style="background:#2d3b4b; font-weight:normal;">' + s.port + '</span></td>' +
+                            '<td><span class="label ' + badgeCls + '"><i class="fa-solid ' + icon + '"></i> ' + s.status + '</span></td>' +
+                            '<td class="text-info font-monospace">' + s.latency + '</td>' +
+                            '<td class="text-success font-monospace">' + s.rx_formatted + '</td>' +
+                            '<td class="text-primary font-monospace">' + s.tx_formatted + '</td>' +
+                            '</tr>';
+                    });
+                    $('#tbody-client-streams').html(cHtml);
+                }
+
+                // Update Server Telemetry
+                if (d.server_enabled) {
+                    $('#hud-server-status').html('<i class="fa-solid fa-circle-check"></i> SERVER LISTENING').removeClass('text-danger').addClass('text-success');
+                } else {
+                    $('#hud-server-status').html('<i class="fa-solid fa-circle-xmark"></i> NON-AKTIF').removeClass('text-success').addClass('text-danger');
+                }
+                var pStart = d.server_listen_port_start || 51831;
+                var sCount = d.server_stream_count || 2;
+                $('#hud-server-range').text(pStart + '–' + (pStart + sCount - 1));
+                $('#hud-server-rx').html('<i class="fa-solid fa-arrow-down"></i> ' + (d.server_total_rx || '0 B'));
+                $('#hud-server-tx').html('<i class="fa-solid fa-arrow-up"></i> ' + (d.server_total_tx || '0 B'));
+
+                // Update Server Streams Table
+                if (d.server_peers_telemetry && d.server_peers_telemetry.length > 0) {
+                    var sHtml = '';
+                    var now = Math.floor(Date.now() / 1000);
+                    d.server_peers_telemetry.forEach(function(sp) {
+                        var st = sp.status || 'DOWN';
+                        var lblCls = (st === 'UP') ? 'label-success' : ((st === 'READY') ? 'label-info' : 'label-danger');
+                        var icon = (st === 'UP') ? 'fa-check' : ((st === 'READY') ? 'fa-satellite' : 'fa-times');
+                        var hs = parseInt(sp.latest_handshake || 0);
+                        var hsStr = (hs > 0) ? (now - hs) + ' detik lalu' : 'Belum pernah';
+                        sHtml += '<tr>' +
+                            '<td><strong>#' + sp.stream_id + '</strong></td>' +
+                            '<td><span class="label label-default font-monospace">' + sp.interface + '</span></td>' +
+                            '<td><span class="badge" style="background:#2d3b4b;">' + sp.listen_port + '</span></td>' +
+                            '<td><div style="font-size:11px;">S: <code>' + sp.server_ip + '</code></div><div style="font-size:11px; color:#95afc0;">C: <code>' + sp.client_ip + '</code></div></td>' +
+                            '<td><span class="label ' + lblCls + '"><i class="fa-solid ' + icon + '"></i> ' + st + '</span></td>' +
+                            '<td class="text-muted" style="font-size:11px;">' + hsStr + '</td>' +
+                            '<td class="text-success font-monospace">' + sp.rx_formatted + '</td>' +
+                            '<td class="text-primary font-monospace">' + sp.tx_formatted + '</td>' +
+                            '</tr>';
+                    });
+                    $('#tbody-server-streams').html(sHtml);
+                }
+            }
+        }
+    });
+}
+
+// Start polling
+setInterval(pollBoosterTelemetry, 3000);
 </script>
 
 <?php require_once(__DIR__ . '/../includes/foot.inc'); ?>

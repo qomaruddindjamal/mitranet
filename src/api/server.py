@@ -1389,6 +1389,7 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 "enabled": False,
                 "vps_host": "",
                 "stream_count": 2,
+                "client_stream_count": 2,
                 "tunnel_type": "wireguard",
                 "balancer_mode": "ecmp",
                 "dscp_mode": "AF41",
@@ -1397,6 +1398,7 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 "peer_public_key": "",
                 "server_enabled": False,
                 "server_listen_port_start": 51831,
+                "server_stream_count": 2,
                 "server_subnet": "10.250.0.0/16",
                 "server_public_key": "",
                 "server_peers": [],
@@ -1441,9 +1443,11 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 pass
 
             # Inspect actual live system telemetry
-            streams = []
-            stream_count = int(cfg.get("stream_count") or 2)
-            stream_count = min(max(stream_count, 1), 4)
+            client_stream_count = int(cfg.get("client_stream_count") or cfg.get("stream_count") or 2)
+            client_stream_count = min(max(client_stream_count, 1), 4)
+
+            server_stream_count = int(cfg.get("server_stream_count") or cfg.get("stream_count") or 2)
+            server_stream_count = min(max(server_stream_count, 1), 4)
 
             # Telemetry for Server Role
             server_peers_telemetry = []
@@ -1451,7 +1455,7 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             total_server_tx = 0
             is_server_active = False
 
-            for i in range(1, stream_count + 1):
+            for i in range(1, server_stream_count + 1):
                 srv_dev = f"wgsrvboost{i}"
                 sys_net = f"/sys/class/net/{srv_dev}"
                 rx_b = 0
@@ -1507,12 +1511,15 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             cfg["server_total_rx"] = fmt_bytes(total_server_rx)
             cfg["server_total_tx"] = fmt_bytes(total_server_tx)
             cfg["server_active"] = is_server_active
+            cfg["client_stream_count"] = client_stream_count
+            cfg["server_stream_count"] = server_stream_count
 
+            streams = []
             total_rx_bytes = 0
             total_tx_bytes = 0
             any_active = False
 
-            for i in range(1, stream_count + 1):
+            for i in range(1, client_stream_count + 1):
                 dev_name = f"wgboost{i}"
                 dev_ip = f"10.250.{i}.2"
                 is_up = False
@@ -4433,6 +4440,15 @@ PrivateKey = {priv_key}
                 except Exception:
                     pass
 
+                # Cleanup any orphan server streams (e.g. if reducing from 4 to 2)
+                for old_i in range(stream_count + 1, 5):
+                    old_srv_dev = f"wgsrvboost{old_i}"
+                    subprocess.run(["wg-quick", "down", old_srv_dev], stderr=subprocess.DEVNULL)
+                    subprocess.run(["ip", "link", "del", old_srv_dev], stderr=subprocess.DEVNULL)
+                    subprocess.run(["iptables", "-t", "nat", "-D", "POSTROUTING", "-s", f"10.250.{old_i}.0/30", "-j", "MASQUERADE"], stderr=subprocess.DEVNULL)
+                    subprocess.run(["iptables", "-D", "FORWARD", "-i", old_srv_dev, "-j", "ACCEPT"], stderr=subprocess.DEVNULL)
+                    subprocess.run(["iptables", "-D", "FORWARD", "-o", old_srv_dev, "-m", "state", "--state", "ESTABLISHED,RELATED", "-j", "ACCEPT"], stderr=subprocess.DEVNULL)
+
                 created_server_streams = []
                 for i in range(1, stream_count + 1):
                     srv_dev = f"wgsrvboost{i}"
@@ -4483,11 +4499,26 @@ PostDown = iptables -t nat -D POSTROUTING -s 10.250.{i}.0/30 -j MASQUERADE; ipta
                         "client_pubkey": client_pubkey
                     })
 
+                # Detect WAN IP for script generation
+                detected_wan_ip = "YOUR_MITRANET_PUBLIC_IP"
+                try:
+                    r_ip = subprocess.run(["ip", "route", "get", "1.1.1.1"], stdout=subprocess.PIPE, text=True)
+                    for l in r_ip.stdout.splitlines():
+                        if "src" in l:
+                            parts = l.split()
+                            src_idx = parts.index("src")
+                            if src_idx + 1 < len(parts):
+                                detected_wan_ip = parts[src_idx + 1].strip()
+                                break
+                except Exception:
+                    pass
+
                 # Generate Client Setup Script (RouterOS & Linux) for clients connecting to this Server
                 srv_ros_script_lines = [
                     "# ====================================================",
                     "# MitraNet Cloud Speed Booster - Client Setup Script",
                     f"# Server Public Key: {srv_pub}",
+                    f"# Server Public Endpoint IP: {detected_wan_ip}",
                     "# Run on Client RouterOS (e.g. MikroTik at branch/customer)",
                     "# ====================================================",
                     ""
@@ -4496,6 +4527,7 @@ PostDown = iptables -t nat -D POSTROUTING -s 10.250.{i}.0/30 -j MASQUERADE; ipta
                     "# ====================================================",
                     "# MitraNet Cloud Speed Booster - Linux Client Setup",
                     f"# Server Public Key: {srv_pub}",
+                    f"# Server Endpoint IP: {detected_wan_ip}",
                     "# ====================================================",
                     ""
                 ]
@@ -4505,11 +4537,11 @@ PostDown = iptables -t nat -D POSTROUTING -s 10.250.{i}.0/30 -j MASQUERADE; ipta
                     srv_ros_script_lines.append(f"# Stream {si}")
                     srv_ros_script_lines.append(f"/interface wireguard add name=wg-boost{si} listen-port={sport} mtu=1420")
                     srv_ros_script_lines.append(f"/ip address add address=10.250.{si}.2/30 interface=wg-boost{si}")
-                    srv_ros_script_lines.append(f"/interface wireguard peers add interface=wg-boost{si} public-key=\"{srv_pub}\" endpoint-address=YOUR_MITRANET_PUBLIC_IP endpoint-port={sport} allowed-address=0.0.0.0/0 persistent-keepalive=25")
+                    srv_ros_script_lines.append(f"/interface wireguard peers add interface=wg-boost{si} public-key=\"{srv_pub}\" endpoint-address={detected_wan_ip} endpoint-port={sport} allowed-address=0.0.0.0/0 persistent-keepalive=25")
                     srv_ros_script_lines.append("")
 
                     srv_linux_script_lines.append(f"# Client Stream {si} Config (/etc/wireguard/wgboost{si}.conf)")
-                    srv_linux_script_lines.append(f"[Interface]\nAddress = 10.250.{si}.2/30\nPrivateKey = CLIENT_PRIVATE_KEY_HERE\n\n[Peer]\nPublicKey = {srv_pub}\nEndpoint = YOUR_MITRANET_PUBLIC_IP:{sport}\nAllowedIPs = 0.0.0.0/0\nPersistentKeepalive = 25\n")
+                    srv_linux_script_lines.append(f"[Interface]\nAddress = 10.250.{si}.2/30\nPrivateKey = CLIENT_PRIVATE_KEY_HERE\n\n[Peer]\nPublicKey = {srv_pub}\nEndpoint = {detected_wan_ip}:{sport}\nAllowedIPs = 0.0.0.0/0\nPersistentKeepalive = 25\n")
 
                 srv_scripts = {
                     "routeros": "\n".join(srv_ros_script_lines),
@@ -4524,7 +4556,9 @@ PostDown = iptables -t nat -D POSTROUTING -s 10.250.{i}.0/30 -j MASQUERADE; ipta
                     "server_subnet": server_subnet,
                     "server_private_key": srv_priv,
                     "server_public_key": srv_pub,
-                    "stream_count": stream_count,
+                    "stream_count": existing_cfg.get("stream_count", 2),
+                    "client_stream_count": existing_cfg.get("client_stream_count", 2),
+                    "server_stream_count": stream_count,
                     "enable_bbr": enable_bbr,
                     "server_peers": server_peers,
                     "created_server_streams": created_server_streams,
@@ -4760,6 +4794,8 @@ MTU = 1420
                 "enabled": True,
                 "vps_host": vps_host,
                 "stream_count": stream_count,
+                "client_stream_count": stream_count,
+                "server_stream_count": existing_cfg.get("server_stream_count", 2),
                 "tunnel_type": tunnel_type,
                 "balancer_mode": balancer_mode,
                 "dscp_mode": dscp_mode,
@@ -4777,7 +4813,8 @@ MTU = 1420
                 "server_subnet": existing_cfg.get("server_subnet", "10.250.0.0/16"),
                 "server_private_key": existing_cfg.get("server_private_key", ""),
                 "server_public_key": existing_cfg.get("server_public_key", ""),
-                "server_peers": existing_cfg.get("server_peers", [])
+                "server_peers": existing_cfg.get("server_peers", []),
+                "server_scripts": existing_cfg.get("server_scripts", {})
             }
 
             try:
@@ -4853,6 +4890,12 @@ MTU = 1420
                         pass
                     try:
                         subprocess.run(["ip", "link", "del", srv_dev], stderr=subprocess.DEVNULL)
+                    except Exception:
+                        pass
+                    try:
+                        subprocess.run(["iptables", "-t", "nat", "-D", "POSTROUTING", "-s", f"10.250.{i}.0/30", "-j", "MASQUERADE"], stderr=subprocess.DEVNULL)
+                        subprocess.run(["iptables", "-D", "FORWARD", "-i", srv_dev, "-j", "ACCEPT"], stderr=subprocess.DEVNULL)
+                        subprocess.run(["iptables", "-D", "FORWARD", "-o", srv_dev, "-m", "state", "--state", "ESTABLISHED,RELATED", "-j", "ACCEPT"], stderr=subprocess.DEVNULL)
                     except Exception:
                         pass
                 cfg["server_enabled"] = False
