@@ -2373,6 +2373,7 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             import urllib.request
             import ssl
             import time
+            import json
 
             result_entry = None
             err_msg = ""
@@ -2550,7 +2551,6 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
 
         # 18d. Bandwidth & Hardware Benchmark Runner
         if path == "/api/v1/tools/benchmark/run":
-            import subprocess, time, json
             mode = str(payload.get("mode") or "cdn").strip().lower() # cdn, iperf3, pps
             iface = str(payload.get("interface") or "").strip()
             size_mb = int(payload.get("size_mb") or 25)
