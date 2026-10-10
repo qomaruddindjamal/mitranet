@@ -171,6 +171,21 @@ if (!isset($candidate_ifaces['veth0'])) {
                     <input class="form-control" name="listenport" id="listenport" type="text" value="<?=htmlspecialchars($suggested_port)?>" required placeholder="51820" />
                     <span class="help-block">Port UDP untuk komunikasi tunnel (default: 51820).</span>
                 </div>
+                <div class="col-sm-3">
+                    <div class="dropdown">
+                        <button class="btn btn-default btn-sm dropdown-toggle" type="button" id="dropdownCamouflageTun" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                            <i class="fa-solid fa-mask text-primary"></i> Camouflage <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownCamouflageTun">
+                            <li class="dropdown-header">Penyamaran Port Server (Bypass ISP)</li>
+                            <li><a href="javascript:void(0)" onclick="$('#listenport').val('53'); MitraNet.toast('Listen Port diatur ke 53 (DNS Protocol Camouflage)', 'info');"><i class="fa-solid fa-network-wired text-info"></i> Port 53 (DNS Server Bypass)</a></li>
+                            <li><a href="javascript:void(0)" onclick="$('#listenport').val('443'); MitraNet.toast('Listen Port diatur ke 443 (QUIC / HTTPS Camouflage)', 'info');"><i class="fa-solid fa-shield-halved text-success"></i> Port 443 (QUIC/HTTPS Bypass)</a></li>
+                            <li><a href="javascript:void(0)" onclick="$('#listenport').val('123'); MitraNet.toast('Listen Port diatur ke 123 (NTP Protocol Camouflage)', 'info');"><i class="fa-solid fa-clock text-warning"></i> Port 123 (NTP Time Bypass)</a></li>
+                            <li role="separator" class="divider"></li>
+                            <li><a href="javascript:void(0)" onclick="$('#listenport').val('51820'); MitraNet.toast('Listen Port dikembalikan ke standar (51820)', 'info');"><i class="fa-solid fa-rotate-left"></i> Default (51820)</a></li>
+                        </ul>
+                    </div>
+                </div>
             </div>
 
             <div class="form-group">
