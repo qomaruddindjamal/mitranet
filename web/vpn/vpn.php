@@ -342,6 +342,9 @@ $interfaces = $vpnConfig['interfaces'] ?? [];
                 <li class="<?=($current_tab === 'l2tp_secrets') ? 'active' : ''?>">
                     <a href="vpn.php?tab=l2tp_secrets">L2TP Secrets</a>
                 </li>
+                <li>
+                    <a href="vpn_booster.php" class="text-primary font-weight-bold"><i class="fa-solid fa-bolt"></i> Cloud Speed Booster</a>
+                </li>
             </ul>
         </div>
 

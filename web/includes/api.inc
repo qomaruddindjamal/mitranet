@@ -466,5 +466,18 @@ class MitraNetApi {
     public static function restartDnsmasq() {
         return self::request('/services/dnsmasq/restart', 'POST', []);
     }
+
+    public static function getBoosterStatus() {
+        $res = self::request('/vpn/booster/status');
+        return $res['status'] === 200 ? ($res['data']['data'] ?? []) : [];
+    }
+
+    public static function applyBooster($payload) {
+        return self::request('/vpn/booster/apply', 'POST', $payload);
+    }
+
+    public static function stopBooster() {
+        return self::request('/vpn/booster/stop', 'POST', []);
+    }
 }
 

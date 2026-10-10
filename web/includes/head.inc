@@ -101,6 +101,7 @@ $services_menu = array(
 );
 
 $vpn_menu = array(
+    array("Cloud Speed Booster", "/vpn/vpn_booster.php"),
     array("IPsec", "/vpn/ipsec.php"),
     array("L2TP", "/vpn/l2tp_server.php"),
     array("OpenVPN", "/vpn/openvpn_server.php"),
