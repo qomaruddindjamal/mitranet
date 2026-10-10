@@ -315,7 +315,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'description' => $descr
             ]);
             if (($res['status'] ?? 0) === 200) {
-                $msg = "VLAN interface '{$parent}.{$tag}' berhasil dibuat.";
+                $vlan_dev = "{$parent}.{$tag}";
+                if (!empty($_POST['auto_dhcp'])) {
+                    exec("dhcpcd -4 -n " . escapeshellarg($vlan_dev) . " >/dev/null 2>&1 &");
+                }
+                $msg = "VLAN interface '{$vlan_dev}' berhasil dibuat.";
             } else {
                 $err = $res['data']['error'] ?? 'Gagal membuat VLAN.';
             }
@@ -957,6 +961,14 @@ if (!function_exists('fmt_pkts')) {
                     <div class="form-group">
                         <label><?=gettext("Description:")?></label>
                         <input type="text" name="descr" class="form-control" placeholder="Office / Hotspot VLAN">
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="auto_dhcp" value="1" checked> <strong><?=gettext("Minta IP Address otomatis via DHCP (dhcpcd)")?></strong>
+                        </label>
+                    </div>
+                    <div class="alert alert-info fs-11" style="margin-bottom:0; padding:8px;">
+                        <i class="fa-solid fa-circle-info"></i> <strong>Catatan Trunking:</strong> Pastikan port switch pada router upstream diset sebagai <em>Trunk Port / Tagged</em> untuk VLAN ID ini agar paket 802.1Q diterima.
                     </div>
                 </div>
                 <div class="modal-footer">

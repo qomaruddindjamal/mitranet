@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /*
  * system_advanced_admin.php - MitraNet System: Advanced: Admin Access
  * Faithful port from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
@@ -28,13 +28,9 @@ $sys = MitraNetApi::getSystem();
 $cfg = MitraNetApi::getConfigStatus();
 ?>
 
-<ul class="nav nav-pills">
-    <li role="presentation" class="active"><a href="system_advanced_admin.php">Admin Access</a></li>
-    <li role="presentation"><a href="system_advanced_firewall.php">Firewall &amp; NAT</a></li>
-    <li role="presentation"><a href="system_advanced_network.php">Networking</a></li>
-    <li role="presentation"><a href="system_advanced_misc.php">Miscellaneous</a></li>
-    <li role="presentation"><a href="system_advanced_sysctl.php">System Tunables</a></li>
-    <li role="presentation"><a href="system_advanced_notifications.php">Notifications</a></li>
+<ul class="nav nav-pills" style="margin-bottom: 20px;">
+    <li role="presentation" class="active"><a href="advanced_admin.php">Admin Access</a></li>
+    <li role="presentation"><a href="advanced_sysctl.php">System Tunables &amp; BBR</a></li>
 </ul>
 
 <?php if (!empty($savemsg)): ?>

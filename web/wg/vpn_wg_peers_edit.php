@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /*
  * vpn_wg_peers_edit.php - MitraNet WireGuard Edit / Add Peer
  * Faithful port from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
@@ -217,6 +217,21 @@ display_top_tabs($tab_array, false, 'pills');
                 </div>
                 <div class="col-sm-2">
                     <input class="form-control" name="port" id="port" type="text" value="<?=htmlspecialchars($ep_port)?>" placeholder="51820" />
+                </div>
+                <div class="col-sm-2">
+                    <div class="dropdown">
+                        <button class="btn btn-default btn-sm dropdown-toggle" type="button" id="dropdownCamouflage" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                            <i class="fa-solid fa-mask text-primary"></i> Camouflage <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownCamouflage">
+                            <li class="dropdown-header">Bypass &amp; Shaper Camouflage</li>
+                            <li><a href="javascript:void(0)" onclick="$('#port').val('53'); MitraNet.toast('Port diatur ke 53 (DNS Query)', 'info');"><i class="fa-solid fa-network-wired"></i> Port 53 (DNS Bypass)</a></li>
+                            <li><a href="javascript:void(0)" onclick="$('#port').val('443'); MitraNet.toast('Port diatur ke 443 (QUIC / HTTPS)', 'info');"><i class="fa-solid fa-shield-halved"></i> Port 443 (QUIC/HTTPS Bypass)</a></li>
+                            <li><a href="javascript:void(0)" onclick="$('#port').val('123'); MitraNet.toast('Port diatur ke 123 (NTP)', 'info');"><i class="fa-solid fa-clock"></i> Port 123 (NTP Time)</a></li>
+                            <li role="separator" class="divider"></li>
+                            <li><a href="javascript:void(0)" onclick="$('#port').val('51820'); MitraNet.toast('Port diatur ke 51820 (Standard WireGuard)', 'info');"><i class="fa-solid fa-rotate-left"></i> Default (51820)</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
 
