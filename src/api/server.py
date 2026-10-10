@@ -4380,10 +4380,10 @@ MTU = 1420
                     gw_b_file = "/etc/mitranet/secrets/original_gateway.json"
                     if not os.path.exists(gw_b_file):
                         r_show = subprocess.run(["ip", "route", "show", "default"], stdout=subprocess.PIPE, text=True)
-                        orig_line = r_show.stdout.strip()
-                        if orig_line and "wgboost" not in orig_line:
+                        orig_lines = [l.strip() for l in r_show.stdout.splitlines() if l.strip() and "wgboost" not in l]
+                        if orig_lines:
                             with open(gw_b_file, "w") as gwf:
-                                json.dump({"orig_default": orig_line}, gwf)
+                                json.dump({"orig_defaults": orig_lines, "orig_default": orig_lines[0]}, gwf, indent=2)
 
                     ecmp_parts = []
                     for i in range(1, stream_count + 1):
@@ -4547,10 +4547,13 @@ MTU = 1420
                 gw_b_file = "/etc/mitranet/secrets/original_gateway.json"
                 if os.path.exists(gw_b_file):
                     with open(gw_b_file, "r") as gwf:
-                        saved_gw = json.load(gwf).get("orig_default", "")
-                    if saved_gw:
-                        # e.g., "default via 10.10.66.254 dev enp1s0 metric 1002"
-                        subprocess.run(f"ip route replace {saved_gw}", shell=True)
+                        saved_data = json.load(gwf)
+                    defaults_to_restore = saved_data.get("orig_defaults") or []
+                    if not defaults_to_restore and saved_data.get("orig_default"):
+                        defaults_to_restore = [saved_data.get("orig_default")]
+                    for gw_route in defaults_to_restore:
+                        if gw_route:
+                            subprocess.run(f"ip route replace {gw_route}", shell=True)
             except Exception as r_err:
                 logger.warning("Failed restoring default route: %s", r_err)
 
