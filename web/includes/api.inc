@@ -445,6 +445,14 @@ class MitraNetApi {
         return self::request('/interfaces/vethernet/delete', 'POST', ['name' => $name]);
     }
 
+    public static function createTunnel($payload) {
+        return self::request('/interfaces/tunnel/create', 'POST', $payload);
+    }
+
+    public static function deleteTunnel($name) {
+        return self::request('/interfaces/tunnel/delete', 'POST', ['name' => $name]);
+    }
+
     public static function getDhcpConfigs() {
         $res = self::request('/services/dhcp');
         return $res['status'] === 200 ? ($res['data']['dhcp'] ?? []) : [];

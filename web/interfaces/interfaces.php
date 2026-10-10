@@ -510,6 +510,114 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $err = $res['data']['error'] ?? 'Gagal membuat LAGG.';
             }
         }
+    } elseif ($action === 'create_eoip') {
+        $name = trim($_POST['name'] ?? '');
+        $remote = trim($_POST['remote'] ?? '');
+        $local = trim($_POST['local'] ?? '');
+        $tunnel_id = (int)($_POST['tunnel_id'] ?? 1);
+        $mtu = (int)($_POST['mtu'] ?? 1500) ?: 1500;
+        $bridge = trim($_POST['bridge'] ?? '');
+        $ip_cidr = trim($_POST['ip_cidr'] ?? '');
+
+        if (!empty($name) && !empty($remote)) {
+            $res = MitraNetApi::createTunnel([
+                'type' => 'eoip',
+                'name' => $name,
+                'remote' => $remote,
+                'local' => $local,
+                'tunnel_id' => $tunnel_id,
+                'mtu' => $mtu,
+                'bridge' => $bridge,
+                'ip_cidr' => $ip_cidr
+            ]);
+            if (($res['status'] ?? 0) === 200 && ($res['data']['success'] ?? false)) {
+                $msg = $res['data']['message'] ?? "EoIP Tunnel '{$name}' berhasil dibuat.";
+            } else {
+                $err = $res['data']['error'] ?? 'Gagal membuat EoIP tunnel.';
+            }
+        } else {
+            $err = "Nama interface dan Alamat Remote wajib diisi untuk EoIP.";
+        }
+    } elseif ($action === 'create_gre') {
+        $name = trim($_POST['name'] ?? '');
+        $remote = trim($_POST['remote'] ?? '');
+        $local = trim($_POST['local'] ?? '');
+        $ttl = (int)($_POST['ttl'] ?? 255) ?: 255;
+        $mtu = (int)($_POST['mtu'] ?? 1476) ?: 1476;
+        $ip_cidr = trim($_POST['ip_cidr'] ?? '');
+
+        if (!empty($name) && !empty($remote)) {
+            $res = MitraNetApi::createTunnel([
+                'type' => 'gre',
+                'name' => $name,
+                'remote' => $remote,
+                'local' => $local,
+                'ttl' => $ttl,
+                'mtu' => $mtu,
+                'ip_cidr' => $ip_cidr
+            ]);
+            if (($res['status'] ?? 0) === 200 && ($res['data']['success'] ?? false)) {
+                $msg = $res['data']['message'] ?? "GRE Tunnel '{$name}' berhasil dibuat.";
+            } else {
+                $err = $res['data']['error'] ?? 'Gagal membuat GRE tunnel.';
+            }
+        } else {
+            $err = "Nama interface dan Alamat Remote wajib diisi untuk GRE.";
+        }
+    } elseif ($action === 'create_iptunnel') {
+        $name = trim($_POST['name'] ?? '');
+        $remote = trim($_POST['remote'] ?? '');
+        $local = trim($_POST['local'] ?? '');
+        $ttl = (int)($_POST['ttl'] ?? 64) ?: 64;
+        $mtu = (int)($_POST['mtu'] ?? 1480) ?: 1480;
+        $ip_cidr = trim($_POST['ip_cidr'] ?? '');
+
+        if (!empty($name) && !empty($remote)) {
+            $res = MitraNetApi::createTunnel([
+                'type' => 'ipip',
+                'name' => $name,
+                'remote' => $remote,
+                'local' => $local,
+                'ttl' => $ttl,
+                'mtu' => $mtu,
+                'ip_cidr' => $ip_cidr
+            ]);
+            if (($res['status'] ?? 0) === 200 && ($res['data']['success'] ?? false)) {
+                $msg = $res['data']['message'] ?? "IPIP Tunnel '{$name}' berhasil dibuat.";
+            } else {
+                $err = $res['data']['error'] ?? 'Gagal membuat IPIP tunnel.';
+            }
+        } else {
+            $err = "Nama interface dan Alamat Remote wajib diisi untuk IPIP Tunnel.";
+        }
+    } elseif ($action === 'create_vxlan') {
+        $name = trim($_POST['name'] ?? '');
+        $vni = (int)($_POST['vni'] ?? 100) ?: 100;
+        $port = (int)($_POST['port'] ?? 4789) ?: 4789;
+        $remote = trim($_POST['remote'] ?? '');
+        $parent = trim($_POST['parent'] ?? '');
+        $bridge = trim($_POST['bridge'] ?? '');
+        $ip_cidr = trim($_POST['ip_cidr'] ?? '');
+
+        if (!empty($name) && $vni > 0) {
+            $res = MitraNetApi::createTunnel([
+                'type' => 'vxlan',
+                'name' => $name,
+                'vni' => $vni,
+                'port' => $port,
+                'remote' => $remote,
+                'parent' => $parent,
+                'bridge' => $bridge,
+                'ip_cidr' => $ip_cidr
+            ]);
+            if (($res['status'] ?? 0) === 200 && ($res['data']['success'] ?? false)) {
+                $msg = $res['data']['message'] ?? "VXLAN '{$name}' (VNI {$vni}) berhasil dibuat.";
+            } else {
+                $err = $res['data']['error'] ?? 'Gagal membuat VXLAN interface.';
+            }
+        } else {
+            $err = "Nama interface dan VNI Identifier wajib diisi untuk VXLAN.";
+        }
     } elseif ($action === 'delete_interface') {
         $del_name = trim($_POST['interface'] ?? '');
         $del_type = trim($_POST['type'] ?? '');
@@ -518,6 +626,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 MitraNetApi::request('/bridges/delete', 'POST', ['name' => $del_name]);
             } elseif ($del_type === 'VLAN' || strpos($del_name, '.') !== false || strpos($del_name, 'vlan') === 0) {
                 MitraNetApi::request('/vlans/delete', 'POST', ['name' => $del_name]);
+            } elseif (preg_match('/^(eoip|gre|ipip|tunl|vxlan)/i', $del_name)) {
+                MitraNetApi::deleteTunnel($del_name);
             } elseif (strpos($del_name, 'veth') === 0) {
                 exec("ip link delete " . escapeshellarg($del_name));
             } else {
@@ -957,6 +1067,10 @@ if (!function_exists('fmt_pkts')) {
 					if (is_dir("/sys/class/net/{$ifname}/bridge") || preg_match('/^br[-_]/i', $ifname) || ($i['type'] ?? '') === 'bridge') $type = 'Bridge';
 					elseif (is_dir("/sys/class/net/{$ifname}/bonding") || preg_match('/^bond/i', $ifname) || ($i['type'] ?? '') === 'bond') $type = 'Bonding';
 					elseif (preg_match('/^vlan/i', $ifname) || strpos($ifname, '.') !== false || ($i['type'] ?? '') === 'vlan') $type = 'VLAN';
+					elseif (preg_match('/^eoip/i', $ifname)) $type = 'EoIP';
+					elseif (preg_match('/^gre/i', $ifname)) $type = 'GRE';
+					elseif (preg_match('/^(tunl|ipip)/i', $ifname)) $type = 'IPIP';
+					elseif (preg_match('/^vxlan/i', $ifname)) $type = 'VXLAN';
 					elseif (($i['type'] ?? '') === 'macvlan' || preg_match('/^(macvlan|mac[0-9])/i', $ifname)) $type = 'MACVLAN';
 					elseif (preg_match('/^wg/i', $ifname)) $type = 'WireGuard';
 					elseif (preg_match('/^veth/i', $ifname)) $type = 'vEthernet';
@@ -1349,6 +1463,293 @@ if (!function_exists('fmt_pkts')) {
 </div>
 
 <!-- ============================================== -->
+<!-- MODAL: ADD NEW EOIP TUNNEL (MikroTik Standard) -->
+<!-- ============================================== -->
+<div id="modal-new-eoip" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-md">
+        <form method="post" action="interfaces.php?tab=eoip">
+            <input type="hidden" name="action" value="create_eoip">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">
+                        <i class="fa-solid fa-network-wired text-primary"></i> <?=gettext("New EoIP Tunnel (MikroTik Standard)")?>
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label><span class="text-danger">*</span> <?=gettext("Interface Name:")?></label>
+                        <input type="text" name="name" class="form-control" placeholder="eoip-tunnel1" required>
+                        <span class="help-block">Nama perangkat interface (contoh: eoip-tunnel1 atau eoip1).</span>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label><?=gettext("Local Address (Optional):")?></label>
+                                <input type="text" name="local" class="form-control" placeholder="10.10.66.228">
+                                <span class="help-block">IP WAN router ini (opsional).</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label><span class="text-danger">*</span> <?=gettext("Remote Address:")?></label>
+                                <input type="text" name="remote" class="form-control" placeholder="103.187.146.126" required>
+                                <span class="help-block">IP Publik / WAN router peer lawan.</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label><span class="text-danger">*</span> <?=gettext("Tunnel ID (Key):")?></label>
+                                <input type="number" name="tunnel_id" class="form-control" min="1" max="65535" value="1" required>
+                                <span class="help-block">Harus sama persis dengan Tunnel ID di MikroTik peer.</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label><?=gettext("MTU:")?></label>
+                                <input type="number" name="mtu" class="form-control" min="576" max="9000" value="1500">
+                                <span class="help-block">Default: 1500 (Layer 2 Ethernet).</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label><?=gettext("Bridge Member (LAN Bridge Port):")?></label>
+                        <select name="bridge" class="form-control">
+                            <option value="">-- None (Standalone L2 Device) --</option>
+                            <?php foreach ($ifaces_raw as $b): if (is_dir("/sys/class/net/{$b['name']}/bridge") || ($b['type'] ?? '') === 'bridge' || preg_match('/^br/i', $b['name'])): ?>
+                                <option value="<?=htmlspecialchars($b['name'])?>"><?=htmlspecialchars(strtoupper($b['name']))?> (Bridge)</option>
+                            <?php endif; endforeach; ?>
+                        </select>
+                        <span class="help-block">Gabungkan interface EoIP ini ke Bridge LAN untuk meneruskan broadcast/DHCP langsung antar kantor/site.</span>
+                    </div>
+                    <div class="form-group">
+                        <label><?=gettext("IP Address / CIDR (Opsional jika tidak di-bridge):")?></label>
+                        <input type="text" name="ip_cidr" class="form-control" placeholder="10.200.1.1/30">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-plus icon-embed-btn"></i> Create EoIP</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL: ADD NEW GRE TUNNEL                      -->
+<!-- ============================================== -->
+<div id="modal-new-gre" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-md">
+        <form method="post" action="interfaces.php?tab=gre">
+            <input type="hidden" name="action" value="create_gre">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">
+                        <i class="fa-solid fa-shield-halved text-primary"></i> <?=gettext("New GRE Tunnel")?>
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label><span class="text-danger">*</span> <?=gettext("Interface Name:")?></label>
+                        <input type="text" name="name" class="form-control" placeholder="gre1" required>
+                        <span class="help-block">Nama antarmuka GRE (contoh: gre1 atau gre-vps).</span>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label><?=gettext("Local Address (Optional):")?></label>
+                                <input type="text" name="local" class="form-control" placeholder="10.10.66.228">
+                                <span class="help-block">IP WAN router lokal.</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label><span class="text-danger">*</span> <?=gettext("Remote Address:")?></label>
+                                <input type="text" name="remote" class="form-control" placeholder="103.187.146.126" required>
+                                <span class="help-block">IP WAN endpoint router tujuan.</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label><?=gettext("TTL (Time To Live):")?></label>
+                                <input type="number" name="ttl" class="form-control" min="1" max="255" value="255">
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label><?=gettext("MTU:")?></label>
+                                <input type="number" name="mtu" class="form-control" min="576" max="9000" value="1476">
+                                <span class="help-block">Default GRE MTU: 1476 bytes.</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label><?=gettext("IP Address / CIDR (Tunnel Point-to-Point):")?></label>
+                        <input type="text" name="ip_cidr" class="form-control" placeholder="10.250.1.1/30">
+                        <span class="help-block">Alamat IP subnet interkoneksi tunnel.</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-plus icon-embed-btn"></i> Create GRE</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL: ADD NEW IPIP TUNNEL                     -->
+<!-- ============================================== -->
+<div id="modal-new-iptunnel" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-md">
+        <form method="post" action="interfaces.php?tab=iptunnel">
+            <input type="hidden" name="action" value="create_iptunnel">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">
+                        <i class="fa-solid fa-arrow-right-arrow-left text-primary"></i> <?=gettext("New IPIP Tunnel")?>
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label><span class="text-danger">*</span> <?=gettext("Interface Name:")?></label>
+                        <input type="text" name="name" class="form-control" placeholder="ipip1" required>
+                        <span class="help-block">Nama antarmuka IPIP (contoh: ipip1).</span>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label><?=gettext("Local Address (Optional):")?></label>
+                                <input type="text" name="local" class="form-control" placeholder="10.10.66.228">
+                                <span class="help-block">IP WAN router lokal.</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label><span class="text-danger">*</span> <?=gettext("Remote Address:")?></label>
+                                <input type="text" name="remote" class="form-control" placeholder="103.187.146.126" required>
+                                <span class="help-block">IP WAN endpoint router tujuan.</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label><?=gettext("TTL (Time To Live):")?></label>
+                                <input type="number" name="ttl" class="form-control" min="1" max="255" value="64">
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label><?=gettext("MTU:")?></label>
+                                <input type="number" name="mtu" class="form-control" min="576" max="9000" value="1480">
+                                <span class="help-block">Default IPIP MTU: 1480 bytes.</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label><?=gettext("IP Address / CIDR (Tunnel Point-to-Point):")?></label>
+                        <input type="text" name="ip_cidr" class="form-control" placeholder="10.252.1.1/30">
+                        <span class="help-block">Alamat IP subnet interkoneksi tunnel layer 3.</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-plus icon-embed-btn"></i> Create IPIP</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL: ADD NEW VXLAN INTERFACE                 -->
+<!-- ============================================== -->
+<div id="modal-new-vxlan" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-md">
+        <form method="post" action="interfaces.php?tab=vxlan">
+            <input type="hidden" name="action" value="create_vxlan">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">
+                        <i class="fa-solid fa-cloud-arrow-up text-primary"></i> <?=gettext("New VXLAN Interface (Overlay Layer 2)")?>
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label><span class="text-danger">*</span> <?=gettext("Interface Name:")?></label>
+                        <input type="text" name="name" class="form-control" placeholder="vxlan100" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label><span class="text-danger">*</span> <?=gettext("VNI (VXLAN Network ID):")?></label>
+                                <input type="number" name="vni" class="form-control" min="1" max="16777215" value="100" required>
+                                <span class="help-block">VNI ID (1 s/d 16,777,215).</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label><?=gettext("UDP Destination Port:")?></label>
+                                <input type="number" name="port" class="form-control" value="4789">
+                                <span class="help-block">Standar IANA: 4789.</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label><?=gettext("Remote VTEP IP:")?></label>
+                                <input type="text" name="remote" class="form-control" placeholder="103.187.146.126">
+                                <span class="help-block">IP Unicast VTEP peer endpoint lawan.</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label><?=gettext("Underlay Parent Interface:")?></label>
+                                <select name="parent" class="form-control">
+                                    <option value="">-- Auto Route Detection --</option>
+                                    <?php foreach ($ifaces_raw as $p): if (!preg_match('/^(lo|vxlan|eoip)/i', $p['name'])): ?>
+                                        <option value="<?=htmlspecialchars($p['name'])?>"><?=htmlspecialchars(strtoupper($p['name']))?></option>
+                                    <?php endif; endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label><?=gettext("Bridge Member (LAN Bridge Port):")?></label>
+                        <select name="bridge" class="form-control">
+                            <option value="">-- None (Standalone Overlay L2) --</option>
+                            <?php foreach ($ifaces_raw as $b): if (is_dir("/sys/class/net/{$b['name']}/bridge") || ($b['type'] ?? '') === 'bridge' || preg_match('/^br/i', $b['name'])): ?>
+                                <option value="<?=htmlspecialchars($b['name'])?>"><?=htmlspecialchars(strtoupper($b['name']))?> (Bridge)</option>
+                            <?php endif; endforeach; ?>
+                        </select>
+                        <span class="help-block">Gabungkan antarmuka VXLAN ke Bridge lokal untuk ekstensi VLAN/LAN overlay multi-site.</span>
+                    </div>
+                    <div class="form-group">
+                        <label><?=gettext("IP Address / CIDR (Optional):")?></label>
+                        <input type="text" name="ip_cidr" class="form-control" placeholder="192.168.100.1/24">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-plus icon-embed-btn"></i> Create VXLAN</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================== -->
 <!-- MODAL: ADD NEW GENERIC INTERFACE (All tab)     -->
 <!-- ============================================== -->
 <div id="modal-new-interface" class="modal fade" role="dialog">
@@ -1364,8 +1765,12 @@ if (!function_exists('fmt_pkts')) {
                 <div class="form-group">
                     <label><?=gettext("Select Interface Type:")?></label>
                     <select class="form-control" id="new-iface-type">
+                        <option value="eoip">EoIP Tunnel (Ethernet over IP - MikroTik)</option>
+                        <option value="gre">GRE Tunnel (Generic Routing Encapsulation)</option>
+                        <option value="iptunnel">IPIP Tunnel (IP over IP)</option>
+                        <option value="vxlan">VXLAN (Virtual Extensible LAN)</option>
                         <option value="bridge">Bridge Interface</option>
-                        <option value="vlan">VLAN Interface</option>
+                        <option value="vlan">VLAN Interface (802.1Q)</option>
                         <option value="macvlan">MACVLAN Interface (Virtual MAC)</option>
                         <option value="vether">vEthernet (KVM / Host-Guest)</option>
                         <option value="vether_tunnel">vEther Tunnel</option>
@@ -1709,7 +2114,15 @@ var selectedIface = null;
 
 window.openNewModal = function() {
     var currentTab = <?=json_encode($current_tab)?>;
-    if (currentTab === 'bridge') {
+    if (currentTab === 'eoip') {
+        $('#modal-new-eoip').modal('show');
+    } else if (currentTab === 'gre') {
+        $('#modal-new-gre').modal('show');
+    } else if (currentTab === 'iptunnel') {
+        $('#modal-new-iptunnel').modal('show');
+    } else if (currentTab === 'vxlan') {
+        $('#modal-new-vxlan').modal('show');
+    } else if (currentTab === 'bridge') {
         $('#modal-new-bridge').modal('show');
     } else if (currentTab === 'vlan') {
         $('#modal-new-vlan').modal('show');
@@ -1732,7 +2145,15 @@ window.proceedToTypeModal = function() {
     var selectedType = $('#new-iface-type').val();
     $('#modal-new-interface').modal('hide');
     setTimeout(function() {
-        if (selectedType === 'bridge') {
+        if (selectedType === 'eoip') {
+            $('#modal-new-eoip').modal('show');
+        } else if (selectedType === 'gre') {
+            $('#modal-new-gre').modal('show');
+        } else if (selectedType === 'iptunnel') {
+            $('#modal-new-iptunnel').modal('show');
+        } else if (selectedType === 'vxlan') {
+            $('#modal-new-vxlan').modal('show');
+        } else if (selectedType === 'bridge') {
             $('#modal-new-bridge').modal('show');
         } else if (selectedType === 'vlan') {
             $('#modal-new-vlan').modal('show');

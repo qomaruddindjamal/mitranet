@@ -4056,6 +4056,153 @@ PrivateKey = {priv_key}
                 self._send_json(500, {"error": f"Gagal menghapus interface: {e}"})
             return
 
+        # 22a. Point-to-Point & Overlay Tunnels (EoIP, GRE, IPIP, VXLAN) Creation
+        if path == "/api/v1/interfaces/tunnel/create":
+            import re
+            import subprocess
+            tun_type = str(payload.get("type", "")).strip().lower() # eoip, gre, iptunnel/ipip, vxlan
+            name = re.sub(r'[^a-zA-Z0-9_\-]', '', str(payload.get("name", "")).strip().lower())
+            remote_ip = str(payload.get("remote", "")).strip()
+            local_ip = str(payload.get("local", "")).strip()
+            ttl = int(payload.get("ttl", 255) or 255)
+            mtu = int(payload.get("mtu", 1500) or 1500)
+            bridge_name = str(payload.get("bridge", "")).strip()
+
+            if not name:
+                self._send_json(400, {"error": "Nama interface tunnel wajib diisi."})
+                return
+
+            if tun_type not in ("eoip", "gre", "ipip", "iptunnel", "vxlan"):
+                self._send_json(400, {"error": "Tipe tunnel tidak didukung. Gunakan eoip, gre, ipip, atau vxlan."})
+                return
+
+            try:
+                # 1. Pastikan modul kernel terpasang (Auto-modprobe)
+                if tun_type in ("eoip", "gre"):
+                    subprocess.run(["modprobe", "ip_gre"], check=False)
+                    subprocess.run(["modprobe", "ip_tunnel"], check=False)
+                elif tun_type in ("ipip", "iptunnel"):
+                    subprocess.run(["modprobe", "ipip"], check=False)
+                    subprocess.run(["modprobe", "ip_tunnel"], check=False)
+                elif tun_type == "vxlan":
+                    subprocess.run(["modprobe", "vxlan"], check=False)
+
+                # 2. Hapus jika nama device sudah ada sebelumnya
+                subprocess.run(["ip", "link", "del", name], stderr=subprocess.DEVNULL)
+
+                # 3. Eksekusi perintah spesifik per tipe
+                cmd = []
+                if tun_type == "eoip":
+                    # Linux EoIP Layer 2 Ethernet Tunnel (GRETAP)
+                    cmd = ["ip", "link", "add", name, "type", "gretap"]
+                    if remote_ip: cmd.extend(["remote", remote_ip])
+                    if local_ip: cmd.extend(["local", local_ip])
+                    cmd.extend(["ttl", str(ttl)])
+                elif tun_type == "gre":
+                    cmd = ["ip", "tunnel", "add", name, "mode", "gre"]
+                    if remote_ip: cmd.extend(["remote", remote_ip])
+                    if local_ip: cmd.extend(["local", local_ip])
+                    cmd.extend(["ttl", str(ttl)])
+                elif tun_type in ("ipip", "iptunnel"):
+                    cmd = ["ip", "tunnel", "add", name, "mode", "ipip"]
+                    if remote_ip: cmd.extend(["remote", remote_ip])
+                    if local_ip: cmd.extend(["local", local_ip])
+                    cmd.extend(["ttl", str(ttl)])
+                elif tun_type == "vxlan":
+                    vni = int(payload.get("vni", 100) or 100)
+                    dstport = int(payload.get("port", 4789) or 4789)
+                    phys_dev = str(payload.get("parent", "")).strip()
+                    mcast_grp = str(payload.get("group", "")).strip()
+
+                    cmd = ["ip", "link", "add", name, "type", "vxlan", "id", str(vni), "dstport", str(dstport)]
+                    if remote_ip:
+                        cmd.extend(["remote", remote_ip])
+                    elif mcast_grp:
+                        cmd.extend(["group", mcast_grp])
+                    if phys_dev:
+                        cmd.extend(["dev", phys_dev])
+
+                res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                if res.returncode != 0:
+                    self._send_json(500, {"error": f"Kernel error: {res.stderr.strip()}"})
+                    return
+
+                # 4. Atur MTU & Bring UP
+                if mtu:
+                    subprocess.run(["ip", "link", "set", name, "mtu", str(mtu)], check=False)
+                subprocess.run(["ip", "link", "set", name, "up"], check=False)
+
+                # 5. Pasang ke Bridge jika diminta (untuk L2 EoIP / VXLAN)
+                if bridge_name and bridge_name != "none":
+                    subprocess.run(["ip", "link", "set", name, "master", bridge_name], check=False)
+
+                # 6. Assign IP address jika disediakan
+                ip_cidr = str(payload.get("ip_cidr", "")).strip()
+                if ip_cidr and "/" in ip_cidr:
+                    subprocess.run(["ip", "addr", "add", ip_cidr, "dev", name], check=False)
+
+                # 7. Persistensi ke /etc/mitranet/network/tunnels.json
+                conf_dir = "/etc/mitranet/network"
+                os.makedirs(conf_dir, exist_ok=True)
+                conf_file = f"{conf_dir}/tunnels.json"
+                tun_db = {}
+                if os.path.isfile(conf_file):
+                    try:
+                        with open(conf_file, "r") as cf:
+                            tun_db = json.load(cf)
+                    except Exception:
+                        tun_db = {}
+
+                tun_db[name] = {
+                    "name": name,
+                    "type": tun_type,
+                    "remote": remote_ip,
+                    "local": local_ip,
+                    "ttl": ttl,
+                    "mtu": mtu,
+                    "bridge": bridge_name,
+                    "ip_cidr": ip_cidr,
+                    "created_at": time.time()
+                }
+                with open(conf_file, "w") as cf:
+                    json.dump(tun_db, cf, indent=2)
+
+                self._send_json(200, {
+                    "success": True,
+                    "message": f"Tunnel interface '{name}' ({tun_type.upper()}) berhasil dibuat dan diaktifkan.",
+                    "data": tun_db[name]
+                })
+            except Exception as e:
+                self._send_json(500, {"error": f"Eksekusi pembuatan tunnel gagal: {e}"})
+            return
+
+        # 22a2. Point-to-Point & Overlay Tunnels Deletion
+        if path == "/api/v1/interfaces/tunnel/delete":
+            name = payload.get("name", "").strip()
+            if not name:
+                self._send_json(400, {"error": "Nama interface tunnel wajib diisi."})
+                return
+            try:
+                subprocess.run(["ip", "link", "set", name, "down"], stderr=subprocess.DEVNULL)
+                subprocess.run(["ip", "link", "del", name], stderr=subprocess.DEVNULL)
+                subprocess.run(["ip", "tunnel", "del", name], stderr=subprocess.DEVNULL)
+
+                conf_file = "/etc/mitranet/network/tunnels.json"
+                if os.path.isfile(conf_file):
+                    try:
+                        with open(conf_file, "r") as cf:
+                            tun_db = json.load(cf)
+                        if name in tun_db:
+                            del tun_db[name]
+                            with open(conf_file, "w") as cf:
+                                json.dump(tun_db, cf, indent=2)
+                    except Exception:
+                        pass
+                self._send_json(200, {"success": True, "message": f"Tunnel '{name}' berhasil dihapus."})
+            except Exception as e:
+                self._send_json(500, {"error": f"Gagal menghapus tunnel: {e}"})
+            return
+
         # 22b. DHCP Server Settings Mutation
         if path == "/api/v1/services/dhcp/save":
             import subprocess
