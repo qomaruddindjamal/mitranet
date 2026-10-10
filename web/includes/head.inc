@@ -70,6 +70,7 @@ $interfaces_menu[] = array("-DIVIDER-", "");
 $interfaces_menu[] = array("VLANs", "/interfaces/vlan.php");
 $interfaces_menu[] = array("Bridges", "/interfaces/bridge.php");
 $interfaces_menu[] = array("LAGGs", "/interfaces/lagg.php");
+$interfaces_menu[] = array("MACVLANs", "/interfaces/macVlan.php");
 $interfaces_menu[] = array("VRFs", "/interfaces/vrf.php");
 $interfaces_menu[] = array("vEthernet (KVM)", "/interfaces/vethernet.php");
 
