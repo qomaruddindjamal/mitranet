@@ -5099,6 +5099,60 @@ def run_api_server(host: str = "0.0.0.0", port: int = 8443) -> None:
             web_dir = candidate
             break
 
+    # Restore persistent point-to-point and overlay tunnels (EoIP, GRE, IPIP, VXLAN)
+    try:
+        tun_cfg = "/etc/mitranet/network/tunnels.json"
+        if os.path.isfile(tun_cfg):
+            with open(tun_cfg, "r") as tf:
+                saved_tuns = json.load(tf)
+            for t_name, t_data in saved_tuns.items():
+                t_type = t_data.get("type", "")
+                remote = t_data.get("remote", "")
+                local = t_data.get("local", "")
+                ttl = t_data.get("ttl", 255)
+                mtu = t_data.get("mtu", 1500)
+                ip_cidr = t_data.get("ip_cidr", "")
+                bridge = t_data.get("bridge", "")
+
+                if t_type == "vxlan":
+                    subprocess.run(["modprobe", "vxlan"], stderr=subprocess.DEVNULL)
+                    subprocess.run(["ip", "link", "del", t_name], stderr=subprocess.DEVNULL)
+                    cmd = ["ip", "link", "add", t_name, "type", "vxlan", "id", "100", "dstport", "4789"]
+                    if remote: cmd.extend(["remote", remote])
+                    subprocess.run(cmd, stderr=subprocess.DEVNULL)
+                elif t_type in ("eoip", "gretap"):
+                    subprocess.run(["modprobe", "ip_gre"], stderr=subprocess.DEVNULL)
+                    subprocess.run(["ip", "link", "del", t_name], stderr=subprocess.DEVNULL)
+                    cmd = ["ip", "link", "add", t_name, "type", "gretap"]
+                    if remote: cmd.extend(["remote", remote])
+                    if local: cmd.extend(["local", local])
+                    subprocess.run(cmd, stderr=subprocess.DEVNULL)
+                elif t_type == "gre":
+                    subprocess.run(["modprobe", "ip_gre"], stderr=subprocess.DEVNULL)
+                    subprocess.run(["ip", "tunnel", "del", t_name], stderr=subprocess.DEVNULL)
+                    cmd = ["ip", "tunnel", "add", t_name, "mode", "gre"]
+                    if remote: cmd.extend(["remote", remote])
+                    if local: cmd.extend(["local", local])
+                    subprocess.run(cmd, stderr=subprocess.DEVNULL)
+                elif t_type in ("ipip", "iptunnel"):
+                    subprocess.run(["modprobe", "ipip"], stderr=subprocess.DEVNULL)
+                    subprocess.run(["ip", "tunnel", "del", t_name], stderr=subprocess.DEVNULL)
+                    cmd = ["ip", "tunnel", "add", t_name, "mode", "ipip"]
+                    if remote: cmd.extend(["remote", remote])
+                    if local: cmd.extend(["local", local])
+                    subprocess.run(cmd, stderr=subprocess.DEVNULL)
+
+                if mtu:
+                    subprocess.run(["ip", "link", "set", t_name, "mtu", str(mtu)], stderr=subprocess.DEVNULL)
+                subprocess.run(["ip", "link", "set", t_name, "up"], stderr=subprocess.DEVNULL)
+                if bridge and bridge != "none":
+                    subprocess.run(["ip", "link", "set", t_name, "master", bridge], stderr=subprocess.DEVNULL)
+                if ip_cidr and "/" in ip_cidr:
+                    subprocess.run(["ip", "addr", "add", ip_cidr, "dev", t_name], stderr=subprocess.DEVNULL)
+            logger.info("Restored %d persistent network tunnels.", len(saved_tuns))
+    except Exception as tun_err:
+        logger.warning("Could not restore network tunnels: %s", tun_err)
+
     if php_path and web_dir:
         try:
             logger.info("Spawning local PHP WebUI worker on 127.0.0.1:8000 (docroot: %s)", web_dir)
