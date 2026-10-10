@@ -8,28 +8,71 @@ window.MitraNet = window.MitraNet || {};
 (function($) {
     'use strict';
 
-    // 1. Toast Notification (Pojok kanan atas)
+    // 1. Toast Notification (Kompak, Elegan di Pojok Kanan Atas, Auto-Hilang)
     MitraNet.toast = function(icon, title, timer) {
         if (typeof Swal === 'undefined') {
             console.warn('SweetAlert2 not loaded, fallback to console');
             return;
         }
+        // Support signature: MitraNet.toast('Pesan', 'success') or MitraNet.toast('success', 'Pesan')
+        let toastIcon = 'success';
+        let toastTitle = title || '';
+        if (['success', 'error', 'warning', 'info', 'question'].indexOf(icon) !== -1) {
+            toastIcon = icon;
+        } else if (['success', 'error', 'warning', 'info', 'question'].indexOf(title) !== -1) {
+            toastIcon = title;
+            toastTitle = icon;
+        } else if (!toastTitle) {
+            toastTitle = icon;
+        }
+
         const Toast = Swal.mixin({
             toast: true,
             position: 'top-end',
             showConfirmButton: false,
-            timer: timer || 2500,
+            timer: timer || 3000,
             timerProgressBar: true,
+            customClass: {
+                popup: 'mitranet-compact-toast'
+            },
             didOpen: (toast) => {
                 toast.addEventListener('mouseenter', Swal.stopTimer);
                 toast.addEventListener('mouseleave', Swal.resumeTimer);
             }
         });
+
         Toast.fire({
-            icon: icon || 'success',
-            title: title || 'Operasi berhasil'
+            icon: toastIcon,
+            title: toastTitle
         });
     };
+
+    // Auto Toast Runner: Secara otomatis mengubah alert banner sukses/gagal di WebUI menjadi toast kanan atas yang auto hilang
+    $(document).ready(function() {
+        // Cek alert-dismissible atau alert banner yang baru muncul dari submit POST
+        $('.alert.alert-success, .alert.alert-danger, .alert.alert-info').each(function() {
+            var $alert = $(this);
+            // Lewati alert instruksi statis atau info panduan form yang bukan flash status
+            if ($alert.hasClass('alert-static') || $alert.parents('#form-instructions').length > 0) {
+                return;
+            }
+            // Khusus alert flash pesan sistem (seperti di dhcp_settings.php, system.php, dll)
+            if ($alert.parent().hasClass('mitranet-window') || $alert.parent().hasClass('mitranet-page-container') || $alert.hasClass('alert-dismissible')) {
+                var text = $alert.clone().children('.close, button').remove().end().text().trim();
+                var isErr = $alert.hasClass('alert-danger');
+                var isSuccess = $alert.hasClass('alert-success');
+                var type = isErr ? 'error' : (isSuccess ? 'success' : 'info');
+
+                if (text && text.length > 0 && text.length < 250) {
+                    // Sembunyikan alert balok besar dan gantikan dengan toast kompak pojok kanan atas
+                    $alert.hide();
+                    setTimeout(function() {
+                        MitraNet.toast(type, text, 3500);
+                    }, 150);
+                }
+            }
+        });
+    });
 
     // 2. Alert Standar
     MitraNet.alert = function(title, text, icon) {

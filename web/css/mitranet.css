@@ -2307,7 +2307,47 @@ body {
     border-bottom: 1px solid #7ba0cd !important;
     height: 100% !important;
     max-height: 100% !important;
+    min-height: 0 !important;
     overflow: hidden !important;
+}
+
+/* Custom WinBox / Modern RouterOS Scrollbars */
+.mitranet-window ::-webkit-scrollbar,
+.mitranet-grid-container::-webkit-scrollbar,
+.mitranet-window-body::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+}
+
+.mitranet-window ::-webkit-scrollbar-track,
+.mitranet-grid-container::-webkit-scrollbar-track,
+.mitranet-window-body::-webkit-scrollbar-track {
+    background: #e4edf7;
+    border-left: 1px solid #c9d8e8;
+}
+
+.mitranet-window ::-webkit-scrollbar-thumb,
+.mitranet-grid-container::-webkit-scrollbar-thumb,
+.mitranet-window-body::-webkit-scrollbar-thumb {
+    background: #9bb7d4;
+    border-radius: 4px;
+    border: 2px solid #e4edf7;
+}
+
+.mitranet-window ::-webkit-scrollbar-thumb:hover,
+.mitranet-grid-container::-webkit-scrollbar-thumb:hover,
+.mitranet-window-body::-webkit-scrollbar-thumb:hover {
+    background: #648fb8;
+}
+
+/* Scrollable Form Body Container for MitraNet Windows */
+.mitranet-window-body {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 16px 20px !important;
+    background: #eef4f9;
 }
 
 .mitranet-grid-container {
@@ -2433,6 +2473,7 @@ body {
     overflow: hidden !important;
     height: 100% !important;
     max-height: 100% !important;
+    min-height: 0 !important;
 }
 
 .mitranet-header {
@@ -2629,20 +2670,26 @@ body {
 
 /* Unified panel styling under top tabs */
 .panel-mitranet,
-.panel.panel-default,
-.nav-tabs ~ .panel-default,
-.nav-pills ~ .panel-default {
+.panel.panel-default {
     margin-top: 0 !important;
+    margin-bottom: 12px !important;
     border: 1px solid #8faecf !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
+    border-radius: 4px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
     background: #ffffff !important;
+    overflow: hidden !important;
 }
 
 .nav-tabs ~ .panel-default,
-.nav-pills ~ .panel-default,
-.panel-mitranet {
+.nav-pills ~ .panel-default {
+    margin-top: 0 !important;
+    margin-bottom: 12px !important;
+    border: 1px solid #8faecf !important;
     border-top: none !important;
+    border-radius: 0 0 4px 4px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+    background: #ffffff !important;
+    overflow: hidden !important;
 }
 
 .panel-mitranet > .panel-heading,
@@ -2671,6 +2718,13 @@ body {
 .panel.panel-default > .panel-body,
 .nav-tabs ~ .panel-default > .panel-body,
 .nav-pills ~ .panel-default > .panel-body {
+    padding: 14px 16px !important;
+}
+
+.panel-mitranet > .panel-body.p-0,
+.panel.panel-default > .panel-body.p-0,
+.panel-mitranet > .table-responsive,
+.panel.panel-default > .table-responsive {
     padding: 0 !important;
 }
 
@@ -2824,8 +2878,7 @@ body {
     flex-direction: column !important;
 }
 
-/* Global Form Controls & Inputs - Consistent with Modern WinBox / WebFig Density */
-.form-control,
+.form-control:not(textarea),
 input[type="text"],
 input[type="password"],
 input[type="email"],
@@ -2840,6 +2893,19 @@ select.form-control {
     box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05) !important;
 }
 
+textarea.form-control {
+    height: auto !important;
+    min-height: 75px !important;
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+    font-family: monospace !important;
+    border: 1px solid #9cb5cf !important;
+    border-radius: 3px !important;
+    color: #1e395b !important;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05) !important;
+    line-height: 1.4 !important;
+}
+
 .form-control:focus,
 input:focus,
 select:focus {
@@ -2849,7 +2915,17 @@ select:focus {
 }
 
 .form-group {
-    margin-bottom: 8px !important;
+    margin: 0 !important;
+    padding: 9px 4px 8px 4px !important;
+    border-bottom: 1px solid #e9edf2 !important;
+}
+
+.form-group:last-child {
+    border-bottom: none !important;
+}
+
+.panel-body > .form-group:last-child {
+    border-bottom: none !important;
 }
 
 .control-label {
@@ -2864,6 +2940,30 @@ select:focus {
     margin-bottom: 0 !important;
     font-size: 10px !important;
     color: #64748b !important;
+}
+
+/* Checkbox & Radio Controls in WinBox Panels */
+.checkbox {
+    margin-top: 4px !important;
+    margin-bottom: 4px !important;
+}
+
+.checkbox label {
+    font-size: 11px !important;
+    color: #1e395b !important;
+    padding-left: 20px !important;
+    cursor: pointer !important;
+    font-weight: normal !important;
+    display: inline-block !important;
+}
+
+.checkbox input[type="checkbox"] {
+    margin-top: 2px !important;
+    margin-left: -20px !important;
+    cursor: pointer !important;
+    width: 14px !important;
+    height: 14px !important;
+    accent-color: #0284c7 !important;
 }
 
 /* Action buttons and infoblock styling */
@@ -4302,15 +4402,93 @@ select:focus {
         font-size: 12px !important;
     }
 
-    .table > thead > tr > th,
-    .table > tbody > tr > td {
-        font-size: 11px !important;
-        padding: 5px 6px !important;
-    }
-
     .btn {
         padding: 5px 10px !important;
         font-size: 12px !important;
     }
+}
+
+/* =========================================================================
+   COMPACT SWEETALERT2 TOAST (MitraNet Global Top-Right Toast)
+   ========================================================================= */
+.swal2-container.swal2-top-end {
+    top: 55px !important;
+    right: 15px !important;
+    z-index: 100000 !important;
+}
+
+.swal2-popup.mitranet-compact-toast {
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+    font-family: inherit !important;
+    border-radius: 6px !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    background: #ffffff !important;
+    max-width: 320px !important;
+    min-width: 220px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+.swal2-popup.mitranet-compact-toast .swal2-title {
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    color: #1e293b !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1.35 !important;
+    text-align: left !important;
+}
+
+.swal2-popup.mitranet-compact-toast .swal2-icon {
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+    margin: 0 !important;
+    border-width: 2px !important;
+}
+
+.swal2-popup.mitranet-compact-toast .swal2-icon .swal2-icon-content {
+    font-size: 12px !important;
+}
+
+.swal2-popup.mitranet-compact-toast .swal2-icon.swal2-success {
+    border-color: #10b981 !important;
+    color: #10b981 !important;
+}
+
+.swal2-popup.mitranet-compact-toast .swal2-icon.swal2-error {
+    border-color: #ef4444 !important;
+    color: #ef4444 !important;
+}
+
+.swal2-popup.mitranet-compact-toast .swal2-icon.swal2-warning {
+    border-color: #f59e0b !important;
+    color: #f59e0b !important;
+}
+
+.swal2-popup.mitranet-compact-toast .swal2-icon.swal2-info {
+    border-color: #0284c7 !important;
+    color: #0284c7 !important;
+}
+
+.swal2-popup.mitranet-compact-toast .swal2-timer-progress-bar {
+    height: 3px !important;
+    border-radius: 0 0 6px 6px !important;
+    background: rgba(16, 185, 129, 0.65) !important;
+}
+
+.swal2-popup.mitranet-compact-toast:has(.swal2-error) .swal2-timer-progress-bar {
+    background: rgba(239, 68, 68, 0.65) !important;
+}
+
+.swal2-popup.mitranet-compact-toast:has(.swal2-warning) .swal2-timer-progress-bar {
+    background: rgba(245, 158, 11, 0.65) !important;
+}
+
+.swal2-popup.mitranet-compact-toast:has(.swal2-info) .swal2-timer-progress-bar {
+    background: rgba(2, 132, 199, 0.65) !important;
 }
 

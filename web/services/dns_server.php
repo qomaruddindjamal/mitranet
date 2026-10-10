@@ -18,11 +18,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $bogus_priv    = !empty($_POST['bogus_priv']);
     $domain_needed = !empty($_POST['domain_needed']);
 
-    // Forward servers – one IP per line or comma-separated
-    $raw_fwd = trim($_POST['forward_servers'] ?? '');
+    // Forward servers – dynamic input list (array or newline/comma separated string)
     $forward_servers = [];
-    if (!empty($raw_fwd)) {
-        foreach (preg_split('/[\r\n,]+/', $raw_fwd) as $s) {
+    $raw_fwd = $_POST['forward_servers'] ?? [];
+    if (is_array($raw_fwd)) {
+        foreach ($raw_fwd as $s) {
+            $s = trim((string)$s);
+            if ($s !== '') {
+                $forward_servers[] = $s;
+            }
+        }
+    } elseif (is_string($raw_fwd)) {
+        foreach (preg_split('/[\r\n,]+/', trim($raw_fwd)) as $s) {
             $s = trim($s);
             if ($s !== '') {
                 $forward_servers[] = $s;
@@ -98,240 +105,296 @@ $fwd_text         = implode("\n", $fwd_servers);
 $pgtitle       = array("Services", "DNS Server");
 $selected_menu = "services";
 require_once(__DIR__ . '/../includes/head.inc');
-
-if (!empty($msg)) { print_info_box($msg, "success"); }
-if (!empty($err)) { print_info_box($err, "danger"); }
 ?>
 
-<div class="panel panel-default">
-    <div class="panel-heading">
-        <h2 class="panel-title">
-            <i class="fa-solid fa-server"></i>
-            <?=gettext("DNS Server &mdash; dnsmasq")?>
-            <span class="badge <?=$service_active ? 'badge-success' : 'badge-danger'?> pull-right">
-                <?=$service_active ? 'RUNNING' : 'STOPPED'?>
-            </span>
-        </h2>
-    </div>
-    <div class="panel-body">
-        <form method="post" action="/services/dns_server.php" class="form-horizontal" id="dns-form">
+<div class="container-fluid mitranet-page-container">
+	<div class="mitranet-window">
+		<div class="mitranet-header">
+			<div class="mitranet-title-badge">
+				<i class="fa-solid fa-server"></i> DNS Server (dnsmasq)
+			</div>
+			<ul class="mitranet-tabs">
+				<li class="active"><a href="/services/dns_server.php">Settings</a></li>
+				<li><a href="/status/services.php">Service Status</a></li>
+			</ul>
+		</div>
 
-            <!-- Enable -->
-            <div class="form-group">
-                <label class="col-sm-3 control-label"><?=gettext("Enable")?></label>
-                <div class="col-sm-6">
-                    <div class="checkbox">
-                        <label>
-                            <input type="checkbox" name="enable" value="1" id="dns_enable"
-                                   <?=$is_enabled ? 'checked' : ''?> />
-                            <strong><?=gettext("Aktifkan DNS Server (dnsmasq) pada sistem ini")?></strong>
-                        </label>
-                    </div>
-                    <span class="help-block">
-                        <?=gettext("Bila diaktifkan, dnsmasq akan mendengarkan port DNS dan melayani query dari client lokal.")?>
-                    </span>
-                </div>
-            </div>
+		<div class="mitranet-window-body">
+			<?php if (!empty($msg)): ?>
+				<div class="alert alert-success alert-dismissible" role="alert" style="margin-bottom: 15px; border-radius: 3px;">
+					<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<i class="fa-solid fa-check-circle"></i> <?= htmlspecialchars($msg) ?>
+				</div>
+			<?php endif; ?>
 
-            <!-- Listen Port -->
-            <div class="form-group">
-                <label class="col-sm-3 control-label"><?=gettext("Listen Port")?></label>
-                <div class="col-sm-3">
-                    <input type="number" name="listen_port" class="form-control"
-                           value="<?=htmlspecialchars($listen_port)?>"
-                           min="1" max="65535" placeholder="53" />
-                    <span class="help-block"><?=gettext("Port yang digunakan dnsmasq. Default: 53.")?></span>
-                </div>
-            </div>
+			<?php if (!empty($err)): ?>
+				<div class="alert alert-danger alert-dismissible" role="alert" style="margin-bottom: 15px; border-radius: 3px;">
+					<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<i class="fa-solid fa-exclamation-circle"></i> <?= htmlspecialchars($err) ?>
+				</div>
+			<?php endif; ?>
 
-            <!-- Cache Size -->
-            <div class="form-group">
-                <label class="col-sm-3 control-label"><?=gettext("Cache Size")?></label>
-                <div class="col-sm-3">
-                    <input type="number" name="cache_size" class="form-control"
-                           value="<?=htmlspecialchars($cache_size)?>"
-                           min="0" max="100000" placeholder="1000" />
-                    <span class="help-block"><?=gettext("Jumlah entri DNS di-cache (0 = nonaktifkan cache).")?></span>
-                </div>
-            </div>
+			<form method="post" action="/services/dns_server.php" class="form-horizontal" id="dns-form">
+				<!-- General DNS Configuration Panel -->
+				<div class="panel panel-default">
+					<div class="panel-heading" style="display: flex; justify-content: space-between; align-items: center;">
+						<h2 class="panel-title">
+							<i class="fa-solid fa-sliders"></i> <?=gettext("General Configuration")?>
+						</h2>
+						<span class="badge <?=$service_active ? 'badge-success' : 'badge-danger'?>" style="font-size: 11px; padding: 4px 8px;">
+							<i class="fa-solid <?=$service_active ? 'fa-circle-check' : 'fa-circle-xmark'?>"></i> <?=$service_active ? 'RUNNING' : 'STOPPED'?>
+						</span>
+					</div>
+					<div class="panel-body">
 
-            <!-- Upstream DNS Servers -->
-            <div class="form-group">
-                <label class="col-sm-3 control-label"><?=gettext("Upstream DNS Servers")?></label>
-                <div class="col-sm-6">
-                    <textarea name="forward_servers" class="form-control" rows="4"
-                              placeholder="8.8.8.8&#10;1.1.1.1&#10;9.9.9.9"><?=htmlspecialchars($fwd_text)?></textarea>
-                    <span class="help-block">
-                        <?=gettext("Satu IP per baris. Server DNS upstream untuk meneruskan query yang tidak ada di cache lokal.")?>
-                    </span>
-                </div>
-            </div>
+						<!-- Enable -->
+						<div class="form-group">
+							<label class="col-sm-3 control-label"><?=gettext("Enable")?></label>
+							<div class="col-sm-7">
+								<div class="checkbox">
+									<label>
+										<input type="checkbox" name="enable" value="1" id="dns_enable" <?=$is_enabled ? 'checked' : ''?> />
+										<strong><?=gettext("Aktifkan DNS Server (dnsmasq) pada sistem ini")?></strong>
+									</label>
+								</div>
+								<span class="help-block">
+									<?=gettext("Bila diaktifkan, dnsmasq akan mendengarkan port DNS dan melayani query dari client lokal.")?>
+								</span>
+							</div>
+						</div>
 
-            <!-- DNS Options -->
-            <div class="form-group">
-                <label class="col-sm-3 control-label"><?=gettext("DNS Options")?></label>
-                <div class="col-sm-6">
-                    <div class="checkbox">
-                        <label>
-                            <input type="checkbox" name="domain_needed" value="1"
-                                   <?=$domain_needed ? 'checked' : ''?> />
-                            <strong>domain-needed</strong> &mdash;
-                            <?=gettext("Jangan teruskan query nama tanpa domain ke upstream.")?>
-                        </label>
-                    </div>
-                    <div class="checkbox">
-                        <label>
-                            <input type="checkbox" name="bogus_priv" value="1"
-                                   <?=$bogus_priv ? 'checked' : ''?> />
-                            <strong>bogus-priv</strong> &mdash;
-                            <?=gettext("Jangan teruskan reverse lookup IP private ke upstream.")?>
-                        </label>
-                    </div>
-                    <div class="checkbox">
-                        <label>
-                            <input type="checkbox" name="strict_order" value="1"
-                                   <?=$strict_order ? 'checked' : ''?> />
-                            <strong>strict-order</strong> &mdash;
-                            <?=gettext("Query ke upstream sesuai urutan yang ditetapkan.")?>
-                        </label>
-                    </div>
-                </div>
-            </div>
+						<!-- Listen Port -->
+						<div class="form-group">
+							<label class="col-sm-3 control-label"><?=gettext("Listen Port")?></label>
+							<div class="col-sm-3">
+								<input type="number" name="listen_port" class="form-control"
+									   value="<?=htmlspecialchars($listen_port)?>"
+									   min="1" max="65535" placeholder="53" />
+								<span class="help-block"><?=gettext("Port yang digunakan dnsmasq. Default: 53.")?></span>
+							</div>
+						</div>
 
-            <hr />
+						<!-- Cache Size -->
+						<div class="form-group">
+							<label class="col-sm-3 control-label"><?=gettext("Cache Size")?></label>
+							<div class="col-sm-3">
+								<input type="number" name="cache_size" class="form-control"
+									   value="<?=htmlspecialchars($cache_size)?>"
+									   min="0" max="100000" placeholder="1000" />
+								<span class="help-block"><?=gettext("Jumlah entri DNS di-cache (0 = nonaktifkan cache).")?></span>
+							</div>
+						</div>
 
-            <!-- Host Overrides -->
-            <div class="form-group">
-                <label class="col-sm-3 control-label"><?=gettext("Host Overrides")?></label>
-                <div class="col-sm-9">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-condensed table-hover">
-                            <thead>
-                                <tr>
-                                    <th><?=gettext("IP Address")?></th>
-                                    <th><?=gettext("Hostname")?></th>
-                                    <th style="width:80px"><?=gettext("Aksi")?></th>
-                                </tr>
-                            </thead>
-                            <tbody id="host-overrides-body">
-                                <?php foreach ($host_overrides as $ho): ?>
-                                <tr>
-                                    <td><?=htmlspecialchars($ho['ip'] ?? '')?></td>
-                                    <td><?=htmlspecialchars($ho['host'] ?? '')?></td>
-                                    <td>
-                                        <button type="button" class="btn btn-xs btn-danger btn-remove-host"
-                                                title="Hapus">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="row mb-1">
-                        <div class="col-sm-4">
-                            <input type="text" class="form-control input-sm" id="new-host-ip"
-                                   placeholder="192.168.1.50" />
-                        </div>
-                        <div class="col-sm-5">
-                            <input type="text" class="form-control input-sm" id="new-host-name"
-                                   placeholder="server.lan" />
-                        </div>
-                        <div class="col-sm-3">
-                            <button type="button" class="btn btn-sm btn-success" id="btn-add-host">
-                                <i class="fa-solid fa-plus"></i> <?=gettext("Tambah")?>
-                            </button>
-                        </div>
-                    </div>
-                    <input type="hidden" name="host_overrides_json" id="host-overrides-json" value="" />
-                    <span class="help-block">
-                        <?=gettext("Pemetaan hostname ke IP statis yang dikembalikan dnsmasq.")?>
-                    </span>
-                </div>
-            </div>
+						<!-- Upstream DNS Servers (Dynamic Input Fields) -->
+						<div class="form-group">
+							<label class="col-sm-3 control-label"><?=gettext("Upstream DNS Servers")?></label>
+							<div class="col-sm-7">
+								<div id="upstream-dns-container" style="display: flex; flex-direction: column; gap: 6px;">
+									<?php 
+									$initial_servers = !empty($fwd_servers) ? $fwd_servers : ['10.10.66.254', '8.8.8.8', '8.8.4.4', 'fe80::1%enp1s0'];
+									foreach ($initial_servers as $idx => $srv): 
+									?>
+									<div class="input-group upstream-dns-row" style="width: 100%;">
+										<input type="text" name="forward_servers[]" class="form-control" 
+										       value="<?=htmlspecialchars($srv)?>" 
+										       placeholder="e.g. 8.8.8.8 atau fe80::1%enp1s0" 
+										       style="font-family: monospace; font-size: 11px;" />
+										<span class="input-group-btn">
+											<button type="button" class="btn btn-default btn-sm btn-remove-dns" title="<?=gettext("Hapus IP ini")?>" style="height: 26px; padding: 2px 10px; color: #dc2626;">
+												<i class="fa-solid fa-trash-can"></i>
+											</button>
+										</span>
+									</div>
+									<?php endforeach; ?>
+								</div>
+								<div style="margin-top: 8px;">
+									<button type="button" class="btn btn-xs btn-primary" id="btn-add-dns" style="font-weight: 600; padding: 3px 10px;">
+										<i class="fa-solid fa-plus"></i> <?=gettext("Tambah DNS Server")?>
+									</button>
+								</div>
+								<span class="help-block" style="margin-top: 6px;">
+									<?=gettext("IP DNS upstream (IPv4 atau IPv6 scoped seperti fe80::1%enp1s0) untuk meneruskan query yang tidak ada di cache lokal.")?>
+								</span>
+							</div>
+						</div>
 
-            <!-- Domain Overrides -->
-            <div class="form-group">
-                <label class="col-sm-3 control-label"><?=gettext("Domain Overrides")?></label>
-                <div class="col-sm-9">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-condensed table-hover">
-                            <thead>
-                                <tr>
-                                    <th><?=gettext("Domain")?></th>
-                                    <th><?=gettext("DNS Server IP")?></th>
-                                    <th style="width:80px"><?=gettext("Aksi")?></th>
-                                </tr>
-                            </thead>
-                            <tbody id="domain-overrides-body">
-                                <?php foreach ($domain_overrides as $do): ?>
-                                <tr>
-                                    <td><?=htmlspecialchars($do['domain'] ?? '')?></td>
-                                    <td><?=htmlspecialchars($do['ip'] ?? '')?></td>
-                                    <td>
-                                        <button type="button" class="btn btn-xs btn-danger btn-remove-domain"
-                                                title="Hapus">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="row mb-1">
-                        <div class="col-sm-4">
-                            <input type="text" class="form-control input-sm" id="new-domain-name"
-                                   placeholder="corp.local" />
-                        </div>
-                        <div class="col-sm-5">
-                            <input type="text" class="form-control input-sm" id="new-domain-ip"
-                                   placeholder="10.0.0.1" />
-                        </div>
-                        <div class="col-sm-3">
-                            <button type="button" class="btn btn-sm btn-success" id="btn-add-domain">
-                                <i class="fa-solid fa-plus"></i> <?=gettext("Tambah")?>
-                            </button>
-                        </div>
-                    </div>
-                    <input type="hidden" name="domain_overrides_json" id="domain-overrides-json" value="" />
-                    <span class="help-block">
-                        <?=gettext("Teruskan query domain tertentu ke DNS server khusus (contoh: internal AD).")?>
-                    </span>
-                </div>
-            </div>
+						<!-- DNS Options -->
+						<div class="form-group">
+							<label class="col-sm-3 control-label"><?=gettext("DNS Options")?></label>
+							<div class="col-sm-7">
+								<div class="checkbox">
+									<label>
+										<input type="checkbox" name="domain_needed" value="1" <?=$domain_needed ? 'checked' : ''?> />
+										<strong>domain-needed</strong> &mdash; <?=gettext("Jangan teruskan query nama tanpa domain ke upstream.")?>
+									</label>
+								</div>
+								<div class="checkbox">
+									<label>
+										<input type="checkbox" name="bogus_priv" value="1" <?=$bogus_priv ? 'checked' : ''?> />
+										<strong>bogus-priv</strong> &mdash; <?=gettext("Jangan teruskan reverse lookup IP private ke upstream.")?>
+									</label>
+								</div>
+								<div class="checkbox">
+									<label>
+										<input type="checkbox" name="strict_order" value="1" <?=$strict_order ? 'checked' : ''?> />
+										<strong>strict-order</strong> &mdash; <?=gettext("Query ke upstream sesuai urutan yang ditetapkan.")?>
+									</label>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
 
-            <!-- Submit -->
-            <div class="form-group">
-                <div class="col-sm-offset-3 col-sm-6">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fa-solid fa-save"></i> <?=gettext("Simpan &amp; Terapkan")?>
-                    </button>
-                    <button type="button" class="btn btn-default ml-1" id="btn-restart-dns">
-                        <i class="fa-solid fa-rotate-right"></i> <?=gettext("Restart Service")?>
-                    </button>
-                </div>
-            </div>
+				<!-- Host Overrides Panel -->
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h2 class="panel-title"><i class="fa-solid fa-network-wired"></i> <?=gettext("Host Overrides")?></h2>
+					</div>
+					<div class="panel-body">
+						<div class="table-responsive" style="margin-bottom: 12px; border: 1px solid #d4e2ef; border-radius: 3px;">
+							<table class="table table-striped table-condensed table-hover" style="margin-bottom: 0;">
+								<thead>
+									<tr style="background: linear-gradient(to bottom, #f1f6fb 0%, #e2edf7 100%);">
+										<th style="width: 40%; font-size: 11px; color: #1e3c5f;"><?=gettext("IP Address")?></th>
+										<th style="width: 45%; font-size: 11px; color: #1e3c5f;"><?=gettext("Hostname")?></th>
+										<th style="width: 15%; text-align: center; font-size: 11px; color: #1e3c5f;"><?=gettext("Aksi")?></th>
+									</tr>
+								</thead>
+								<tbody id="host-overrides-body">
+									<?php if (empty($host_overrides)): ?>
+										<tr id="empty-host-row">
+											<td colspan="3" class="text-center text-muted" style="padding: 14px;">
+												<i class="fa-solid fa-circle-info"></i> <?=gettext("Belum ada Host Override yang dikonfigurasi.")?>
+											</td>
+										</tr>
+									<?php else: ?>
+										<?php foreach ($host_overrides as $ho): ?>
+										<tr>
+											<td><code style="background: #f1f5f9; color: #0369a1; padding: 2px 5px; border-radius: 3px; font-size: 11px;"><?=htmlspecialchars($ho['ip'] ?? '')?></code></td>
+											<td><strong style="color: #1e293b;"><?=htmlspecialchars($ho['host'] ?? '')?></strong></td>
+											<td style="text-align: center;">
+												<button type="button" class="btn btn-xs btn-danger btn-remove-host" title="Hapus">
+													<i class="fa-solid fa-trash"></i>
+												</button>
+											</td>
+										</tr>
+										<?php endforeach; ?>
+									<?php endif; ?>
+								</tbody>
+							</table>
+						</div>
 
-        </form>
+						<div style="background: #f4f8fc; border: 1px solid #d0e1f2; border-radius: 4px; padding: 8px 12px; margin-bottom: 6px;">
+							<div class="row" style="margin-left: -5px; margin-right: -5px;">
+								<div class="col-sm-5 col-xs-12" style="padding-left: 5px; padding-right: 5px; margin-bottom: 4px;">
+									<input type="text" class="form-control" id="new-host-ip" placeholder="192.168.1.50 (IP Address)" />
+								</div>
+								<div class="col-sm-5 col-xs-12" style="padding-left: 5px; padding-right: 5px; margin-bottom: 4px;">
+									<input type="text" class="form-control" id="new-host-name" placeholder="server.lan (Hostname)" />
+								</div>
+								<div class="col-sm-2 col-xs-12" style="padding-left: 5px; padding-right: 5px;">
+									<button type="button" class="btn btn-sm btn-success btn-block" id="btn-add-host" style="font-weight: 600; height: 26px; padding: 2px 8px; font-size: 11px;">
+										<i class="fa-solid fa-plus"></i> <?=gettext("Tambah")?>
+									</button>
+								</div>
+							</div>
+						</div>
+						<input type="hidden" name="host_overrides_json" id="host-overrides-json" value="" />
+						<span class="help-block" style="margin-top: 4px;">
+							<?=gettext("Pemetaan hostname ke IP statis lokal yang langsung di-resolve oleh dnsmasq tanpa query upstream.")?>
+						</span>
+					</div>
+				</div>
 
-        <!-- Hidden form for dnsmasq service-only restart (D1 fix) -->
-        <form method="post" action="/services/dns_server.php" id="form-restart-dnsmasq" style="display:none;">
-            <input type="hidden" name="action" value="restart_dnsmasq" />
-        </form>
-    </div>
-</div>
+				<!-- Domain Overrides Panel -->
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h2 class="panel-title"><i class="fa-solid fa-diagram-project"></i> <?=gettext("Domain Overrides")?></h2>
+					</div>
+					<div class="panel-body">
+						<div class="table-responsive" style="margin-bottom: 12px; border: 1px solid #d4e2ef; border-radius: 3px;">
+							<table class="table table-striped table-condensed table-hover" style="margin-bottom: 0;">
+								<thead>
+									<tr style="background: linear-gradient(to bottom, #f1f6fb 0%, #e2edf7 100%);">
+										<th style="width: 50%; font-size: 11px; color: #1e3c5f;"><?=gettext("Domain")?></th>
+										<th style="width: 35%; font-size: 11px; color: #1e3c5f;"><?=gettext("DNS Server IP")?></th>
+										<th style="width: 15%; text-align: center; font-size: 11px; color: #1e3c5f;"><?=gettext("Aksi")?></th>
+									</tr>
+								</thead>
+								<tbody id="domain-overrides-body">
+									<?php if (empty($domain_overrides)): ?>
+										<tr id="empty-domain-row">
+											<td colspan="3" class="text-center text-muted" style="padding: 14px;">
+												<i class="fa-solid fa-circle-info"></i> <?=gettext("Belum ada Domain Override yang dikonfigurasi.")?>
+											</td>
+										</tr>
+									<?php else: ?>
+										<?php foreach ($domain_overrides as $do): ?>
+										<tr>
+											<td><strong style="color: #1e293b;"><?=htmlspecialchars($do['domain'] ?? '')?></strong></td>
+											<td><code style="background: #f1f5f9; color: #0369a1; padding: 2px 5px; border-radius: 3px; font-size: 11px;"><?=htmlspecialchars($do['ip'] ?? '')?></code></td>
+											<td style="text-align: center;">
+												<button type="button" class="btn btn-xs btn-danger btn-remove-domain" title="Hapus">
+													<i class="fa-solid fa-trash"></i>
+												</button>
+											</td>
+										</tr>
+										<?php endforeach; ?>
+									<?php endif; ?>
+								</tbody>
+							</table>
+						</div>
 
-<div class="infoblock">
-    <div class="alert alert-info clearfix" role="alert">
-        <div class="pull-left">
-            <p><strong>DNS Server</strong> pada MitraNet ditenagai oleh <code>dnsmasq</code>.</p>
-            <p>Konfigurasi DNS upstream sistem dikelola di
-               <a href="/system/system.php">System &rsaquo; General Setup</a>.</p>
-            <p>Status service: <a href="/status/services.php">Status &rsaquo; Services</a>.</p>
-        </div>
-    </div>
+						<div style="background: #f4f8fc; border: 1px solid #d0e1f2; border-radius: 4px; padding: 8px 12px; margin-bottom: 6px;">
+							<div class="row" style="margin-left: -5px; margin-right: -5px;">
+								<div class="col-sm-5 col-xs-12" style="padding-left: 5px; padding-right: 5px; margin-bottom: 4px;">
+									<input type="text" class="form-control" id="new-domain-name" placeholder="corp.local (Domain)" />
+								</div>
+								<div class="col-sm-5 col-xs-12" style="padding-left: 5px; padding-right: 5px; margin-bottom: 4px;">
+									<input type="text" class="form-control" id="new-domain-ip" placeholder="10.0.0.1 (Target DNS IP)" />
+								</div>
+								<div class="col-sm-2 col-xs-12" style="padding-left: 5px; padding-right: 5px;">
+									<button type="button" class="btn btn-sm btn-success btn-block" id="btn-add-domain" style="font-weight: 600; height: 26px; padding: 2px 8px; font-size: 11px;">
+										<i class="fa-solid fa-plus"></i> <?=gettext("Tambah")?>
+									</button>
+								</div>
+							</div>
+						</div>
+						<input type="hidden" name="domain_overrides_json" id="domain-overrides-json" value="" />
+						<span class="help-block" style="margin-top: 4px;">
+							<?=gettext("Meneruskan query resolusi domain tertentu ke server DNS otoritatif khusus (misal: Active Directory / Domain internal).")?>
+						</span>
+					</div>
+				</div>
+
+				<!-- Action Buttons -->
+				<div class="action-buttons" style="border: 1px solid #8faecf; border-radius: 3px; margin-bottom: 25px; padding: 10px 14px;">
+					<button type="submit" class="btn btn-primary btn-sm" style="min-width: 140px; font-weight: 600;">
+						<i class="fa-solid fa-save icon-embed-btn"></i> <?=gettext("Simpan &amp; Terapkan")?>
+					</button>
+					<button type="button" class="btn btn-default btn-sm ml-1" id="btn-restart-dns" style="font-weight: 600;">
+						<i class="fa-solid fa-rotate-right icon-embed-btn"></i> <?=gettext("Restart Service")?>
+					</button>
+				</div>
+
+			</form>
+
+			<!-- Hidden form for dnsmasq service-only restart -->
+			<form method="post" action="/services/dns_server.php" id="form-restart-dnsmasq" style="display:none;">
+				<input type="hidden" name="action" value="restart_dnsmasq" />
+			</form>
+		</div>
+
+		<div class="mitranet-statusbar">
+			<div>
+				<span><strong>Service:</strong> dnsmasq (Port: <?=htmlspecialchars($listen_port)?>)</span>
+			</div>
+			<div>
+				<span class="text-muted">MitraNet Local Resolver &amp; Cache</span>
+			</div>
+		</div>
+
+	</div>
 </div>
 
 <script>
@@ -384,9 +447,11 @@ if (!empty($err)) { print_info_box($err, "danger"); }
             MitraNet.toast('error', 'IP Address dan Hostname wajib diisi.');
             return;
         }
+        var emptyRow = document.getElementById('empty-host-row');
+        if (emptyRow) { emptyRow.remove(); }
         var tr = document.createElement('tr');
-        tr.innerHTML = '<td>' + escHtml(ip) + '</td><td>' + escHtml(host) + '</td>' +
-                       makeRemoveBtn('btn-remove-host');
+        tr.innerHTML = '<td><code>' + escHtml(ip) + '</code></td><td><strong>' + escHtml(host) + '</strong></td><td style="text-align: center;">' +
+                       makeRemoveBtn('btn-remove-host') + '</td>';
         document.getElementById('host-overrides-body').appendChild(tr);
         document.getElementById('new-host-ip').value = '';
         document.getElementById('new-host-name').value = '';
@@ -400,20 +465,53 @@ if (!empty($err)) { print_info_box($err, "danger"); }
             MitraNet.toast('error', 'Domain dan IP DNS wajib diisi.');
             return;
         }
+        var emptyRow = document.getElementById('empty-domain-row');
+        if (emptyRow) { emptyRow.remove(); }
         var tr = document.createElement('tr');
-        tr.innerHTML = '<td>' + escHtml(domain) + '</td><td>' + escHtml(ip) + '</td>' +
-                       makeRemoveBtn('btn-remove-domain');
+        tr.innerHTML = '<td><strong>' + escHtml(domain) + '</strong></td><td><code>' + escHtml(ip) + '</code></td><td style="text-align: center;">' +
+                       makeRemoveBtn('btn-remove-domain') + '</td>';
         document.getElementById('domain-overrides-body').appendChild(tr);
         document.getElementById('new-domain-name').value = '';
         document.getElementById('new-domain-ip').value = '';
     });
 
+    // Add Upstream DNS Input Row
+    var btnAddDns = document.getElementById('btn-add-dns');
+    if (btnAddDns) {
+        btnAddDns.addEventListener('click', function () {
+            var container = document.getElementById('upstream-dns-container');
+            var row = document.createElement('div');
+            row.className = 'input-group upstream-dns-row';
+            row.style.width = '100%';
+            row.innerHTML = '<input type="text" name="forward_servers[]" class="form-control" placeholder="e.g. 1.1.1.1 atau 2001:4860:4860::8888" style="font-family: monospace; font-size: 11px;" />' +
+                            '<span class="input-group-btn">' +
+                            '<button type="button" class="btn btn-default btn-sm btn-remove-dns" title="Hapus IP ini" style="height: 26px; padding: 2px 10px; color: #dc2626;">' +
+                            '<i class="fa-solid fa-trash-can"></i>' +
+                            '</button>' +
+                            '</span>';
+            container.appendChild(row);
+            var input = row.querySelector('input');
+            if (input) input.focus();
+        });
+    }
+
     // Delegated remove buttons
     document.addEventListener('click', function (e) {
         var removeHost   = e.target.closest('.btn-remove-host');
         var removeDomain = e.target.closest('.btn-remove-domain');
+        var removeDns    = e.target.closest('.btn-remove-dns');
         if (removeHost)   removeHost.closest('tr').remove();
         if (removeDomain) removeDomain.closest('tr').remove();
+        if (removeDns) {
+            var dnsRows = document.querySelectorAll('.upstream-dns-row');
+            if (dnsRows.length <= 1) {
+                // If only 1 row left, just clear the value instead of removing row completely
+                var input = removeDns.closest('.upstream-dns-row').querySelector('input');
+                if (input) input.value = '';
+            } else {
+                removeDns.closest('.upstream-dns-row').remove();
+            }
+        }
     });
 
     // Pre-submit: serialize tables; confirm when disabling

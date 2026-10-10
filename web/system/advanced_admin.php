@@ -40,7 +40,7 @@ $cfg = MitraNetApi::getConfigStatus();
     </div>
 <?php endif; ?>
 
-<form action="system_advanced_admin.php" method="post" class="form-horizontal">
+<form action="advanced_admin.php" method="post" class="form-horizontal">
     <div class="panel panel-default">
         <div class="panel-heading"><h2 class="panel-title">webConfigurator</h2></div>
         <div class="panel-body">

@@ -1522,6 +1522,10 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             if os.path.isdir(conf_dir):
                 for fpath in glob.glob(f"{conf_dir}/*.conf"):
                     fname = os.path.basename(fpath)
+                    if fname == "dns_server.conf":
+                        continue
+                    if not (fname.startswith("dhcp_") or fname.startswith("vethernet_")):
+                        continue
                     ifname = fname.replace("vethernet_", "").replace("dhcp_", "").replace(".conf", "")
                     cfg = {
                         "interface": ifname,
@@ -1532,21 +1536,27 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                         "dns": [],
                         "lease_time": "12h"
                     }
+                    is_disabled = False
                     try:
                         with open(fpath, "r") as cf:
-                            for line in cf:
-                                line = line.strip()
-                                if line.startswith("dhcp-range="):
-                                    parts = line.split("=", 1)[1].split(",")
+                            for raw_line in cf:
+                                line = raw_line.strip()
+                                if "status=disabled" in line:
+                                    is_disabled = True
+                                # strip comment prefix for reading values even when disabled
+                                clean_line = line.lstrip("#").strip()
+                                if clean_line.startswith("dhcp-range="):
+                                    parts = clean_line.split("=", 1)[1].split(",")
                                     if len(parts) >= 3:
                                         cfg["range_start"] = parts[1]
                                         cfg["range_end"] = parts[2]
                                         if len(parts) >= 5:
                                             cfg["lease_time"] = parts[4]
-                                elif line.startswith("dhcp-option=") and "option:router" in line:
-                                    cfg["gateway"] = line.split(",")[-1]
-                                elif line.startswith("dhcp-option=") and "option:dns-server" in line:
-                                    cfg["dns"] = line.split(",")[2:]
+                                elif clean_line.startswith("dhcp-option=") and "option:router" in clean_line:
+                                    cfg["gateway"] = clean_line.split(",")[-1]
+                                elif clean_line.startswith("dhcp-option=") and "option:dns-server" in clean_line:
+                                    cfg["dns"] = clean_line.split(",")[2:]
+                        cfg["enabled"] = not is_disabled
                         dhcp_configs[ifname] = cfg
                     except Exception:
                         pass
@@ -3968,12 +3978,39 @@ PrivateKey = {priv_key}
             # Also check vethernet conf file
             veth_conf_file = f"/etc/dnsmasq.d/vethernet_{ifname}.conf"
 
+            action = payload.get("action", "save")
+
             try:
-                if not enabled:
-                    # Remove configuration if disabled
+                if action == "remove":
+                    # Fully remove configuration file
                     for cf in (conf_file, veth_conf_file):
                         if os.path.exists(cf):
                             os.remove(cf)
+                    subprocess.run(["systemctl", "restart", "dnsmasq"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    self._send_json(200, {"success": True, "message": f"DHCP Server for {ifname} removed."})
+                    return
+
+                target_file = veth_conf_file if os.path.exists(veth_conf_file) else conf_file
+                os.makedirs("/etc/dnsmasq.d", exist_ok=True)
+
+                if not enabled:
+                    # Keep config file with commented out directives and # disabled flag
+                    if os.path.exists(target_file):
+                        existing_lines = []
+                        with open(target_file, "r") as ef:
+                            for el in ef:
+                                el = el.strip()
+                                if el and not el.startswith("#"):
+                                    existing_lines.append(f"# {el}")
+                                elif el:
+                                    existing_lines.append(el)
+                        if not any("status=disabled" in l for l in existing_lines):
+                            existing_lines.insert(0, "# status=disabled")
+                        with open(target_file, "w") as df:
+                            df.write("\n".join(existing_lines) + "\n")
+                    else:
+                        with open(target_file, "w") as df:
+                            df.write(f"# status=disabled\n# interface={ifname}\n")
                     subprocess.run(["systemctl", "restart", "dnsmasq"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                     self._send_json(200, {"success": True, "message": f"DHCP Server for {ifname} disabled."})
                     return
@@ -3982,8 +4019,9 @@ PrivateKey = {priv_key}
                     self._send_json(400, {"error": "DHCP range start and end required"})
                     return
 
-                # Build dnsmasq config lines
+                # Build dnsmasq config lines (Enabled)
                 lines = [
+                    f"# status=enabled",
                     f"interface={ifname}",
                     f"bind-interfaces",
                     f"dhcp-range={ifname},{range_start},{range_end},255.255.255.0,{lease_time}",
@@ -3998,8 +4036,6 @@ PrivateKey = {priv_key}
                     if dns_str:
                         lines.append(f"dhcp-option={ifname},option:dns-server,{dns_str}")
 
-                target_file = veth_conf_file if os.path.exists(veth_conf_file) else conf_file
-                os.makedirs("/etc/dnsmasq.d", exist_ok=True)
                 with open(target_file, "w") as df:
                     df.write("\n".join(lines) + "\n")
 
@@ -4348,6 +4384,7 @@ PersistentKeepalive = 10
 Address = {client_ip}/30
 ListenPort = {dev_port}
 PrivateKey = {s_priv}
+FwMark = 0xca6c
 MTU = 1420
 {peer_block}
 """
@@ -4389,10 +4426,14 @@ MTU = 1420
                     for i in range(1, stream_count + 1):
                         ecmp_parts.extend(["nexthop", "dev", f"wgboost{i}", "weight", "1"])
                     subprocess.run(["ip", "route", "replace", "default"] + ecmp_parts, check=False)
+                    # Also replace default in policy routing table 51820 used by non-marked outbound traffic
+                    subprocess.run(["ip", "route", "replace", "default", "table", "51820"] + ecmp_parts, check=False)
+                    # Ensure sysctl fib_multipath_hash_policy is set to L4 (IP+Port)
+                    subprocess.run(["sysctl", "-w", "net.ipv4.fib_multipath_hash_policy=1"], check=False)
                 except Exception as re_err:
                     logger.warning("ECMP route apply error: %s", re_err)
 
-                # Mangle DSCP & MSS clamping
+                # NAT Masquerade & Mangle DSCP & MSS clamping
                 try:
                     if dscp_mode == "AF41":
                         dscp_val = "0x28"
@@ -4405,6 +4446,15 @@ MTU = 1420
 
                     for i in range(1, stream_count + 1):
                         dev_name = f"wgboost{i}"
+                        # NAT Masquerade for Booster tunnels
+                        subprocess.run(["iptables", "-t", "nat", "-D", "POSTROUTING", "-o", dev_name, "-j", "MASQUERADE"], stderr=subprocess.DEVNULL)
+                        subprocess.run(["iptables", "-t", "nat", "-A", "POSTROUTING", "-o", dev_name, "-j", "MASQUERADE"], check=False)
+                        # Forwarding rules
+                        subprocess.run(["iptables", "-D", "FORWARD", "-o", dev_name, "-j", "ACCEPT"], stderr=subprocess.DEVNULL)
+                        subprocess.run(["iptables", "-A", "FORWARD", "-o", dev_name, "-j", "ACCEPT"], check=False)
+                        subprocess.run(["iptables", "-D", "FORWARD", "-i", dev_name, "-m", "state", "--state", "ESTABLISHED,RELATED", "-j", "ACCEPT"], stderr=subprocess.DEVNULL)
+                        subprocess.run(["iptables", "-A", "FORWARD", "-i", dev_name, "-m", "state", "--state", "ESTABLISHED,RELATED", "-j", "ACCEPT"], check=False)
+
                         if dscp_val:
                             subprocess.run(["iptables", "-t", "mangle", "-D", "POSTROUTING", "-o", dev_name, "-j", "DSCP", "--set-dscp", dscp_val], stderr=subprocess.DEVNULL)
                             subprocess.run(["iptables", "-t", "mangle", "-A", "POSTROUTING", "-o", dev_name, "-j", "DSCP", "--set-dscp", dscp_val], check=False)
@@ -4413,7 +4463,7 @@ MTU = 1420
                             subprocess.run(["iptables", "-t", "mangle", "-D", "POSTROUTING", "-o", dev_name, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", str(clamp_mss)], stderr=subprocess.DEVNULL)
                             subprocess.run(["iptables", "-t", "mangle", "-A", "POSTROUTING", "-o", dev_name, "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN", "-j", "TCPMSS", "--set-mss", str(clamp_mss)], check=False)
                 except Exception as me:
-                    logger.warning("Mangle setup error: %s", me)
+                    logger.warning("Mangle and NAT setup error: %s", me)
 
             # Generate RouterOS & Linux Server Config scripts
             ros_script_lines = [
@@ -4554,6 +4604,8 @@ MTU = 1420
                     for gw_route in defaults_to_restore:
                         if gw_route:
                             subprocess.run(f"ip route replace {gw_route}", shell=True)
+                # Restore wg0 in policy routing table 51820 if wg0 is up
+                subprocess.run(["ip", "route", "replace", "default", "dev", "wg0", "table", "51820"], stderr=subprocess.DEVNULL)
             except Exception as r_err:
                 logger.warning("Failed restoring default route: %s", r_err)
 
