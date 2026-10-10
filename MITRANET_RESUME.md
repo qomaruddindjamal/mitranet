@@ -23,10 +23,11 @@ Ketika memulai conversation baru atau memulihkan pekerjaan setelah konteks terpo
 - **WebUI Port**: HTTP `8000` (`/mitranet/web`, dialihkan oleh PHP built-in server)
 - **Management API Port**: HTTP `8443` (Python REST API `/mitranet/src/api/server.py`)
 - **Aturan Operasional Wajib**: Ikuti batasan dan standar di `AGENTS.md` dan `RecoveryAgents.md`.
-- **Status Rilis MitraNet Rinjani 1.0.2**:
-  - Baseline commit: `7929a97`
-  - Berkas ISO: `iso/MitraNet-Rinjani-1.0.2-amd64.iso` (SHA256: `9E544A245372965D7D7688B0B54370113C7280E8A2C3A40ADECC435FFAEA3A09`, 1,017,139,200 bytes)
-  - Validasi multi-stream WireGuard (Stream 1 dan Stream 2) terverifikasi 100% pada VPS RouterOS `103.93.162.168`.
-  - Integrasi HUD browser dan API telemetri (`/api/v1/vpn/booster/status`) terverifikasi 100% konsisten dengan kernel runtime WireGuard.
-  - Rollback routing default terbukti aman dan mempertahankan akses SSH manajemen.
+- **Status Release Candidate MitraNet Rinjani 1.0.2**:
+  - Baseline commit: `5b6f091`
+  - Manifest Rilis: [RELEASE_MANIFEST.md](file:///c:/mitranet/RELEASE_MANIFEST.md)
+  - Berkas ISO: `iso/MitraNet-Rinjani-1.0.2-amd64.iso` (SHA256: `C0F69F83CB03AA0A37EE496C4A55CF7B2270BDF58281A7B41E63D56F943E9097`, 1,017,139,200 bytes)
+  - Semantik API Booster (`enabled` vs `active` vs `streams.status`) terverifikasi dan terdokumentasi rapi.
+  - Preservasi & Rollback multi-default route terintegrasi di `server.py` dan aman terhadap multi-NIC dhcpcd.
+  - Seluruh 4 test suite lulus (100%).
   - Status VM Boot Test: **NOT TESTED** (RAM host terbatas saat start Hyper-V).
