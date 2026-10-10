@@ -242,7 +242,7 @@ class MitraNetApi {
         return self::request('/wireguard/keygen', 'POST', []);
     }
 
-    public static function saveWireGuardTunnel($name, $address, $listen_port, $private_key, $descr = '', $mode = 'server', $route_interface = '', $enable_nat = false, $dns = '', $mtu = '1420') {
+    public static function saveWireGuardTunnel($name, $address, $listen_port, $private_key, $descr = '', $mode = 'server', $route_interface = '', $enable_nat = false, $dns = '', $mtu = '1420', $dscp_class = '', $clamp_mss = true) {
         return self::request('/wireguard/tunnel/save', 'POST', [
             'name' => $name,
             'address' => $address,
@@ -253,7 +253,9 @@ class MitraNetApi {
             'route_interface' => $route_interface,
             'enable_nat' => $enable_nat,
             'dns' => $dns,
-            'mtu' => $mtu
+            'mtu' => $mtu,
+            'dscp_class' => $dscp_class,
+            'clamp_mss' => $clamp_mss
         ]);
     }
 

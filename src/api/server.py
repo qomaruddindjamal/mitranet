@@ -250,6 +250,8 @@ def parse_wireguard_conf(conf_path):
         "enable_nat": False,
         "dns": "",
         "mtu": 1420,
+        "dscp_class": "",
+        "clamp_mss": False,
         "custom_postup": [],
         "custom_postdown": [],
         "peers": []
@@ -348,11 +350,20 @@ def parse_wireguard_conf(conf_path):
                             pass
                     if "MASQUERADE" in v:
                         tunnel_info["enable_nat"] = True
-                    is_auto = any(pattern in v for pattern in ("table 100", "table 101", "MASQUERADE", "net.ipv4.ip_forward=1"))
+                    if "--set-dscp-class" in v:
+                        try:
+                            m_dscp = re.search(r'--set-dscp-class\s+([A-Za-z0-9]+)', v)
+                            if m_dscp:
+                                tunnel_info["dscp_class"] = m_dscp.group(1).upper()
+                        except Exception:
+                            pass
+                    if "TCPMSS" in v and "clamp-mss-to-pmtu" in v:
+                        tunnel_info["clamp_mss"] = True
+                    is_auto = any(pattern in v for pattern in ("table 100", "table 101", "MASQUERADE", "net.ipv4.ip_forward=1", "--set-dscp-class", "TCPMSS"))
                     if not is_auto and v not in tunnel_info["custom_postup"]:
                         tunnel_info["custom_postup"].append(v)
                 elif k == "postdown":
-                    is_auto = any(pattern in v for pattern in ("table 100", "table 101", "MASQUERADE"))
+                    is_auto = any(pattern in v for pattern in ("table 100", "table 101", "MASQUERADE", "--set-dscp-class", "TCPMSS"))
                     if not is_auto and v not in tunnel_info["custom_postdown"]:
                         tunnel_info["custom_postdown"].append(v)
                 elif k == "privatekey":
@@ -2695,6 +2706,13 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             enable_nat = bool(payload.get("enable_nat", False))
             dns_val = str(payload.get("dns") or "").strip()
             mtu_val = str(payload.get("mtu") or "").strip()
+            dscp_class = str(payload.get("dscp_class") or "").strip().upper()
+            clamp_mss = bool(payload.get("clamp_mss", True))
+
+            if dscp_class and dscp_class not in ("EF", "CS6", "CS7", "AF41", "AF42", "AF43", "VA", "DISABLED", "NONE"):
+                dscp_class = ""
+            if dscp_class in ("DISABLED", "NONE"):
+                dscp_class = ""
 
             if not re.match(r'^[a-zA-Z0-9_\-]+$', name):
                 self._send_json(400, {"error": "Invalid tunnel interface name"})
@@ -2744,15 +2762,17 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                             if k == "privatekey" and not privkey:
                                 privkey = v
                             elif k == "postup":
-                                # Exclude auto-generated routing/NAT hooks to prevent duplication
+                                # Exclude auto-generated routing/NAT/DSCP/MSS hooks to prevent duplication
                                 is_auto = any(pattern in v for pattern in (
-                                    "table 100", "table 101", "MASQUERADE", "net.ipv4.ip_forward=1"
+                                    "table 100", "table 101", "MASQUERADE", "net.ipv4.ip_forward=1",
+                                    "--set-dscp-class", "TCPMSS", "--clamp-mss-to-pmtu"
                                 ))
                                 if not is_auto and v not in custom_postup:
                                     custom_postup.append(v)
                             elif k == "postdown":
                                 is_auto = any(pattern in v for pattern in (
-                                    "table 100", "table 101", "MASQUERADE"
+                                    "table 100", "table 101", "MASQUERADE",
+                                    "--set-dscp-class", "TCPMSS", "--clamp-mss-to-pmtu"
                                 ))
                                 if not is_auto and v not in custom_postdown:
                                     custom_postdown.append(v)
@@ -2777,6 +2797,10 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                     f"# RouteInterface: {route_iface}",
                     f"# EnableNAT: {'true' if enable_nat else 'false'}"
                 ]
+                if dscp_class:
+                    iface_lines.append(f"# DSCP: {dscp_class}")
+                if clamp_mss:
+                    iface_lines.append(f"# ClampMSS: true")
                 if dns_val:
                     iface_lines.append(f"# DNS: {dns_val}")
                 iface_lines.append(f"Address = {address}")
@@ -2786,6 +2810,30 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                     iface_lines.append(f"DNS = {dns_val}")
                 if mtu_val and mtu_val.isdigit():
                     iface_lines.append(f"MTU = {mtu_val}")
+
+                # Shaper Bypass: DSCP Prioritization & Anti-Fragmentation MSS Clamping
+                bypass_postup = []
+                bypass_postdown = []
+
+                if dscp_class:
+                    bypass_postup.append(f"iptables -t mangle -A POSTROUTING -p udp --dport {listen_port} -j DSCP --set-dscp-class {dscp_class}")
+                    bypass_postup.append(f"iptables -t mangle -A POSTROUTING -p udp --sport {listen_port} -j DSCP --set-dscp-class {dscp_class}")
+                    bypass_postdown.append(f"iptables -t mangle -D POSTROUTING -p udp --dport {listen_port} -j DSCP --set-dscp-class {dscp_class} 2>/dev/null || true")
+                    bypass_postdown.append(f"iptables -t mangle -D POSTROUTING -p udp --sport {listen_port} -j DSCP --set-dscp-class {dscp_class} 2>/dev/null || true")
+
+                if clamp_mss:
+                    bypass_postup.append(f"iptables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -o {name} -j TCPMSS --clamp-mss-to-pmtu")
+                    bypass_postup.append(f"iptables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -i {name} -j TCPMSS --clamp-mss-to-pmtu")
+                    bypass_postdown.append(f"iptables -t mangle -D FORWARD -p tcp --tcp-flags SYN,RST SYN -o {name} -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null || true")
+                    bypass_postdown.append(f"iptables -t mangle -D FORWARD -p tcp --tcp-flags SYN,RST SYN -i {name} -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null || true")
+
+                if bypass_postup:
+                    iface_lines.append("")
+                    iface_lines.append("# Shaper Bypass: DSCP Priority & Anti-Fragmentation MSS Clamping")
+                    for bp in bypass_postup:
+                        iface_lines.append(f"PostUp = {bp}")
+                    for bd in bypass_postdown:
+                        iface_lines.append(f"PostDown = {bd}")
 
                 # Append routing and NAT hooks if requested
                 if route_iface:

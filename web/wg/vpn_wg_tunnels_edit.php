@@ -64,13 +64,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['act']) && $_POST['act
     $enable_nat = isset($_POST['enable_nat']) && $_POST['enable_nat'] === 'yes';
     $dns = trim($_POST['dns'] ?? '');
     $mtu = trim($_POST['mtu'] ?? '1420');
+    $dscp_class = trim($_POST['dscp_class'] ?? '');
+    $clamp_mss = isset($_POST['clamp_mss']) && $_POST['clamp_mss'] === 'yes';
 
     if (empty($name)) {
         $err_msg = "Nama tunnel wajib diisi (contoh: wg0).";
     } elseif (empty($address)) {
         $err_msg = "Interface Address (CIDR) wajib diisi (contoh: 10.10.99.1/24).";
     } else {
-        $res = MitraNetApi::saveWireGuardTunnel($name, $address, $listenport, $privatekey, $descr, $mode, $route_interface, $enable_nat, $dns, $mtu);
+        $res = MitraNetApi::saveWireGuardTunnel($name, $address, $listenport, $privatekey, $descr, $mode, $route_interface, $enable_nat, $dns, $mtu, $dscp_class, $clamp_mss);
         if ($res['status'] === 200 && !empty($res['data']['success'])) {
             header('Location: /wg/vpn_wg_tunnels.php?savemsg=' . urlencode("Tunnel {$name} berhasil disimpan dan dijalankan."));
             exit;
@@ -234,6 +236,38 @@ if (!isset($candidate_ifaces['veth0'])) {
                         <strong>Enable Outbound NAT (Masquerade)</strong>
                     </label>
                     <span class="help-block">Aktifkan translasi alamat IP (SNAT/Masquerade) pada antarmuka WireGuard sehingga perangkat client mendapatkan akses internet penuh dari gateway remote.</span>
+                </div>
+            </div>
+
+            <!-- Shaper Bypass & QoS DSCP Section -->
+            <div class="well well-sm well-config">
+                <strong class="text-dark-primary"><i class="fa-solid fa-gauge-high"></i> WireGuard Shaper &amp; Throttling Bypass</strong>
+                <p class="fs-085 text-muted mt-5">
+                    Teknik penembus batas bandwidth ISP dan DPI limiter: Injeksi QoS DSCP Priority Tagging agar paket WireGuard diperlakukan sebagai trafik prioritas tinggi (VoIP/Network Control) di router uplink, serta Anti-Fragmentation MSS Clamping untuk mencegah bottleneck fragmentasi paket UDP.
+                </p>
+            </div>
+
+            <div class="form-group">
+                <label class="col-sm-2 control-label" for="dscp_class">DSCP Priority Mark</label>
+                <div class="col-sm-4">
+                    <?php $cur_dscp = $current_tun['dscp_class'] ?? ''; ?>
+                    <select class="form-control" name="dscp_class" id="dscp_class">
+                        <option value="" <?=(empty($cur_dscp))?'selected':''?>>-- Disabled (Standard Best-Effort BE) --</option>
+                        <option value="EF" <?=($cur_dscp==='EF')?'selected':''?>>EF (Expedited Forwarding / 46 - VoIP &amp; Lowest Latency)</option>
+                        <option value="CS6" <?=($cur_dscp==='CS6')?'selected':''?>>CS6 (Internetwork Control / 48 - Router Routing Control)</option>
+                        <option value="CS7" <?=($cur_dscp==='CS7')?'selected':''?>>CS7 (Network Control / 56 - Highest VIP Priority)</option>
+                        <option value="AF41" <?=($cur_dscp==='AF41')?'selected':''?>>AF41 (Assured Forwarding High Throughput)</option>
+                    </select>
+                    <span class="help-block">Menandai paket WireGuard keluar dengan kode DSCP untuk melewati antrian shaping / drop ISP.</span>
+                </div>
+                <div class="col-sm-6">
+                    <div class="checkbox">
+                        <label>
+                            <input name="clamp_mss" id="clamp_mss" type="checkbox" value="yes" <?=(!isset($current_tun['clamp_mss']) || !empty($current_tun['clamp_mss']))?'checked':''?>>
+                            <strong>Anti-Fragmentation MSS Clamping (TCPMSS --clamp-mss-to-pmtu)</strong>
+                        </label>
+                        <span class="help-block">Mencegah paket TCP melebihi MTU WireGuard sehingga tidak dipecah/tercekik fragmentasi di jalur ISP.</span>
+                    </div>
                 </div>
             </div>
 
