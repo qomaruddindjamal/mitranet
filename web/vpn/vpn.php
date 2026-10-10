@@ -2240,7 +2240,7 @@ function applyBoosterServerModal() {
         if (result.isConfirmed) {
             Swal.showLoading();
             $.ajax({
-                url: '/api/v1/vpn/booster/apply',
+                url: 'vpn_booster.php?action=apply',
                 type: 'POST',
                 data: JSON.stringify(payload),
                 contentType: 'application/json',
@@ -2278,7 +2278,7 @@ function stopBoosterServerModal() {
         if (result.isConfirmed) {
             Swal.showLoading();
             $.ajax({
-                url: '/api/v1/vpn/booster/stop',
+                url: 'vpn_booster.php?action=stop',
                 type: 'POST',
                 data: JSON.stringify({ role: 'server' }),
                 contentType: 'application/json',

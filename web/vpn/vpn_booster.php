@@ -8,6 +8,35 @@
 $pgtitle = ["VPN", "Cloud Speed Booster"];
 $selected_menu = "vpn";
 require_once(__DIR__ . '/../includes/api.inc');
+
+// Handle AJAX action requests from WebUI directly via MitraNetApi (Zero authentication failure)
+if (isset($_GET['action'])) {
+    header('Content-Type: application/json; charset=utf-8');
+    $raw_input = file_get_contents('php://input');
+    $json_data = json_decode($raw_input, true) ?: [];
+
+    if ($_GET['action'] === 'apply') {
+        $res = MitraNetApi::applyBooster($json_data);
+        http_response_code($res['status'] ?? 200);
+        echo json_encode($res['data'] ?? ['success' => false, 'error' => 'API Error']);
+        exit;
+    }
+
+    if ($_GET['action'] === 'stop') {
+        $res = MitraNetApi::stopBooster($json_data);
+        http_response_code($res['status'] ?? 200);
+        echo json_encode($res['data'] ?? ['success' => false, 'error' => 'API Error']);
+        exit;
+    }
+
+    if ($_GET['action'] === 'status') {
+        $res = MitraNetApi::request('/vpn/booster/status');
+        http_response_code($res['status'] ?? 200);
+        echo json_encode($res['data'] ?? ['success' => false, 'error' => 'API Error']);
+        exit;
+    }
+}
+
 require_once(__DIR__ . '/../includes/head.inc');
 
 // Fetch live booster telemetry
@@ -733,7 +762,7 @@ function applyBoosterConfig() {
         if (result.isConfirmed) {
             Swal.showLoading();
             $.ajax({
-                url: '/api/v1/vpn/booster/apply',
+                url: 'vpn_booster.php?action=apply',
                 type: 'POST',
                 data: JSON.stringify(payload),
                 contentType: 'application/json',
@@ -801,7 +830,7 @@ function applyServerBoosterConfig() {
         if (result.isConfirmed) {
             Swal.showLoading();
             $.ajax({
-                url: '/api/v1/vpn/booster/apply',
+                url: 'vpn_booster.php?action=apply',
                 type: 'POST',
                 data: JSON.stringify(payload),
                 contentType: 'application/json',
@@ -846,7 +875,7 @@ function stopBoosterConfig(targetRole) {
         if (result.isConfirmed) {
             Swal.showLoading();
             $.ajax({
-                url: '/api/v1/vpn/booster/stop',
+                url: 'vpn_booster.php?action=stop',
                 type: 'POST',
                 data: JSON.stringify({ role: targetRole || 'all' }),
                 contentType: 'application/json',
@@ -863,7 +892,8 @@ function stopBoosterConfig(targetRole) {
                 },
                 error: function(xhr) {
                     Swal.close();
-                    MitraNet.toast('error', 'Gagal memanggil endpoint stop.');
+                    var errMsg = (xhr.responseJSON && xhr.responseJSON.error) ? xhr.responseJSON.error : 'Gagal memanggil endpoint stop.';
+                    MitraNet.toast('error', errMsg);
                 }
             });
         }
@@ -898,7 +928,7 @@ function pollBoosterTelemetry() {
     if (!isPollingActive || document.hidden) return;
 
     $.ajax({
-        url: '/api/v1/vpn/booster/status',
+        url: 'vpn_booster.php?action=status',
         type: 'GET',
         dataType: 'json',
         success: function(resp) {
