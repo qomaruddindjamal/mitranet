@@ -1720,7 +1720,7 @@ $interfaces = $vpnConfig['interfaces'] ?? [];
                     <div class="winbox-footer-buttons" style="display:flex; justify-content:space-between; width:100%;">
                         <div>
                             <?php if ($boosterServerEnabled): ?>
-                                <button type="button" class="btn btn-sm btn-danger" onclick="stopBoosterServerModal()">
+                                <button type="button" class="btn btn-sm btn-danger no-confirm" onclick="stopBoosterServerModal()">
                                     <i class="fa-solid fa-stop"></i> Hentikan Server
                                 </button>
                             <?php endif; ?>

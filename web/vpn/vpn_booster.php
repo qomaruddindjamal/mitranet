@@ -299,7 +299,7 @@ $active_mode = (isset($_GET['mode']) && strtolower($_GET['mode']) === 'server') 
                                             </button>
                                         </div>
                                         <div id="btn-stop-client-wrap" style="<?=$enabled ? 'display:block;' : 'display:none;'?>">
-                                            <button type="button" class="btn btn-danger btn-block btn-sm" onclick="stopBoosterConfig('client')" style="font-weight:600; padding:8px;">
+                                            <button type="button" class="btn btn-danger no-confirm btn-block btn-sm" onclick="stopBoosterConfig('client')" style="font-weight:600; padding:8px;">
                                                 <i class="fa-solid fa-stop"></i> Hentikan Client
                                             </button>
                                         </div>
