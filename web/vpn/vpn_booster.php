@@ -86,12 +86,16 @@ $active_mode = (isset($_GET['mode']) && strtolower($_GET['mode']) === 'server') 
 
                 <!-- ROLE SPECIFIC ACTION BUTTONS -->
                 <div id="toolbar-actions-client" style="display:inline-flex; gap:6px;">
-                    <button type="button" class="mitranet-btn text-success" onclick="applyBoosterConfig()" title="Terapkan Konfigurasi Client Multi-Stream">
-                        <i class="fa-solid fa-circle-check"></i> <strong>Terapkan Client Booster</strong>
-                    </button>
-                    <button type="button" class="mitranet-btn text-danger" onclick="stopBoosterConfig('client')" title="Hentikan Client Booster">
-                        <i class="fa-solid fa-circle-stop"></i> Hentikan Client
-                    </button>
+                    <div id="toolbar-btn-activate-wrap" style="<?=$enabled ? 'display:none;' : 'display:inline-block;'?>">
+                        <button type="button" class="mitranet-btn text-success" onclick="applyBoosterConfig()" title="Terapkan Konfigurasi & Aktifkan Client Booster">
+                            <i class="fa-solid fa-circle-play"></i> <strong>Aktifkan Client</strong>
+                        </button>
+                    </div>
+                    <div id="toolbar-btn-stop-wrap" style="<?=$enabled ? 'display:inline-block;' : 'display:none;'?>">
+                        <button type="button" class="mitranet-btn text-danger" onclick="stopBoosterConfig('client')" title="Hentikan Layanan Client Booster">
+                            <i class="fa-solid fa-circle-stop"></i> <strong>Hentikan Client</strong>
+                        </button>
+                    </div>
                     <button type="button" class="mitranet-btn text-primary" onclick="showVpsScripts()" title="Salin Skrip VPS Server Gateway">
                         <i class="fa-solid fa-terminal"></i> Skrip VPS Gateway
                     </button>
@@ -177,92 +181,99 @@ $active_mode = (isset($_GET['mode']) && strtolower($_GET['mode']) === 'server') 
                             </div>
                             <div class="panel-body" style="padding: 15px;">
                                 <form id="form-booster">
-                                    <div class="form-group">
-                                        <label style="color:#d1d5db; font-size:12px;">Alamat VPS / Cloud Gateway IP atau Hostname <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control input-sm" id="booster-vps-host" value="<?=htmlspecialchars($vps_host)?>" placeholder="contoh: 103.93.162.168 atau vps.contoh.com" required>
-                                        <small class="text-muted" style="font-size:11px;">IP Publik VPS gateway WireGuard tujuan agregasi.</small>
-                                    </div>
+                                    <fieldset id="fieldset-booster-client" <?=$enabled ? 'disabled' : ''?> style="<?=$enabled ? 'opacity: 0.7;' : ''?>">
+                                        <div class="form-group">
+                                            <label style="color:#d1d5db; font-size:12px;">Alamat VPS / Cloud Gateway IP atau Hostname <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control input-sm booster-input-client" id="booster-vps-host" value="<?=htmlspecialchars($vps_host)?>" placeholder="contoh: 103.93.162.168 atau vps.contoh.com" <?=$enabled ? 'readonly style="background-color:#21262d; color:#8b949e; cursor:not-allowed;"' : ''?> required>
+                                            <small class="text-muted" style="font-size:11px;">IP Publik VPS gateway WireGuard tujuan agregasi.</small>
+                                        </div>
 
-                                    <div class="row">
-                                        <div class="col-xs-6">
-                                            <div class="form-group">
-                                                <label style="color:#d1d5db; font-size:12px;">Jumlah Parallel Streams</label>
-                                                <select class="form-control input-sm" id="booster-streams">
-                                                    <option value="1" <?=($stream_count===1?'selected':'')?>>1 Stream (Baseline)</option>
-                                                    <option value="2" <?=($stream_count===2?'selected':'')?>>2 Streams (2x Multi-Link)</option>
-                                                    <option value="3" <?=($stream_count===3?'selected':'')?>>3 Streams (3x Multi-Link)</option>
-                                                    <option value="4" <?=($stream_count===4?'selected':'')?>>4 Streams (4x Multi-Link)</option>
-                                                </select>
+                                        <div class="row">
+                                            <div class="col-xs-6">
+                                                <div class="form-group">
+                                                    <label style="color:#d1d5db; font-size:12px;">Jumlah Parallel Streams</label>
+                                                    <select class="form-control input-sm booster-input-client" id="booster-streams" <?=$enabled ? 'disabled style="background-color:#21262d; color:#8b949e; cursor:not-allowed;"' : ''?>>
+                                                        <option value="1" <?=($stream_count===1?'selected':'')?>>1 Stream (Baseline)</option>
+                                                        <option value="2" <?=($stream_count===2?'selected':'')?>>2 Streams (2x Multi-Link)</option>
+                                                        <option value="3" <?=($stream_count===3?'selected':'')?>>3 Streams (3x Multi-Link)</option>
+                                                        <option value="4" <?=($stream_count===4?'selected':'')?>>4 Streams (4x Multi-Link)</option>
+                                                    </select>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div class="col-xs-6">
-                                            <div class="form-group">
-                                                <label style="color:#d1d5db; font-size:12px;">Tipe Tunnel</label>
-                                                <select class="form-control input-sm" id="booster-type">
-                                                    <option value="wireguard" <?=($tunnel_type==='wireguard'?'selected':'')?>>WireGuard Multi-Link</option>
-                                                    <option value="l2_gre" <?=($tunnel_type==='l2_gre'?'selected':'')?>>Layer 2 GRETAP Tunnel</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-xs-6">
-                                            <div class="form-group">
-                                                <label style="color:#d1d5db; font-size:12px;">Balancing Mode</label>
-                                                <select class="form-control input-sm" id="booster-balancer">
-                                                    <option value="ecmp" <?=($balancer_mode==='ecmp'?'selected':'')?>>ECMP (Equal Cost Multi-Path)</option>
-                                                    <option value="pcc" <?=($balancer_mode==='pcc'?'selected':'')?>>PCC (Per-Connection Classifier)</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-xs-6">
-                                            <div class="form-group">
-                                                <label style="color:#d1d5db; font-size:12px;">DSCP Marking (Shaper Bypass)</label>
-                                                <select class="form-control input-sm" id="booster-dscp">
-                                                    <option value="AF41" <?=($dscp_mode==='AF41'?'selected':'')?>>AF41 (0x28 - Multimedia Stream)</option>
-                                                    <option value="CS6" <?=($dscp_mode==='CS6'?'selected':'')?>>CS6 (0x30 - Internetwork Control)</option>
-                                                    <option value="EF" <?=($dscp_mode==='EF'?'selected':'')?>>EF (0x2e - Expedited Forwarding)</option>
-                                                    <option value="NONE" <?=($dscp_mode==='NONE'?'selected':'')?>>Tanpa DSCP Marking</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-xs-6">
-                                            <div class="form-group">
-                                                <label style="color:#d1d5db; font-size:12px;">TCP MSS Clamping</label>
-                                                <input type="number" class="form-control input-sm" id="booster-mss" value="<?=$clamp_mss?>" min="1200" max="1500">
-                                                <small class="text-muted" style="font-size:11px;">Nilai 1360 mencegah fragmentasi ISP.</small>
-                                            </div>
-                                        </div>
-                                        <div class="col-xs-6">
-                                            <div class="form-group">
-                                                <label style="color:#d1d5db; font-size:12px;">Akselerasi Kernel</label>
-                                                <div class="checkbox" style="margin-top:6px;">
-                                                    <label style="color:#d1d5db; font-size:12px;">
-                                                        <input type="checkbox" id="booster-bbr" <?=$enable_bbr ? 'checked' : ''?>>
-                                                        Aktifkan TCP BBR / FQ
-                                                    </label>
+                                            <div class="col-xs-6">
+                                                <div class="form-group">
+                                                    <label style="color:#d1d5db; font-size:12px;">Tipe Tunnel</label>
+                                                    <select class="form-control input-sm booster-input-client" id="booster-type" <?=$enabled ? 'disabled style="background-color:#21262d; color:#8b949e; cursor:not-allowed;"' : ''?>>
+                                                        <option value="wireguard" <?=($tunnel_type==='wireguard'?'selected':'')?>>WireGuard Multi-Link</option>
+                                                        <option value="l2_gre" <?=($tunnel_type==='l2_gre'?'selected':'')?>>Layer 2 GRETAP Tunnel</option>
+                                                    </select>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <div class="form-group">
-                                        <label style="color:#d1d5db; font-size:12px;">Public Key Server VPS (Peer Public Key)</label>
-                                        <input type="text" class="form-control input-sm font-monospace" id="booster-peer-key" value="<?=htmlspecialchars($peer_pubkey)?>" placeholder="Masukkan Public Key dari VPS (kosongkan jika sedang generate)">
-                                        <small class="text-muted" style="font-size:11px;">Public Key server VPS tujuan untuk handshake WireGuard.</small>
-                                    </div>
+                                        <div class="row">
+                                            <div class="col-xs-6">
+                                                <div class="form-group">
+                                                    <label style="color:#d1d5db; font-size:12px;">Balancing Mode</label>
+                                                    <select class="form-control input-sm booster-input-client" id="booster-balancer" <?=$enabled ? 'disabled style="background-color:#21262d; color:#8b949e; cursor:not-allowed;"' : ''?>>
+                                                        <option value="ecmp" <?=($balancer_mode==='ecmp'?'selected':'')?>>ECMP (Equal Cost Multi-Path)</option>
+                                                        <option value="pcc" <?=($balancer_mode==='pcc'?'selected':'')?>>PCC (Per-Connection Classifier)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-xs-6">
+                                                <div class="form-group">
+                                                    <label style="color:#d1d5db; font-size:12px;">DSCP Marking (Shaper Bypass)</label>
+                                                    <select class="form-control input-sm booster-input-client" id="booster-dscp" <?=$enabled ? 'disabled style="background-color:#21262d; color:#8b949e; cursor:not-allowed;"' : ''?>>
+                                                        <option value="AF41" <?=($dscp_mode==='AF41'?'selected':'')?>>AF41 (0x28 - Multimedia Stream)</option>
+                                                        <option value="CS6" <?=($dscp_mode==='CS6'?'selected':'')?>>CS6 (0x30 - Internetwork Control)</option>
+                                                        <option value="EF" <?=($dscp_mode==='EF'?'selected':'')?>>EF (0x2e - Expedited Forwarding)</option>
+                                                        <option value="NONE" <?=($dscp_mode==='NONE'?'selected':'')?>>Tanpa DSCP Marking</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                    <div style="margin-top: 15px; border-top: 1px solid #2d3b4b; padding-top: 12px; display:flex; gap:10px;">
-                                        <button type="button" class="btn btn-primary btn-sm" onclick="applyBoosterConfig()" style="flex:1;">
-                                            <i class="fa-solid fa-play"></i> Terapkan & Aktifkan Client
-                                        </button>
-                                        <button type="button" class="btn btn-default btn-sm" onclick="stopBoosterConfig('client')" style="flex:1;">
-                                            <i class="fa-solid fa-stop text-danger"></i> Hentikan Client
-                                        </button>
+                                        <div class="row">
+                                            <div class="col-xs-6">
+                                                <div class="form-group">
+                                                    <label style="color:#d1d5db; font-size:12px;">TCP MSS Clamping</label>
+                                                    <input type="number" class="form-control input-sm booster-input-client" id="booster-mss" value="<?=$clamp_mss?>" min="1200" max="1500" <?=$enabled ? 'readonly style="background-color:#21262d; color:#8b949e; cursor:not-allowed;"' : ''?>>
+                                                    <small class="text-muted" style="font-size:11px;">Nilai 1360 mencegah fragmentasi ISP.</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-xs-6">
+                                                <div class="form-group">
+                                                    <label style="color:#d1d5db; font-size:12px;">Akselerasi Kernel</label>
+                                                    <div class="checkbox" style="margin-top:6px;">
+                                                        <label style="color:<?=$enabled ? '#8b949e' : '#d1d5db'?>; font-size:12px;">
+                                                            <input type="checkbox" id="booster-bbr" <?=$enable_bbr ? 'checked' : ''?> <?=$enabled ? 'disabled' : ''?>>
+                                                            Aktifkan TCP BBR / FQ
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label style="color:#d1d5db; font-size:12px;">Public Key Server VPS (Peer Public Key)</label>
+                                            <input type="text" class="form-control input-sm font-monospace booster-input-client" id="booster-peer-key" value="<?=htmlspecialchars($peer_pubkey)?>" placeholder="Masukkan Public Key dari VPS (kosongkan jika sedang generate)" <?=$enabled ? 'readonly style="background-color:#21262d; color:#8b949e; cursor:not-allowed;"' : ''?>>
+                                            <small class="text-muted" style="font-size:11px;">Public Key server VPS tujuan untuk handshake WireGuard.</small>
+                                        </div>
+                                    </fieldset>
+
+                                    <!-- DYNAMIC SINGLE ACTION BUTTON -->
+                                    <div style="margin-top: 15px; border-top: 1px solid #2d3b4b; padding-top: 12px;">
+                                        <div id="btn-activate-client-wrap" style="<?=$enabled ? 'display:none;' : 'display:block;'?>">
+                                            <button type="button" class="btn btn-primary btn-block btn-sm" onclick="applyBoosterConfig()" style="font-weight:600; padding:8px;">
+                                                <i class="fa-solid fa-play"></i> Aktifkan Client
+                                            </button>
+                                        </div>
+                                        <div id="btn-stop-client-wrap" style="<?=$enabled ? 'display:block;' : 'display:none;'?>">
+                                            <button type="button" class="btn btn-danger btn-block btn-sm" onclick="stopBoosterConfig('client')" style="font-weight:600; padding:8px;">
+                                                <i class="fa-solid fa-stop"></i> Hentikan Client
+                                            </button>
+                                        </div>
                                     </div>
                                 </form>
                             </div>
@@ -894,11 +905,31 @@ function pollBoosterTelemetry() {
             if (resp && resp.success && resp.data) {
                 var d = resp.data;
 
-                // Update Client Telemetry
+                // Update Client Telemetry & Dynamic Button/Form State
                 if (d.enabled) {
                     $('#hud-client-status').html('<i class="fa-solid fa-circle-check"></i> AKTIF (MULTI-PATH)').removeClass('text-danger').addClass('text-success');
+                    // Tampilkan hanya tombol Hentikan Client
+                    $('#btn-activate-client-wrap').hide();
+                    $('#btn-stop-client-wrap').show();
+                    $('#toolbar-btn-activate-wrap').hide();
+                    $('#toolbar-btn-stop-wrap').show();
+                    // Kunci form menjadi readonly/disabled dengan latar abu-abu
+                    $('#fieldset-booster-client').prop('disabled', true).css('opacity', '0.7');
+                    $('.booster-input-client').css({ 'background-color': '#21262d', 'color': '#8b949e', 'cursor': 'not-allowed' });
+                    $('#booster-vps-host, #booster-mss, #booster-peer-key').prop('readonly', true);
+                    $('#booster-streams, #booster-type, #booster-balancer, #booster-dscp, #booster-bbr').prop('disabled', true);
                 } else {
                     $('#hud-client-status').html('<i class="fa-solid fa-circle-xmark"></i> NON-AKTIF').removeClass('text-success').addClass('text-danger');
+                    // Tampilkan hanya tombol Aktifkan Client
+                    $('#btn-activate-client-wrap').show();
+                    $('#btn-stop-client-wrap').hide();
+                    $('#toolbar-btn-activate-wrap').show();
+                    $('#toolbar-btn-stop-wrap').hide();
+                    // Buka kunci form sehingga bisa diedit normal
+                    $('#fieldset-booster-client').prop('disabled', false).css('opacity', '1');
+                    $('.booster-input-client').css({ 'background-color': '', 'color': '', 'cursor': '' });
+                    $('#booster-vps-host, #booster-mss, #booster-peer-key').prop('readonly', false);
+                    $('#booster-streams, #booster-type, #booster-balancer, #booster-dscp, #booster-bbr').prop('disabled', false);
                 }
                 $('#hud-client-streams').text((d.client_stream_count || d.stream_count || 2) + ' Parallel Streams');
                 $('#hud-client-rx').html('<i class="fa-solid fa-arrow-down"></i> ' + (d.total_rx_formatted || '0 B'));
