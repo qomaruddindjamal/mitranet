@@ -1823,6 +1823,13 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
     # =========================================================================
 
     def do_POST(self) -> None:
+        import subprocess
+        import urllib.request
+        import ssl
+        import time
+        import json
+        import re
+
         parsed = urlparse(self.path)
         path = parsed.path
 
@@ -2368,12 +2375,6 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             engine = payload.get("engine", "ookla")
             iface = payload.get("interface", "")
             server_id = payload.get("server_id", "")
-
-            import subprocess
-            import urllib.request
-            import ssl
-            import time
-            import json
 
             result_entry = None
             err_msg = ""
