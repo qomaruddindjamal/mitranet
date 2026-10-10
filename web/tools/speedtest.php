@@ -448,6 +448,29 @@ body.theme-dark .st-history-title {
     margin-bottom: 0;
     font-size: 12px;
 }
+.st-scroll-table {
+    max-height: 380px;
+    overflow-y: auto;
+    overflow-x: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #ffffff;
+}
+body.theme-dark .st-scroll-table {
+    border-color: #2e3446;
+    background: #1e222d;
+}
+.st-scroll-table table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: #f8fafc;
+    box-shadow: 0 1px 0 #e2e8f0;
+}
+body.theme-dark .st-scroll-table table thead th {
+    background: #181d28;
+    box-shadow: 0 1px 0 #283042;
+}
 .st-table th {
     background: #f8fafc;
     color: #475569;
@@ -524,7 +547,7 @@ body.theme-dark .st-table tbody tr:hover {
                 </div>
                 <div class="col-md-2 col-sm-6" style="margin-bottom: 10px;">
                     <div class="speedtest-label">&nbsp;</div>
-                    <button type="button" id="btn-start" class="btn btn-run-speedtest btn-block" onclick="if(typeof window.startSpeedtest==='function'){window.startSpeedtest();}">
+                    <button type="button" id="btn-start" class="btn btn-run-speedtest btn-block">
                         <i class="fa-solid fa-play"></i> <span>Start Test</span>
                     </button>
                 </div>
@@ -618,7 +641,7 @@ body.theme-dark .st-table tbody tr:hover {
                     <i class="fa-solid fa-trash text-danger"></i> Hapus Riwayat
                 </button>
             </div>
-            <div class="table-responsive">
+            <div class="st-scroll-table">
                 <table class="table st-table">
                     <thead>
                         <tr>
@@ -759,7 +782,7 @@ body.theme-dark .st-table tbody tr:hover {
                 </div>
             </div>
 
-            <div class="table-responsive" style="border: 1px solid #e2e8f0; border-radius: 6px;">
+            <div class="st-scroll-table">
                 <table class="table st-table">
                     <thead>
                         <tr>
@@ -791,9 +814,156 @@ body.theme-dark .st-table tbody tr:hover {
 <?php include(__DIR__ . '/../includes/foot.inc'); ?>
 
 <script type="text/javascript">
-function initSpeedtest() {
-    var currentUrl = '/tools/speedtest.php';
+var currentUrl = '/tools/speedtest.php';
+var activeTab = '<?= $active_tab ?>';
 
+// -------------------------------------------------------------
+// Speedtest Engine
+// -------------------------------------------------------------
+function refreshSpeedtestHistory() {
+    $.ajax({
+        url: currentUrl,
+        type: 'GET',
+        data: { ajax: '1', action: 'history' },
+        dataType: 'json',
+        success: function(res) {
+            if (res && res.success && res.history) {
+                var tbody = $('#history-tbody');
+                tbody.empty();
+                if (res.history.length === 0) {
+                    tbody.html('<tr><td colspan="8" class="text-center text-muted" style="padding: 20px;">Belum ada riwayat pengujian. Silakan klik "Start Test".</td></tr>');
+                } else {
+                    res.history.forEach(function(h) {
+                        var linkHtml = (h.url && h.url.indexOf('http') === 0) ? '<a href="' + h.url + '" target="_blank" class="btn btn-xs btn-info"><i class="fa-solid fa-arrow-up-right-from-square"></i> Result</a>' : '-';
+                        var row = $('<tr>');
+                        row.append($('<td>').text(h.timestamp));
+                        row.append($('<td>').html('<span class="label label-default">' + h.engine + '</span>'));
+                        row.append($('<td>').text(h.interface));
+                        row.append($('<td>').text(h.server));
+                        row.append($('<td>').html('<strong>' + h.ping + '</strong> ms'));
+                        row.append($('<td>').html('<strong class="text-primary">' + h.download + '</strong> Mbps'));
+                        row.append($('<td>').html('<strong class="text-success">' + h.upload + '</strong> Mbps'));
+                        row.append($('<td>').html(linkHtml));
+                        tbody.append(row);
+                    });
+                }
+            }
+        }
+    });
+}
+
+function startSpeedtest() {
+    var btn = $('#btn-start');
+    if (btn.prop('disabled')) return false;
+
+    btn.prop('disabled', true);
+    btn.find('span').text('Testing...');
+    btn.find('i').removeClass('fa-play').addClass('fa-spinner fa-spin');
+
+    $('#test-status').removeClass('speedtest-badge').addClass('speedtest-badge active').html('<i class="fa-solid fa-spinner fa-spin"></i> <span>Sedang menguji latency dan bandwidth multi-stream (10-25 detik)...</span>');
+    $('#speed-progress').show();
+    $('#speed-progress-inner').css('width', '15%');
+
+    var engine = $('#engine-select').val() || 'ookla';
+    var iface = $('#interface-select').val() || '';
+    var srv = $('#server-select').val() || 'auto';
+
+    var progressVal = 15;
+    var progressTimer = setInterval(function() {
+        progressVal += 12;
+        if (progressVal > 88) progressVal = 88;
+        $('#speed-progress-inner').css('width', progressVal + '%');
+    }, 1500);
+
+    $.ajax({
+        url: currentUrl,
+        type: 'POST',
+        data: {
+            ajax: '1',
+            action: 'run',
+            engine: engine,
+            interface: iface,
+            server_id: srv
+        },
+        dataType: 'json',
+        timeout: 120000,
+        success: function(res) {
+            clearInterval(progressTimer);
+            $('#speed-progress-inner').css('width', '100%');
+            setTimeout(function() { $('#speed-progress').fadeOut(); }, 1000);
+
+            btn.prop('disabled', false);
+            btn.find('span').text('Start Test');
+            btn.find('i').removeClass('fa-spinner fa-spin').addClass('fa-play');
+
+            if (res && res.success && res.data) {
+                var d = res.data;
+                $('#test-status').removeClass('speedtest-badge active').addClass('speedtest-badge').html('<i class="fa-solid fa-circle-check text-success"></i> <span>Pengujian Selesai! Throughput berhasil diukur.</span>');
+
+                $('#val-dl').text(d.download);
+                $('#val-ul').text(d.upload);
+                $('#val-ping').text(d.ping);
+                $('#val-jitter').text(d.jitter);
+
+                $('#det-isp').text(d.isp);
+                $('#det-ip').text(d.client_ip);
+                $('#det-loss').text(d.loss ? d.loss + '%' : '0.0%');
+                $('#det-server').text(d.server);
+                $('#det-if').text(d.interface);
+
+                if (d.url && d.url.indexOf('http') === 0) {
+                    $('#det-url').html('<a href="' + d.url + '" target="_blank" class="btn btn-xs btn-info"><i class="fa-solid fa-link"></i> Result Link</a>');
+                } else {
+                    $('#det-url').text('-');
+                }
+
+                if (typeof MitraNet !== 'undefined' && MitraNet.toast) {
+                    MitraNet.toast('Speedtest berhasil: ' + d.download + ' Mbps Down / ' + d.upload + ' Mbps Up', 'success');
+                }
+
+                refreshSpeedtestHistory();
+            } else {
+                var errMsg = (res && res.error) ? res.error : 'Pengujian gagal';
+                $('#test-status').removeClass('speedtest-badge active').addClass('speedtest-badge').html('<i class="fa-solid fa-triangle-exclamation text-danger"></i> <span>Gagal: ' + errMsg + '</span>');
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Speedtest Error',
+                        text: errMsg,
+                        icon: 'error',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#d33'
+                    });
+                } else {
+                    alert(errMsg);
+                }
+            }
+        },
+        error: function(xhr, status, err) {
+            clearInterval(progressTimer);
+            $('#speed-progress').fadeOut();
+            btn.prop('disabled', false);
+            btn.find('span').text('Start Test');
+            btn.find('i').removeClass('fa-spinner fa-spin').addClass('fa-play');
+
+            var errMsg = 'Koneksi ke backend pengujian gagal (' + (err || status) + '). Status: ' + xhr.status;
+            $('#test-status').removeClass('speedtest-badge active').addClass('speedtest-badge').html('<i class="fa-solid fa-triangle-exclamation text-danger"></i> <span>' + errMsg + '</span>');
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Koneksi Gagal',
+                    text: errMsg,
+                    icon: 'error',
+                    confirmButtonText: 'Tutup',
+                    confirmButtonColor: '#d33'
+                });
+            } else {
+                alert(errMsg);
+            }
+        }
+    });
+    return false;
+}
+
+function initSpeedtest() {
     // 1. Fetch Speedtest Servers
     $.ajax({
         url: currentUrl,
@@ -818,155 +988,12 @@ function initSpeedtest() {
     });
 
     // 2. Fetch History
-    window.refreshHistory = function() {
-        $.ajax({
-            url: currentUrl,
-            type: 'GET',
-            data: { ajax: '1', action: 'history' },
-            dataType: 'json',
-            success: function(res) {
-                if (res && res.success && res.history) {
-                    var tbody = $('#history-tbody');
-                    tbody.empty();
-                    if (res.history.length === 0) {
-                        tbody.html('<tr><td colspan="8" class="text-center text-muted" style="padding: 20px;">Belum ada riwayat pengujian. Silakan klik "Start Test".</td></tr>');
-                    } else {
-                        res.history.forEach(function(h) {
-                            var linkHtml = (h.url && h.url.indexOf('http') === 0) ? '<a href="' + h.url + '" target="_blank" class="btn btn-xs btn-info"><i class="fa-solid fa-arrow-up-right-from-square"></i> Result</a>' : '-';
-                            var row = $('<tr>');
-                            row.append($('<td>').text(h.timestamp));
-                            row.append($('<td>').html('<span class="label label-default">' + h.engine + '</span>'));
-                            row.append($('<td>').text(h.interface));
-                            row.append($('<td>').text(h.server));
-                            row.append($('<td>').html('<strong>' + h.ping + '</strong> ms'));
-                            row.append($('<td>').html('<strong class="text-primary">' + h.download + '</strong> Mbps'));
-                            row.append($('<td>').html('<strong class="text-success">' + h.upload + '</strong> Mbps'));
-                            row.append($('<td>').html(linkHtml));
-                            tbody.append(row);
-                        });
-                    }
-                }
-            }
-        });
-    };
+    refreshSpeedtestHistory();
 
-    window.refreshHistory();
-
-    // 3. Start Speedtest Runner
-    window.startSpeedtest = function() {
-        var btn = $('#btn-start');
-        if (btn.prop('disabled')) return false;
-
-        btn.prop('disabled', true);
-        btn.find('span').text('Testing...');
-        btn.find('i').removeClass('fa-play').addClass('fa-spinner fa-spin');
-
-        $('#test-status').removeClass('speedtest-badge').addClass('speedtest-badge active').html('<i class="fa-solid fa-spinner fa-spin"></i> <span>Sedang menguji latency dan bandwidth multi-stream (10-25 detik)...</span>');
-        $('#speed-progress').show();
-        $('#speed-progress-inner').css('width', '15%');
-
-        var engine = $('#engine-select').val() || 'ookla';
-        var iface = $('#interface-select').val() || '';
-        var srv = $('#server-select').val() || 'auto';
-
-        var progressVal = 15;
-        var progressTimer = setInterval(function() {
-            progressVal += 12;
-            if (progressVal > 88) progressVal = 88;
-            $('#speed-progress-inner').css('width', progressVal + '%');
-        }, 1500);
-
-        $.ajax({
-            url: currentUrl,
-            type: 'POST',
-            data: {
-                ajax: '1',
-                action: 'run',
-                engine: engine,
-                interface: iface,
-                server_id: srv
-            },
-            dataType: 'json',
-            timeout: 120000,
-            success: function(res) {
-                clearInterval(progressTimer);
-                $('#speed-progress-inner').css('width', '100%');
-                setTimeout(function() { $('#speed-progress').fadeOut(); }, 1000);
-
-                btn.prop('disabled', false);
-                btn.find('span').text('Start Test');
-                btn.find('i').removeClass('fa-spinner fa-spin').addClass('fa-play');
-
-                if (res && res.success && res.data) {
-                    var d = res.data;
-                    $('#test-status').removeClass('speedtest-badge active').addClass('speedtest-badge').html('<i class="fa-solid fa-circle-check text-success"></i> <span>Pengujian Selesai! Throughput berhasil diukur.</span>');
-
-                    $('#val-dl').text(d.download);
-                    $('#val-ul').text(d.upload);
-                    $('#val-ping').text(d.ping);
-                    $('#val-jitter').text(d.jitter);
-
-                    $('#det-isp').text(d.isp);
-                    $('#det-ip').text(d.client_ip);
-                    $('#det-loss').text(d.loss ? d.loss + '%' : '0.0%');
-                    $('#det-server').text(d.server);
-                    $('#det-if').text(d.interface);
-
-                    if (d.url && d.url.indexOf('http') === 0) {
-                        $('#det-url').html('<a href="' + d.url + '" target="_blank" class="btn btn-xs btn-info"><i class="fa-solid fa-link"></i> Result Link</a>');
-                    } else {
-                        $('#det-url').text('-');
-                    }
-
-                    if (typeof MitraNet !== 'undefined' && MitraNet.toast) {
-                        MitraNet.toast('Speedtest berhasil: ' + d.download + ' Mbps Down / ' + d.upload + ' Mbps Up', 'success');
-                    }
-
-                    window.refreshHistory();
-                } else {
-                    var errMsg = (res && res.error) ? res.error : 'Pengujian gagal';
-                    $('#test-status').removeClass('speedtest-badge active').addClass('speedtest-badge').html('<i class="fa-solid fa-triangle-exclamation text-danger"></i> <span>Gagal: ' + errMsg + '</span>');
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({
-                            title: 'Speedtest Error',
-                            text: errMsg,
-                            icon: 'error',
-                            confirmButtonText: 'OK',
-                            confirmButtonColor: '#d33'
-                        });
-                    } else {
-                        alert(errMsg);
-                    }
-                }
-            },
-            error: function(xhr, status, err) {
-                clearInterval(progressTimer);
-                $('#speed-progress').fadeOut();
-                btn.prop('disabled', false);
-                btn.find('span').text('Start Test');
-                btn.find('i').removeClass('fa-spinner fa-spin').addClass('fa-play');
-
-                var errMsg = 'Koneksi ke backend pengujian gagal (' + (err || status) + '). Status: ' + xhr.status;
-                $('#test-status').removeClass('speedtest-badge active').addClass('speedtest-badge').html('<i class="fa-solid fa-triangle-exclamation text-danger"></i> <span>' + errMsg + '</span>');
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        title: 'Koneksi Gagal',
-                        text: errMsg,
-                        icon: 'error',
-                        confirmButtonText: 'Tutup',
-                        confirmButtonColor: '#d33'
-                    });
-                } else {
-                    alert(errMsg);
-                }
-            }
-        });
-        return false;
-    };
-
+    // 3. Bind Start Button
     $('#btn-start').off('click').on('click', function(e) {
         e.preventDefault();
-        window.startSpeedtest();
+        startSpeedtest();
     });
 
     // 4. Clear History Handler
@@ -1018,7 +1045,11 @@ function initSpeedtest() {
             }
         }
     });
-// Benchmark JavaScript Engine
+}
+
+// -------------------------------------------------------------
+// Benchmark Engine
+// -------------------------------------------------------------
 var currentBenchmarkMode = 'cdn';
 
 function selectBenchmarkMode(mode) {
@@ -1075,10 +1106,10 @@ function startBenchmark() {
         } else {
             $('#hud-status').text('ERROR').css('color', '#f87171');
             if (typeof MitraNet !== 'undefined' && MitraNet.toast) {
-                MitraNet.toast(res.error || 'Benchmark gagal dieksekusi', 'error');
+                MitraNet.toast((res && res.error) ? res.error : 'Benchmark gagal dieksekusi', 'error');
             }
         }
-    }).fail(function(xhr) {
+    }, 'json').fail(function(xhr) {
         btn.prop('disabled', false).html('<i class="fa-solid fa-play"></i> Mulai Benchmark Sekarang');
         $('#hud-status').text('TIMEOUT').css('color', '#f87171');
         if (typeof MitraNet !== 'undefined' && MitraNet.toast) {
@@ -1114,24 +1145,45 @@ function loadBenchmarkHistory() {
 }
 
 function clearBenchmarkHistory() {
-    if (typeof MitraNet !== 'undefined' && MitraNet.confirmDelete) {
-        MitraNet.confirmDelete('Apakah Anda yakin ingin menghapus seluruh riwayat benchmark?', function() {
-            $.post('/tools/speedtest.php', { ajax: '1', action: 'clear_benchmark_history' }, function(res) {
+    var doClear = function() {
+        $.post('/tools/speedtest.php', { ajax: '1', action: 'clear_benchmark_history' }, function(res) {
+            if (typeof MitraNet !== 'undefined' && MitraNet.toast) {
                 MitraNet.toast('Riwayat benchmark berhasil dibersihkan', 'info');
-                loadBenchmarkHistory();
-            });
+            }
+            loadBenchmarkHistory();
+        }, 'json');
+    };
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Hapus Riwayat Benchmark?',
+            text: 'Seluruh histori benchmark throughput dan PPS akan dihapus permanen.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Ya, Bersihkan!',
+            cancelButtonText: 'Batal'
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                doClear();
+            }
         });
     } else {
         if (confirm('Hapus seluruh riwayat benchmark?')) {
-            $.post('/tools/speedtest.php', { ajax: '1', action: 'clear_benchmark_history' }, function(res) {
-                loadBenchmarkHistory();
-            });
+            doClear();
         }
     }
 }
 
+// -------------------------------------------------------------
+// Document Ready Lifecycle per Tab
+// -------------------------------------------------------------
 $(document).ready(function() {
-    initSpeedtest();
-    loadBenchmarkHistory();
+    if (activeTab === 'speedtest') {
+        initSpeedtest();
+    } else if (activeTab === 'benchmark') {
+        loadBenchmarkHistory();
+    }
 });
 </script>
