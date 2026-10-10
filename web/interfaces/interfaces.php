@@ -309,20 +309,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $tag = (int)($_POST['tag'] ?? 0);
         $descr = trim($_POST['descr'] ?? '');
         if (!empty($parent) && $tag > 0 && $tag <= 4094) {
+            $vlan_dev = "{$parent}.{$tag}";
             $res = MitraNetApi::request('/vlans/create', 'POST', [
+                'name' => $vlan_dev,
+                'parent' => $parent,
                 'parent_interface' => $parent,
                 'vlan_id' => $tag,
                 'description' => $descr
             ]);
-            if (($res['status'] ?? 0) === 200) {
-                $vlan_dev = "{$parent}.{$tag}";
+            $is_success = (($res['status'] ?? 0) === 200 && empty($res['data']['error']));
+            if (!$is_success) {
+                // Direct kernel fallback
+                exec("ip link add link " . escapeshellarg($parent) . " name " . escapeshellarg($vlan_dev) . " type vlan id " . escapeshellarg($tag), $k_out, $k_ret);
+                if ($k_ret === 0) {
+                    $is_success = true;
+                }
+            }
+
+            if ($is_success) {
+                exec("ip link set " . escapeshellarg($vlan_dev) . " up");
                 if (!empty($_POST['auto_dhcp'])) {
                     exec("dhcpcd -4 -n " . escapeshellarg($vlan_dev) . " >/dev/null 2>&1 &");
                 }
-                $msg = "VLAN interface '{$vlan_dev}' berhasil dibuat.";
+                $msg = "VLAN interface '{$vlan_dev}' berhasil dibuat dan diaktifkan.";
             } else {
-                $err = $res['data']['error'] ?? 'Gagal membuat VLAN.';
+                $err = $res['data']['error'] ?? 'Gagal membuat VLAN interface.';
             }
+        } else {
+            $err = "Parent interface dan VLAN Tag (1-4094) wajib diisi.";
         }
     } elseif ($action === 'create_vether') {
         $name = trim($_POST['name'] ?? '');
