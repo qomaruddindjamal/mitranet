@@ -628,6 +628,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 MitraNetApi::request('/vlans/delete', 'POST', ['name' => $del_name]);
             } elseif (preg_match('/^(eoip|gre|ipip|tunl|vxlan)/i', $del_name)) {
                 MitraNetApi::deleteTunnel($del_name);
+            } elseif (strpos($del_name, 'macsec') === 0) {
+                MitraNetApi::deleteMacsec($del_name);
             } elseif (strpos($del_name, 'veth') === 0) {
                 exec("ip link delete " . escapeshellarg($del_name));
             } else {
@@ -637,6 +639,86 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($is_ajax) {
                 echo json_encode(['success' => true, 'message' => $msg]);
                 exit;
+            }
+        }
+    } elseif ($action === 'delete_vrf') {
+        $vrf_name = trim($_POST['vrf_name'] ?? '');
+        if (!empty($vrf_name)) {
+            $res = MitraNetApi::request('/vrfs/delete', 'POST', ['name' => $vrf_name]);
+            if (($res['status'] ?? 0) === 200 && ($res['data']['success'] ?? false)) {
+                $msg = "VRF '{$vrf_name}' berhasil dihapus.";
+                if ($is_ajax) { echo json_encode(['success' => true, 'message' => $msg]); exit; }
+            } else {
+                $err = $res['data']['error'] ?? 'Gagal menghapus VRF.';
+                if ($is_ajax) { echo json_encode(['success' => false, 'error' => $err]); exit; }
+            }
+        }
+    } elseif ($action === 'add_vrf_member') {
+        $vrf_name = trim($_POST['vrf_name'] ?? '');
+        $member_if = trim($_POST['member_interface'] ?? '');
+        if (!empty($vrf_name) && !empty($member_if)) {
+            $res = MitraNetApi::addVrfMember($vrf_name, $member_if);
+            if (($res['status'] ?? 0) === 200 && ($res['data']['success'] ?? false)) {
+                $msg = "Interface '{$member_if}' berhasil dimasukkan ke VRF '{$vrf_name}'.";
+                if ($is_ajax) { echo json_encode(['success' => true, 'message' => $msg]); exit; }
+            } else {
+                $err = $res['data']['error'] ?? 'Gagal menambahkan member interface ke VRF.';
+                if ($is_ajax) { echo json_encode(['success' => false, 'error' => $err]); exit; }
+            }
+        }
+    } elseif ($action === 'remove_vrf_member') {
+        $vrf_name = trim($_POST['vrf_name'] ?? '');
+        $member_if = trim($_POST['member_interface'] ?? '');
+        if (!empty($vrf_name) && !empty($member_if)) {
+            $res = MitraNetApi::removeVrfMember($vrf_name, $member_if);
+            if (($res['status'] ?? 0) === 200 && ($res['data']['success'] ?? false)) {
+                $msg = "Interface '{$member_if}' berhasil dilepas dari VRF '{$vrf_name}'.";
+                if ($is_ajax) { echo json_encode(['success' => true, 'message' => $msg]); exit; }
+            } else {
+                $err = $res['data']['error'] ?? 'Gagal melepas member interface dari VRF.';
+                if ($is_ajax) { echo json_encode(['success' => false, 'error' => $err]); exit; }
+            }
+        }
+    } elseif ($action === 'create_macsec') {
+        $name = trim($_POST['name'] ?? '');
+        $parent = trim($_POST['parent'] ?? '');
+        $encrypt = !empty($_POST['encrypt']);
+        $key = trim($_POST['key'] ?? '');
+        $key_id = trim($_POST['key_id'] ?? '01');
+        $sci = trim($_POST['sci'] ?? '');
+        $comment = trim($_POST['comment'] ?? '');
+
+        if (!empty($name) && !empty($parent)) {
+            $res = MitraNetApi::createMacsec([
+                'name' => $name,
+                'parent' => $parent,
+                'encrypt' => $encrypt,
+                'key' => $key,
+                'key_id' => $key_id,
+                'sci' => $sci,
+                'comment' => $comment
+            ]);
+            if (($res['status'] ?? 0) === 200 && ($res['data']['success'] ?? false)) {
+                $msg = "MACsec interface '{$name}' berhasil dibuat.";
+                if ($is_ajax) { echo json_encode(['success' => true, 'message' => $msg]); exit; }
+            } else {
+                $err = $res['data']['error'] ?? 'Gagal membuat MACsec interface.';
+                if ($is_ajax) { echo json_encode(['success' => false, 'error' => $err]); exit; }
+            }
+        } else {
+            $err = "Nama interface dan Parent device wajib diisi.";
+            if ($is_ajax) { echo json_encode(['success' => false, 'error' => $err]); exit; }
+        }
+    } elseif ($action === 'delete_macsec') {
+        $name = trim($_POST['name'] ?? '');
+        if (!empty($name)) {
+            $res = MitraNetApi::deleteMacsec($name);
+            if (($res['status'] ?? 0) === 200 && ($res['data']['success'] ?? false)) {
+                $msg = "MACsec interface '{$name}' berhasil dihapus.";
+                if ($is_ajax) { echo json_encode(['success' => true, 'message' => $msg]); exit; }
+            } else {
+                $err = $res['data']['error'] ?? 'Gagal menghapus MACsec interface.';
+                if ($is_ajax) { echo json_encode(['success' => false, 'error' => $err]); exit; }
             }
         }
     } elseif ($action === 'save_interface_list') {
@@ -681,6 +763,8 @@ $ifaces_raw = MitraNetApi::getInterfaces();
 $vlans   = MitraNetApi::getVlans();
 $bridges = MitraNetApi::getBridges();
 $bonds   = MitraNetApi::getBonds();
+$vrfs    = MitraNetApi::getVrfs();
+$macsecs = MitraNetApi::getMacsec();
 $interface_lists = MitraNetApi::getInterfaceLists();
 
 // Check if a specific interface is selected for configuration
@@ -1099,6 +1183,181 @@ if (!function_exists('fmt_pkts')) {
 			</div>
 			<div>
 				<span class="text-muted">MikroTik RouterOS Interface Grouping Standard</span>
+			</div>
+		</div>
+
+		<?php elseif ($current_tab === 'vrf'): ?>
+		<!-- ============================================== -->
+		<!-- VRF (VIRTUAL ROUTING & FORWARDING) DATA GRID   -->
+		<!-- ============================================== -->
+		<div class="mitranet-grid-container">
+			<table class="mitranet-grid" id="vrf-grid-table">
+				<thead>
+					<tr>
+						<th class="text-center col-flag" style="width: 35px;"><i class="fa-regular fa-flag"></i></th>
+						<th class="sortable" style="width: 180px;">VRF Name</th>
+						<th class="sortable" style="width: 120px;">Table ID</th>
+						<th class="sortable">Member Interfaces</th>
+						<th class="sortable" style="width: 120px;">Routes</th>
+						<th class="sortable" style="width: 100px;">Oper State</th>
+						<th class="text-center" style="width: 140px;">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+				<?php if (empty($vrfs)): ?>
+					<tr>
+						<td colspan="7" class="text-center text-muted" style="padding: 24px;">
+							<i class="fa-solid fa-diagram-project fs-18 mb-2"></i><br>
+							Belum ada domain VRF yang dibuat. Klik tombol <strong>New</strong> di toolbar untuk membuat Virtual Routing and Forwarding domain terisolasi.
+						</td>
+					</tr>
+				<?php else: ?>
+					<?php foreach ($vrfs as $v): ?>
+					<?php
+					$v_name = htmlspecialchars($v['name'] ?? '');
+					$v_table = htmlspecialchars((string)($v['table'] ?? $v['table_id'] ?? ''));
+					$v_members = (array)($v['interfaces'] ?? []);
+					$v_routes = $v['routes_count'] ?? 0;
+					$v_oper = strtoupper($v['oper_state'] ?? 'UP');
+					?>
+					<tr data-vrfname="<?=$v_name?>">
+						<td class="text-center col-flag-cell">
+							<i class="fa-solid fa-circle text-success fs-10" title="VRF Domain Active"></i>
+						</td>
+						<td>
+							<strong class="text-primary fs-13"><i class="fa-solid fa-diagram-project mr-1"></i> <?=$v_name?></strong>
+						</td>
+						<td>
+							<span class="badge badge-info" style="font-family: monospace; font-size: 11px;">Table <?=$v_table?></span>
+						</td>
+						<td>
+							<div style="display: flex; flex-wrap: wrap; gap: 5px; align-items: center;">
+							<?php if (empty($v_members)): ?>
+								<span class="text-muted fs-11"><em>(Belum ada interface yang diikat ke VRF ini)</em></span>
+							<?php else: ?>
+								<?php foreach ($v_members as $vm): ?>
+									<span class="label label-primary font-monospace" style="display: inline-flex; align-items: center; padding: 4px 8px; font-size: 11px;">
+										<i class="fa-solid fa-network-wired mr-1" style="font-size: 10px;"></i> <?=htmlspecialchars($vm)?>
+										<a href="javascript:void(0)" onclick="removeVrfMemberClick('<?=$v_name?>', '<?=htmlspecialchars($vm)?>')" style="color: #fff; margin-left: 6px; text-decoration: none;" title="Lepas interface ini dari VRF">&times;</a>
+									</span>
+								<?php endforeach; ?>
+							<?php endif; ?>
+							</div>
+						</td>
+						<td>
+							<span class="text-muted"><i class="fa-solid fa-route mr-1"></i> <?=$v_routes?> routes</span>
+						</td>
+						<td>
+							<span class="badge <?=($v_oper === 'UP') ? 'badge-success' : 'badge-default'?>"><?=$v_oper?></span>
+						</td>
+						<td class="text-center">
+							<button type="button" class="btn btn-xs btn-default" onclick="openAddVrfMemberModal('<?=$v_name?>')" title="Tambah Interface Member ke VRF">
+								<i class="fa-solid fa-plus text-primary"></i> Member
+							</button>
+							<button type="button" class="btn btn-xs btn-danger" onclick="deleteVrfClick('<?=$v_name?>')" title="Hapus Domain VRF">
+								<i class="fa-solid fa-trash-can"></i>
+							</button>
+						</td>
+					</tr>
+					<?php endforeach; ?>
+				<?php endif; ?>
+				</tbody>
+			</table>
+		</div>
+
+		<!-- STATUSBAR VRF -->
+		<div class="mitranet-statusbar">
+			<div>
+				<span><strong>Total:</strong> <?=count($vrfs)?> VRF domain(s)</span>
+			</div>
+			<div>
+				<span class="text-muted">Linux Kernel Virtual Routing and Forwarding</span>
+			</div>
+		</div>
+
+		<?php elseif ($current_tab === 'macsec'): ?>
+		<!-- ============================================== -->
+		<!-- MACSEC (IEEE 802.1AE LAYER 2 ENCRYPTION) GRID  -->
+		<!-- ============================================== -->
+		<div class="mitranet-grid-container">
+			<table class="mitranet-grid" id="macsec-grid-table">
+				<thead>
+					<tr>
+						<th class="text-center col-flag" style="width: 35px;"><i class="fa-regular fa-flag"></i></th>
+						<th class="sortable" style="width: 160px;">Name</th>
+						<th class="sortable" style="width: 160px;">Parent Device</th>
+						<th class="sortable" style="width: 120px;">Cipher Suite</th>
+						<th class="sortable" style="width: 110px;">Encryption</th>
+						<th class="sortable" style="width: 110px;">Protect / Validate</th>
+						<th class="sortable">Secure Channel (SCI)</th>
+						<th class="sortable" style="width: 180px;">Comment</th>
+						<th class="text-center" style="width: 80px;">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+				<?php if (empty($macsecs)): ?>
+					<tr>
+						<td colspan="9" class="text-center text-muted" style="padding: 24px;">
+							<i class="fa-solid fa-user-shield fs-18 mb-2"></i><br>
+							Belum ada antarmuka MACsec (IEEE 802.1AE) yang dikonfigurasi. Klik tombol <strong>New</strong> di toolbar untuk membuat link terenkripsi Layer 2 hardware/software.
+						</td>
+					</tr>
+				<?php else: ?>
+					<?php foreach ($macsecs as $ms): ?>
+					<?php
+					$ms_name = htmlspecialchars($ms['ifname'] ?? '');
+					$ms_parent = htmlspecialchars($ms['parent'] ?? '-');
+					$ms_cipher = htmlspecialchars($ms['cipher_suite'] ?? 'GCM-AES-128');
+					$ms_enc = !empty($ms['encrypt']);
+					$ms_protect = !empty($ms['protect']);
+					$ms_validate = htmlspecialchars($ms['validate'] ?? 'strict');
+					$ms_sci = htmlspecialchars($ms['sci'] ?? '-');
+					$ms_comment = htmlspecialchars($ms['comment'] ?? '');
+					?>
+					<tr data-msname="<?=$ms_name?>">
+						<td class="text-center col-flag-cell">
+							<i class="fa-solid fa-lock text-success" title="MACsec Secured Link"></i>
+						</td>
+						<td>
+							<strong class="text-primary fs-13"><i class="fa-solid fa-shield-halved mr-1"></i> <?=$ms_name?></strong>
+						</td>
+						<td>
+							<span class="label label-default font-monospace"><?=strtoupper($ms_parent)?></span>
+						</td>
+						<td>
+							<span class="text-info fs-11 font-monospace"><?=$ms_cipher?></span>
+						</td>
+						<td>
+							<span class="badge <?=$ms_enc ? 'badge-success' : 'badge-default'?>"><?=$ms_enc ? 'ON (Encrypted)' : 'OFF (Integrity only)'?></span>
+						</td>
+						<td>
+							<span class="text-muted fs-11"><?=$ms_validate?></span>
+						</td>
+						<td>
+							<code style="font-size: 11px;"><?=$ms_sci?></code>
+						</td>
+						<td class="text-muted">
+							<?=$ms_comment ? $ms_comment : '<span class="text-muted">-</span>'?>
+						</td>
+						<td class="text-center">
+							<button type="button" class="btn btn-xs btn-danger" onclick="deleteMacsecClick('<?=$ms_name?>')" title="Hapus Antarmuka MACsec">
+								<i class="fa-solid fa-trash-can"></i>
+							</button>
+						</td>
+					</tr>
+					<?php endforeach; ?>
+				<?php endif; ?>
+				</tbody>
+			</table>
+		</div>
+
+		<!-- STATUSBAR MACSEC -->
+		<div class="mitranet-statusbar">
+			<div>
+				<span><strong>Total:</strong> <?=count($macsecs)?> MACsec interface(s)</span>
+			</div>
+			<div>
+				<span class="text-muted">IEEE 802.1AE Layer 2 MAC Security (Hardware/Kernel AES-GCM)</span>
 			</div>
 		</div>
 
@@ -1854,6 +2113,110 @@ if (!function_exists('fmt_pkts')) {
 </div>
 
 <!-- ============================================== -->
+<!-- MODAL: ADD NEW MACSEC (IEEE 802.1AE)           -->
+<!-- ============================================== -->
+<div id="modal-new-macsec" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-md">
+        <form method="post" action="interfaces.php?tab=macsec">
+            <input type="hidden" name="action" value="create_macsec">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">
+                        <i class="fa-solid fa-shield-halved text-primary"></i> <?=gettext("New MACsec Interface (IEEE 802.1AE)")?>
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label><span class="text-danger">*</span> <?=gettext("MACsec Interface Name:")?></label>
+                        <input type="text" name="name" class="form-control" placeholder="macsec0" required>
+                        <span class="help-block">Nama perangkat antarmuka virtual MACsec (contoh: macsec0).</span>
+                    </div>
+                    <div class="form-group">
+                        <label><span class="text-danger">*</span> <?=gettext("Parent Physical/Virtual Interface:")?></label>
+                        <select name="parent" class="form-control" required>
+                            <option value="">-- Pilih Parent Interface --</option>
+                            <?php foreach ($ifaces_raw as $p): if ($p['name'] !== 'lo' && strpos($p['name'], 'macsec') !== 0): ?>
+                                <option value="<?=htmlspecialchars($p['name'])?>"><?=htmlspecialchars(strtoupper($p['altname'] ?? $p['name']))?> (<?=htmlspecialchars($p['name'])?>)</option>
+                            <?php endif; endforeach; ?>
+                        </select>
+                        <span class="help-block">Antarmuka fisik atau virtual yang menjadi pembawa (carrier link) Layer 2.</span>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="encrypt" value="1" checked> <strong><?=gettext("Aktifkan Enkripsi Data (AES-GCM Payload Encryption)")?></strong>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label><?=gettext("Pre-Shared Key / SAK (128-bit / 32 Karakter Hex):")?></label>
+                        <input type="text" name="key" class="form-control font-monospace" placeholder="00112233445566778899aabbccddeeff" maxlength="64">
+                        <span class="help-block">Kunci enkripsi simetris 128-bit (32 karakter hex). Digunakan untuk SA TX channel.</span>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label><?=gettext("Key ID (AN/ID Hex):")?></label>
+                                <input type="text" name="key_id" class="form-control font-monospace" value="01" maxlength="4">
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label><?=gettext("SCI (Secure Channel Identifier Hex/Int, Opsional):")?></label>
+                                <input type="text" name="sci" class="form-control font-monospace" placeholder="0x1">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label><?=gettext("Comment / Description:")?></label>
+                        <input type="text" name="comment" class="form-control" placeholder="Link interkoneksi aman Point-to-Point Layer 2">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-plus icon-embed-btn"></i> Create MACsec</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL: ADD VRF MEMBER INTERFACE                -->
+<!-- ============================================== -->
+<div id="modal-add-vrf-member" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-sm">
+        <form method="post" action="interfaces.php?tab=vrf">
+            <input type="hidden" name="action" value="add_vrf_member">
+            <input type="hidden" name="vrf_name" id="vrf-target-name-hidden" value="">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">
+                        <i class="fa-solid fa-plus text-primary"></i> <?=gettext("Add Interface to VRF")?>: <span id="vrf-target-label"></span>
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label><?=gettext("Select Interface:")?></label>
+                        <select name="member_interface" class="form-control" required>
+                            <option value="">-- Pilih Antarmuka --</option>
+                            <?php foreach ($ifaces_raw as $p): if (!preg_match('/^(lo|enp0s3)/i', $p['name'])): ?>
+                                <option value="<?=htmlspecialchars($p['name'])?>"><?=htmlspecialchars(strtoupper($p['altname'] ?? $p['name']))?> (<?=htmlspecialchars($p['name'])?>)</option>
+                            <?php endif; endforeach; ?>
+                        </select>
+                        <span class="help-block">Interface ini akan diikat sebagai slave dari domain VRF terpilih.</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-check icon-embed-btn"></i> Add Member</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================== -->
 <!-- MODAL: ADD NEW INTERFACE LIST                  -->
 <!-- ============================================== -->
 <div id="modal-new-interface-list" class="modal fade" role="dialog">
@@ -1919,10 +2282,12 @@ if (!function_exists('fmt_pkts')) {
                         <option value="bridge">Bridge Interface</option>
                         <option value="vlan">VLAN Interface (802.1Q)</option>
                         <option value="macvlan">MACVLAN Interface (Virtual MAC)</option>
+                        <option value="macsec">MACsec Interface (IEEE 802.1AE Layer 2 Encryption)</option>
                         <option value="vether">vEthernet (KVM / Host-Guest)</option>
                         <option value="vether_tunnel">vEther Tunnel</option>
                         <option value="lagg">Bonding / LAGG</option>
                         <option value="vrf">VRF Domain</option>
+                        <option value="interface_list">Interface List (MikroTik Standard Group)</option>
                     </select>
                 </div>
             </div>
@@ -2293,6 +2658,8 @@ window.openNewModal = function() {
         $('#modal-new-vlan').modal('show');
     } else if (currentTab === 'macvlan') {
         $('#modal-new-macvlan').modal('show');
+    } else if (currentTab === 'macsec') {
+        $('#modal-new-macsec').modal('show');
     } else if (currentTab === 'vether') {
         $('#modal-new-vether').modal('show');
     } else if (currentTab === 'vether_tunnel') {
@@ -2326,6 +2693,8 @@ window.proceedToTypeModal = function() {
             $('#modal-new-vlan').modal('show');
         } else if (selectedType === 'macvlan') {
             $('#modal-new-macvlan').modal('show');
+        } else if (selectedType === 'macsec') {
+            $('#modal-new-macsec').modal('show');
         } else if (selectedType === 'vether') {
             $('#modal-new-vether').modal('show');
         } else if (selectedType === 'vether_tunnel') {
@@ -2346,6 +2715,55 @@ window.deleteInterfaceListClick = function(listName) {
         warning: 'Grup antarmuka ini akan dihapus dari konfigurasi sistem.',
         url: 'interfaces.php?tab=interface_list',
         data: { action: 'delete_interface_list', list_name: listName },
+        onSuccess: function() {
+            location.reload();
+        }
+    });
+};
+
+window.deleteVrfClick = function(vrfName) {
+    if (!vrfName) return;
+    MitraNet.confirmDelete({
+        title: 'Hapus Domain VRF?',
+        name: vrfName,
+        warning: 'Domain routing VRF ini dan seluruh asosiasi interface akan dihapus.',
+        url: 'interfaces.php?tab=vrf',
+        data: { action: 'delete_vrf', vrf_name: vrfName },
+        onSuccess: function() {
+            location.reload();
+        }
+    });
+};
+
+window.openAddVrfMemberModal = function(vrfName) {
+    if (!vrfName) return;
+    $('#vrf-target-name-hidden').val(vrfName);
+    $('#vrf-target-label').text(vrfName);
+    $('#modal-add-vrf-member').modal('show');
+};
+
+window.removeVrfMemberClick = function(vrfName, ifaceName) {
+    if (!vrfName || !ifaceName) return;
+    MitraNet.confirmDelete({
+        title: 'Lepas Interface dari VRF?',
+        name: ifaceName + ' &rarr; ' + vrfName,
+        warning: 'Antarmuka ini akan dilepas dari domain VRF dan dikembalikan ke tabel routing utama (main).',
+        url: 'interfaces.php?tab=vrf',
+        data: { action: 'remove_vrf_member', vrf_name: vrfName, member_interface: ifaceName },
+        onSuccess: function() {
+            location.reload();
+        }
+    });
+};
+
+window.deleteMacsecClick = function(msName) {
+    if (!msName) return;
+    MitraNet.confirmDelete({
+        title: 'Hapus Antarmuka MACsec?',
+        name: msName,
+        warning: 'Link terenkripsi Layer 2 IEEE 802.1AE ini akan dihapus dari kernel.',
+        url: 'interfaces.php?tab=macsec',
+        data: { action: 'delete_macsec', name: msName },
         onSuccess: function() {
             location.reload();
         }

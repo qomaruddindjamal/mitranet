@@ -829,6 +829,38 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 self._send_json(500, {"error": f"Gagal membaca interface lists: {e}"})
             return
 
+        # 7c. MACsec IEEE 802.1AE Interfaces
+        if path == "/api/v1/macsec":
+            try:
+                subprocess.run(["modprobe", "macsec"], stderr=subprocess.DEVNULL)
+                res = subprocess.run(["ip", "-j", "macsec", "show"], capture_output=True, text=True)
+                macsecs = []
+                if res.returncode == 0 and res.stdout.strip():
+                    try:
+                        macsecs = json.loads(res.stdout)
+                    except Exception:
+                        pass
+                
+                # Enrich with persistent config comment/parent
+                cfg_file = "/etc/mitranet/network/macsec.json"
+                saved_cfg = {}
+                if os.path.exists(cfg_file):
+                    try:
+                        with open(cfg_file, "r") as cf:
+                            saved_cfg = json.load(cf)
+                    except Exception:
+                        pass
+                for m in macsecs:
+                    m_name = m.get("ifname", "")
+                    if m_name in saved_cfg:
+                        m["parent"] = saved_cfg[m_name].get("parent", "")
+                        m["comment"] = saved_cfg[m_name].get("comment", "")
+                        m["key"] = saved_cfg[m_name].get("key", "")
+                self._send_json(200, macsecs)
+            except Exception as e:
+                self._send_json(500, {"error": f"Query MACsec failed: {e}"})
+            return
+
         # 8. Firewall
         if path == "/api/v1/firewall":
             try:
@@ -2312,6 +2344,129 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 self._send_json(200, {"success": True, "message": f"VRF '{name}' deleted"})
             except Exception as e:
                 self._send_json(400, {"error": str(e)})
+            return
+
+        if path == "/api/v1/vrfs/member/add":
+            vrf_name = payload.get("vrf", "").strip()
+            iface_name = payload.get("interface", "").strip()
+            try:
+                vrf = vrf_service.add_interface(vrf_name, iface_name)
+                self._send_json(200, {"success": True, "message": f"Interface '{iface_name}' berhasil ditambahkan ke VRF '{vrf_name}'.", "data": vrf.model_dump()})
+            except Exception as e:
+                self._send_json(400, {"error": str(e)})
+            return
+
+        if path == "/api/v1/vrfs/member/remove":
+            vrf_name = payload.get("vrf", "").strip()
+            iface_name = payload.get("interface", "").strip()
+            try:
+                vrf = vrf_service.remove_interface(vrf_name, iface_name)
+                self._send_json(200, {"success": True, "message": f"Interface '{iface_name}' berhasil dilepas dari VRF '{vrf_name}'.", "data": vrf.model_dump()})
+            except Exception as e:
+                self._send_json(400, {"error": str(e)})
+            return
+
+        # 7c. MACsec IEEE 802.1AE Mutations
+        if path == "/api/v1/macsec/create":
+            name = payload.get("name", "").strip().lower()
+            parent = payload.get("parent", "").strip()
+            encrypt = bool(payload.get("encrypt", True))
+            key_hex = payload.get("key", "").strip() # 128-bit key (32 hex characters)
+            key_id = payload.get("key_id", "01").strip()
+            sci = payload.get("sci", "")
+            comment = payload.get("comment", "").strip()
+
+            if not name or not parent:
+                self._send_json(400, {"error": "Nama interface MACsec dan Parent device wajib diisi."})
+                return
+
+            try:
+                subprocess.run(["modprobe", "macsec"], stderr=subprocess.DEVNULL)
+                # Pastikan parent device UP
+                subprocess.run(["ip", "link", "set", parent, "up"], stderr=subprocess.DEVNULL)
+
+                # 1. Hapus jika sudah ada
+                subprocess.run(["ip", "link", "del", name], stderr=subprocess.DEVNULL)
+
+                # 2. Tambahkan link macsec
+                cmd = ["ip", "link", "add", "link", parent, "name", name, "type", "macsec"]
+                if encrypt:
+                    cmd.extend(["encrypt", "on"])
+                else:
+                    cmd.extend(["encrypt", "off"])
+                if sci:
+                    cmd.extend(["sci", str(sci)])
+
+                res = subprocess.run(cmd, capture_output=True, text=True)
+                if res.returncode != 0:
+                    self._send_json(500, {"error": f"Gagal membuat MACsec interface: {res.stderr.strip()}"})
+                    return
+
+                # 3. Konfigurasi Security Association (SA) jika key disediakan
+                if key_hex:
+                    # Bersihkan spasi atau tanda hubung pada key
+                    clean_key = key_hex.replace(" ", "").replace("-", "").replace(":", "")
+                    if len(clean_key) == 32:
+                        sa_cmd = ["ip", "macsec", "add", name, "tx", "sa", "0", "pn", "1", "on", "key", key_id, clean_key]
+                        subprocess.run(sa_cmd, stderr=subprocess.DEVNULL)
+
+                # 4. Aktifkan interface MACsec
+                subprocess.run(["ip", "link", "set", name, "up"], stderr=subprocess.DEVNULL)
+
+                # 5. Simpan ke konfigurasi persisten /etc/mitranet/network/macsec.json
+                conf_file = "/etc/mitranet/network/macsec.json"
+                os.makedirs("/etc/mitranet/network", exist_ok=True)
+                saved_cfg = {}
+                if os.path.exists(conf_file):
+                    try:
+                        with open(conf_file, "r") as cf:
+                            saved_cfg = json.load(cf)
+                    except Exception:
+                        pass
+                saved_cfg[name] = {
+                    "name": name,
+                    "parent": parent,
+                    "encrypt": encrypt,
+                    "key": key_hex,
+                    "key_id": key_id,
+                    "sci": sci,
+                    "comment": comment
+                }
+                with open(conf_file, "w") as cf:
+                    json.dump(saved_cfg, cf, indent=2)
+
+                self._send_json(200, {
+                    "success": True,
+                    "message": f"MACsec interface '{name}' pada parent '{parent}' berhasil dibuat dan diaktifkan.",
+                    "data": saved_cfg[name]
+                })
+            except Exception as e:
+                self._send_json(500, {"error": f"Eksekusi MACsec gagal: {e}"})
+            return
+
+        if path == "/api/v1/macsec/delete":
+            name = payload.get("name", "").strip()
+            if not name:
+                self._send_json(400, {"error": "Nama interface MACsec wajib diisi."})
+                return
+            try:
+                subprocess.run(["ip", "link", "set", name, "down"], stderr=subprocess.DEVNULL)
+                subprocess.run(["ip", "link", "del", name], stderr=subprocess.DEVNULL)
+
+                conf_file = "/etc/mitranet/network/macsec.json"
+                if os.path.exists(conf_file):
+                    try:
+                        with open(conf_file, "r") as cf:
+                            saved_cfg = json.load(cf)
+                        if name in saved_cfg:
+                            del saved_cfg[name]
+                            with open(conf_file, "w") as cf:
+                                json.dump(saved_cfg, cf, indent=2)
+                    except Exception:
+                        pass
+                self._send_json(200, {"success": True, "message": f"MACsec interface '{name}' berhasil dihapus."})
+            except Exception as e:
+                self._send_json(500, {"error": f"Gagal menghapus MACsec interface: {e}"})
             return
 
         # 7b. Interface Lists Mutations
@@ -5233,6 +5388,37 @@ def run_api_server(host: str = "0.0.0.0", port: int = 8443) -> None:
             logger.info("Restored %d persistent network tunnels.", len(saved_tuns))
     except Exception as tun_err:
         logger.warning("Could not restore network tunnels: %s", tun_err)
+
+    # Restore persistent MACsec interfaces
+    try:
+        macsec_cfg = "/etc/mitranet/network/macsec.json"
+        if os.path.isfile(macsec_cfg):
+            subprocess.run(["modprobe", "macsec"], stderr=subprocess.DEVNULL)
+            with open(macsec_cfg, "r") as mf:
+                saved_ms = json.load(mf)
+            for m_name, m_data in saved_ms.items():
+                m_parent = m_data.get("parent", "")
+                m_encrypt = m_data.get("encrypt", True)
+                m_key = m_data.get("key", "").strip()
+                m_key_id = m_data.get("key_id", "01").strip()
+                m_sci = m_data.get("sci", "")
+                if m_name and m_parent:
+                    subprocess.run(["ip", "link", "set", m_parent, "up"], stderr=subprocess.DEVNULL)
+                    subprocess.run(["ip", "link", "del", m_name], stderr=subprocess.DEVNULL)
+                    m_cmd = ["ip", "link", "add", "link", m_parent, "name", m_name, "type", "macsec"]
+                    m_cmd.extend(["encrypt", "on" if m_encrypt else "off"])
+                    if m_sci:
+                        m_cmd.extend(["sci", str(m_sci)])
+                    subprocess.run(m_cmd, stderr=subprocess.DEVNULL)
+                    if m_key:
+                        clean_k = m_key.replace(" ", "").replace("-", "").replace(":", "")
+                        if len(clean_k) == 32:
+                            sa_c = ["ip", "macsec", "add", m_name, "tx", "sa", "0", "pn", "1", "on", "key", m_key_id, clean_k]
+                            subprocess.run(sa_c, stderr=subprocess.DEVNULL)
+                    subprocess.run(["ip", "link", "set", m_name, "up"], stderr=subprocess.DEVNULL)
+            logger.info("Restored %d persistent MACsec interfaces.", len(saved_ms))
+    except Exception as ms_err:
+        logger.warning("Could not restore MACsec interfaces: %s", ms_err)
 
     if php_path and web_dir:
         try:

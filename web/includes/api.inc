@@ -174,6 +174,33 @@ class MitraNetApi {
         return $res['status'] === 200 ? $res['data'] : [];
     }
 
+    public static function addVrfMember($vrf, $interface) {
+        return self::request('/vrfs/member/add', 'POST', [
+            'vrf' => $vrf,
+            'interface' => $interface
+        ]);
+    }
+
+    public static function removeVrfMember($vrf, $interface) {
+        return self::request('/vrfs/member/remove', 'POST', [
+            'vrf' => $vrf,
+            'interface' => $interface
+        ]);
+    }
+
+    public static function getMacsec() {
+        $res = self::request('/macsec');
+        return $res['status'] === 200 ? $res['data'] : [];
+    }
+
+    public static function createMacsec($data) {
+        return self::request('/macsec/create', 'POST', $data);
+    }
+
+    public static function deleteMacsec($name) {
+        return self::request('/macsec/delete', 'POST', ['name' => $name]);
+    }
+
     public static function getInterfaceLists() {
         $res = self::request('/interface-lists');
         return $res['status'] === 200 ? $res['data'] : [];
