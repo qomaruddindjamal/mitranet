@@ -30,6 +30,35 @@ if (isset($_REQUEST['ajax']) && $_REQUEST['ajax'] == '1') {
         exit;
     }
 
+    if ($action === 'benchmark_history') {
+        $history = MitraNetApi::getBenchmarkHistory();
+        echo json_encode(['success' => true, 'history' => $history]);
+        exit;
+    }
+
+    if ($action === 'clear_benchmark_history') {
+        $res = MitraNetApi::clearBenchmarkHistory();
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
+    if ($action === 'run_benchmark') {
+        $mode = $_POST['mode'] ?? 'cdn';
+        $interface = $_POST['interface'] ?? '';
+        $sizeMb = intval($_POST['size_mb'] ?? 25);
+        $targetHost = trim($_POST['target_host'] ?? '103.93.162.168');
+        $targetPort = intval($_POST['target_port'] ?? 5201);
+
+        $res = MitraNetApi::runBenchmark($mode, $interface, $sizeMb, $targetHost, $targetPort);
+        if ($res['status'] === 200 && !empty($res['data']['success'])) {
+            echo json_encode(['success' => true, 'data' => $res['data']['data']]);
+        } else {
+            $err = $res['data']['error'] ?? 'Pengujian Benchmark gagal dieksekusi.';
+            echo json_encode(['success' => false, 'error' => $err]);
+        }
+        exit;
+    }
+
     if ($action === 'run') {
         $engine = $_POST['engine'] ?? 'ookla';
         $interface = $_POST['interface'] ?? '';
@@ -51,12 +80,6 @@ if (isset($_REQUEST['ajax']) && $_REQUEST['ajax'] == '1') {
 $pgtitle = array("Tools", "Speedtest");
 $selected_menu = "tools";
 require_once(__DIR__ . '/../includes/head.inc');
-
-$tab_array = array(
-    array("Internet Speedtest", true, "/tools/speedtest.php"),
-    array("Bandwidth & Hardware Benchmark", false, "/tools/benchmark.php")
-);
-display_top_tabs($tab_array, false, 'pills');
 
 $ifaces = MitraNetApi::getInterfaces();
 ?>
@@ -605,6 +628,149 @@ body.theme-dark .st-table tbody tr:hover {
         </div>
 
     </div>
+
+    <!-- Bandwidth & Hardware Benchmark Panel (Directly Below Speedtest) -->
+    <div class="speedtest-panel" style="margin-top: 25px;">
+        <div class="speedtest-header" style="background: #eef2ff;">
+            <h3 class="speedtest-title">
+                <i class="fa-solid fa-microchip text-primary"></i>
+                <span>Bandwidth &amp; Hardware Benchmark (Throughput Stress &amp; PPS Testing)</span>
+            </h3>
+            <div>
+                <span class="label label-primary"><i class="fa-solid fa-gauge-high"></i> High-Throughput Engine</span>
+                <span class="label label-info"><i class="fa-solid fa-shield-halved"></i> Shaper Validation</span>
+            </div>
+        </div>
+
+        <div style="padding: 20px;">
+            <!-- Mode Selector Cards -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                <div class="bm-card active" data-mode="cdn" onclick="selectBenchmarkMode('cdn')" style="border: 1px solid #2563eb; background: #eff6ff; border-radius: 8px; padding: 14px; cursor: pointer;">
+                    <div style="font-size: 22px; color: #2563eb; margin-bottom: 8px;"><i class="fa-solid fa-cloud-arrow-down"></i></div>
+                    <div style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Multi-Stream Pipe Stress (CDN)</div>
+                    <div style="font-size: 12px; color: #64748b; line-height: 1.4;">Uji kapasitas pipa maksimal dan bypass shaper ISP dengan mengalirkan data biner multi-stream paralel ke Edge CDN global.</div>
+                </div>
+
+                <div class="bm-card" data-mode="iperf3" onclick="selectBenchmarkMode('iperf3')" style="border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 8px; padding: 14px; cursor: pointer;">
+                    <div style="font-size: 22px; color: #16a34a; margin-bottom: 8px;"><i class="fa-solid fa-network-wired"></i></div>
+                    <div style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 4px;">iPerf3 Point-to-Point (VPS / CHR)</div>
+                    <div style="font-size: 12px; color: #64748b; line-height: 1.4;">Ukur bandwidth point-to-point murni antara router MitraNet langsung ke server MikroTik CHR atau VPS target.</div>
+                </div>
+
+                <div class="bm-card" data-mode="pps" onclick="selectBenchmarkMode('pps')" style="border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 8px; padding: 14px; cursor: pointer;">
+                    <div style="font-size: 22px; color: #d97706; margin-bottom: 8px;"><i class="fa-solid fa-bolt"></i></div>
+                    <div style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Packet-Per-Second (PPS Stress)</div>
+                    <div style="font-size: 12px; color: #64748b; line-height: 1.4;">Ukur batas penerusan paket (Forwarding Rate) kernel Netfilter dan ketahanan CPU Mini PC di bawah beban paket tinggi.</div>
+                </div>
+            </div>
+
+            <!-- Configuration Form -->
+            <div class="well well-sm">
+                <div class="row">
+                    <div class="col-md-4 col-sm-6" style="margin-bottom: 10px;">
+                        <label class="control-label fs-085 text-muted">Antarmuka Pengujian (Interface):</label>
+                        <select id="bm-iface" class="form-control input-sm">
+                            <option value="">-- Default Gateway (Auto Routing) --</option>
+                            <?php foreach ($ifaces as $if): ?>
+                                <option value="<?=htmlspecialchars($if['name'])?>">
+                                    <?=htmlspecialchars($if['name'])?> (<?=htmlspecialchars($if['ip'] ?? 'No IP')?> - <?=htmlspecialchars($if['descr'] ?? strtoupper($if['name']))?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <!-- Options for CDN mode -->
+                    <div class="col-md-4 col-sm-6 bm-opt-cdn" style="margin-bottom: 10px;">
+                        <label class="control-label fs-085 text-muted">Ukuran Beban Data (Throughput Payload):</label>
+                        <select id="bm-size" class="form-control input-sm">
+                            <option value="10">10 MB (Quick Burst Test)</option>
+                            <option value="25" selected>25 MB (Standard ISP Shaper Benchmark)</option>
+                            <option value="50">50 MB (Heavy Pipe Stress Test)</option>
+                            <option value="100">100 MB (Ultra High Bandwidth Saturation)</option>
+                        </select>
+                    </div>
+
+                    <!-- Options for iPerf3 mode -->
+                    <div class="col-md-3 col-sm-6 bm-opt-iperf hidden" style="margin-bottom: 10px;">
+                        <label class="control-label fs-085 text-muted">Target Host (VPS / CHR IP):</label>
+                        <input type="text" id="bm-host" class="form-control input-sm" value="103.93.162.168" placeholder="e.g. 103.93.162.168">
+                    </div>
+                    <div class="col-md-1 col-sm-6 bm-opt-iperf hidden" style="margin-bottom: 10px;">
+                        <label class="control-label fs-085 text-muted">Port:</label>
+                        <input type="number" id="bm-port" class="form-control input-sm" value="5201" placeholder="5201">
+                    </div>
+
+                    <div class="col-md-4 col-sm-12" style="margin-top: 18px;">
+                        <button id="btn-run-benchmark" class="btn btn-primary btn-sm btn-block" onclick="startBenchmark()">
+                            <i class="fa-solid fa-play"></i> Mulai Benchmark Sekarang
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Real-Time Result HUD Display -->
+            <div style="background: #0f172a; border-radius: 8px; color: #f8fafc; padding: 20px; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; align-items: center;">
+                    <div>
+                        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 4px;"><i class="fa-solid fa-gauge-high"></i> Max Throughput Rate</div>
+                        <div style="font-size: 28px; font-weight: 800; color: #38bdf8;" id="hud-throughput">-- Mbps</div>
+                        <div style="font-size: 11px; color: #64748b; margin-top: 2px;" id="hud-mode-sub">Menunggu pengujian...</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 4px;"><i class="fa-solid fa-wave-square"></i> Latensi Jaringan</div>
+                        <div style="font-size: 28px; font-weight: 800; color: #34d399;" id="hud-latency">-- ms</div>
+                        <div style="font-size: 11px; color: #64748b; margin-top: 2px;">RTT Average Ping</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 4px;"><i class="fa-solid fa-database"></i> Total Data Terkirim</div>
+                        <div style="font-size: 28px; font-weight: 800; color: #fbbf24;" id="hud-transferred">-- MB</div>
+                        <div style="font-size: 11px; color: #64748b; margin-top: 2px;" id="hud-duration">Durasi: -- s</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 4px;"><i class="fa-solid fa-circle-check"></i> Status Eksekusi</div>
+                        <div style="font-size: 28px; font-weight: 800; color: #a78bfa;" id="hud-status">READY</div>
+                        <div style="font-size: 11px; color: #64748b; margin-top: 2px;" id="hud-target">Target: Cloudflare Edge</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Section -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h4 style="margin: 0; font-size: 13px; font-weight: 700; color: #334155;">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Riwayat Pengujian Benchmark
+                </h4>
+                <div>
+                    <button class="btn btn-default btn-xs" onclick="loadBenchmarkHistory()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+                    <button class="btn btn-danger btn-xs" onclick="clearBenchmarkHistory()"><i class="fa-solid fa-trash"></i> Hapus Riwayat</button>
+                </div>
+            </div>
+
+            <div class="table-responsive" style="border: 1px solid #e2e8f0; border-radius: 6px;">
+                <table class="table st-table">
+                    <thead>
+                        <tr>
+                            <th>Waktu</th>
+                            <th>Mode Benchmark</th>
+                            <th>Interface</th>
+                            <th>Max Throughput</th>
+                            <th>Latensi</th>
+                            <th>Volume Data</th>
+                            <th>Durasi</th>
+                            <th>Target</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bm-history-tbody">
+                        <tr>
+                            <td colspan="9" class="text-center text-muted" style="padding: 15px;">
+                                Belum ada riwayat benchmark.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
 <?php include(__DIR__ . '/../includes/foot.inc'); ?>
@@ -837,7 +1003,120 @@ function initSpeedtest() {
             }
         }
     });
+// Benchmark JavaScript Engine
+var currentBenchmarkMode = 'cdn';
+
+function selectBenchmarkMode(mode) {
+    currentBenchmarkMode = mode;
+    $('.bm-card').css({'border': '1px solid #e2e8f0', 'background': '#f8fafc'});
+    $('.bm-card[data-mode="' + mode + '"]').css({'border': '1px solid #2563eb', 'background': '#eff6ff'});
+
+    if (mode === 'cdn') {
+        $('.bm-opt-cdn').removeClass('hidden');
+        $('.bm-opt-iperf').addClass('hidden');
+    } else if (mode === 'iperf3') {
+        $('.bm-opt-cdn').addClass('hidden');
+        $('.bm-opt-iperf').removeClass('hidden');
+    } else if (mode === 'pps') {
+        $('.bm-opt-cdn').addClass('hidden');
+        $('.bm-opt-iperf').addClass('hidden');
+    }
 }
 
-$(document).ready(initSpeedtest);
+function startBenchmark() {
+    var btn = $('#btn-run-benchmark');
+    btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Sedang Menjalankan Benchmark...');
+
+    $('#hud-throughput').html('<i class="fa-solid fa-circle-notch fa-spin"></i>');
+    $('#hud-latency').text('Menguji...');
+    $('#hud-status').text('RUNNING').css('color', '#fbbf24');
+
+    var payload = {
+        ajax: '1',
+        action: 'run_benchmark',
+        mode: currentBenchmarkMode,
+        interface: $('#bm-iface').val(),
+        size_mb: $('#bm-size').val(),
+        target_host: $('#bm-host').val(),
+        target_port: $('#bm-port').val()
+    };
+
+    $.post('/tools/speedtest.php', payload, function(res) {
+        btn.prop('disabled', false).html('<i class="fa-solid fa-play"></i> Mulai Benchmark Sekarang');
+        if (res && res.success && res.data) {
+            var d = res.data;
+            $('#hud-throughput').text(d.throughput);
+            $('#hud-latency').text(d.latency);
+            $('#hud-transferred').text(d.transferred);
+            $('#hud-duration').text('Durasi: ' + d.duration);
+            $('#hud-status').text(d.status).css('color', d.status === 'PASS' ? '#34d399' : '#f87171');
+            $('#hud-target').text('Target: ' + d.target);
+            $('#hud-mode-sub').text(d.mode + ' (' + d.interface + ')');
+
+            if (typeof MitraNet !== 'undefined' && MitraNet.toast) {
+                MitraNet.toast('Benchmark selesai: ' + d.throughput, 'success');
+            }
+            loadBenchmarkHistory();
+        } else {
+            $('#hud-status').text('ERROR').css('color', '#f87171');
+            if (typeof MitraNet !== 'undefined' && MitraNet.toast) {
+                MitraNet.toast(res.error || 'Benchmark gagal dieksekusi', 'error');
+            }
+        }
+    }).fail(function(xhr) {
+        btn.prop('disabled', false).html('<i class="fa-solid fa-play"></i> Mulai Benchmark Sekarang');
+        $('#hud-status').text('TIMEOUT').css('color', '#f87171');
+        if (typeof MitraNet !== 'undefined' && MitraNet.toast) {
+            MitraNet.toast('Koneksi timeout atau gagal menghubungi server.', 'error');
+        }
+    });
+}
+
+function loadBenchmarkHistory() {
+    $.getJSON('/tools/speedtest.php?ajax=1&action=benchmark_history', function(res) {
+        var tbody = $('#bm-history-tbody');
+        tbody.empty();
+        if (res && res.success && res.history && res.history.length > 0) {
+            $.each(res.history, function(idx, item) {
+                var badgeClass = item.status === 'PASS' ? 'label-success' : (item.status === 'RUNNING' ? 'label-warning' : 'label-danger');
+                var tr = '<tr>' +
+                    '<td><code style="font-size:11px;">' + (item.timestamp || '-') + '</code></td>' +
+                    '<td><strong>' + (item.mode || '-') + '</strong></td>' +
+                    '<td><span class="label label-default">' + (item.interface || 'Default') + '</span></td>' +
+                    '<td><strong class="text-primary" style="font-size:13px;">' + (item.throughput || '-') + '</strong></td>' +
+                    '<td>' + (item.latency || '-') + '</td>' +
+                    '<td>' + (item.transferred || '-') + '</td>' +
+                    '<td>' + (item.duration || '-') + '</td>' +
+                    '<td><small class="text-muted">' + (item.target || '-') + '</small></td>' +
+                    '<td><span class="label ' + badgeClass + '">' + (item.status || '-') + '</span></td>' +
+                    '</tr>';
+                tbody.append(tr);
+            });
+        } else {
+            tbody.html('<tr><td colspan="9" class="text-center text-muted" style="padding: 15px;">Belum ada riwayat benchmark. Silakan jalankan pengujian di atas.</td></tr>');
+        }
+    });
+}
+
+function clearBenchmarkHistory() {
+    if (typeof MitraNet !== 'undefined' && MitraNet.confirmDelete) {
+        MitraNet.confirmDelete('Apakah Anda yakin ingin menghapus seluruh riwayat benchmark?', function() {
+            $.post('/tools/speedtest.php', { ajax: '1', action: 'clear_benchmark_history' }, function(res) {
+                MitraNet.toast('Riwayat benchmark berhasil dibersihkan', 'info');
+                loadBenchmarkHistory();
+            });
+        });
+    } else {
+        if (confirm('Hapus seluruh riwayat benchmark?')) {
+            $.post('/tools/speedtest.php', { ajax: '1', action: 'clear_benchmark_history' }, function(res) {
+                loadBenchmarkHistory();
+            });
+        }
+    }
+}
+
+$(document).ready(function() {
+    initSpeedtest();
+    loadBenchmarkHistory();
+});
 </script>
