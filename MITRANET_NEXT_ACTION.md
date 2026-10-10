@@ -1,19 +1,14 @@
 # LANGKAH BERIKUTNYA MITRANET
 
-LANGKAH BERIKUTNYA: Eksekusi pipeline deployment otomatis (`deploy_pipeline.py`) untuk sinkronisasi Mini PC, rebuild ISO, dan push commit ke GitHub.
-ALASAN: Seluruh tahapan audit VPS RouterOS, penambahan firewall rule, validasi live Stream 1 & Stream 2 (paralel + failover), peningkatan AI Assistant (deteksi runtime vs configured, stale handshake, zero counter), serta 4 regression test suites telah 100% lulus.
+LANGKAH BERIKUTNYA: Pengujian Boot ISO pada lingkungan terisolasi (VirtualBox / Proxmox / Bare-Metal Testbed) sebelum rilis produksi fisik.
+ALASAN: Seluruh fungsi perangkat lunak, WebUI HUD, API telemetri, diagnostik AI Assistant, pipeline deployment Mini PC, dan validasi VPS multi-stream telah lulus 100% (PASS). Namun pengujian instalasi dan boot ISO di hypervisor host Windows ditandai NOT TESTED karena keterbatasan memori host.
 FILE ATAU SERVICE TERKAIT:
-- `web/vpn/vpn_booster.php`
-- `src/api/server.py`
-- `ai/ai-asistans.py`
-- `ai/tools/diagnostics.py`
-- `ai/knowledge/booster_wireguard.md`
-- `tests/test_booster_regression.py`
-- `ai/tests/test_ai_assistant.py`
 - `iso/MitraNet-Rinjani-1.0.2-amd64.iso`
+- `src/api/server.py`
+- `web/vpn/vpn_booster.php`
+- `ai/ai-asistans.py`
 PRASYARAT:
-- Validasi Stream 1 (wg-boost1 port 51831) terbukti live (STATUS: PASS)
-- Validasi Stream 2 (wg-boost2 port 51832) terbukti paralel & failover (STATUS: PASS)
-- Seluruh 4 test suite lulus (STATUS: PASS)
-- Tidak ada kebocoran private key (STATUS: PASS)
-STATUS: READY_FOR_DEPLOYMENT
+- Commit `7929a97` ter-push ke GitHub (STATUS: PASS)
+- ISO SHA-256 `9E544A245372965D7D7688B0B54370113C7280E8A2C3A40ADECC435FFAEA3A09` terverifikasi (STATUS: PASS)
+- Mini PC service aktif & teruji (STATUS: PASS)
+STATUS: READY_FOR_PHYSICAL_OR_EXTERNAL_VM_BOOT_TEST

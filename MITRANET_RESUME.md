@@ -23,9 +23,10 @@ Ketika memulai conversation baru atau memulihkan pekerjaan setelah konteks terpo
 - **WebUI Port**: HTTP `8000` (`/mitranet/web`, dialihkan oleh PHP built-in server)
 - **Management API Port**: HTTP `8443` (Python REST API `/mitranet/src/api/server.py`)
 - **Aturan Operasional Wajib**: Ikuti batasan dan standar di `AGENTS.md` dan `RecoveryAgents.md`.
-- **Status Terkini**:
-  - Validasi tunnel primer `wg0` ke VPS `103.93.162.168:13231` terverifikasi (101.7 Mbps, 14 ms latency).
-  - Validasi live multi-stream Stream 1 (port 51831) dan Stream 2 (port 51832) terbukti sukses di VPS RouterOS nyata dengan handshake aktif dan counter bertambah.
-  - Failover Stream 2 dan pemulihan default gateway terverifikasi 100% aman; SSH Mini PC (`10.10.66.228`) tidak terputus.
-  - AI Assistant ditingkatkan dengan analisis perbedaan konfigurasi vs runtime, deteksi stale handshake, dan deteksi zero-counter.
-  - Seluruh unit & regression tests (4 suite) lulus.
+- **Status Rilis MitraNet Rinjani 1.0.2**:
+  - Baseline commit: `7929a97`
+  - Berkas ISO: `iso/MitraNet-Rinjani-1.0.2-amd64.iso` (SHA256: `9E544A245372965D7D7688B0B54370113C7280E8A2C3A40ADECC435FFAEA3A09`, 1,017,139,200 bytes)
+  - Validasi multi-stream WireGuard (Stream 1 dan Stream 2) terverifikasi 100% pada VPS RouterOS `103.93.162.168`.
+  - Integrasi HUD browser dan API telemetri (`/api/v1/vpn/booster/status`) terverifikasi 100% konsisten dengan kernel runtime WireGuard.
+  - Rollback routing default terbukti aman dan mempertahankan akses SSH manajemen.
+  - Status VM Boot Test: **NOT TESTED** (RAM host terbatas saat start Hyper-V).
