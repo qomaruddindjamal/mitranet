@@ -1,3 +1,8 @@
+﻿import sys
+import pytest
+
+pytestmark = pytest.mark.skipif(sys.platform != 'linux', reason='Linux-only kernel VRF test')
+
 """
 Live Linux Kernel Integration Test Suite for Phase 1E:
 VRF Core, Environment Gate & Routing Domain Isolation.
@@ -267,3 +272,4 @@ class TestLinuxVRFIntegration(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
