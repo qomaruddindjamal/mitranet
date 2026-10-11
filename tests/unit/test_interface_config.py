@@ -14,6 +14,11 @@ Tests:
 10. CLI command handlers for up, down, set, address add/remove.
 """
 
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+FIXTURES = REPO_ROOT / "tests" / "fixtures"
+
 import copy
 import json
 import unittest
@@ -128,9 +133,9 @@ class MutableMockNetworkBackend(NetworkBackend):
 
 class TestInterfaceConfiguration(unittest.TestCase):
     def setUp(self):
-        with open("C:/mitranet/tests/fixtures/network/ip_link_sample.json", "r", encoding="utf-8") as f:
+        with open(str(FIXTURES / "network/ip_link_sample.json"), "r", encoding="utf-8") as f:
             self.sample_links = json.load(f)
-        with open("C:/mitranet/tests/fixtures/network/ip_addr_sample.json", "r", encoding="utf-8") as f:
+        with open(str(FIXTURES / "network/ip_addr_sample.json"), "r", encoding="utf-8") as f:
             self.sample_addrs = json.load(f)
 
         self.backend = MutableMockNetworkBackend(

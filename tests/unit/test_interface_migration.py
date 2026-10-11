@@ -2,6 +2,11 @@
 Test Suite: Interface Migration and Compatibility.
 """
 
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+FIXTURES = REPO_ROOT / "tests" / "fixtures"
+
 import unittest
 from mitranet.core.migration.pfsense_xml_parser import PfSenseXmlParser
 from mitranet.core.migration.pfsense_mapper import PfSenseMapper
@@ -10,7 +15,7 @@ from mitranet.core.migration.compatibility import InterfaceMapper
 
 class TestInterfaceMigration(unittest.TestCase):
     def test_interface_mapping_and_vlans(self):
-        data = PfSenseXmlParser.parse_file("C:/mitranet/tests/fixtures/pfsense-interface.xml")
+        data = PfSenseXmlParser.parse_file(str(FIXTURES / "pfsense-interface.xml"))
         mapper = PfSenseMapper(InterfaceMapper({"vtnet0": "eth0", "vtnet1": "eth1", "vtnet2": "eth2"}))
         cfg, report = mapper.map_to_mitranet(data)
 

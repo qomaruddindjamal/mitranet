@@ -6,6 +6,11 @@ Tests:
 3. cmd_interface_show missing interface error exit.
 """
 
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+FIXTURES = REPO_ROOT / "tests" / "fixtures"
+
 import json
 import unittest
 from unittest.mock import patch
@@ -17,9 +22,9 @@ from mitranet.src.cli.main import cmd_interface_list, cmd_interface_show
 
 class TestInterfaceCLI(unittest.TestCase):
     def setUp(self):
-        with open("C:/mitranet/tests/fixtures/network/ip_link_sample.json", "r", encoding="utf-8") as f:
+        with open(str(FIXTURES / "network/ip_link_sample.json"), "r", encoding="utf-8") as f:
             links = json.load(f)
-        with open("C:/mitranet/tests/fixtures/network/ip_addr_sample.json", "r", encoding="utf-8") as f:
+        with open(str(FIXTURES / "network/ip_addr_sample.json"), "r", encoding="utf-8") as f:
             addrs = json.load(f)
 
         backend = MockNetworkBackend(

@@ -2,6 +2,11 @@
 Test Suite: End-to-End Migration Pipeline from real pfSense ISO config.xml to MitraNet JSON.
 """
 
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+FIXTURES = REPO_ROOT / "tests" / "fixtures"
+
 import os
 import unittest
 from mitranet.core.migration.exporter import MigrationExporter
@@ -10,7 +15,7 @@ from mitranet.core.config.loader import ConfigLoader
 
 class TestEndToEndMigration(unittest.TestCase):
     def test_full_pfsense_iso_config_migration(self):
-        xml_input = "C:/mitranet/tests/fixtures/pfsense-full.xml"
+        xml_input = str(FIXTURES / "pfsense-full.xml")
         out_json = "C:/mitranet/tmp/test_migrated.json"
         out_report_json = "C:/mitranet/tmp/test_report.json"
         out_report_md = "C:/mitranet/tmp/test_report.md"

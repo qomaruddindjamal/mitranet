@@ -2,6 +2,11 @@
 Test Suite: NAT Outbound and Port Forward Migration.
 """
 
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+FIXTURES = REPO_ROOT / "tests" / "fixtures"
+
 import unittest
 from mitranet.core.migration.pfsense_xml_parser import PfSenseXmlParser
 from mitranet.core.migration.pfsense_mapper import PfSenseMapper
@@ -9,7 +14,7 @@ from mitranet.core.migration.pfsense_mapper import PfSenseMapper
 
 class TestNatMigration(unittest.TestCase):
     def test_nat_migration(self):
-        data = PfSenseXmlParser.parse_file("C:/mitranet/tests/fixtures/pfsense-nat.xml")
+        data = PfSenseXmlParser.parse_file(str(FIXTURES / "pfsense-nat.xml"))
         mapper = PfSenseMapper()
         cfg, report = mapper.map_to_mitranet(data)
 

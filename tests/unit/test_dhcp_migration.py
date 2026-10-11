@@ -2,6 +2,11 @@
 Test Suite: DHCP and DNS Migration.
 """
 
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+FIXTURES = REPO_ROOT / "tests" / "fixtures"
+
 import unittest
 from mitranet.core.migration.pfsense_xml_parser import PfSenseXmlParser
 from mitranet.core.migration.pfsense_mapper import PfSenseMapper
@@ -9,7 +14,7 @@ from mitranet.core.migration.pfsense_mapper import PfSenseMapper
 
 class TestDhcpDnsMigration(unittest.TestCase):
     def test_dhcp_migration(self):
-        data = PfSenseXmlParser.parse_file("C:/mitranet/tests/fixtures/pfsense-dhcp.xml")
+        data = PfSenseXmlParser.parse_file(str(FIXTURES / "pfsense-dhcp.xml"))
         mapper = PfSenseMapper()
         cfg, report = mapper.map_to_mitranet(data)
 
@@ -20,7 +25,7 @@ class TestDhcpDnsMigration(unittest.TestCase):
         self.assertEqual(dhcp.gateway, "192.168.1.1")
 
     def test_dns_migration(self):
-        data = PfSenseXmlParser.parse_file("C:/mitranet/tests/fixtures/pfsense-dns.xml")
+        data = PfSenseXmlParser.parse_file(str(FIXTURES / "pfsense-dns.xml"))
         mapper = PfSenseMapper()
         cfg, report = mapper.map_to_mitranet(data)
 
