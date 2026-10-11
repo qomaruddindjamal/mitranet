@@ -441,9 +441,11 @@ def apply_wireless_configuration(ifname: str, cfg: Dict[str, Any]) -> Tuple[bool
         # Assign Gateway IP to AP interface if not assigned
         ap_ip = cfg.get("gateway_ip", "10.10.1.254/24")
         subprocess.run(f"ip addr add {ap_ip} dev {ifname} 2>/dev/null || true", shell=True)
+        subprocess.run(["ip", "link", "set", ifname, "up"], stderr=subprocess.DEVNULL)
+        time.sleep(0.5)
 
         # Launch hostapd
-        subprocess.run(f"hostapd -B {conf_path}", shell=True, stderr=subprocess.DEVNULL)
+        subprocess.run(["hostapd", "-B", conf_path], capture_output=True, text=True)
 
         # Setup dynamic DHCP configuration for AP clients
         dhcp_conf_path = f"/etc/dnsmasq.d/dhcp_{ifname}.conf"
