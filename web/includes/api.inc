@@ -233,7 +233,7 @@ class MitraNetApi {
 
     public static function getConntrackStates() {
         $res = self::request('/conntrack');
-        return $res['status'] === 200 ? $res['data'] : ['total' => 0, 'states' => []];
+        return ($res['status'] === 200 && is_array($res['data'])) ? $res['data'] : null;
     }
 
     public static function ping($host, $count = 3) {
