@@ -92,14 +92,14 @@ foreach ($tunnels as $t) {
 }
 
 $badge_title = "WireGuard";
-$pgtitle = array("VPN", "WireGuard", "Peers");
+$pgtitle = array("VPN", "WireGuard", "Secrets");
 $pglinks = array("", "/wg/vpn_wg_peers.php", "@self");
 $selected_menu = "wireguard";
 require_once(__DIR__ . '/../includes/head.inc');
 
 $tab_array = array(
-    array("Tunnels", false, "/wg/vpn_wg_tunnels.php"),
-    array("Peers", true, "/wg/vpn_wg_peers.php"),
+    array("Interfaces", false, "/wg/vpn_wg_tunnels.php"),
+    array("Secrets", true, "/wg/vpn_wg_peers.php"),
     array("Settings", false, "/wg/vpn_wg_settings.php"),
     array("Status", false, "/wg/status_wireguard.php")
 );
@@ -112,7 +112,7 @@ $tab_array = array(
 		<!-- TOOLBAR EXACT SCREENSHOT -->
 		<div class="mitranet-toolbar">
 			<div class="mitranet-toolbar-left">
-				<a href="/wg/vpn_wg_peers_edit.php" class="mitranet-btn" id="btn-peer-new" title="Add New Peer">
+				<a href="/wg/vpn_wg_peers_edit.php" class="mitranet-btn" id="btn-peer-new" title="Add New Secret / Peer">
 					<i class="fa-regular fa-square-plus"></i> New
 				</a>
 				<button type="button" class="mitranet-btn" id="btn-peer-enable" disabled onclick="toggleSelectedPeer(true)" title="Enable Selected Peer">
@@ -155,7 +155,7 @@ $tab_array = array(
 			<table class="mitranet-grid" id="peer-grid-table">
 				<thead>
 					<tr>
-						<th style="width: 28px; text-align: center;"><i class="fa-regular fa-flag text-muted"></i></th>
+						<th class="text-center col-flag" style="width: 28px;"><i class="fa-regular fa-flag text-muted"></i></th>
 						<th>Name <i class="fa-solid fa-caret-up"></i></th>
 						<th>Interface</th>
 						<th>Public Key</th>
@@ -167,7 +167,7 @@ $tab_array = array(
 						<th>Current Endpoint Port</th>
 						<th>Rx</th>
 						<th>Tx</th>
-						<th style="width: 24px; text-align: center;"><i class="fa-solid fa-bars text-muted"></i></th>
+						<th class="text-center col-menu" style="width: 24px;"><i class="fa-solid fa-bars text-muted"></i></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -202,7 +202,7 @@ $tab_array = array(
 					    data-keepalive="<?=htmlspecialchars($p['persistent_keepalive'] ?? '25')?>"
 					    onclick="selectPeerRow(this)"
 					    ondblclick="document.location='/wg/vpn_wg_peers_edit.php?peer=<?=$pubkey_url?>&amp;tun=<?=urlencode($tun_name)?>';">
-						<td style="text-align: center;"><i class="fa-regular fa-flag text-muted"></i></td>
+						<td class="text-center col-flag-cell"><i class="fa-regular fa-flag text-muted"></i></td>
 						<td><strong><?=htmlspecialchars($desc)?></strong></td>
 						<td><code><?=htmlspecialchars($tun_name)?></code></td>
 						<td class="td-pubkey"
@@ -218,7 +218,7 @@ $tab_array = array(
 						<td><?=htmlspecialchars($ep_port)?></td>
 						<td><span class="label label-info"><?=$rx_fmt?></span></td>
 						<td><span class="label label-info"><?=$tx_fmt?></span></td>
-						<td style="text-align: center;"><i class="fa-solid fa-bars text-muted" style="cursor: pointer;" title="Double-click untuk edit"></i></td>
+						<td class="text-center col-menu"></td>
 					</tr>
 					<?php endforeach; ?>
 				<?php endif; ?>

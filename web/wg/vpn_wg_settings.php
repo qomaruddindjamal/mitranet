@@ -14,8 +14,8 @@ require_once(__DIR__ . '/../includes/head.inc');
 $wg = MitraNetApi::getWireGuard();
 
 $tab_array = array(
-    array("Tunnels", false, "/wg/vpn_wg_tunnels.php"),
-    array("Peers", false, "/wg/vpn_wg_peers.php"),
+    array("Interfaces", false, "/wg/vpn_wg_tunnels.php"),
+    array("Secrets", false, "/wg/vpn_wg_peers.php"),
     array("Settings", true, "/wg/vpn_wg_settings.php"),
     array("Status", false, "/wg/status_wireguard.php")
 );
