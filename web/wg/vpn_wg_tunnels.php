@@ -295,9 +295,6 @@ $tab_array = array(
                             <a href="#wgtab-general" role="tab" data-toggle="tab">General</a>
                         </li>
                         <li role="presentation">
-                            <a href="#wgtab-wireguard" role="tab" data-toggle="tab">WireGuard</a>
-                        </li>
-                        <li role="presentation">
                             <a href="#wgtab-routing" role="tab" data-toggle="tab">Routing &amp; NAT</a>
                         </li>
                         <li role="presentation">
@@ -339,32 +336,15 @@ $tab_array = array(
                                 <div class="form-group">
                                     <label class="col-sm-3 control-label">Type</label>
                                     <div class="col-sm-9">
-                                        <input type="text" class="form-control input-sm" value="WireGuard (Kernel Subsystem)" readonly>
+                                        <input type="text" class="form-control input-sm" value="WireGuard" readonly>
                                     </div>
                                 </div>
                                 <div class="form-group">
                                     <label class="col-sm-3 control-label">MTU</label>
                                     <div class="col-sm-9">
                                         <input type="number" name="mtu" id="wg-mtu" class="form-control input-sm font-monospace" value="1420" min="576" max="65535">
-                                        <span class="help-block fs-11">Standard MTU untuk WireGuard interface adalah 1420.</span>
                                     </div>
                                 </div>
-                                <div class="form-group">
-                                    <label class="col-sm-3 control-label">Actual MTU</label>
-                                    <div class="col-sm-9">
-                                        <input type="text" id="wg-actual-mtu" class="form-control input-sm" value="1420" readonly>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label class="col-sm-3 control-label">Comment</label>
-                                    <div class="col-sm-9">
-                                        <input type="text" name="descr" id="wg-descr" class="form-control input-sm" placeholder="WireGuard Interface">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- TAB 2: WIREGUARD SPECIFIC SETTINGS -->
-                            <div role="tabpanel" class="tab-pane" id="wgtab-wireguard">
                                 <div class="form-group">
                                     <label class="col-sm-3 control-label">Mode</label>
                                     <div class="col-sm-9">
@@ -378,7 +358,7 @@ $tab_array = array(
                                     <label class="col-sm-3 control-label">Address (CIDR) <span class="text-danger">*</span></label>
                                     <div class="col-sm-9">
                                         <input type="text" name="address" id="wg-address" class="form-control input-sm font-monospace" placeholder="10.10.99.1/24" required>
-                                        <span class="help-block fs-11">IP address dan prefix subnet internal interface (contoh: <code>10.10.99.1/24</code>).</span>
+                                        <span class="help-block fs-11">IP address dan prefix subnet interface (contoh: <code>10.10.99.1/24</code>).</span>
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -429,6 +409,12 @@ $tab_array = array(
                                             </span>
                                         </div>
                                         <span class="help-block fs-11">Public key untuk dipasang di Secrets / Peers client.</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">Comment</label>
+                                    <div class="col-sm-9">
+                                        <input type="text" name="descr" id="wg-descr" class="form-control input-sm" placeholder="WireGuard Interface">
                                     </div>
                                 </div>
                             </div>

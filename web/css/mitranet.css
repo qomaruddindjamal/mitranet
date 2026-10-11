@@ -3927,37 +3927,71 @@ select:focus {
 .winbox-popup-tabs-bar {
     background: #d8e5f2 !important;
     border-bottom: 1px solid #adc5dd !important;
-    padding: 4px 6px 0 6px !important;
+    padding: 3px 6px 0 6px !important;
     display: flex !important;
     align-items: flex-end !important;
     gap: 4px !important;
+    min-height: 28px !important;
+    box-sizing: border-box !important;
 }
 
 .winbox-popup-tabs-bar .mitranet-title-badge {
     margin-bottom: 0 !important;
     margin-right: 4px !important;
-    height: 25px !important;
+    height: 24px !important;
     border-radius: 4px 4px 0 0 !important;
+    border: 1px solid #7ea3cf !important;
+    border-bottom: none !important;
+    padding: 3px 8px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    background: #eaf2fa !important;
+    color: #1e395b !important;
+    cursor: default !important;
 }
 
 .winbox-tabs-nav {
     border-bottom: none !important;
     margin-bottom: 0 !important;
+    padding: 0 !important;
     gap: 2px !important;
     display: flex !important;
     flex: 1 1 auto !important;
     align-items: flex-end !important;
+    list-style: none !important;
+}
+
+.winbox-tabs-nav > li {
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 .winbox-tabs-nav > li > a {
-    padding: 4px 10px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    padding: 3px 10px !important;
     font-size: 11px !important;
     color: #2a476c !important;
     border: 1px solid transparent !important;
     border-bottom: none !important;
-    border-top-left-radius: 3px !important;
-    border-top-right-radius: 3px !important;
+    border-top-left-radius: 4px !important;
+    border-top-right-radius: 4px !important;
     background: transparent !important;
+    height: 24px !important;
+    line-height: 1 !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+    transition: background 0.15s, color 0.15s !important;
+}
+
+.winbox-tabs-nav > li > a:hover {
+    background: #e4edf7 !important;
+    color: #0b315b !important;
+    border-color: #b3c9df !important;
+    border-bottom: none !important;
 }
 
 .winbox-tabs-nav > li.active > a,
@@ -3968,6 +4002,10 @@ select:focus {
     margin-bottom: -1px !important;
     font-weight: 700 !important;
     color: #0c335e !important;
+    height: 25px !important;
+    box-shadow: 0 -1px 2px rgba(0,0,0,0.05) !important;
+    position: relative !important;
+    z-index: 2 !important;
 }
 
 .winbox-popup-body {
