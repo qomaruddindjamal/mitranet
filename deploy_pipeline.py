@@ -2,21 +2,25 @@ import os
 import sys
 import subprocess
 import paramiko
+from mitranet_secrets import MINIPC_HOST, MINIPC_USER, MINIPC_PASS
 
-MINIPC_IP = "10.10.66.228"
-MINIPC_USER = "root"
-MINIPC_PASS = "mitranet"
 PROJECT_ROOT = r"C:\mitranet"
+
+def _ensure_env_gitignored():
+    res = subprocess.run(["git", "check-ignore", ".env"], cwd=PROJECT_ROOT, capture_output=True)
+    if res.returncode != 0:
+        raise SystemExit("REFUSING: .env is not gitignored")
 
 def log(msg):
     print(f"[DEPLOY PIPELINE] {msg}")
 
 def sync_to_minipc():
-    log(f"1/4 Connecting to Mini PC ({MINIPC_IP})...")
+    _ensure_env_gitignored()
+    log(f"1/4 Connecting to Mini PC ({MINIPC_HOST})...")
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     try:
-        ssh.connect(MINIPC_IP, username=MINIPC_USER, password=MINIPC_PASS, timeout=12)
+        ssh.connect(MINIPC_HOST, username=MINIPC_USER, password=MINIPC_PASS, timeout=12)
     except Exception as e:
         log(f"ERROR: Cannot connect to Mini PC: {e}")
         return False
@@ -76,8 +80,9 @@ def rebuild_deb_and_iso():
     return True
 
 def push_to_github(commit_msg="chore: auto-sync update to repo, minipc and iso"):
+    _ensure_env_gitignored()
     log("4/4 Checking Git status and pushing to GitHub...")
-    subprocess.run(["git", "add", "."], cwd=PROJECT_ROOT, capture_output=True)
+    subprocess.run(["git", "add", "-u"], cwd=PROJECT_ROOT, capture_output=True)
     
     status_res = subprocess.run(["git", "status", "--porcelain"], cwd=PROJECT_ROOT, capture_output=True, text=True)
     if status_res.stdout.strip():
@@ -93,6 +98,7 @@ def push_to_github(commit_msg="chore: auto-sync update to repo, minipc and iso")
     return True
 
 def run_pipeline(commit_msg=None):
+    _ensure_env_gitignored()
     print("=" * 60)
     print("  MitraNet Automated Deployment Pipeline")
     print("=" * 60)
