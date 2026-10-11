@@ -139,7 +139,7 @@ $tab_array = array(
 					    data-enabled="<?=$is_up ? '1' : '0'?>"
 					    data-comment="<?=htmlspecialchars($t_desc)?>"
 					    onclick="selectStatusRow(this, '<?=htmlspecialchars($t_name, ENT_QUOTES)?>')"
-					    ondblclick="document.location='/wg/vpn_wg_tunnels.php';">
+					    ondblclick="toggleStatusPeers('<?=htmlspecialchars($t_name, ENT_QUOTES)?>', event)">
 						<td class="text-center col-flag-cell" style="cursor: pointer;" onclick="toggleStatusPeers('<?=htmlspecialchars($t_name, ENT_QUOTES)?>', event)" title="<?=$peer_count > 0 ? 'Klik untuk melihat / menyembunyikan detail peers' : 'Status Interface'?>">
 							<?php if ($is_up): ?>
 								<i class="fa-solid fa-check text-success" title="Running / Link UP"></i>
