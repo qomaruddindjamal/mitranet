@@ -169,16 +169,16 @@ $tab_array = array(
 						</td>
 						<td>
 							<?php if ($is_up): ?>
-								<span class="label label-success"><i class="fa-solid fa-circle-check"></i> UP</span>
+								<span class="badge-status-up"><i class="fa-solid fa-circle-check"></i> UP</span>
 							<?php else: ?>
-								<span class="label label-default"><i class="fa-solid fa-circle-stop"></i> DOWN</span>
+								<span class="badge-status-down"><i class="fa-solid fa-circle-stop"></i> DOWN</span>
 							<?php endif; ?>
 						</td>
 						<td>
 							<?php if ($is_srv): ?>
-								<span class="label label-primary"><i class="fa-solid fa-server"></i> Server</span>
+								<span class="badge-mode-server"><i class="fa-solid fa-server"></i> Server</span>
 							<?php else: ?>
-								<span class="label label-info"><i class="fa-solid fa-network-wired"></i> Client</span>
+								<span class="badge-mode-client"><i class="fa-solid fa-network-wired"></i> Client</span>
 							<?php endif; ?>
 						</td>
 						<td class="td-comment"><?=htmlspecialchars($t_desc)?></td>
@@ -190,11 +190,10 @@ $tab_array = array(
 							<?=htmlspecialchars(substr($tun['public_key'] ?? '', 0, 16))?>...
 						</td>
 						<td>
-							<span class="badge" 
-							      style="background:#2b476c; font-weight:normal; cursor: pointer;"
+							<span class="badge-peers-count" 
 							      onclick="toggleStatusPeers('<?=htmlspecialchars($t_name, ENT_QUOTES)?>', event)"
 							      title="Klik untuk melihat / menyembunyikan detail peers">
-								<i class="fa-solid fa-users" style="font-size: 9px; margin-right: 2px;"></i> <?=$peer_count?> peer<?=$peer_count === 1 ? '' : 's'?>
+								<i class="fa-solid fa-users" style="font-size: 9px; margin-right: 3px;"></i> <?=$peer_count?> peer<?=$peer_count === 1 ? '' : 's'?>
 							</span>
 						</td>
 						<td><span class="rx-val" id="tun-rx-<?=htmlspecialchars($t_name)?>" style="font-family: monospace; font-size: 11px; color: #1e395b; font-weight: 600;"><?=$rx_fmt?></span></td>
@@ -233,9 +232,9 @@ $tab_array = array(
 						</td>
 						<td id="peer-hs-<?=$safe_pubkey_id?>">
 							<?php if ($has_hs): ?>
-								<span class="label label-success" style="font-size: 10px;"><i class="fa-solid fa-circle-check"></i> Connected</span>
+								<span class="badge-status-up" style="font-size: 10px; padding: 2px 6px;"><i class="fa-solid fa-circle-check"></i> Connected</span>
 							<?php else: ?>
-								<span class="label label-default" style="font-size: 10px;"><i class="fa-regular fa-clock"></i> Idle / Never</span>
+								<span class="badge-status-down" style="font-size: 10px; padding: 2px 6px;"><i class="fa-regular fa-clock"></i> Idle / Never</span>
 							<?php endif; ?>
 						</td>
 						<td><span class="text-muted" style="font-size: 10px;">Peer Client</span></td>
@@ -605,9 +604,9 @@ function pollWireGuardTelemetry() {
 
                     var hs = parseInt(peer.latest_handshake) || 0;
                     if (hs > 0) {
-                        $('#peer-hs-' + safeId).html('<span class="text-success"><i class="fa-solid fa-circle-check"></i> Connected</span>');
+                        $('#peer-hs-' + safeId).html('<span class="badge-status-up" style="font-size: 10px; padding: 2px 6px;"><i class="fa-solid fa-circle-check"></i> Connected</span>');
                     } else {
-                        $('#peer-hs-' + safeId).html('<span class="text-muted"><i class="fa-regular fa-clock"></i> Idle / Never</span>');
+                        $('#peer-hs-' + safeId).html('<span class="badge-status-down" style="font-size: 10px; padding: 2px 6px;"><i class="fa-regular fa-clock"></i> Idle / Never</span>');
                     }
                 });
             }
@@ -624,6 +623,63 @@ $(document).ready(function() {
 </script>
 
 <style>
+/* WinBox Clean & Crisp Status Badges */
+.badge-status-up,
+.badge-status-down,
+.badge-mode-server,
+.badge-mode-client,
+.badge-peers-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.3;
+    border-radius: 3px;
+    white-space: nowrap;
+    text-transform: none;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.06);
+    vertical-align: middle;
+}
+
+.badge-status-up {
+    background-color: #2e7d32;
+    color: #ffffff;
+    border: 1px solid #1b5e20;
+}
+
+.badge-status-down {
+    background-color: #616161;
+    color: #ffffff;
+    border: 1px solid #424242;
+}
+
+.badge-mode-server {
+    background-color: #1976d2;
+    color: #ffffff;
+    border: 1px solid #1565c0;
+}
+
+.badge-mode-client {
+    background-color: #0288d1;
+    color: #ffffff;
+    border: 1px solid #0277bd;
+}
+
+.badge-peers-count {
+    background-color: #2b476c;
+    color: #ffffff;
+    border: 1px solid #1e395b;
+    cursor: pointer;
+    transition: background-color 0.15s ease-in-out;
+}
+
+.badge-peers-count:hover {
+    background-color: #1a3250;
+    color: #ffffff;
+}
+
 .selected-peer-row td {
     background-color: #dbeafe !important;
     color: #1e3a8a !important;
