@@ -41,3 +41,12 @@ wg_*.html
 # ── Dev one-off scripts in project root ───────────────────
 patch_server.py
 run_server.py
+
+# ── Phase A2 Git Hygiene (Secrets & Local Artifacts) ──────
+cookies.txt
+.env
+__pycache__/
+*.pyc
+.venv/
+scratch/
+tests/live/
