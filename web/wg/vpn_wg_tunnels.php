@@ -282,9 +282,6 @@ $tab_array = array(
 	</div>
 </div>
 
-<div class="infoblock">
-	<i class="fa-solid fa-circle-info text-info"></i> Layanan service daemon WireGuard (Start / Stop / Restart) dikelola secara terpusat di menu <a href="/status_services.php"><strong>Status: Services</strong></a>.
-</div>
 
 <!-- ============================================================== -->
 <!-- WINBOX MODAL: NEW / EDIT WIREGUARD INTERFACE                   -->
