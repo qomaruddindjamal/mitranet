@@ -370,6 +370,15 @@ class MitraNetApi {
         return self::request('/xray/service', 'POST', ['action' => $action]);
     }
 
+    public static function saveXrayConfig($config) {
+        return self::request('/xray/config', 'POST', ['config' => $config]);
+    }
+
+    public static function generateXrayKeys() {
+        $res = self::request('/xray/keygen', 'POST');
+        return $res['status'] === 200 ? $res['data'] : [];
+    }
+
     public static function getUsers() {
         $res = self::request('/users');
         return $res['status'] === 200 ? ($res['data']['users'] ?? []) : [];

@@ -1288,20 +1288,25 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
 
         # 16. Xray-core Status & Config
         if path == "/api/v1/xray":
-            import subprocess
+            import subprocess, shutil
+            xray_bin = shutil.which("xray") or "/usr/local/bin/xray"
             xray_running = False
-            version_str = "Xray 1.8.24 (go1.23.0 linux/amd64)"
+            version_str = "Xray 26.3.27 (go1.26.1 linux/amd64)"
             cfg_obj = {}
             try:
                 proc = subprocess.run(["systemctl", "is-active", "xray"], stdout=subprocess.PIPE, text=True)
                 xray_running = (proc.stdout.strip() == "active")
 
-                vproc = subprocess.run(["/usr/local/bin/xray", "version"], stdout=subprocess.PIPE, text=True)
-                if vproc.returncode == 0:
-                    version_str = vproc.stdout.splitlines()[0]
+                if os.path.exists(xray_bin):
+                    vproc = subprocess.run([xray_bin, "version"], stdout=subprocess.PIPE, text=True)
+                    if vproc.returncode == 0:
+                        version_str = vproc.stdout.splitlines()[0]
 
                 if os.path.exists("/usr/local/etc/xray/config.json"):
                     with open("/usr/local/etc/xray/config.json", "r") as f:
+                        cfg_obj = json.load(f)
+                elif os.path.exists("/etc/xray/config.json"):
+                    with open("/etc/xray/config.json", "r") as f:
                         cfg_obj = json.load(f)
             except Exception as e:
                 logger.warning("Error querying xray status: %s", e)
@@ -1309,6 +1314,7 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             self._send_json(200, {
                 "running": xray_running,
                 "version": version_str,
+                "binary": xray_bin if os.path.exists(xray_bin) else None,
                 "config": cfg_obj
             })
             return
@@ -2901,9 +2907,14 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 self._send_json(400, {"error": "Invalid action. Use start, stop, restart, or test"})
                 return
             try:
-                import subprocess
+                import subprocess, shutil
+                xray_bin = shutil.which("xray") or "/usr/local/bin/xray"
+                cfg_path = "/usr/local/etc/xray/config.json"
+                if not os.path.exists(cfg_path) and os.path.exists("/etc/xray/config.json"):
+                    cfg_path = "/etc/xray/config.json"
+
                 if action == "test":
-                    proc = subprocess.run(["/usr/local/bin/xray", "run", "-test", "-c", "/usr/local/etc/xray/config.json"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=10)
+                    proc = subprocess.run([xray_bin, "run", "-test", "-c", cfg_path], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=10)
                     self._send_json(200, {
                         "success": (proc.returncode == 0),
                         "output": proc.stdout
@@ -2921,6 +2932,60 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 })
             except Exception as e:
                 self._send_json(500, {"error": f"Xray service action failed: {e}"})
+            return
+
+        if path == "/api/v1/xray/keygen":
+            try:
+                import subprocess, shutil, uuid
+                xray_bin = shutil.which("xray") or "/usr/local/bin/xray"
+                new_uuid = str(uuid.uuid4())
+                private_key = ""
+                public_key = ""
+                short_id = uuid.uuid4().hex[:16]
+
+                if os.path.exists(xray_bin):
+                    proc = subprocess.run([xray_bin, "x25519"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=5)
+                    for line in proc.stdout.splitlines():
+                        if "PrivateKey:" in line:
+                            private_key = line.split(":", 1)[1].strip()
+                        elif "Password (PublicKey):" in line or "PublicKey:" in line:
+                            public_key = line.split(":", 1)[1].strip()
+
+                self._send_json(200, {
+                    "uuid": new_uuid,
+                    "private_key": private_key,
+                    "public_key": public_key,
+                    "short_id": short_id
+                })
+            except Exception as e:
+                self._send_json(500, {"error": f"Failed to generate Xray keys: {e}"})
+            return
+
+        if path == "/api/v1/xray/config":
+            cfg_data = payload.get("config")
+            if cfg_data is None:
+                self._send_json(400, {"error": "Missing config payload"})
+                return
+            try:
+                os.makedirs("/usr/local/etc/xray", exist_ok=True)
+                target_path = "/usr/local/etc/xray/config.json"
+                if isinstance(cfg_data, str):
+                    parsed = json.loads(cfg_data)
+                else:
+                    parsed = cfg_data
+                with open(target_path, "w") as f:
+                    json.dump(parsed, f, indent=2)
+                # Keep /etc/xray/config.json in sync if it exists or is symlinked
+                if os.path.isdir("/etc/xray") and not os.path.islink("/etc/xray/config.json"):
+                    try:
+                        with open("/etc/xray/config.json", "w") as f2:
+                            json.dump(parsed, f2, indent=2)
+                    except Exception:
+                        pass
+                self._send_json(200, {"success": True, "message": "Xray configuration updated successfully"})
+            except Exception as e:
+                logger.exception("Error saving xray config: %s", e)
+                self._send_json(500, {"error": f"Failed to save Xray config: {e}"})
             return
 
         # 13b. WireGuard Service Control (Start / Stop / Restart)

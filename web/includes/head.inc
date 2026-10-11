@@ -188,7 +188,7 @@ $sidebar_structure = array(
     array('id' => 'firewall', 'name' => 'Firewall', 'icon' => 'fa-shield-halved', 'menu' => $firewall_menu),
     array('id' => 'services', 'name' => 'Services', 'icon' => 'fa-cubes', 'menu' => $services_menu),
     array('id' => 'vpn', 'name' => 'VPN', 'icon' => 'fa-key', 'url' => '/vpn/vpn.php', 'direct' => true),
-    array('id' => 'xray', 'name' => 'Xray-core', 'icon' => 'fa-bolt', 'url' => '/xray/xray.php', 'direct' => true),
+    array('id' => 'xray', 'name' => 'XRay-Core', 'icon' => 'fa-bolt', 'url' => '/xray/xray.php', 'direct' => true),
     array('id' => 'qos', 'name' => 'QoS Manager', 'icon' => 'fa-gauge-high', 'url' => '/qos/qos.php', 'direct' => true)
 );
 
