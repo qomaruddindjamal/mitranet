@@ -43,6 +43,27 @@ from mitranet.core.firewall.models import (
 )
 from mitranet.core.transaction.engine import NetworkTransactionEngine
 from mitranet.core.services.sysmetrics import SystemMetricsCollector
+try:
+    from mitranet.core.network.wireless import (
+        get_wireless_interfaces,
+        scan_wireless_networks,
+        get_connected_clients,
+        apply_wireless_configuration,
+    )
+except ImportError:
+    # Fallback to local import if needed
+    try:
+        from core.network.wireless import (
+            get_wireless_interfaces,
+            scan_wireless_networks,
+            get_connected_clients,
+            apply_wireless_configuration,
+        )
+    except Exception:
+        get_wireless_interfaces = None
+        scan_wireless_networks = None
+        get_connected_clients = None
+        apply_wireless_configuration = None
 
 logger = logging.getLogger("mitranet.api")
 
@@ -2122,6 +2143,52 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                     _sp.run(["/sbin/poweroff", "-f"])
             _th.Thread(target=_do_halt, daemon=True).start()
             self._send_json(200, {"success": True, "message": "System is shutting down..."})
+            return
+
+        # =====================================================================
+        # WIRELESS / WIFI GET ENDPOINTS (MikroTik Parity)
+        # =====================================================================
+        if path == "/api/v1/wifi/interfaces":
+            try:
+                if get_wireless_interfaces:
+                    ifaces = get_wireless_interfaces()
+                else:
+                    from mitranet.core.network.wireless import get_wireless_interfaces as _gwi
+                    ifaces = _gwi()
+                self._send_json(200, {"success": True, "interfaces": ifaces, "count": len(ifaces)})
+            except Exception as e:
+                logger.error("Failed fetching wireless interfaces: %s", e)
+                self._send_json(500, {"error": f"Failed fetching wireless interfaces: {e}"})
+            return
+
+        if path == "/api/v1/wifi/scan":
+            try:
+                query = parse_qs(parsed.query)
+                target_if = query.get("interface", ["wlan0"])[0]
+                if scan_wireless_networks:
+                    networks = scan_wireless_networks(target_if)
+                else:
+                    from mitranet.core.network.wireless import scan_wireless_networks as _swn
+                    networks = _swn(target_if)
+                self._send_json(200, {"success": True, "interface": target_if, "networks": networks, "count": len(networks)})
+            except Exception as e:
+                logger.error("Failed scanning wireless networks: %s", e)
+                self._send_json(500, {"error": f"Failed scanning wireless networks: {e}"})
+            return
+
+        if path == "/api/v1/wifi/clients":
+            try:
+                query = parse_qs(parsed.query)
+                target_if = query.get("interface", ["wlan0"])[0]
+                if get_connected_clients:
+                    clients = get_connected_clients(target_if)
+                else:
+                    from mitranet.core.network.wireless import get_connected_clients as _gcc
+                    clients = _gcc(target_if)
+                self._send_json(200, {"success": True, "interface": target_if, "clients": clients, "count": len(clients)})
+            except Exception as e:
+                logger.error("Failed fetching connected clients: %s", e)
+                self._send_json(500, {"error": f"Failed fetching connected clients: {e}"})
             return
 
         self._send_json(404, {"error": "Endpoint not found"})
@@ -5345,6 +5412,101 @@ MTU = 1420
                 "success": True,
                 "message": "Cloud Speed Booster services have been stopped."
             })
+            return
+
+        # =====================================================================
+        # WIRELESS / WIFI POST ENDPOINTS (MikroTik Parity)
+        # =====================================================================
+        if path == "/api/v1/wifi/mode":
+            ifname = str(payload.get("interface", "wlan0")).strip()
+            mode = str(payload.get("mode", "managed")).strip().lower()
+            if mode not in ("ap", "managed", "station", "repeater"):
+                self._send_json(400, {"error": "Invalid mode. Allowed: 'ap', 'managed', 'station', 'repeater'"})
+                return
+            if mode == "station":
+                mode = "managed"
+
+            cfg = {
+                "enable": bool(payload.get("enable", True)),
+                "mode": mode,
+                "ssid": str(payload.get("ssid", "")).strip(),
+                "passphrase": str(payload.get("passphrase", "")).strip(),
+                "security": str(payload.get("security", "wpa2")).strip().lower(),
+                "channel": payload.get("channel", 36),
+                "band": str(payload.get("band", "5GHz")),
+                "country_code": str(payload.get("country_code", "ID")).upper(),
+                "mtu": int(payload.get("mtu", 1500))
+            }
+            try:
+                if apply_wireless_configuration:
+                    ok, msg = apply_wireless_configuration(ifname, cfg)
+                else:
+                    from mitranet.core.network.wireless import apply_wireless_configuration as _awc
+                    ok, msg = _awc(ifname, cfg)
+                self._send_json(200, {"success": ok, "message": msg, "interface": ifname, "config": cfg})
+            except Exception as e:
+                logger.error("Failed changing WiFi mode on %s: %s", ifname, e)
+                self._send_json(500, {"error": f"Failed changing WiFi mode: {e}"})
+            return
+
+        if path == "/api/v1/wifi/ap/config":
+            ifname = str(payload.get("interface", "wlan0")).strip()
+            ssid = str(payload.get("ssid", "MitraNet-AP")).strip()
+            if not ssid:
+                ssid = "MitraNet-AP"
+            cfg = {
+                "enable": bool(payload.get("enable", True)),
+                "mode": "ap",
+                "ssid": ssid,
+                "passphrase": str(payload.get("passphrase", "")).strip(),
+                "security": str(payload.get("security", "wpa2")).strip().lower(),
+                "channel": payload.get("channel", 36),
+                "band": str(payload.get("band", "5GHz")),
+                "channel_width": str(payload.get("channel_width", "20/40/80 MHz")),
+                "txpower": str(payload.get("txpower", "auto")),
+                "country_code": str(payload.get("country_code", "ID")).upper(),
+                "gateway_ip": str(payload.get("gateway_ip", "10.10.1.254/24")),
+                "mtu": int(payload.get("mtu", 1500))
+            }
+            try:
+                if apply_wireless_configuration:
+                    ok, msg = apply_wireless_configuration(ifname, cfg)
+                else:
+                    from mitranet.core.network.wireless import apply_wireless_configuration as _awc
+                    ok, msg = _awc(ifname, cfg)
+                self._send_json(200, {"success": ok, "message": msg, "interface": ifname, "config": cfg})
+            except Exception as e:
+                logger.error("Failed configuring WiFi AP on %s: %s", ifname, e)
+                self._send_json(500, {"error": f"Failed configuring WiFi AP: {e}"})
+            return
+
+        if path == "/api/v1/wifi/client/connect":
+            ifname = str(payload.get("interface", "wlan0")).strip()
+            ssid = str(payload.get("ssid", "")).strip()
+            passphrase = str(payload.get("passphrase", "")).strip()
+            if not ssid:
+                self._send_json(400, {"error": "Target SSID cannot be empty"})
+                return
+
+            cfg = {
+                "enable": True,
+                "mode": "managed",
+                "ssid": ssid,
+                "passphrase": passphrase,
+                "security": "wpa2" if passphrase else "open",
+                "country_code": str(payload.get("country_code", "ID")).upper(),
+                "mtu": int(payload.get("mtu", 1500))
+            }
+            try:
+                if apply_wireless_configuration:
+                    ok, msg = apply_wireless_configuration(ifname, cfg)
+                else:
+                    from mitranet.core.network.wireless import apply_wireless_configuration as _awc
+                    ok, msg = _awc(ifname, cfg)
+                self._send_json(200, {"success": ok, "message": msg, "interface": ifname, "target_ssid": ssid})
+            except Exception as e:
+                logger.error("Failed connecting WiFi client on %s: %s", ifname, e)
+                self._send_json(500, {"error": f"Failed connecting WiFi client: {e}"})
             return
 
         self._send_json(404, {"error": "Endpoint not found"})
