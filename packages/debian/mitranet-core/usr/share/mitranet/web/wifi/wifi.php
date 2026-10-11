@@ -151,6 +151,30 @@ function getRealWirelessInterfaces() {
             $d['link_connected'] = false;
         }
 
+        // MitraNet Profile Check (AP or Managed Profile)
+        $profile_file = "/etc/mitranet/wifi/profile_{$name}.json";
+        $profile = file_exists($profile_file) ? @json_decode(@file_get_contents($profile_file), true) : null;
+        if (!empty($profile) && is_array($profile)) {
+            $d['mode'] = $profile['mode'] ?? $d['mode'];
+            $d['band'] = $profile['band'] ?? $d['band'];
+            $d['channel'] = $profile['channel'] ?? $d['channel'];
+            $d['channel_width'] = $profile['channel_width'] ?? $d['channel_width'];
+            $d['txpower'] = $profile['txpower'] ?? $d['txpower'];
+            $d['security'] = $profile['security'] ?? 'wpa2';
+            $d['passphrase'] = $profile['passphrase'] ?? '';
+            $d['country_code'] = $profile['country_code'] ?? 'ID';
+            if ($d['mode'] === 'ap' && !empty($profile['ssid'])) {
+                $d['ssid'] = $profile['ssid'];
+                $d['bssid'] = $d['mac_address'];
+            } elseif ($d['mode'] === 'managed' && !empty($profile['ssid']) && !$d['link_connected']) {
+                $d['ssid'] = $profile['ssid'] . ' (Configured)';
+            }
+        } else {
+            $d['security'] = 'wpa2';
+            $d['passphrase'] = '';
+            $d['country_code'] = 'ID';
+        }
+
         // Live stats from /proc/net/dev or sysfs
         $rx_bytes = 0; $tx_bytes = 0; $rx_pkts = 0; $tx_pkts = 0;
         if (file_exists("/sys/class/net/{$name}/statistics/rx_bytes")) {
@@ -231,6 +255,280 @@ function scanRealWifiNetworks($ifname = 'wlan0') {
 }
 
 // -------------------------------------------------------------
+// HELPER: GET CONNECTED CLIENTS (STATION DUMP)
+// -------------------------------------------------------------
+function getRealWifiClients($ifname = 'wlan0') {
+    $out = @shell_exec('iw dev ' . escapeshellarg($ifname) . ' station dump 2>/dev/null');
+    $clients = [];
+    if (!$out) return $clients;
+
+    $cur_station = null;
+    $curr = [];
+    foreach (explode("\n", $out) as $line) {
+        $line = trim($line);
+        if (preg_match('/^Station\s+([0-9a-f:]{17})/i', $line, $m)) {
+            if ($cur_station && !empty($curr['mac'])) {
+                $clients[] = $curr;
+            }
+            $cur_station = strtolower($m[1]);
+            $curr = [
+                'mac'          => $cur_station,
+                'interface'    => $ifname,
+                'signal'       => '-',
+                'rx_bytes'     => 0,
+                'tx_bytes'     => 0,
+                'rx_packets'   => 0,
+                'tx_packets'   => 0,
+                'tx_bitrate'   => '-',
+                'rx_bitrate'   => '-',
+                'connected_time'=> '-',
+                'inactive_time'=> '-'
+            ];
+        } elseif ($cur_station) {
+            if (preg_match('/signal:\s*([-\d.]+\s*dBm)/', $line, $m)) {
+                $curr['signal'] = $m[1];
+            } elseif (preg_match('/rx bytes:\s*(\d+)/', $line, $m)) {
+                $curr['rx_bytes'] = intval($m[1]);
+            } elseif (preg_match('/tx bytes:\s*(\d+)/', $line, $m)) {
+                $curr['tx_bytes'] = intval($m[1]);
+            } elseif (preg_match('/rx packets:\s*(\d+)/', $line, $m)) {
+                $curr['rx_packets'] = intval($m[1]);
+            } elseif (preg_match('/tx packets:\s*(\d+)/', $line, $m)) {
+                $curr['tx_packets'] = intval($m[1]);
+            } elseif (preg_match('/tx bitrate:\s*(.+)/', $line, $m)) {
+                $curr['tx_bitrate'] = trim($m[1]);
+            } elseif (preg_match('/rx bitrate:\s*(.+)/', $line, $m)) {
+                $curr['rx_bitrate'] = trim($m[1]);
+            } elseif (preg_match('/connected time:\s*(\d+)\s*seconds/i', $line, $m)) {
+                $curr['connected_time'] = $m[1] . 's';
+            } elseif (preg_match('/inactive time:\s*(\d+)\s*ms/i', $line, $m)) {
+                $curr['inactive_time'] = $m[1] . ' ms';
+            }
+        }
+    }
+    if ($cur_station && !empty($curr['mac'])) {
+        $clients[] = $curr;
+    }
+    return $clients;
+}
+
+// -------------------------------------------------------------
+// HELPER: SECURITY PROFILES (JSON PERSISTED)
+// -------------------------------------------------------------
+function getSecurityProfiles() {
+    $sec_file = '/etc/mitranet/wifi/security_profiles.json';
+    if (file_exists($sec_file)) {
+        $data = @json_decode(@file_get_contents($sec_file), true);
+        if (is_array($data) && !empty($data)) return $data;
+    }
+    // Default profile
+    return [
+        [
+            'name' => 'default',
+            'mode' => 'dynamic-keys',
+            'authentication' => 'WPA2 PSK',
+            'unicast_ciphers' => 'aes-ccmp',
+            'group_ciphers' => 'aes-ccmp',
+            'wpa2_key' => 'mitranet12345',
+            'is_default' => true
+        ],
+        [
+            'name' => 'profile-wpa3',
+            'mode' => 'wpa3-sae',
+            'authentication' => 'WPA3 SAE',
+            'unicast_ciphers' => 'aes-ccmp',
+            'group_ciphers' => 'aes-ccmp',
+            'wpa2_key' => 'mitranet12345',
+            'is_default' => false
+        ]
+    ];
+}
+
+function saveSecurityProfiles($profiles) {
+    if (!is_dir('/etc/mitranet/wifi')) @mkdir('/etc/mitranet/wifi', 0755, true);
+    @file_put_contents('/etc/mitranet/wifi/security_profiles.json', json_encode($profiles, JSON_PRETTY_PRINT));
+}
+
+// -------------------------------------------------------------
+// HELPER: ACCESS LIST / MAC FILTER (JSON & HOSTAPD FILTER)
+// -------------------------------------------------------------
+function getAccessList() {
+    $acl_file = '/etc/mitranet/wifi/access_list.json';
+    if (file_exists($acl_file)) {
+        $data = @json_decode(@file_get_contents($acl_file), true);
+        if (is_array($data)) return $data;
+    }
+    return [];
+}
+
+function saveAccessList($acl) {
+    if (!is_dir('/etc/mitranet/wifi')) @mkdir('/etc/mitranet/wifi', 0755, true);
+    @file_put_contents('/etc/mitranet/wifi/access_list.json', json_encode($acl, JSON_PRETTY_PRINT));
+
+    // Update hostapd accept/deny lists if hostapd is configured
+    $accept_lines = [];
+    $deny_lines = [];
+    foreach ($acl as $entry) {
+        $mac = strtolower(trim($entry['mac'] ?? ''));
+        if (empty($mac)) continue;
+        if (($entry['action'] ?? 'allow') === 'allow') {
+            $accept_lines[] = $mac;
+        } else {
+            $deny_lines[] = $mac;
+        }
+    }
+    @file_put_contents('/etc/mitranet/wifi/hostapd.accept', implode("\n", $accept_lines));
+    @file_put_contents('/etc/mitranet/wifi/hostapd.deny', implode("\n", $deny_lines));
+}
+
+// -------------------------------------------------------------
+// HELPER: CHANNEL SPECTRUM
+// -------------------------------------------------------------
+function getChannelSpectrum() {
+    return [
+        ['band' => '2.4 GHz', 'channel' => '1', 'frequency' => '2412 MHz', 'width' => '20/40 MHz', 'max_tx' => '20 dBm', 'status' => 'Allowed'],
+        ['band' => '2.4 GHz', 'channel' => '2', 'frequency' => '2417 MHz', 'width' => '20/40 MHz', 'max_tx' => '20 dBm', 'status' => 'Allowed'],
+        ['band' => '2.4 GHz', 'channel' => '3', 'frequency' => '2422 MHz', 'width' => '20/40 MHz', 'max_tx' => '20 dBm', 'status' => 'Allowed'],
+        ['band' => '2.4 GHz', 'channel' => '4', 'frequency' => '2427 MHz', 'width' => '20/40 MHz', 'max_tx' => '20 dBm', 'status' => 'Allowed'],
+        ['band' => '2.4 GHz', 'channel' => '5', 'frequency' => '2432 MHz', 'width' => '20/40 MHz', 'max_tx' => '20 dBm', 'status' => 'Allowed'],
+        ['band' => '2.4 GHz', 'channel' => '6', 'frequency' => '2437 MHz', 'width' => '20/40 MHz', 'max_tx' => '20 dBm', 'status' => 'Allowed'],
+        ['band' => '2.4 GHz', 'channel' => '7', 'frequency' => '2442 MHz', 'width' => '20/40 MHz', 'max_tx' => '20 dBm', 'status' => 'Allowed'],
+        ['band' => '2.4 GHz', 'channel' => '8', 'frequency' => '2447 MHz', 'width' => '20/40 MHz', 'max_tx' => '20 dBm', 'status' => 'Allowed'],
+        ['band' => '2.4 GHz', 'channel' => '9', 'frequency' => '2452 MHz', 'width' => '20/40 MHz', 'max_tx' => '20 dBm', 'status' => 'Allowed'],
+        ['band' => '2.4 GHz', 'channel' => '10', 'frequency' => '2457 MHz', 'width' => '20/40 MHz', 'max_tx' => '20 dBm', 'status' => 'Allowed'],
+        ['band' => '2.4 GHz', 'channel' => '11', 'frequency' => '2462 MHz', 'width' => '20/40 MHz', 'max_tx' => '20 dBm', 'status' => 'Allowed'],
+        ['band' => '5 GHz', 'channel' => '36', 'frequency' => '5180 MHz', 'width' => '20/40/80 MHz', 'max_tx' => '20 dBm', 'status' => 'Allowed (UNII-1)'],
+        ['band' => '5 GHz', 'channel' => '40', 'frequency' => '5200 MHz', 'width' => '20/40/80 MHz', 'max_tx' => '20 dBm', 'status' => 'Allowed (UNII-1)'],
+        ['band' => '5 GHz', 'channel' => '44', 'frequency' => '5220 MHz', 'width' => '20/40/80 MHz', 'max_tx' => '20 dBm', 'status' => 'Allowed (UNII-1)'],
+        ['band' => '5 GHz', 'channel' => '48', 'frequency' => '5240 MHz', 'width' => '20/40/80 MHz', 'max_tx' => '20 dBm', 'status' => 'Allowed (UNII-1)'],
+        ['band' => '5 GHz', 'channel' => '149', 'frequency' => '5745 MHz', 'width' => '20/40/80 MHz', 'max_tx' => '20 dBm', 'status' => 'Allowed (UNII-3)'],
+        ['band' => '5 GHz', 'channel' => '153', 'frequency' => '5765 MHz', 'width' => '20/40/80 MHz', 'max_tx' => '20 dBm', 'status' => 'Allowed (UNII-3)'],
+        ['band' => '5 GHz', 'channel' => '157', 'frequency' => '5785 MHz', 'width' => '20/40/80 MHz', 'max_tx' => '20 dBm', 'status' => 'Allowed (UNII-3)'],
+        ['band' => '5 GHz', 'channel' => '161', 'frequency' => '5805 MHz', 'width' => '20/40/80 MHz', 'max_tx' => '20 dBm', 'status' => 'Allowed (UNII-3)'],
+        ['band' => '5 GHz', 'channel' => '165', 'frequency' => '5825 MHz', 'width' => '20/40/80 MHz', 'max_tx' => '20 dBm', 'status' => 'Allowed (UNII-3)']
+    ];
+}
+
+// -------------------------------------------------------------
+// HELPER: APPLY WIRELESS ENGINE (AP or CLIENT)
+// -------------------------------------------------------------
+function applyWirelessEngine($ifname, $cfg) {
+    if (!is_dir('/etc/mitranet/wifi')) {
+        @mkdir('/etc/mitranet/wifi', 0755, true);
+    }
+
+    $profile_file = "/etc/mitranet/wifi/profile_{$ifname}.json";
+    @file_put_contents($profile_file, json_encode($cfg, JSON_PRETTY_PRINT));
+
+    $mode = $cfg['mode'] ?? 'managed';
+    $is_enabled = !empty($cfg['enable']);
+    $mtu = intval($cfg['mtu'] ?? 1500);
+
+    // Stop existing hostapd instance for this interface
+    @shell_exec("pkill -9 -f 'hostapd.*{$ifname}' 2>/dev/null");
+
+    if (!$is_enabled) {
+        @shell_exec('ip link set ' . escapeshellarg($ifname) . ' down 2>/dev/null');
+        return true;
+    }
+
+    // Bring interface UP
+    @shell_exec('ip link set ' . escapeshellarg($ifname) . ' up 2>/dev/null');
+    if ($mtu >= 576 && $mtu <= 1500) {
+        @shell_exec('ip link set ' . escapeshellarg($ifname) . ' mtu ' . $mtu . ' 2>/dev/null');
+    }
+
+    if ($mode === 'ap') {
+        // Kill existing wpa_supplicant on this interface so hostapd gets exclusive nl80211 AP control
+        @shell_exec("pkill -9 -f 'wpa_supplicant.*{$ifname}' 2>/dev/null");
+
+        $ssid = !empty($cfg['ssid']) ? $cfg['ssid'] : 'MitraNet-AP';
+        $channel = intval($cfg['channel'] ?? 36);
+        if ($channel <= 0) $channel = 36;
+        $hw_mode = ($channel > 14) ? 'a' : 'g';
+        $country = !empty($cfg['country_code']) ? strtoupper($cfg['country_code']) : 'ID';
+        $passphrase = $cfg['passphrase'] ?? '';
+        $security = $cfg['security'] ?? 'wpa2';
+
+        $hostapd_conf = "interface={$ifname}\n";
+        $hostapd_conf .= "driver=nl80211\n";
+        $hostapd_conf .= "ssid={$ssid}\n";
+        $hostapd_conf .= "hw_mode={$hw_mode}\n";
+        $hostapd_conf .= "channel={$channel}\n";
+        $hostapd_conf .= "country_code={$country}\n";
+        $hostapd_conf .= "ieee80211n=1\n";
+        if ($hw_mode === 'a') {
+            $hostapd_conf .= "ieee80211ac=1\n";
+        }
+        $hostapd_conf .= "wmm_enabled=1\n";
+
+        if ($security === 'open' || empty($passphrase)) {
+            // Open network
+        } elseif ($security === 'wpa3') {
+            $hostapd_conf .= "wpa=2\n";
+            $hostapd_conf .= "wpa_key_mgmt=SAE\n";
+            $hostapd_conf .= "sae_password={$passphrase}\n";
+            $hostapd_conf .= "rsn_pairwise=CCMP\n";
+        } else {
+            // WPA2-PSK (Default)
+            $hostapd_conf .= "wpa=2\n";
+            $hostapd_conf .= "wpa_key_mgmt=WPA-PSK\n";
+            $hostapd_conf .= "rsn_pairwise=CCMP\n";
+            $hostapd_conf .= "wpa_passphrase={$passphrase}\n";
+        }
+
+        $conf_path = "/etc/mitranet/wifi/hostapd_{$ifname}.conf";
+        @file_put_contents($conf_path, $hostapd_conf);
+
+        // Assign Gateway IP if not set
+        $gateway_ip = !empty($cfg['gateway_ip']) ? $cfg['gateway_ip'] : '10.10.1.254/24';
+        @shell_exec("ip addr add " . escapeshellarg($gateway_ip) . " dev " . escapeshellarg($ifname) . " 2>/dev/null");
+
+        // Launch hostapd in daemon mode
+        @shell_exec("hostapd -B " . escapeshellarg($conf_path) . " 2>/dev/null");
+
+        // Write DHCP server configuration for AP clients
+        $dhcp_file = "/etc/dnsmasq.d/dhcp_{$ifname}.conf";
+        $dhcp_conf = "# status=enabled\n" .
+                     "interface={$ifname}\n" .
+                     "bind-dynamic\n" .
+                     "dhcp-range={$ifname},10.10.1.10,10.10.1.240,255.255.255.0,12h\n" .
+                     "dhcp-option={$ifname},option:router,10.10.1.254\n" .
+                     "dhcp-option={$ifname},option:dns-server,8.8.8.8,1.1.1.1\n";
+        @file_put_contents($dhcp_file, $dhcp_conf);
+        @shell_exec("systemctl restart dnsmasq 2>/dev/null");
+
+        // Ensure NAT Masquerade for Hotspot AP Subnet
+        @shell_exec("iptables -t nat -C POSTROUTING -s 10.10.1.0/24 ! -o " . escapeshellarg($ifname) . " -j MASQUERADE 2>/dev/null || iptables -t nat -A POSTROUTING -s 10.10.1.0/24 ! -o " . escapeshellarg($ifname) . " -j MASQUERADE");
+    } else {
+        // Mode Managed (Station / Client)
+        // If client SSID & Passphrase configured, generate wpa_supplicant config
+        if (!empty($cfg['ssid'])) {
+            $ssid = $cfg['ssid'];
+            $passphrase = $cfg['passphrase'] ?? '';
+            $wpa_conf = "ctrl_interface=/run/wpa_supplicant\nupdate_config=1\ncountry=" . (!empty($cfg['country_code']) ? $cfg['country_code'] : 'ID') . "\n\n";
+            $wpa_conf .= "network={\n";
+            $wpa_conf .= "\tssid=\"" . addslashes($ssid) . "\"\n";
+            if (!empty($passphrase)) {
+                $wpa_conf .= "\tpsk=\"" . addslashes($passphrase) . "\"\n";
+            } else {
+                $wpa_conf .= "\tkey_mgmt=NONE\n";
+            }
+            $wpa_conf .= "}\n";
+
+            $conf_path = "/etc/mitranet/wifi/wpa_{$ifname}.conf";
+            @file_put_contents($conf_path, $wpa_conf);
+
+            @shell_exec("pkill -9 -f 'wpa_supplicant.*{$ifname}' 2>/dev/null");
+            @shell_exec("wpa_supplicant -B -i " . escapeshellarg($ifname) . " -c " . escapeshellarg($conf_path) . " 2>/dev/null");
+            // Request IP via dhcpcd if available
+            @shell_exec("dhcpcd -b " . escapeshellarg($ifname) . " 2>/dev/null");
+        }
+    }
+    return true;
+}
+
+// -------------------------------------------------------------
 // AJAX ENDPOINTS
 // -------------------------------------------------------------
 if (isset($_GET['ajax'])) {
@@ -274,6 +572,127 @@ if (isset($_GET['ajax'])) {
         exit;
     }
 
+    if ($_GET['ajax'] === 'quick_connect') {
+        $ifname = trim($_POST['interface'] ?? 'wlan0');
+        $ssid = trim($_POST['ssid'] ?? '');
+        $passphrase = trim($_POST['passphrase'] ?? '');
+
+        if (empty($ssid)) {
+            echo json_encode(['success' => false, 'error' => 'SSID tidak boleh kosong']);
+            exit;
+        }
+
+        $cfg = [
+            'enable' => true,
+            'mode' => 'managed',
+            'ssid' => $ssid,
+            'passphrase' => $passphrase,
+            'security' => !empty($passphrase) ? 'wpa2' : 'open',
+            'channel' => 'auto',
+            'band' => '2.4GHz / 5GHz',
+            'mtu' => 1500,
+            'country_code' => 'ID'
+        ];
+
+        applyWirelessEngine($ifname, $cfg);
+        echo json_encode(['success' => true, 'message' => "Radio {$ifname} berhasil disambungkan ke {$ssid}."]);
+        exit;
+    }
+
+    if ($_GET['ajax'] === 'clients') {
+        $ifname = trim($_GET['if'] ?? 'wlan0');
+        $clients = getRealWifiClients($ifname);
+        echo json_encode(['success' => true, 'clients' => $clients]);
+        exit;
+    }
+
+    if ($_GET['ajax'] === 'save_sec_profile') {
+        $name = trim($_POST['name'] ?? '');
+        $key = trim($_POST['wpa2_key'] ?? '');
+        $auth = trim($_POST['authentication'] ?? 'WPA2 PSK');
+        if (empty($name)) {
+            echo json_encode(['success' => false, 'error' => 'Nama profil tidak boleh kosong']);
+            exit;
+        }
+        $profiles = getSecurityProfiles();
+        $updated = false;
+        foreach ($profiles as &$p) {
+            if ($p['name'] === $name) {
+                $p['authentication'] = $auth;
+                $p['wpa2_key'] = $key;
+                $updated = true;
+                break;
+            }
+        }
+        if (!$updated) {
+            $profiles[] = [
+                'name' => $name,
+                'mode' => 'dynamic-keys',
+                'authentication' => $auth,
+                'unicast_ciphers' => 'aes-ccmp',
+                'group_ciphers' => 'aes-ccmp',
+                'wpa2_key' => $key,
+                'is_default' => false
+            ];
+        }
+        saveSecurityProfiles($profiles);
+        echo json_encode(['success' => true, 'message' => 'Profil keamanan berhasil disimpan']);
+        exit;
+    }
+
+    if ($_GET['ajax'] === 'delete_sec_profile') {
+        $name = trim($_POST['name'] ?? '');
+        if ($name === 'default') {
+            echo json_encode(['success' => false, 'error' => 'Profil default tidak boleh dihapus']);
+            exit;
+        }
+        $profiles = getSecurityProfiles();
+        $profiles = array_values(array_filter($profiles, function($p) use ($name) { return $p['name'] !== $name; }));
+        saveSecurityProfiles($profiles);
+        echo json_encode(['success' => true, 'message' => 'Profil keamanan dihapus']);
+        exit;
+    }
+
+    if ($_GET['ajax'] === 'save_acl_entry') {
+        $mac = strtolower(trim($_POST['mac'] ?? ''));
+        $action_val = strtolower(trim($_POST['action_val'] ?? 'allow'));
+        $comment = trim($_POST['comment'] ?? '');
+        if (!preg_match('/^([0-9a-f]{2}[:-]){5}([0-9a-f]{2})$/i', $mac)) {
+            echo json_encode(['success' => false, 'error' => 'Format MAC address tidak valid (contoh: AA:BB:CC:DD:EE:FF)']);
+            exit;
+        }
+        $acl = getAccessList();
+        $updated = false;
+        foreach ($acl as &$entry) {
+            if (strtolower($entry['mac']) === $mac) {
+                $entry['action'] = $action_val;
+                $entry['comment'] = $comment;
+                $updated = true;
+                break;
+            }
+        }
+        if (!$updated) {
+            $acl[] = [
+                'mac' => $mac,
+                'interface' => 'wlan0',
+                'action' => $action_val,
+                'comment' => $comment
+            ];
+        }
+        saveAccessList($acl);
+        echo json_encode(['success' => true, 'message' => 'Entri Access List berhasil disimpan']);
+        exit;
+    }
+
+    if ($_GET['ajax'] === 'delete_acl_entry') {
+        $mac = strtolower(trim($_POST['mac'] ?? ''));
+        $acl = getAccessList();
+        $acl = array_values(array_filter($acl, function($e) use ($mac) { return strtolower($e['mac']) !== $mac; }));
+        saveAccessList($acl);
+        echo json_encode(['success' => true, 'message' => 'Entri Access List dihapus']);
+        exit;
+    }
+
     echo json_encode(['error' => 'Invalid ajax operation']);
     exit;
 }
@@ -293,13 +712,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: wifi.php");
         exit;
     } elseif ($action === 'save_wifi' && !empty($ifname)) {
-        $is_enabled = !empty($_POST['enable']);
-        $mtu = intval($_POST['mtu'] ?? 1500);
-        $state_cmd = $is_enabled ? 'up' : 'down';
-        @shell_exec('ip link set ' . escapeshellarg($ifname) . ' ' . $state_cmd);
-        if ($mtu >= 576 && $mtu <= 1500) {
-            @shell_exec('ip link set ' . escapeshellarg($ifname) . ' mtu ' . $mtu);
-        }
+        $cfg = [
+            'enable' => !empty($_POST['enable']),
+            'mode' => strtolower($_POST['mode'] ?? 'managed'),
+            'ssid' => trim($_POST['ssid'] ?? ''),
+            'passphrase' => trim($_POST['passphrase'] ?? ''),
+            'security' => strtolower($_POST['security'] ?? 'wpa2'),
+            'channel' => trim($_POST['channel'] ?? '36'),
+            'band' => trim($_POST['band'] ?? '5GHz'),
+            'channel_width' => trim($_POST['channel_width'] ?? '20 MHz'),
+            'txpower' => trim($_POST['txpower'] ?? 'auto'),
+            'country_code' => strtoupper(trim($_POST['country_code'] ?? 'ID')),
+            'mtu' => intval($_POST['mtu'] ?? 1500)
+        ];
+
+        applyWirelessEngine($ifname, $cfg);
         header("Location: wifi.php");
         exit;
     }
@@ -371,7 +798,260 @@ $current_tab = $_GET['tab'] ?? 'wifi';
             </ul>
         </div>
 
-        <!-- TOOLBAR: NEW, ENABLE, DISABLE, REMOVE, COMMENT, FIND, FILTER -->
+        <?php if ($current_tab === 'registration'): 
+            $clients = getRealWifiClients('wlan0');
+        ?>
+        <!-- TOOLBAR: REGISTRATION (REFRESH) -->
+        <div class="mitranet-toolbar">
+            <div class="mitranet-toolbar-left">
+                <button type="button" class="mitranet-btn" onclick="location.reload()" title="Refresh Clients">
+                    <i class="fa-solid fa-arrows-rotate text-primary"></i> <strong>Refresh</strong>
+                </button>
+            </div>
+            <div class="mitranet-toolbar-right">
+                <div class="mitranet-search-wrapper">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Find MAC" onkeyup="filterGrid(this.value)">
+                </div>
+            </div>
+        </div>
+
+        <!-- REGISTRATION TABLE: CONNECTED STATIONS / CLIENTS -->
+        <div class="mitranet-grid-container">
+            <table class="mitranet-grid" id="wifi-grid-table">
+                <thead>
+                    <tr>
+                        <th class="text-center" style="width:30px;"><i class="fa-regular fa-flag"></i></th>
+                        <th class="sortable">MAC Address <i class="fa-solid fa-caret-up"></i></th>
+                        <th class="sortable">Interface</th>
+                        <th class="sortable">Signal</th>
+                        <th class="sortable">Tx Rate</th>
+                        <th class="sortable">Rx Rate</th>
+                        <th class="sortable">Tx Bytes</th>
+                        <th class="sortable">Rx Bytes</th>
+                        <th class="sortable">Connected Time</th>
+                        <th class="sortable">Inactive</th>
+                        <th class="text-center" style="width:80px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php if (!empty($clients)): ?>
+                    <?php foreach ($clients as $c): ?>
+                    <tr>
+                        <td class="text-center"><i class="fa-solid fa-link text-success"></i></td>
+                        <td class="font-monospace"><strong class="text-primary"><?=htmlspecialchars(strtoupper($c['mac']))?></strong></td>
+                        <td><span class="badge badge-wlan"><?=htmlspecialchars($c['interface'])?></span></td>
+                        <td><span class="label label-success"><?=htmlspecialchars($c['signal'])?></span></td>
+                        <td><?=htmlspecialchars($c['tx_bitrate'])?></td>
+                        <td><?=htmlspecialchars($c['rx_bitrate'])?></td>
+                        <td><?=htmlspecialchars(number_format($c['tx_bytes']))?> B</td>
+                        <td><?=htmlspecialchars(number_format($c['rx_bytes']))?> B</td>
+                        <td><?=htmlspecialchars($c['connected_time'])?></td>
+                        <td><?=htmlspecialchars($c['inactive_time'])?></td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-xs btn-default" onclick="quickAddAcl('<?=htmlspecialchars($c['mac'])?>')" title="Add to Access List">
+                                <i class="fa-solid fa-shield-halved text-info"></i> ACL
+                            </button>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="11" class="text-center text-muted p-20">
+                            <em>Belum ada perangkat klien (Station) yang terhubung ke Access Point.</em>
+                        </td>
+                    </tr>
+                <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mitranet-statusbar">
+            <div><span><strong>Connected Clients:</strong> <?=count($clients)?> items</span></div>
+            <div><span class="text-muted">nl80211 Station Dump Table</span></div>
+        </div>
+
+        <?php elseif ($current_tab === 'security'): 
+            $sec_profiles = getSecurityProfiles();
+        ?>
+        <!-- TOOLBAR: SECURITY PROFILES (ADD PROFILE) -->
+        <div class="mitranet-toolbar">
+            <div class="mitranet-toolbar-left">
+                <button type="button" class="mitranet-btn" onclick="openNewSecProfileModal()" title="Add Security Profile">
+                    <i class="fa-solid fa-plus text-primary"></i> <strong>New</strong>
+                </button>
+            </div>
+            <div class="mitranet-toolbar-right">
+                <div class="mitranet-search-wrapper">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Find Profile" onkeyup="filterGrid(this.value)">
+                </div>
+            </div>
+        </div>
+
+        <!-- SECURITY PROFILES TABLE -->
+        <div class="mitranet-grid-container">
+            <table class="mitranet-grid" id="wifi-grid-table">
+                <thead>
+                    <tr>
+                        <th class="text-center" style="width:30px;"><i class="fa-solid fa-lock"></i></th>
+                        <th class="sortable">Name <i class="fa-solid fa-caret-up"></i></th>
+                        <th class="sortable">Mode</th>
+                        <th class="sortable">Authentication Types</th>
+                        <th class="sortable">Unicast Ciphers</th>
+                        <th class="sortable">Group Ciphers</th>
+                        <th class="sortable">Default</th>
+                        <th class="text-center" style="width:100px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($sec_profiles as $sp): ?>
+                    <tr>
+                        <td class="text-center"><i class="fa-solid fa-key text-warning"></i></td>
+                        <td><strong class="text-primary"><?=htmlspecialchars($sp['name'])?></strong></td>
+                        <td><?=htmlspecialchars($sp['mode'] ?? 'dynamic-keys')?></td>
+                        <td><span class="badge badge-default"><?=htmlspecialchars($sp['authentication'])?></span></td>
+                        <td><?=htmlspecialchars($sp['unicast_ciphers'])?></td>
+                        <td><?=htmlspecialchars($sp['group_ciphers'])?></td>
+                        <td><?=!empty($sp['is_default']) ? '<span class="text-success"><i class="fa-solid fa-check"></i> yes</span>' : 'no'?></td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-xs btn-default" onclick="editSecProfile('<?=htmlspecialchars($sp['name'])?>', '<?=htmlspecialchars($sp['authentication'])?>', '<?=htmlspecialchars($sp['wpa2_key'] ?? '')?>')"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <?php if (empty($sp['is_default'])): ?>
+                                <button type="button" class="btn btn-xs btn-default" onclick="deleteSecProfile('<?=htmlspecialchars($sp['name'])?>')"><i class="fa-solid fa-trash text-danger"></i></button>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mitranet-statusbar">
+            <div><span><strong>Profiles:</strong> <?=count($sec_profiles)?> items</span></div>
+            <div><span class="text-muted">Wireless Security Subsystem</span></div>
+        </div>
+
+        <?php elseif ($current_tab === 'access_list'): 
+            $acl_list = getAccessList();
+        ?>
+        <!-- TOOLBAR: ACCESS LIST (ADD RULE) -->
+        <div class="mitranet-toolbar">
+            <div class="mitranet-toolbar-left">
+                <button type="button" class="mitranet-btn" onclick="openNewAclModal()" title="Add Access List Entry">
+                    <i class="fa-solid fa-plus text-primary"></i> <strong>New</strong>
+                </button>
+            </div>
+            <div class="mitranet-toolbar-right">
+                <div class="mitranet-search-wrapper">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Find MAC" onkeyup="filterGrid(this.value)">
+                </div>
+            </div>
+        </div>
+
+        <!-- ACCESS LIST TABLE (MAC FILTER) -->
+        <div class="mitranet-grid-container">
+            <table class="mitranet-grid" id="wifi-grid-table">
+                <thead>
+                    <tr>
+                        <th class="text-center" style="width:30px;"><i class="fa-solid fa-shield"></i></th>
+                        <th class="sortable">MAC Address <i class="fa-solid fa-caret-up"></i></th>
+                        <th class="sortable">Interface</th>
+                        <th class="sortable">Action</th>
+                        <th class="sortable">Comment</th>
+                        <th class="text-center" style="width:80px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php if (!empty($acl_list)): ?>
+                    <?php foreach ($acl_list as $a): ?>
+                    <tr>
+                        <td class="text-center">
+                            <?=($a['action'] === 'allow') ? '<i class="fa-solid fa-check-circle text-success"></i>' : '<i class="fa-solid fa-ban text-danger"></i>'?>
+                        </td>
+                        <td class="font-monospace"><strong class="text-primary"><?=htmlspecialchars(strtoupper($a['mac']))?></strong></td>
+                        <td><span class="badge badge-wlan"><?=htmlspecialchars($a['interface'] ?? 'wlan0')?></span></td>
+                        <td>
+                            <span class="label label-<?=($a['action'] === 'allow') ? 'success' : 'danger'?>">
+                                <?=htmlspecialchars(strtoupper($a['action']))?>
+                            </span>
+                        </td>
+                        <td><?=htmlspecialchars($a['comment'] ?? '-')?></td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-xs btn-default" onclick="deleteAclEntry('<?=htmlspecialchars($a['mac'])?>')">
+                                <i class="fa-solid fa-trash text-danger"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="6" class="text-center text-muted p-20">
+                            <em>Belum ada aturan Access List. Semua perangkat diperbolehkan secara default (Open Policy).</em>
+                        </td>
+                    </tr>
+                <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mitranet-statusbar">
+            <div><span><strong>ACL Rules:</strong> <?=count($acl_list)?> items</span></div>
+            <div><span class="text-muted">Hostapd MAC Filter Subsystem</span></div>
+        </div>
+
+        <?php elseif ($current_tab === 'channel'): 
+            $channels = getChannelSpectrum();
+        ?>
+        <!-- TOOLBAR: CHANNELS (INFO) -->
+        <div class="mitranet-toolbar">
+            <div class="mitranet-toolbar-left">
+                <span class="fs-12 text-muted ml-10"><strong>Regulatory Spectrum Table (Indonesia ID / nl80211)</strong></span>
+            </div>
+            <div class="mitranet-toolbar-right">
+                <div class="mitranet-search-wrapper">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Find Channel" onkeyup="filterGrid(this.value)">
+                </div>
+            </div>
+        </div>
+
+        <!-- CHANNELS SPECTRUM TABLE -->
+        <div class="mitranet-grid-container">
+            <table class="mitranet-grid" id="wifi-grid-table">
+                <thead>
+                    <tr>
+                        <th class="sortable">Band <i class="fa-solid fa-caret-up"></i></th>
+                        <th class="sortable">Channel</th>
+                        <th class="sortable">Center Frequency</th>
+                        <th class="sortable">Channel Width</th>
+                        <th class="sortable">Max Tx Power</th>
+                        <th class="sortable">Regulatory Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($channels as $ch): ?>
+                    <tr>
+                        <td><strong class="text-primary"><?=htmlspecialchars($ch['band'])?></strong></td>
+                        <td><span class="badge badge-default">Ch <?=htmlspecialchars($ch['channel'])?></span></td>
+                        <td><?=htmlspecialchars($ch['frequency'])?></td>
+                        <td><?=htmlspecialchars($ch['width'])?></td>
+                        <td><?=htmlspecialchars($ch['max_tx'])?></td>
+                        <td><span class="label label-success"><?=htmlspecialchars($ch['status'])?></span></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mitranet-statusbar">
+            <div><span><strong>Channels:</strong> <?=count($channels)?> items</span></div>
+            <div><span class="text-muted">802.11 b/g/n/ac Spectrum Map</span></div>
+        </div>
+
+        <?php else: ?>
+        <!-- DEFAULT TAB: WIFI RADIO LIST -->
+        <!-- TOOLBAR: NEW, EDIT, ENABLE, DISABLE, SCAN, COMMENT -->
         <div class="mitranet-toolbar">
             <div class="mitranet-toolbar-left">
                 <button type="button" class="mitranet-btn" onclick="openNewModal()" title="Add New Interface">
@@ -497,7 +1177,6 @@ $current_tab = $_GET['tab'] ?? 'wifi';
             </table>
         </div>
 
-        <!-- STATUS BAR -->
         <div class="mitranet-statusbar">
             <div>
                 <span><strong>Total:</strong> <?=count($wifi_interfaces)?> items</span>
@@ -506,6 +1185,7 @@ $current_tab = $_GET['tab'] ?? 'wifi';
                 <span class="text-muted">MitraNet Wireless Management Subsystem (nl80211 Hardware Grounded)</span>
             </div>
         </div>
+        <?php endif; ?>
 
     </div>
 
@@ -618,41 +1298,88 @@ $current_tab = $_GET['tab'] ?? 'wifi';
                                 <div class="form-group">
                                     <label class="col-sm-3 control-label">Mode</label>
                                     <div class="col-sm-9">
-                                        <input type="text" id="edit-wifi-mode" class="form-control input-sm" readonly>
+                                        <select name="mode" id="edit-wifi-mode" class="form-control input-sm" onchange="toggleWifiModeFields()">
+                                            <option value="managed">Station / Client (Connect to external AP)</option>
+                                            <option value="ap">Access Point (Master / Hotspot AP-Bridge)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">SSID</label>
+                                    <div class="col-sm-9">
+                                        <div class="input-group">
+                                            <input type="text" name="ssid" id="edit-wifi-ssid" class="form-control input-sm" placeholder="MitraNet-AP">
+                                            <span class="input-group-btn">
+                                                <button type="button" class="btn btn-sm btn-default" onclick="triggerWifiScan()" title="Scan Nearby SSIDs">
+                                                    <i class="fa-solid fa-satellite-dish text-info"></i> Scan
+                                                </button>
+                                            </span>
+                                        </div>
+                                        <span class="help-block fs-11 text-muted" id="edit-wifi-ssid-help">Nama SSID jaringan nirkabel.</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">Security</label>
+                                    <div class="col-sm-9">
+                                        <select name="security" id="edit-wifi-security" class="form-control input-sm">
+                                            <option value="wpa2">WPA2-PSK (AES/CCMP) - Rekomendasi</option>
+                                            <option value="wpa3">WPA3-SAE (Modern Security)</option>
+                                            <option value="open">Open (No Encryption / Hotspot Open)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group" id="group-wifi-passphrase">
+                                    <label class="col-sm-3 control-label">Passphrase</label>
+                                    <div class="col-sm-9">
+                                        <input type="password" name="passphrase" id="edit-wifi-passphrase" class="form-control input-sm" placeholder="Minimal 8 karakter">
                                     </div>
                                 </div>
                                 <div class="form-group">
                                     <label class="col-sm-3 control-label">Band</label>
                                     <div class="col-sm-9">
-                                        <input type="text" id="edit-wifi-band" class="form-control input-sm" readonly>
+                                        <select name="band" id="edit-wifi-band" class="form-control input-sm" onchange="updateChannelList()">
+                                            <option value="2.4GHz">2.4 GHz (802.11b/g/n)</option>
+                                            <option value="5GHz">5 GHz (802.11a/n/ac)</option>
+                                        </select>
                                     </div>
                                 </div>
                                 <div class="form-group">
                                     <label class="col-sm-3 control-label">Channel</label>
                                     <div class="col-sm-9">
-                                        <input type="text" id="edit-wifi-channel" class="form-control input-sm" readonly>
+                                        <select name="channel" id="edit-wifi-channel" class="form-control input-sm">
+                                            <!-- Dynamically populated -->
+                                        </select>
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="col-sm-3 control-label">Frequency</label>
+                                    <label class="col-sm-3 control-label">Channel Width</label>
                                     <div class="col-sm-9">
-                                        <input type="text" id="edit-wifi-freq" class="form-control input-sm" readonly>
+                                        <select name="channel_width" id="edit-wifi-channel-width" class="form-control input-sm">
+                                            <option value="20 MHz">20 MHz (Standard / High Compatibility)</option>
+                                            <option value="40 MHz">40 MHz (High Throughput HT40)</option>
+                                            <option value="80 MHz">80 MHz (Very High Throughput VHT80 5GHz)</option>
+                                        </select>
                                     </div>
                                 </div>
                                 <div class="form-group">
                                     <label class="col-sm-3 control-label">Tx Power</label>
                                     <div class="col-sm-9">
-                                        <input type="text" id="edit-wifi-txpower" class="form-control input-sm" readonly>
+                                        <select name="txpower" id="edit-wifi-txpower" class="form-control input-sm">
+                                            <option value="auto">Auto / Default Regulatory</option>
+                                            <option value="20.00 dBm">20 dBm (100 mW)</option>
+                                            <option value="25.00 dBm">25 dBm (316 mW)</option>
+                                            <option value="30.00 dBm">30 dBm (1000 mW)</option>
+                                        </select>
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="col-sm-3 control-label">SSID (Linked)</label>
+                                    <label class="col-sm-3 control-label">Country Code</label>
                                     <div class="col-sm-9">
-                                        <input type="text" id="edit-wifi-ssid" class="form-control input-sm" readonly>
+                                        <input type="text" name="country_code" id="edit-wifi-country" class="form-control input-sm font-monospace text-uppercase" value="ID" maxlength="2">
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="col-sm-3 control-label">BSSID</label>
+                                    <label class="col-sm-3 control-label">Hardware BSSID</label>
                                     <div class="col-sm-9">
                                         <input type="text" id="edit-wifi-bssid" class="form-control input-sm font-monospace" readonly>
                                     </div>
@@ -754,11 +1481,12 @@ $current_tab = $_GET['tab'] ?? 'wifi';
                                 <th>Channel</th>
                                 <th>Frequency</th>
                                 <th>Security</th>
+                                <th class="text-center" style="width: 100px;">Action</th>
                             </tr>
                         </thead>
                         <tbody id="scan-results-tbody">
                             <tr>
-                                <td colspan="6" class="text-center text-muted p-20">Klik "Start / Refresh Scan" untuk mencari access point di sekitar.</td>
+                                <td colspan="7" class="text-center text-muted p-20">Klik "Start / Refresh Scan" untuk mencari access point di sekitar.</td>
                             </tr>
                         </tbody>
                     </table>
@@ -824,6 +1552,91 @@ $current_tab = $_GET['tab'] ?? 'wifi';
     </div>
 </div>
 
+<!-- ============================================== -->
+<!-- MODAL: SECURITY PROFILE                        -->
+<!-- ============================================== -->
+<div id="modal-sec-profile" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-md winbox-modal-dialog">
+        <div class="modal-content winbox-window-popup">
+            <div class="winbox-popup-header">
+                <div class="winbox-popup-title">
+                    <i class="fa-solid fa-lock"></i> Wireless &gt; Security Profile
+                </div>
+                <div class="winbox-popup-controls">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+            </div>
+            <div class="modal-body p-20">
+                <div class="form-group">
+                    <label>Profile Name:</label>
+                    <input type="text" id="sec-profile-name" class="form-control input-sm" placeholder="profile-name">
+                </div>
+                <div class="form-group">
+                    <label>Authentication Type:</label>
+                    <select id="sec-profile-auth" class="form-control input-sm">
+                        <option value="WPA2 PSK">WPA2 PSK (AES / CCMP)</option>
+                        <option value="WPA3 SAE">WPA3 SAE (Modern CCMP)</option>
+                        <option value="WPA/WPA2 PSK">WPA/WPA2 PSK Mixed</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Pre-Shared Key / Passphrase:</label>
+                    <input type="password" id="sec-profile-key" class="form-control input-sm" placeholder="Minimal 8 karakter">
+                </div>
+            </div>
+            <div class="winbox-popup-footer">
+                <div></div>
+                <div>
+                    <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="submitSecProfile()">Save Profile</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL: ACCESS LIST / MAC FILTER               -->
+<!-- ============================================== -->
+<div id="modal-acl-entry" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-md winbox-modal-dialog">
+        <div class="modal-content winbox-window-popup">
+            <div class="winbox-popup-header">
+                <div class="winbox-popup-title">
+                    <i class="fa-solid fa-shield"></i> Wireless &gt; Access List Rule
+                </div>
+                <div class="winbox-popup-controls">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+            </div>
+            <div class="modal-body p-20">
+                <div class="form-group">
+                    <label>MAC Address:</label>
+                    <input type="text" id="acl-entry-mac" class="form-control input-sm font-monospace text-uppercase" placeholder="AA:BB:CC:DD:EE:FF">
+                </div>
+                <div class="form-group">
+                    <label>Policy Action:</label>
+                    <select id="acl-entry-action" class="form-control input-sm">
+                        <option value="allow">Allow (Whitelist - Permit to Connect)</option>
+                        <option value="deny">Deny (Blacklist - Disallow / Reject)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Comment / Identifier:</label>
+                    <input type="text" id="acl-entry-comment" class="form-control input-sm" placeholder="Contoh: Laptop Staff / HP Tamu">
+                </div>
+            </div>
+            <div class="winbox-popup-footer">
+                <div></div>
+                <div>
+                    <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="submitAclEntry()">Save Entry</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script type="text/javascript">
 var selectedWifi = null;
 
@@ -855,6 +1668,61 @@ function toggleFilter() {
     inp.focus();
 }
 
+// Channel database per band
+var wifiChannels = {
+    '2.4GHz': [
+        { ch: 'auto', label: 'auto (Dynamic / ACS)' },
+        { ch: '1', label: 'Channel 1 (2412 MHz)' },
+        { ch: '2', label: 'Channel 2 (2417 MHz)' },
+        { ch: '3', label: 'Channel 3 (2422 MHz)' },
+        { ch: '4', label: 'Channel 4 (2427 MHz)' },
+        { ch: '5', label: 'Channel 5 (2432 MHz)' },
+        { ch: '6', label: 'Channel 6 (2437 MHz)' },
+        { ch: '7', label: 'Channel 7 (2442 MHz)' },
+        { ch: '8', label: 'Channel 8 (2447 MHz)' },
+        { ch: '9', label: 'Channel 9 (2452 MHz)' },
+        { ch: '10', label: 'Channel 10 (2457 MHz)' },
+        { ch: '11', label: 'Channel 11 (2462 MHz)' }
+    ],
+    '5GHz': [
+        { ch: 'auto', label: 'auto (Dynamic / ACS)' },
+        { ch: '36', label: 'Channel 36 (5180 MHz)' },
+        { ch: '40', label: 'Channel 40 (5200 MHz)' },
+        { ch: '44', label: 'Channel 44 (5220 MHz)' },
+        { ch: '48', label: 'Channel 48 (5240 MHz)' },
+        { ch: '149', label: 'Channel 149 (5745 MHz)' },
+        { ch: '153', label: 'Channel 153 (5765 MHz)' },
+        { ch: '157', label: 'Channel 157 (5785 MHz)' },
+        { ch: '161', label: 'Channel 161 (5805 MHz)' },
+        { ch: '165', label: 'Channel 165 (5825 MHz)' }
+    ]
+};
+
+function updateChannelList(selectedCh) {
+    var band = $('#edit-wifi-band').val() || '5GHz';
+    var list = wifiChannels[band] || wifiChannels['5GHz'];
+    var select = $('#edit-wifi-channel');
+    select.empty();
+    list.forEach(function(item) {
+        var opt = $('<option>').val(item.ch).text(item.label);
+        if (selectedCh && String(selectedCh) === String(item.ch)) {
+            opt.prop('selected', true);
+        }
+        select.append(opt);
+    });
+}
+
+function toggleWifiModeFields() {
+    var mode = $('#edit-wifi-mode').val();
+    if (mode === 'ap') {
+        $('#edit-wifi-ssid-help').text('Nama SSID yang dipancarkan oleh Access Point (Hotspot).');
+        $('#winbox-wifi-title-label').html((selectedWifi || 'wlan0') + ' <span class="badge badge-success">AP-Bridge</span>');
+    } else {
+        $('#edit-wifi-ssid-help').text('Nama SSID target yang disambungkan oleh Radio (Client).');
+        $('#winbox-wifi-title-label').html((selectedWifi || 'wlan0') + ' <span class="badge badge-primary">Station</span>');
+    }
+}
+
 // Open WinBox Edit Modal
 function openWinboxWifiModal(ifname) {
     if (!ifname) return;
@@ -867,7 +1735,7 @@ function openWinboxWifiModal(ifname) {
         cache: false,
         success: function(res) {
             if (!res || !res.success || !res.data) {
-                alert('Gagal mengambil data wireless interface: ' + (res.error || 'Unknown error'));
+                MitraNet.alert('Error', 'Gagal mengambil data wireless interface: ' + (res.error || 'Unknown error'), 'error');
                 return;
             }
             var d = res.data;
@@ -883,13 +1751,21 @@ function openWinboxWifiModal(ifname) {
             $('#edit-wifi-phy').val(d.phy || 'phy0');
 
             // Wireless tab
-            $('#edit-wifi-mode').val(d.mode || 'managed');
-            $('#edit-wifi-band').val(d.band || '2.4GHz / 5GHz');
-            $('#edit-wifi-channel').val(d.channel || 'auto');
-            $('#edit-wifi-freq').val(d.frequency || 'auto');
-            $('#edit-wifi-txpower').val(d.txpower || '-');
-            $('#edit-wifi-ssid').val(d.ssid || 'None');
-            $('#edit-wifi-bssid').val(d.bssid || '-');
+            var modeVal = (d.mode === 'ap') ? 'ap' : 'managed';
+            $('#edit-wifi-mode').val(modeVal);
+            $('#edit-wifi-ssid').val(d.ssid && d.ssid !== 'None (Not Connected)' ? d.ssid.replace(' (Configured)', '') : '');
+            $('#edit-wifi-security').val(d.security || 'wpa2');
+            $('#edit-wifi-passphrase').val(d.passphrase || '');
+            
+            var bandVal = (d.band && d.band.indexOf('5GHz') !== -1) ? '5GHz' : '2.4GHz';
+            $('#edit-wifi-band').val(bandVal);
+            updateChannelList(d.channel);
+
+            $('#edit-wifi-channel-width').val(d.channel_width || '20 MHz');
+            $('#edit-wifi-txpower').val(d.txpower || 'auto');
+            $('#edit-wifi-country').val(d.country_code || 'ID');
+            $('#edit-wifi-bssid').val(d.mac_address || '-');
+            toggleWifiModeFields();
 
             // Status tab
             if (d.link_connected) {
@@ -928,7 +1804,7 @@ function openWinboxWifiModal(ifname) {
             $('#modal-edit-wifi').modal('show');
         },
         error: function() {
-            alert('Gagal berkomunikasi dengan server.');
+            MitraNet.alert('Error', 'Gagal berkomunikasi dengan server.', 'error');
         }
     });
 }
@@ -937,12 +1813,30 @@ function submitWinBoxWifi(closeModal) {
     var ifname = $('#edit-wifi-name-hidden').val();
     var isEnabled = $('#edit-wifi-enable').is(':checked') ? 'yes' : '';
     var mtu = $('#edit-wifi-mtu').val();
+    var mode = $('#edit-wifi-mode').val();
+    var ssid = $('#edit-wifi-ssid').val();
+    var security = $('#edit-wifi-security').val();
+    var passphrase = $('#edit-wifi-passphrase').val();
+    var band = $('#edit-wifi-band').val();
+    var channel = $('#edit-wifi-channel').val();
+    var channel_width = $('#edit-wifi-channel-width').val();
+    var txpower = $('#edit-wifi-txpower').val();
+    var country_code = $('#edit-wifi-country').val();
 
     var formData = {
         action: 'save_wifi',
         interface: ifname,
         enable: isEnabled,
-        mtu: mtu
+        mtu: mtu,
+        mode: mode,
+        ssid: ssid,
+        security: security,
+        passphrase: passphrase,
+        band: band,
+        channel: channel,
+        channel_width: channel_width,
+        txpower: txpower,
+        country_code: country_code
     };
 
     $.ajax({
@@ -954,11 +1848,11 @@ function submitWinBoxWifi(closeModal) {
                 $('#modal-edit-wifi').modal('hide');
                 location.reload();
             } else {
-                alert('Pengaturan radio Wi-Fi diterapkan.');
+                MitraNet.toast('success', 'Pengaturan radio Wi-Fi (' + mode.toUpperCase() + ') berhasil diterapkan.');
             }
         },
         error: function() {
-            alert('Gagal menyimpan konfigurasi.');
+            MitraNet.alert('Error', 'Gagal menyimpan konfigurasi radio Wi-Fi.', 'error');
         }
     });
 }
@@ -972,7 +1866,7 @@ function triggerWifiScan() {
 function runWifiScan() {
     var ifname = selectedWifi || 'wlan0';
     $('#scan-status-text').html('<i class="fa-solid fa-spinner fa-spin"></i> Sedang memindai access point sekitar...');
-    $('#scan-results-tbody').html('<tr><td colspan="6" class="text-center text-muted p-20"><i class="fa-solid fa-spinner fa-spin"></i> Scanning airwaves via nl80211...</td></tr>');
+    $('#scan-results-tbody').html('<tr><td colspan="7" class="text-center text-muted p-20"><i class="fa-solid fa-spinner fa-spin"></i> Scanning airwaves via nl80211...</td></tr>');
 
     $.ajax({
         url: 'wifi.php?ajax=scan&if=' + encodeURIComponent(ifname),
@@ -982,33 +1876,95 @@ function runWifiScan() {
         success: function(res) {
             if (!res || !res.success || !res.networks) {
                 $('#scan-status-text').text('Gagal memindai.');
-                $('#scan-results-tbody').html('<tr><td colspan="6" class="text-center text-danger p-20">Gagal menjalankan pemindaian.</td></tr>');
+                $('#scan-results-tbody').html('<tr><td colspan="7" class="text-center text-danger p-20">Gagal menjalankan pemindaian.</td></tr>');
                 return;
             }
             var nets = res.networks;
             $('#scan-status-text').text('Ditemukan ' + nets.length + ' jaringan nirkabel.');
             if (nets.length === 0) {
-                $('#scan-results-tbody').html('<tr><td colspan="6" class="text-center text-muted p-20">Tidak ada jaringan Wi-Fi terdeteksi.</td></tr>');
+                $('#scan-results-tbody').html('<tr><td colspan="7" class="text-center text-muted p-20">Tidak ada jaringan Wi-Fi terdeteksi.</td></tr>');
                 return;
             }
             var rows = '';
             nets.forEach(function(n) {
+                var safeSSID = escapeHtml(n.ssid || '<Hidden SSID>');
+                var rawSSID = n.ssid || '';
+                var isProtected = (n.security !== 'Open');
+                
                 rows += '<tr>' +
-                    '<td><strong>' + escapeHtml(n.ssid || '<Hidden SSID>') + '</strong></td>' +
+                    '<td><strong>' + safeSSID + '</strong></td>' +
                     '<td class="font-monospace fs-11">' + escapeHtml(n.bssid) + '</td>' +
                     '<td><span class="label label-success">' + escapeHtml(n.signal) + '</span></td>' +
                     '<td>' + escapeHtml(n.channel || '-') + '</td>' +
                     '<td>' + escapeHtml(n.freq || '-') + '</td>' +
                     '<td><span class="badge badge-default">' + escapeHtml(n.security) + '</span></td>' +
+                    '<td class="text-center">' +
+                    (rawSSID ? '<button type="button" class="btn btn-xs btn-primary" onclick="connectToScannedNetwork(\'' + escapeAttr(rawSSID) + '\', ' + (isProtected ? 'true' : 'false') + ')"><i class="fa-solid fa-link"></i> Connect</button>' : '<span class="text-muted fs-11">Hidden</span>') +
+                    '</td>' +
                     '</tr>';
             });
             $('#scan-results-tbody').html(rows);
         },
         error: function() {
             $('#scan-status-text').text('Koneksi terputus saat memindai.');
-            $('#scan-results-tbody').html('<tr><td colspan="6" class="text-center text-danger p-20">Terjadi kesalahan koneksi server.</td></tr>');
+            $('#scan-results-tbody').html('<tr><td colspan="7" class="text-center text-danger p-20">Terjadi kesalahan koneksi server.</td></tr>');
         }
     });
+}
+
+function connectToScannedNetwork(ssid, isProtected) {
+    var ifname = selectedWifi || 'wlan0';
+    if (isProtected) {
+        MitraNet.promptInput({
+            title: 'Sambungkan ke ' + ssid,
+            text: 'Masukkan Passphrase / Security Key Wi-Fi:',
+            placeholder: 'Password Wi-Fi',
+            inputType: 'password'
+        }, function(password) {
+            if (password === null) return;
+            executeQuickConnect(ifname, ssid, password);
+        });
+    } else {
+        MitraNet.confirm({
+            title: 'Sambungkan ke Jaringan Terbuka?',
+            text: 'Jaringan ' + ssid + ' tidak memiliki enkripsi kata sandi. Lanjutkan?',
+            confirmButtonText: 'Sambungkan Sekarang'
+        }, function(isConfirmed) {
+            if (isConfirmed) {
+                executeQuickConnect(ifname, ssid, '');
+            }
+        });
+    }
+}
+
+function executeQuickConnect(ifname, ssid, password) {
+    MitraNet.toast('info', 'Sedang menyambungkan ' + ifname + ' ke ' + ssid + '...');
+    $.ajax({
+        url: 'wifi.php?ajax=quick_connect',
+        type: 'POST',
+        data: {
+            interface: ifname,
+            ssid: ssid,
+            passphrase: password
+        },
+        dataType: 'json',
+        success: function(res) {
+            if (res && res.success) {
+                MitraNet.alert('Sukses Terhubung', res.message, 'success');
+                $('#modal-scan-wifi').modal('hide');
+                setTimeout(function() { location.reload(); }, 1200);
+            } else {
+                MitraNet.alert('Gagal Terhubung', res ? res.error : 'Gagal menyambungkan Wi-Fi', 'error');
+            }
+        },
+        error: function() {
+            MitraNet.alert('Error', 'Gagal berkomunikasi dengan subsystem Wi-Fi', 'error');
+        }
+    });
+}
+
+function escapeAttr(str) {
+    return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
 
 function escapeHtml(str) {
@@ -1038,6 +1994,134 @@ $(document).ready(function() {
         triggerWifiScan();
     });
 });
+
+// Security Profile Actions
+function openNewSecProfileModal() {
+    $('#sec-profile-name').val('').prop('readonly', false);
+    $('#sec-profile-auth').val('WPA2 PSK');
+    $('#sec-profile-key').val('');
+    $('#modal-sec-profile').modal('show');
+}
+
+function editSecProfile(name, auth, key) {
+    $('#sec-profile-name').val(name).prop('readonly', (name === 'default'));
+    $('#sec-profile-auth').val(auth);
+    $('#sec-profile-key').val(key);
+    $('#modal-sec-profile').modal('show');
+}
+
+function submitSecProfile() {
+    var name = $('#sec-profile-name').val().trim();
+    var auth = $('#sec-profile-auth').val();
+    var key = $('#sec-profile-key').val();
+
+    if (!name) {
+        MitraNet.alert('Validasi', 'Nama profil tidak boleh kosong.', 'warning');
+        return;
+    }
+
+    $.ajax({
+        url: 'wifi.php?ajax=save_sec_profile',
+        type: 'POST',
+        data: { name: name, authentication: auth, wpa2_key: key },
+        dataType: 'json',
+        success: function(res) {
+            if (res && res.success) {
+                MitraNet.toast('success', res.message);
+                $('#modal-sec-profile').modal('hide');
+                setTimeout(function() { location.reload(); }, 800);
+            } else {
+                MitraNet.alert('Error', res ? res.error : 'Gagal menyimpan profil', 'error');
+            }
+        },
+        error: function() {
+            MitraNet.alert('Error', 'Gagal berkomunikasi dengan server.', 'error');
+        }
+    });
+}
+
+function deleteSecProfile(name) {
+    MitraNet.confirmDelete('Hapus profil keamanan "' + name + '"?', function() {
+        $.ajax({
+            url: 'wifi.php?ajax=delete_sec_profile',
+            type: 'POST',
+            data: { name: name },
+            dataType: 'json',
+            success: function(res) {
+                if (res && res.success) {
+                    MitraNet.toast('success', res.message);
+                    setTimeout(function() { location.reload(); }, 800);
+                } else {
+                    MitraNet.alert('Error', res ? res.error : 'Gagal menghapus profil', 'error');
+                }
+            }
+        });
+    });
+}
+
+// Access List Actions
+function openNewAclModal() {
+    $('#acl-entry-mac').val('');
+    $('#acl-entry-action').val('allow');
+    $('#acl-entry-comment').val('');
+    $('#modal-acl-entry').modal('show');
+}
+
+function quickAddAcl(mac) {
+    $('#acl-entry-mac').val(mac);
+    $('#acl-entry-action').val('allow');
+    $('#acl-entry-comment').val('Station Client');
+    $('#modal-acl-entry').modal('show');
+}
+
+function submitAclEntry() {
+    var mac = $('#acl-entry-mac').val().trim();
+    var actionVal = $('#acl-entry-action').val();
+    var comment = $('#acl-entry-comment').val().trim();
+
+    if (!mac) {
+        MitraNet.alert('Validasi', 'Alamat MAC wajib diisi.', 'warning');
+        return;
+    }
+
+    $.ajax({
+        url: 'wifi.php?ajax=save_acl_entry',
+        type: 'POST',
+        data: { mac: mac, action_val: actionVal, comment: comment },
+        dataType: 'json',
+        success: function(res) {
+            if (res && res.success) {
+                MitraNet.toast('success', res.message);
+                $('#modal-acl-entry').modal('hide');
+                setTimeout(function() { location.reload(); }, 800);
+            } else {
+                MitraNet.alert('Error', res ? res.error : 'Gagal menyimpan entri ACL', 'error');
+            }
+        },
+        error: function() {
+            MitraNet.alert('Error', 'Gagal berkomunikasi dengan server.', 'error');
+        }
+    });
+}
+
+function deleteAclEntry(mac) {
+    MitraNet.confirmDelete('Hapus aturan filter untuk MAC "' + mac + '"?', function() {
+        $.ajax({
+            url: 'wifi.php?ajax=delete_acl_entry',
+            type: 'POST',
+            data: { mac: mac },
+            dataType: 'json',
+            success: function(res) {
+                if (res && res.success) {
+                    MitraNet.toast('success', res.message);
+                    setTimeout(function() { location.reload(); }, 800);
+                } else {
+                    MitraNet.alert('Error', res ? res.error : 'Gagal menghapus aturan ACL', 'error');
+                }
+            }
+        });
+    });
+}
 
 function postWifiState(ifname, state) {
     var form = $('<form method="post" action="wifi.php"></form>');

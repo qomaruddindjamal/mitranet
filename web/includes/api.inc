@@ -539,5 +539,43 @@ class MitraNetApi {
     public static function stopBooster() {
         return self::request('/vpn/booster/stop', 'POST', []);
     }
+
+    // =========================================================================
+    // WIRELESS / WIFI HELPERS (MikroTik Parity)
+    // =========================================================================
+
+    public static function getWifiInterfaces() {
+        $res = self::request('/wifi/interfaces');
+        return $res['status'] === 200 ? ($res['data']['interfaces'] ?? []) : [];
+    }
+
+    public static function scanWifiNetworks($ifname = 'wlan0') {
+        $res = self::request('/wifi/scan?interface=' . urlencode($ifname), 'GET', null, 15);
+        return $res['status'] === 200 ? ($res['data']['networks'] ?? []) : [];
+    }
+
+    public static function getWifiClients($ifname = 'wlan0') {
+        $res = self::request('/wifi/clients?interface=' . urlencode($ifname));
+        return $res['status'] === 200 ? ($res['data']['clients'] ?? []) : [];
+    }
+
+    public static function setWifiMode($ifname, $mode, $extra = []) {
+        $payload = array_merge(['interface' => $ifname, 'mode' => $mode], $extra);
+        return self::request('/wifi/mode', 'POST', $payload);
+    }
+
+    public static function configureWifiAp($payload) {
+        return self::request('/wifi/ap/config', 'POST', $payload);
+    }
+
+    public static function connectWifiClient($ifname, $ssid, $passphrase = '', $country = 'ID') {
+        return self::request('/wifi/client/connect', 'POST', [
+            'interface' => $ifname,
+            'ssid' => $ssid,
+            'passphrase' => $passphrase,
+            'country_code' => $country
+        ]);
+    }
 }
+
 

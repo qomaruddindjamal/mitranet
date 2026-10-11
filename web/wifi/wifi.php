@@ -480,8 +480,26 @@ function applyWirelessEngine($ifname, $cfg) {
         $conf_path = "/etc/mitranet/wifi/hostapd_{$ifname}.conf";
         @file_put_contents($conf_path, $hostapd_conf);
 
+        // Assign Gateway IP if not set
+        $gateway_ip = !empty($cfg['gateway_ip']) ? $cfg['gateway_ip'] : '10.10.1.254/24';
+        @shell_exec("ip addr add " . escapeshellarg($gateway_ip) . " dev " . escapeshellarg($ifname) . " 2>/dev/null");
+
         // Launch hostapd in daemon mode
         @shell_exec("hostapd -B " . escapeshellarg($conf_path) . " 2>/dev/null");
+
+        // Write DHCP server configuration for AP clients
+        $dhcp_file = "/etc/dnsmasq.d/dhcp_{$ifname}.conf";
+        $dhcp_conf = "# status=enabled\n" .
+                     "interface={$ifname}\n" .
+                     "bind-dynamic\n" .
+                     "dhcp-range={$ifname},10.10.1.10,10.10.1.240,255.255.255.0,12h\n" .
+                     "dhcp-option={$ifname},option:router,10.10.1.254\n" .
+                     "dhcp-option={$ifname},option:dns-server,8.8.8.8,1.1.1.1\n";
+        @file_put_contents($dhcp_file, $dhcp_conf);
+        @shell_exec("systemctl restart dnsmasq 2>/dev/null");
+
+        // Ensure NAT Masquerade for Hotspot AP Subnet
+        @shell_exec("iptables -t nat -C POSTROUTING -s 10.10.1.0/24 ! -o " . escapeshellarg($ifname) . " -j MASQUERADE 2>/dev/null || iptables -t nat -A POSTROUTING -s 10.10.1.0/24 ! -o " . escapeshellarg($ifname) . " -j MASQUERADE");
     } else {
         // Mode Managed (Station / Client)
         // If client SSID & Passphrase configured, generate wpa_supplicant config

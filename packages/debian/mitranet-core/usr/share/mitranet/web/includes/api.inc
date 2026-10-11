@@ -13,13 +13,13 @@ define('API_BASE_URL', 'http://127.0.0.1:8443/api/v1');
 
 class MitraNetApi {
 
-    public static function request($endpoint, $method = 'GET', $data = null) {
+    public static function request($endpoint, $method = 'GET', $data = null, $timeout = 5) {
         $url = API_BASE_URL . $endpoint;
         $ch = curl_init($url);
 
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
 
         $headers = ['Accept: application/json'];
         
@@ -174,6 +174,58 @@ class MitraNetApi {
         return $res['status'] === 200 ? $res['data'] : [];
     }
 
+    public static function addVrfMember($vrf, $interface) {
+        return self::request('/vrfs/member/add', 'POST', [
+            'vrf' => $vrf,
+            'interface' => $interface
+        ]);
+    }
+
+    public static function removeVrfMember($vrf, $interface) {
+        return self::request('/vrfs/member/remove', 'POST', [
+            'vrf' => $vrf,
+            'interface' => $interface
+        ]);
+    }
+
+    public static function getMacsec() {
+        $res = self::request('/macsec');
+        return $res['status'] === 200 ? $res['data'] : [];
+    }
+
+    public static function createMacsec($data) {
+        return self::request('/macsec/create', 'POST', $data);
+    }
+
+    public static function deleteMacsec($name) {
+        return self::request('/macsec/delete', 'POST', ['name' => $name]);
+    }
+
+    public static function getInterfaceLists() {
+        $res = self::request('/interface-lists');
+        return $res['status'] === 200 ? $res['data'] : [];
+    }
+
+    public static function saveInterfaceList($name, $members = [], $comment = '', $disabled = false) {
+        return self::request('/interface-lists/save', 'POST', [
+            'name' => $name,
+            'members' => $members,
+            'comment' => $comment,
+            'disabled' => (bool)$disabled
+        ]);
+    }
+
+    public static function setInterfaceListState($name, $state = 'enable') {
+        return self::request('/interface-lists/set-state', 'POST', [
+            'name' => $name,
+            'state' => $state
+        ]);
+    }
+
+    public static function deleteInterfaceList($name) {
+        return self::request('/interface-lists/delete', 'POST', ['name' => $name]);
+    }
+
     public static function getArpTable() {
         $res = self::request('/arp');
         return $res['status'] === 200 ? $res['data'] : [];
@@ -242,14 +294,20 @@ class MitraNetApi {
         return self::request('/wireguard/keygen', 'POST', []);
     }
 
-    public static function saveWireGuardTunnel($name, $address, $listen_port, $private_key, $descr = '', $mode = 'server') {
+    public static function saveWireGuardTunnel($name, $address, $listen_port, $private_key, $descr = '', $mode = 'server', $route_interface = '', $enable_nat = false, $dns = '', $mtu = '1420', $dscp_class = '', $clamp_mss = true) {
         return self::request('/wireguard/tunnel/save', 'POST', [
             'name' => $name,
             'address' => $address,
             'listen_port' => $listen_port,
             'private_key' => $private_key,
             'descr' => $descr,
-            'mode' => $mode
+            'mode' => $mode,
+            'route_interface' => $route_interface,
+            'enable_nat' => $enable_nat,
+            'dns' => $dns,
+            'mtu' => $mtu,
+            'dscp_class' => $dscp_class,
+            'clamp_mss' => $clamp_mss
         ]);
     }
 
@@ -336,11 +394,30 @@ class MitraNetApi {
             'engine' => $engine,
             'interface' => $interface,
             'server_id' => $serverId
-        ]);
+        ], 50);
     }
 
     public static function clearSpeedtestHistory() {
         return self::request('/tools/speedtest/clear-history', 'POST', []);
+    }
+
+    public static function getBenchmarkHistory() {
+        $res = self::request('/tools/benchmark/history');
+        return $res['status'] === 200 ? ($res['data']['history'] ?? []) : [];
+    }
+
+    public static function runBenchmark($mode = 'cdn', $interface = '', $sizeMb = 25, $targetHost = '103.93.162.168', $targetPort = 5201) {
+        return self::request('/tools/benchmark/run', 'POST', [
+            'mode' => $mode,
+            'interface' => $interface,
+            'size_mb' => $sizeMb,
+            'target_host' => $targetHost,
+            'target_port' => $targetPort
+        ], 35);
+    }
+
+    public static function clearBenchmarkHistory() {
+        return self::request('/tools/benchmark/clear-history', 'POST', []);
     }
 
     public static function execCommand($command, $cwd = '/root') {
@@ -420,6 +497,14 @@ class MitraNetApi {
         return self::request('/interfaces/vethernet/delete', 'POST', ['name' => $name]);
     }
 
+    public static function createTunnel($payload) {
+        return self::request('/interfaces/tunnel/create', 'POST', $payload);
+    }
+
+    public static function deleteTunnel($name) {
+        return self::request('/interfaces/tunnel/delete', 'POST', ['name' => $name]);
+    }
+
     public static function getDhcpConfigs() {
         $res = self::request('/services/dhcp');
         return $res['status'] === 200 ? ($res['data']['dhcp'] ?? []) : [];
@@ -428,5 +513,69 @@ class MitraNetApi {
     public static function saveDhcpConfig($payload) {
         return self::request('/services/dhcp/save', 'POST', $payload);
     }
+
+    public static function getDnsConfig() {
+        $res = self::request('/services/dns');
+        return $res['status'] === 200 ? ($res['data']['dns'] ?? []) : [];
+    }
+
+    public static function saveDnsConfig($payload) {
+        return self::request('/services/dns/save', 'POST', $payload);
+    }
+
+    public static function restartDnsmasq() {
+        return self::request('/services/dnsmasq/restart', 'POST', []);
+    }
+
+    public static function getBoosterStatus() {
+        $res = self::request('/vpn/booster/status');
+        return $res['status'] === 200 ? ($res['data']['data'] ?? []) : [];
+    }
+
+    public static function applyBooster($payload) {
+        return self::request('/vpn/booster/apply', 'POST', $payload);
+    }
+
+    public static function stopBooster() {
+        return self::request('/vpn/booster/stop', 'POST', []);
+    }
+
+    // =========================================================================
+    // WIRELESS / WIFI HELPERS (MikroTik Parity)
+    // =========================================================================
+
+    public static function getWifiInterfaces() {
+        $res = self::request('/wifi/interfaces');
+        return $res['status'] === 200 ? ($res['data']['interfaces'] ?? []) : [];
+    }
+
+    public static function scanWifiNetworks($ifname = 'wlan0') {
+        $res = self::request('/wifi/scan?interface=' . urlencode($ifname), 'GET', null, 15);
+        return $res['status'] === 200 ? ($res['data']['networks'] ?? []) : [];
+    }
+
+    public static function getWifiClients($ifname = 'wlan0') {
+        $res = self::request('/wifi/clients?interface=' . urlencode($ifname));
+        return $res['status'] === 200 ? ($res['data']['clients'] ?? []) : [];
+    }
+
+    public static function setWifiMode($ifname, $mode, $extra = []) {
+        $payload = array_merge(['interface' => $ifname, 'mode' => $mode], $extra);
+        return self::request('/wifi/mode', 'POST', $payload);
+    }
+
+    public static function configureWifiAp($payload) {
+        return self::request('/wifi/ap/config', 'POST', $payload);
+    }
+
+    public static function connectWifiClient($ifname, $ssid, $passphrase = '', $country = 'ID') {
+        return self::request('/wifi/client/connect', 'POST', [
+            'interface' => $ifname,
+            'ssid' => $ssid,
+            'passphrase' => $passphrase,
+            'country_code' => $country
+        ]);
+    }
 }
+
 
