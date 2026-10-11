@@ -158,20 +158,17 @@ $tab_array = array(
 				<button type="button" class="mitranet-btn" id="btn-settings" data-toggle="modal" data-target="#modal-winbox-settings" onclick="openWgSettingsModal()" title="WireGuard Service Settings">
 					<i class="fa-solid fa-gear text-primary"></i> Settings
 				</button>
-				<button type="button" class="mitranet-btn" id="btn-enable" disabled onclick="toggleSelectedTunnel(true)" title="Enable Selected Interface">
-					<i class="fa-solid fa-play text-muted"></i> Enable
+				<button type="button" class="mitranet-btn" id="btn-enable" onclick="toggleSelectedTunnel(true)" title="Enable Selected Interface">
+					<i class="fa-solid fa-play text-success"></i> Enable
 				</button>
-				<button type="button" class="mitranet-btn" id="btn-disable" disabled onclick="toggleSelectedTunnel(false)" title="Disable Selected Interface">
-					<i class="fa-solid fa-pause text-muted"></i> Disable
+				<button type="button" class="mitranet-btn" id="btn-disable" onclick="toggleSelectedTunnel(false)" title="Disable Selected Interface">
+					<i class="fa-solid fa-pause text-warning"></i> Disable
 				</button>
-				<button type="button" class="mitranet-btn" id="btn-remove" disabled onclick="removeSelectedTunnel()" title="Remove Selected Interface">
-					<i class="fa-solid fa-xmark text-muted"></i> Remove
+				<button type="button" class="mitranet-btn" id="btn-remove" onclick="removeSelectedTunnel()" title="Remove Selected Interface">
+					<i class="fa-solid fa-xmark text-danger"></i> Remove
 				</button>
-				<button type="button" class="mitranet-btn" id="btn-comment" disabled onclick="commentSelectedTunnel()" title="Set Comment">
-					<i class="fa-regular fa-comment text-muted"></i> Comment
-				</button>
-				<button type="button" class="mitranet-btn" id="btn-edit" disabled onclick="editSelectedTunnel()" title="Edit Selected Interface (atau double-click baris)">
-					<i class="fa-solid fa-pencil text-muted"></i> Edit
+				<button type="button" class="mitranet-btn" id="btn-comment" onclick="commentSelectedTunnel()" title="Set Comment">
+					<i class="fa-regular fa-comment text-primary"></i> Comment
 				</button>
 			</div>
 			<div class="mitranet-toolbar-right">
@@ -779,7 +776,7 @@ function selectTunnelRow(tr, name) {
     selectedTunnelName = name;
     
     var rawJson = $(tr).data('tunnel');
-    if (typeof rawJson === 'object') {
+    if (typeof rawJson === 'object' && rawJson !== null) {
         selectedTunnelData = rawJson;
     } else {
         selectedTunnelData = {
@@ -789,8 +786,8 @@ function selectTunnelRow(tr, name) {
         };
     }
 
-    // Enable toolbar action buttons
-    $('#btn-enable, #btn-disable, #btn-remove, #btn-comment, #btn-edit').prop('disabled', false);
+    // Keep toolbar action buttons active
+    $('#btn-enable, #btn-disable, #btn-remove, #btn-comment').prop('disabled', false);
 }
 
 // Filter Grid
@@ -1189,6 +1186,27 @@ $(document).ready(function() {
         e.preventDefault();
         openNewTunnelModal();
     });
+
+    // Explicit delegation for row click and dblclick
+    $('#wg-grid-table tbody').on('click', 'tr', function(e) {
+        var tName = $(this).data('name');
+        if (tName) {
+            selectTunnelRow(this, tName);
+        }
+    });
+
+    $('#wg-grid-table tbody').on('dblclick', 'tr', function(e) {
+        var tName = $(this).data('name');
+        if (tName) {
+            openEditTunnelModal(tName);
+        }
+    });
+
+    // Auto-select first row if available so buttons have target immediately
+    var firstRow = $('#wg-grid-table tbody tr:first');
+    if (firstRow.length > 0 && firstRow.data('name')) {
+        selectTunnelRow(firstRow[0], firstRow.data('name'));
+    }
 
     setTimeout(pollWgTunnelTelemetry, 2000);
 });
