@@ -34,7 +34,7 @@
 ### 3. ARTEFAK RILIS ISO & MANIFEST
 - **Berkas ISO**: [iso/MitraNet-Rinjani-1.0.2-amd64.iso](file:///c:/mitranet/iso/MitraNet-Rinjani-1.0.2-amd64.iso)
 - **Ukuran File**: `1,017,139,200 bytes` (969.95 MB)
-- **SHA-256 Checksum**: `C0F69F83CB03AA0A37EE496C4A55CF7B2270BDF58281A7B41E63D56F943E9097`
+- **SHA-256 Checksum**: `EA4DB6DEDB21517654988180BE6BA637F3EEC2D9E4F417EEBCAE97FE7778C3BB`
 - **Manifest Rilis**: [RELEASE_MANIFEST.md](file:///c:/mitranet/RELEASE_MANIFEST.md)
 - **Commit Baseline**: `5b6f091`
 - **Status VM Boot Test**: **NOT TESTED** (Hypervisor Hyper-V pada host Windows kekurangan RAM fisik saat alokasi; boot test fisik/eksternal wajib sebelum produksi).

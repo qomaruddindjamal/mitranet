@@ -4531,7 +4531,7 @@ PrivateKey = {priv_key}
                 lines = [
                     f"# status=enabled",
                     f"interface={ifname}",
-                    f"bind-interfaces",
+                    f"bind-dynamic",
                     f"dhcp-range={ifname},{range_start},{range_end},255.255.255.0,{lease_time}",
                 ]
                 if gateway:
