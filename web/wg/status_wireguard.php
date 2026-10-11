@@ -181,9 +181,9 @@ $tab_array = array(
 						</td>
 						<td class="text-center">
 							<?php if ($is_srv): ?>
-								<span class="badge-mode-server"><i class="fa-solid fa-server"></i> Server</span>
+								<span style="color: #0369a1; font-weight: 600; font-size: 11px;">Server</span>
 							<?php else: ?>
-								<span class="badge-mode-client"><i class="fa-solid fa-network-wired"></i> Client</span>
+								<span style="color: #0284c7; font-weight: 600; font-size: 11px;">Client</span>
 							<?php endif; ?>
 						</td>
 						<td class="td-comment"><?=htmlspecialchars($t_desc)?></td>
@@ -194,12 +194,8 @@ $tab_array = array(
 						    onclick="navigator.clipboard.writeText('<?=htmlspecialchars($tun['public_key'] ?? '')?>'); MitraNet.toast('Public key disalin ke clipboard', 'success'); event.stopPropagation();">
 							<?=htmlspecialchars(substr($tun['public_key'] ?? '', 0, 16))?>...
 						</td>
-						<td class="text-center">
-							<span class="badge-peers-count" 
-							      onclick="toggleStatusPeers('<?=htmlspecialchars($t_name, ENT_QUOTES)?>', event)"
-							      title="Klik atau double-click baris untuk melihat peers">
-								<i class="fa-solid fa-users" style="font-size: 9px; margin-right: 3px;"></i> <?=$peer_count?> peer<?=$peer_count === 1 ? '' : 's'?>
-							</span>
+						<td class="text-center" style="cursor: pointer;" onclick="toggleStatusPeers('<?=htmlspecialchars($t_name, ENT_QUOTES)?>', event)" title="Klik untuk expand / collapse peers">
+							<strong style="color: #1e395b; font-size: 11px;"><?=$peer_count?></strong>
 						</td>
 						<td><span class="rx-val" id="tun-rx-<?=htmlspecialchars($t_name)?>" style="font-family: monospace; font-size: 11px; color: #1e395b; font-weight: 600;"><?=$rx_fmt?></span></td>
 						<td><span class="tx-val" id="tun-tx-<?=htmlspecialchars($t_name)?>" style="font-family: monospace; font-size: 11px; color: #1e395b; font-weight: 600;"><?=$tx_fmt?></span></td>
@@ -242,14 +238,14 @@ $tab_array = array(
 								<span style="color: #64748b; font-weight: 600; font-size: 11px;"><i class="fa-solid fa-circle" style="font-size: 7px; vertical-align: middle; margin-right: 3px;"></i> Idle</span>
 							<?php endif; ?>
 						</td>
-						<td class="text-center"><span class="badge-mode-client" style="font-size: 10px; padding: 2px 6px;"><i class="fa-solid fa-network-wired"></i> Peer</span></td>
+						<td class="text-center"><span style="color: #0284c7; font-weight: 600; font-size: 11px;">Peer</span></td>
 						<td class="td-comment text-muted" style="font-size: 10px;">Endpoint: <code id="peer-ep-<?=$safe_pubkey_id?>" style="font-size: 10px;"><?=htmlspecialchars($peer['endpoint'] ?: 'Dynamic')?></code></td>
 						<td><span class="badge" style="background:#e2ecf5; color:#1e395b; font-weight:normal; font-size:10px;"><?=htmlspecialchars($peer['allowed_ips'])?></span></td>
 						<td class="text-center"><span class="text-muted" style="font-size: 10px;"><?=htmlspecialchars($peer['persistent_keepalive'] ?? '25')?>s</span></td>
 						<td class="td-pubkey" title="<?=htmlspecialchars($peer['public_key'])?>">
 							<code><?=htmlspecialchars(substr($peer['public_key'], 0, 16))?>...</code>
 						</td>
-						<td class="text-center"><span class="badge" style="background: #e2e8f0; color: #475569; font-weight: normal; font-size: 9px;">Session</span></td>
+						<td class="text-center"><span class="text-muted" style="font-size: 11px;">-</span></td>
 						<td><span class="peer-rx-val" id="peer-rx-<?=$safe_pubkey_id?>" style="font-family: monospace; font-size: 11px; color: #1e395b; font-weight: 600;"><?=$p_rx_fmt?></span></td>
 						<td><span class="peer-tx-val" id="peer-tx-<?=$safe_pubkey_id?>" style="font-family: monospace; font-size: 11px; color: #1e395b; font-weight: 600;"><?=$p_tx_fmt?></span></td>
 						<td class="text-center col-menu"></td>
