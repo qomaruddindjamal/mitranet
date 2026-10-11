@@ -7,7 +7,17 @@
 
 require_once(__DIR__ . '/../includes/api.inc');
 
-// AJAX Actions: Toggle / Delete Tunnel from Status tab
+// AJAX Actions: client_config, toggle, delete from Status tab
+if (isset($_REQUEST['ajax']) && $_REQUEST['ajax'] === 'client_config') {
+    header('Content-Type: application/json');
+    $tun = trim($_REQUEST['tun'] ?? 'wg0');
+    $peer = trim($_REQUEST['peer'] ?? '');
+    $endpoint = trim($_REQUEST['endpoint'] ?? '');
+    $res = MitraNetApi::getWireGuardClientConfig($tun, $peer, $endpoint);
+    echo json_encode($res['data'] ?? ['success' => false, 'error' => 'API Error']);
+    exit;
+}
+
 if (isset($_REQUEST['ajax']) && $_REQUEST['ajax'] === '1') {
     header('Content-Type: application/json');
     $act = $_REQUEST['act'] ?? '';
@@ -53,9 +63,15 @@ $tab_array = array(
 	<div class="mitranet-window">
 <?php display_top_tabs($tab_array, false, 'tabs'); ?>
 		
-		<!-- TOOLBAR (WINBOX SUB-HEADER: ENABLE, DISABLE, REMOVE, REFRESH) -->
+		<!-- TOOLBAR (WINBOX SUB-HEADER: QR, ROS, ENABLE, DISABLE, REMOVE, REFRESH) -->
 		<div class="mitranet-toolbar">
 			<div class="mitranet-toolbar-left">
+				<button type="button" class="mitranet-btn" id="btn-status-qr" disabled onclick="showSelectedStatusQR()" title="View QR Code &amp; Config">
+					<i class="fa-solid fa-qrcode text-muted"></i> QR
+				</button>
+				<button type="button" class="mitranet-btn" id="btn-status-ros" disabled onclick="showSelectedStatusROS()" title="Generate MikroTik ROS v7 Command">
+					<i class="fa-solid fa-terminal text-muted"></i> ROS
+				</button>
 				<button type="button" class="mitranet-btn" id="btn-status-enable" disabled onclick="toggleSelectedStatusTunnel(true)" title="Enable Selected Interface">
 					<i class="fa-solid fa-play text-muted"></i> Enable
 				</button>
@@ -192,7 +208,15 @@ $tab_array = array(
 										$p_tx_fmt = $p_tx > 1048576 ? number_format($p_tx / 1048576, 2) . ' MiB' : number_format($p_tx / 1024, 2) . ' KiB';
 										$has_hs = !empty($peer['latest_handshake']) && intval($peer['latest_handshake']) > 0;
 									?>
-										<tr>
+										<tr class="status-peer-item-row"
+										    style="cursor: pointer;"
+										    data-pubkey="<?=htmlspecialchars($peer['public_key'])?>"
+										    data-tun="<?=htmlspecialchars($t_name)?>"
+										    data-name="<?=htmlspecialchars($peer['description'] ?? 'Peer')?>"
+										    data-endpoint="<?=htmlspecialchars($peer['endpoint'] ?? '')?>"
+										    data-allowed="<?=htmlspecialchars($peer['allowed_ips'] ?? '')?>"
+										    data-keepalive="<?=htmlspecialchars($peer['persistent_keepalive'] ?? '25')?>"
+										    onclick="selectStatusPeerRow(this, event)">
 											<td><strong><?=htmlspecialchars($peer['description'] ?? 'Peer')?></strong></td>
 											<td class="pubkey" title="<?=htmlspecialchars($peer['public_key'])?>">
 												<code><?=htmlspecialchars(substr($peer['public_key'], 0, 16))?>...</code>
@@ -237,17 +261,216 @@ $tab_array = array(
 	</div><!-- /.mitranet-window -->
 </div><!-- /.mitranet-page-container -->
 
+<!-- Modal QR Code & Client Configuration -->
+<div class="modal fade" id="qrModal" tabindex="-1" role="dialog" aria-labelledby="qrModalLabel">
+  <div class="modal-dialog modal-md" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="qrModalLabel"><i class="fa-solid fa-qrcode"></i> WireGuard Client Configuration &amp; QR Code</h4>
+      </div>
+      <div class="modal-body">
+        <div id="qrLoading" class="text-center p-20">
+            <i class="fa-solid fa-spinner fa-spin fa-3x text-primary"></i>
+            <p style="margin-top: 10px;">Generating client configuration and QR code...</p>
+        </div>
+
+        <div id="qrContent" class="d-none">
+            <div class="row">
+                <div class="col-sm-6 text-center" style="margin-bottom: 15px;">
+                    <div id="qrSvgContainer" style="background: white; padding: 10px; display: inline-block; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                    <p class="text-muted" style="font-size: 11px; margin-top: 6px;">
+                        <i class="fa-solid fa-mobile-screen"></i> Scan menggunakan aplikasi WireGuard (iOS / Android)
+                    </p>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label style="font-size: 12px; font-weight: 600;">Server Endpoint (IP / Host Publik)</label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control" id="qrEndpointInput" placeholder="e.g. 103.93.162.168 or vpn.domain.com" />
+                            <span class="input-group-btn">
+                                <button class="btn btn-default" type="button" id="btnUpdateEndpoint" title="Update QR Endpoint"><i class="fa-solid fa-rotate"></i></button>
+                            </span>
+                        </div>
+                        <span class="help-block text-muted" style="font-size: 11px;">Ubah jika router berada di balik NAT publik atau DDNS.</span>
+                    </div>
+
+                    <div id="privateKeyWarning" class="alert alert-warning d-none" style="font-size: 11px; padding: 6px 10px;">
+                        <i class="fa-solid fa-triangle-exclamation"></i> <strong>Perhatian:</strong> Private key client tidak tersimpan di router. Masukkan private key pada konfigurasi di bawah jika diperlukan.
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 10px;">
+                <label style="font-size: 12px; font-weight: 600;">File Konfigurasi Client (<code>wg-client.conf</code>):</label>
+                <textarea class="form-control" id="qrConfigText" rows="7" style="font-family: monospace; font-size: 11px; background: #222; color: #a6e22e; resize: vertical;" readonly></textarea>
+            </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default btn-sm" id="btnCopyConfig"><i class="fa-solid fa-copy"></i> Copy Config</button>
+        <button type="button" class="btn btn-primary btn-sm" id="btnDownloadConfig"><i class="fa-solid fa-download"></i> Download .conf</button>
+        <button type="button" class="btn btn-default btn-sm" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 var selectedStatusTunnelName = null;
+var selectedStatusPeerData = null;
 
-// Row Selection Handler
+// Tunnel Row Selection Handler
 function selectStatusRow(tr, name) {
     $('#status-grid-table tbody tr.status-tunnel-row').removeClass('selected');
+    $('#status-grid-table tbody tr.status-peer-item-row').removeClass('selected-peer-row');
     $(tr).addClass('selected');
     selectedStatusTunnelName = name;
 
     // Enable toolbar action buttons
     $('#btn-status-enable, #btn-status-disable, #btn-status-remove').prop('disabled', false);
+
+    // Cek apakah tunnel memiliki peer baris pertama
+    var firstPeerTr = $('#status-grid-table tbody tr[data-parent="' + name + '"] tr.status-peer-item-row:first');
+    if (firstPeerTr.length > 0) {
+        selectedStatusPeerData = {
+            pubkey: firstPeerTr.data('pubkey'),
+            tun: firstPeerTr.data('tun'),
+            name: firstPeerTr.data('name'),
+            endpoint: firstPeerTr.data('endpoint'),
+            allowed: firstPeerTr.data('allowed'),
+            keepalive: firstPeerTr.data('keepalive')
+        };
+        $('#btn-status-qr, #btn-status-ros').prop('disabled', false);
+    } else {
+        selectedStatusPeerData = null;
+        $('#btn-status-qr, #btn-status-ros').prop('disabled', true);
+    }
+}
+
+// Peer Row Selection Handler in Nested Table
+function selectStatusPeerRow(tr, e) {
+    if (e) e.stopPropagation();
+    $('#status-grid-table tbody tr.status-peer-item-row').removeClass('selected-peer-row');
+    $(tr).addClass('selected-peer-row');
+
+    selectedStatusPeerData = {
+        pubkey: $(tr).data('pubkey'),
+        tun: $(tr).data('tun'),
+        name: $(tr).data('name'),
+        endpoint: $(tr).data('endpoint'),
+        allowed: $(tr).data('allowed'),
+        keepalive: $(tr).data('keepalive')
+    };
+
+    selectedStatusTunnelName = selectedStatusPeerData.tun;
+    $('#status-grid-table tbody tr.status-tunnel-row').removeClass('selected');
+    $('#status-grid-table tbody tr.status-tunnel-row[data-name="' + selectedStatusTunnelName + '"]').addClass('selected');
+
+    $('#btn-status-enable, #btn-status-disable, #btn-status-remove, #btn-status-qr, #btn-status-ros').prop('disabled', false);
+}
+
+// Show QR Modal for Selected Peer
+function showSelectedStatusQR() {
+    if (!selectedStatusPeerData) {
+        MitraNet.toast('Pilih peer terlebih dahulu', 'warning');
+        return;
+    }
+    loadStatusPeerQR(selectedStatusPeerData.pubkey, selectedStatusPeerData.tun, selectedStatusPeerData.name, '');
+}
+
+function loadStatusPeerQR(peerKey, tunName, descr, customEndpoint) {
+    $('#qrModalLabel').html('<i class="fa-solid fa-qrcode"></i> Client Config: ' + descr);
+    $('#qrLoading').removeClass('d-none');
+    $('#qrContent').addClass('d-none');
+    $('#qrModal').modal('show');
+
+    var url = 'status_wireguard.php?ajax=client_config&tun=' + encodeURIComponent(tunName) + '&peer=' + encodeURIComponent(peerKey);
+    if (customEndpoint) {
+        url += '&endpoint=' + encodeURIComponent(customEndpoint);
+    }
+
+    $.getJSON(url, function(data) {
+        $('#qrLoading').addClass('d-none');
+        if (data && data.success) {
+            $('#qrContent').removeClass('d-none');
+            $('#qrSvgContainer').html(data.qr_svg);
+            $('#qrEndpointInput').val(data.server_endpoint || '');
+            $('#qrConfigText').val(data.config_text || '');
+
+            if (!data.client_private_key) {
+                $('#privateKeyWarning').removeClass('d-none');
+            } else {
+                $('#privateKeyWarning').addClass('d-none');
+            }
+        } else {
+            alert('Gagal memuat konfigurasi client: ' + (data.error || 'Unknown error'));
+            $('#qrModal').modal('hide');
+        }
+    }).fail(function() {
+        $('#qrLoading').addClass('d-none');
+        alert('Terjadi kesalahan jaringan saat memuat konfigurasi.');
+        $('#qrModal').modal('hide');
+    });
+}
+
+$('#btnUpdateEndpoint').click(function() {
+    if (!selectedStatusPeerData) return;
+    var ep = $('#qrEndpointInput').val().trim();
+    loadStatusPeerQR(selectedStatusPeerData.pubkey, selectedStatusPeerData.tun, selectedStatusPeerData.name, ep);
+});
+
+$('#btnCopyConfig').click(function() {
+    var text = $('#qrConfigText').val();
+    navigator.clipboard.writeText(text).then(function() {
+        MitraNet.toast('Konfigurasi berhasil disalin ke clipboard', 'success');
+    });
+});
+
+$('#btnDownloadConfig').click(function() {
+    var text = $('#qrConfigText').val();
+    var blob = new Blob([text], {type: "text/plain;charset=utf-8"});
+    var link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = (selectedStatusPeerData ? selectedStatusPeerData.name.replace(/[^a-zA-Z0-9_-]/g, '_') : 'wg-client') + ".conf";
+    link.click();
+});
+
+// Show ROS MikroTik v7 Command
+function showSelectedStatusROS() {
+    if (!selectedStatusPeerData) {
+        MitraNet.toast('Pilih peer terlebih dahulu', 'warning');
+        return;
+    }
+    var p = selectedStatusPeerData;
+    var rosCmd = '/interface wireguard peers add interface=' + p.tun + ' public-key="' + p.pubkey + '" allowed-address=' + (p.allowed || '0.0.0.0/0');
+    if (p.endpoint && p.endpoint !== '(none)' && p.endpoint !== 'Dynamic') {
+        var epParts = p.endpoint.split(':');
+        rosCmd += ' endpoint-address=' + epParts[0];
+        if (epParts[1]) rosCmd += ' endpoint-port=' + epParts[1];
+    }
+    if (p.keepalive && parseInt(p.keepalive) > 0) {
+        rosCmd += ' persistent-keepalive=' + p.keepalive + 's';
+    }
+    rosCmd += ' comment="' + p.name.replace(/"/g, '') + '"';
+
+    Swal.fire({
+        title: '<i class="fa-solid fa-terminal"></i> MikroTik RouterOS v7 Command',
+        html: '<p class="text-left text-muted small">Jalankan perintah ini di Terminal MikroTik untuk menambahkan peer:</p>' +
+              '<textarea id="swalRosCmd" class="form-control" rows="4" style="font-family: monospace; font-size: 12px; background: #222; color: #a6e22e; resize: vertical;" readonly>' + rosCmd + '</textarea>',
+        showCancelButton: true,
+        confirmButtonText: '<i class="fa-solid fa-copy"></i> Copy Command',
+        cancelButtonText: 'Tutup',
+        preConfirm: function() {
+            var copyText = document.getElementById('swalRosCmd').value;
+            navigator.clipboard.writeText(copyText);
+        }
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            MitraNet.toast('Perintah MikroTik berhasil disalin ke clipboard', 'success');
+        }
+    });
 }
 
 // Filter Status Table
@@ -321,5 +544,12 @@ function removeSelectedStatusTunnel() {
     });
 }
 </script>
+
+<style>
+.selected-peer-row td {
+    background-color: #dbeafe !important;
+    color: #1e3a8a !important;
+}
+</style>
 
 <?php include(__DIR__ . '/../includes/foot.inc'); ?>
