@@ -52,11 +52,25 @@ require_once(__DIR__ . '/../includes/head.inc');
 
 $wg = MitraNetApi::getWireGuard();
 $is_running = !empty($wg['running']);
-$tunnels = $wg['tunnels'] ?? [];
-
+// Filter tunnels to only UP interfaces and peers to only Connected peers
+$raw_tunnels = $wg['tunnels'] ?? [];
+$tunnels = [];
 $total_peers = 0;
-foreach ($tunnels as $t) {
-    $total_peers += count($t['peers'] ?? []);
+
+foreach ($raw_tunnels as $tun) {
+    if (empty($tun['enabled'])) {
+        continue;
+    }
+    // Filter peers to only those with successful handshake (Connected)
+    $active_peers = [];
+    foreach ($tun['peers'] ?? [] as $peer) {
+        if (!empty($peer['latest_handshake']) && intval($peer['latest_handshake']) > 0) {
+            $active_peers[] = $peer;
+        }
+    }
+    $tun['peers'] = $active_peers;
+    $total_peers += count($active_peers);
+    $tunnels[] = $tun;
 }
 
 $tab_array = array(
@@ -160,9 +174,9 @@ $tab_array = array(
 						</td>
 						<td class="text-center">
 							<?php if ($is_up): ?>
-								<span class="badge-status-up"><i class="fa-solid fa-circle-check"></i> UP</span>
+								<span style="color: #15803d; font-weight: 600; font-size: 11px;"><i class="fa-solid fa-circle" style="font-size: 7px; vertical-align: middle; margin-right: 3px;"></i> UP</span>
 							<?php else: ?>
-								<span class="badge-status-down"><i class="fa-solid fa-circle-stop"></i> DOWN</span>
+								<span style="color: #64748b; font-weight: 600; font-size: 11px;"><i class="fa-solid fa-circle" style="font-size: 7px; vertical-align: middle; margin-right: 3px;"></i> DOWN</span>
 							<?php endif; ?>
 						</td>
 						<td class="text-center">
@@ -223,9 +237,9 @@ $tab_array = array(
 						</td>
 						<td class="text-center" id="peer-hs-<?=$safe_pubkey_id?>">
 							<?php if ($has_hs): ?>
-								<span class="badge-status-up" style="font-size: 10px; padding: 2px 6px;"><i class="fa-solid fa-circle-check"></i> Connected</span>
+								<span style="color: #15803d; font-weight: 600; font-size: 11px;"><i class="fa-solid fa-circle" style="font-size: 7px; vertical-align: middle; margin-right: 3px;"></i> Connected</span>
 							<?php else: ?>
-								<span class="badge-status-down" style="font-size: 10px; padding: 2px 6px;"><i class="fa-regular fa-clock"></i> Idle / Never</span>
+								<span style="color: #64748b; font-weight: 600; font-size: 11px;"><i class="fa-solid fa-circle" style="font-size: 7px; vertical-align: middle; margin-right: 3px;"></i> Idle</span>
 							<?php endif; ?>
 						</td>
 						<td class="text-center"><span class="badge-mode-client" style="font-size: 10px; padding: 2px 6px;"><i class="fa-solid fa-network-wired"></i> Peer</span></td>
@@ -252,11 +266,11 @@ $tab_array = array(
 		<!-- STATUSBAR -->
 		<div class="mitranet-statusbar">
 			<div>
-				<span><strong>Interfaces:</strong> <?=count($tunnels)?> active</span> &nbsp;|&nbsp;
-				<span><strong>Total Peers:</strong> <?=$total_peers?> registered</span>
+				<span><strong>Interfaces (UP):</strong> <?=count($tunnels)?> active</span> &nbsp;|&nbsp;
+				<span><strong>Connected Peers:</strong> <?=$total_peers?> active</span>
 			</div>
 			<div>
-				<span class="text-muted">WireGuard Subsystem Driver Active</span>
+				<span class="text-muted"><i class="fa-solid fa-circle" style="color: #22c55e; font-size: 8px;"></i> Showing only UP interfaces &amp; Connected peers</span>
 			</div>
 		</div>
 
@@ -592,9 +606,9 @@ function pollWireGuardTelemetry() {
 
                     var hs = parseInt(peer.latest_handshake) || 0;
                     if (hs > 0) {
-                        $('#peer-hs-' + safeId).html('<span class="badge-status-up" style="font-size: 10px; padding: 2px 6px;"><i class="fa-solid fa-circle-check"></i> Connected</span>');
+                        $('#peer-hs-' + safeId).html('<span style="color: #15803d; font-weight: 600; font-size: 11px;"><i class="fa-solid fa-circle" style="font-size: 7px; vertical-align: middle; margin-right: 3px;"></i> Connected</span>');
                     } else {
-                        $('#peer-hs-' + safeId).html('<span class="badge-status-down" style="font-size: 10px; padding: 2px 6px;"><i class="fa-regular fa-clock"></i> Idle / Never</span>');
+                        $('#peer-hs-' + safeId).html('<span style="color: #64748b; font-weight: 600; font-size: 11px;"><i class="fa-solid fa-circle" style="font-size: 7px; vertical-align: middle; margin-right: 3px;"></i> Idle</span>');
                     }
                 });
             }
