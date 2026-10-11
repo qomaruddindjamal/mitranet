@@ -140,14 +140,26 @@ $tab_array = array(
 					    data-comment="<?=htmlspecialchars($t_desc)?>"
 					    onclick="selectStatusRow(this, '<?=htmlspecialchars($t_name, ENT_QUOTES)?>')"
 					    ondblclick="document.location='/wg/vpn_wg_tunnels.php';">
-						<td class="text-center col-flag-cell">
+						<td class="text-center col-flag-cell" style="cursor: pointer;" onclick="toggleStatusPeers('<?=htmlspecialchars($t_name, ENT_QUOTES)?>', event)" title="<?=$peer_count > 0 ? 'Klik untuk melihat / menyembunyikan detail peers' : 'Status Interface'?>">
 							<?php if ($is_up): ?>
 								<i class="fa-solid fa-check text-success" title="Running / Link UP"></i>
 							<?php else: ?>
 								<i class="fa-solid fa-minus text-muted" title="Disabled"></i>
 							<?php endif; ?>
 						</td>
-						<td><strong><code><?=htmlspecialchars($t_name)?></code></strong></td>
+						<td>
+							<?php if ($peer_count > 0): ?>
+								<button type="button" class="btn btn-xs btn-link p-0 text-muted btn-toggle-peers" 
+								        style="font-size: 11px; margin-right: 4px; text-decoration: none;"
+								        onclick="toggleStatusPeers('<?=htmlspecialchars($t_name, ENT_QUOTES)?>', event)" 
+								        title="Expand / Collapse Peers">
+									<i class="fa-solid fa-chevron-right" id="chevron-<?=htmlspecialchars($t_name)?>"></i>
+								</button>
+							<?php else: ?>
+								<span style="display: inline-block; width: 14px;"></span>
+							<?php endif; ?>
+							<strong><code><?=htmlspecialchars($t_name)?></code></strong>
+						</td>
 						<td>
 							<?php if ($is_up): ?>
 								<span class="label label-success"><i class="fa-solid fa-circle-check"></i> UP</span>
@@ -171,16 +183,21 @@ $tab_array = array(
 							<?=htmlspecialchars(substr($tun['public_key'] ?? '', 0, 16))?>...
 						</td>
 						<td>
-							<span class="badge" style="background:#2b476c; font-weight:normal;"><?=$peer_count?> peer<?=$peer_count === 1 ? '' : 's'?></span>
+							<span class="badge" 
+							      style="background:#2b476c; font-weight:normal; cursor: pointer;"
+							      onclick="toggleStatusPeers('<?=htmlspecialchars($t_name, ENT_QUOTES)?>', event)"
+							      title="Klik untuk melihat / menyembunyikan detail peers">
+								<i class="fa-solid fa-users" style="font-size: 9px; margin-right: 2px;"></i> <?=$peer_count?> peer<?=$peer_count === 1 ? '' : 's'?>
+							</span>
 						</td>
 						<td><span class="label label-info"><?=$rx_fmt?></span></td>
 						<td><span class="label label-info"><?=$tx_fmt?></span></td>
 						<td class="text-center col-menu"></td>
 					</tr>
 
-					<!-- NESTED PEERS SUB-TABLE (CLEAN & MINIMALIST) -->
+					<!-- NESTED PEERS SUB-TABLE (ACCORDION / COLLAPSIBLE) -->
 					<?php if (!empty($tun['peers'])): ?>
-					<tr class="status-peers-row" data-parent="<?=htmlspecialchars($t_name)?>">
+					<tr class="status-peers-row" id="peers-row-<?=htmlspecialchars($t_name)?>" data-parent="<?=htmlspecialchars($t_name)?>" style="display: none;">
 						<td colspan="12" style="background: #fdfefe; padding: 6px 15px 10px 38px; border-top: none; border-bottom: 2px solid #adc5dd;">
 							<div style="background: #ffffff; border: 1px solid #d1dfed; border-radius: 4px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
 								<div style="background: #eef5fb; padding: 4px 8px; font-size: 11px; font-weight: 700; color: #1e395b; border-bottom: 1px solid #d1dfed; display:flex; justify-content:space-between; align-items:center;">
@@ -320,6 +337,22 @@ $tab_array = array(
 <script>
 var selectedStatusTunnelName = null;
 var selectedStatusPeerData = null;
+
+// Toggle Peers Sub-Table (Accordion)
+function toggleStatusPeers(tunName, e) {
+    if (e) e.stopPropagation();
+    var peerRow = $('#peers-row-' + tunName);
+    var chevron = $('#chevron-' + tunName);
+    if (peerRow.length === 0) return;
+
+    if (peerRow.is(':visible')) {
+        peerRow.hide();
+        chevron.removeClass('fa-chevron-down').addClass('fa-chevron-right');
+    } else {
+        peerRow.show();
+        chevron.removeClass('fa-chevron-right').addClass('fa-chevron-down');
+    }
+}
 
 // Tunnel Row Selection Handler
 function selectStatusRow(tr, name) {
