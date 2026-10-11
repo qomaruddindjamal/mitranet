@@ -4035,6 +4035,102 @@ PrivateKey = {priv_key}
                 self._send_json(404, {"error": "Tunnel config not found"})
             return
 
+        if path == "/api/v1/wireguard/peer/toggle":
+            tun = str(payload.get("tunnel") or "wg0").strip()
+            pubkey = str(payload.get("public_key") or "").strip()
+            enable = bool(payload.get("enable", True))
+            if not pubkey:
+                self._send_json(400, {"error": "Public key required"})
+                return
+
+            conf_path = f"/etc/wireguard/{tun}.conf"
+            if os.path.exists(conf_path):
+                try:
+                    with open(conf_path, "r", encoding="utf-8", errors="ignore") as cf:
+                        content = cf.read()
+                    parts = content.split("[Peer]")
+                    interface_part = parts[0]
+                    peer_parts = parts[1:]
+
+                    modified_peers = []
+                    for p in peer_parts:
+                        if pubkey in p:
+                            lines = p.splitlines()
+                            new_lines = []
+                            has_disabled_flag = any(ln.strip().startswith("# Disabled:") for ln in lines)
+                            for ln in lines:
+                                if ln.strip().startswith("# Disabled:"):
+                                    new_lines.append(f"# Disabled: {'true' if not enable else 'false'}")
+                                else:
+                                    new_lines.append(ln)
+                            if not has_disabled_flag:
+                                new_lines.insert(1, f"# Disabled: {'true' if not enable else 'false'}")
+                            modified_peers.append("[Peer]\n" + "\n".join(new_lines).strip())
+                        else:
+                            modified_peers.append("[Peer]" + p)
+
+                    new_file_content = interface_part.strip() + "\n\n" + "\n\n".join(p.strip() for p in modified_peers if p.strip()) + "\n"
+                    with open(conf_path, "w", encoding="utf-8") as cf:
+                        cf.write(new_file_content)
+
+                    import subprocess
+                    if not enable:
+                        subprocess.run(["wg", "set", tun, "peer", pubkey, "remove"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    subprocess.run(["systemctl", "restart", f"wg-quick@{tun}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                    self._send_json(200, {"success": True, "message": f"Peer {'enabled' if enable else 'disabled'} successfully"})
+                except Exception as e:
+                    self._send_json(500, {"error": f"Failed toggling peer: {e}"})
+            else:
+                self._send_json(404, {"error": "Tunnel config not found"})
+            return
+
+        if path == "/api/v1/wireguard/peer/comment":
+            tun = str(payload.get("tunnel") or "wg0").strip()
+            pubkey = str(payload.get("public_key") or "").strip()
+            comment = str(payload.get("comment") or "").strip()
+            if not pubkey:
+                self._send_json(400, {"error": "Public key required"})
+                return
+
+            conf_path = f"/etc/wireguard/{tun}.conf"
+            if os.path.exists(conf_path):
+                try:
+                    with open(conf_path, "r", encoding="utf-8", errors="ignore") as cf:
+                        content = cf.read()
+                    parts = content.split("[Peer]")
+                    interface_part = parts[0]
+                    peer_parts = parts[1:]
+
+                    modified_peers = []
+                    for p in peer_parts:
+                        if pubkey in p:
+                            lines = p.splitlines()
+                            new_lines = []
+                            has_desc = False
+                            for ln in lines:
+                                if ln.strip().startswith("# Description:"):
+                                    new_lines.append(f"# Description: {comment}")
+                                    has_desc = True
+                                else:
+                                    new_lines.append(ln)
+                            if not has_desc:
+                                new_lines.insert(1, f"# Description: {comment}")
+                            modified_peers.append("[Peer]\n" + "\n".join(new_lines).strip())
+                        else:
+                            modified_peers.append("[Peer]" + p)
+
+                    new_file_content = interface_part.strip() + "\n\n" + "\n\n".join(p.strip() for p in modified_peers if p.strip()) + "\n"
+                    with open(conf_path, "w", encoding="utf-8") as cf:
+                        cf.write(new_file_content)
+
+                    self._send_json(200, {"success": True, "message": "Peer comment updated successfully"})
+                except Exception as e:
+                    self._send_json(500, {"error": f"Failed updating peer comment: {e}"})
+            else:
+                self._send_json(404, {"error": "Tunnel config not found"})
+            return
+
         # Master KVM Subsystem Toggle (Enable/Disable Service)
         if path == "/api/v1/services/kvm/toggle":
             enabled = bool(payload.get("enabled", False))

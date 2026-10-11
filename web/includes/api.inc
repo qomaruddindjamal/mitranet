@@ -367,6 +367,22 @@ class MitraNetApi {
         ]);
     }
 
+    public static function toggleWireGuardPeer($tunnel, $pubkey, $enable = true) {
+        return self::request('/wireguard/peer/toggle', 'POST', [
+            'tunnel' => $tunnel,
+            'public_key' => $pubkey,
+            'enable' => $enable
+        ]);
+    }
+
+    public static function commentWireGuardPeer($tunnel, $pubkey, $comment) {
+        return self::request('/wireguard/peer/comment', 'POST', [
+            'tunnel' => $tunnel,
+            'public_key' => $pubkey,
+            'comment' => $comment
+        ]);
+    }
+
     public static function getWireGuardClientConfig($tunnel, $pubkey, $endpoint = '') {
         $url = '/wireguard/client-config?tunnel=' . urlencode($tunnel) . '&peer=' . urlencode($pubkey);
         if ($endpoint) {

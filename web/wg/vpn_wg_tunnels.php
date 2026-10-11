@@ -119,12 +119,11 @@ $tab_array = array(
 						<th>Listen Port</th>
 						<th>Public Key</th>
 						<th>Peers</th>
-						<th class="text-center col-menu">Actions</th>
 					</tr>
 				</thead>
 				<tbody>
 				<?php if (empty($tunnels)): ?>
-					<tr><td colspan="9" class="text-center text-muted p-20">Belum ada tunnel WireGuard yang dikonfigurasi. Klik tombol "New" di toolbar untuk membuat.</td></tr>
+					<tr><td colspan="8" class="text-center text-muted p-20">Belum ada tunnel WireGuard yang dikonfigurasi. Klik tombol "New" di toolbar untuk membuat.</td></tr>
 				<?php else: ?>
 					<?php foreach ($tunnels as $tun): ?>
 					<?php 
@@ -136,7 +135,8 @@ $tab_array = array(
 					<tr data-name="<?=htmlspecialchars($tname)?>"
 					    data-enabled="<?=$tun_up ? '1' : '0'?>"
 					    data-comment="<?=htmlspecialchars($desc)?>"
-					    onclick="selectTunnelRow(this, '<?=htmlspecialchars($tname, ENT_QUOTES)?>')">
+					    onclick="selectTunnelRow(this, '<?=htmlspecialchars($tname, ENT_QUOTES)?>')"
+					    ondblclick="document.location='/wg/vpn_wg_tunnels_edit.php?tun=<?=urlencode($tname)?>';">
 						<td><strong><code><?=htmlspecialchars($tname)?></code></strong></td>
 						<td>
 							<?php if ($tun_up): ?>
@@ -161,13 +161,6 @@ $tab_array = array(
 							<?=htmlspecialchars(substr($tun['public_key'], 0, 16))?>...
 						</td>
 						<td><span class="badge"><?=count($tun['peers'] ?? [])?></span></td>
-						<td class="text-center" onclick="event.stopPropagation();">
-							<a class="btn btn-xs btn-success" href="/wg/vpn_wg_peers_edit.php?tun=<?=urlencode($tname)?>" title="Add Peer to <?=htmlspecialchars($tname)?>"><i class="fa-solid fa-user-plus"></i></a>
-							<a class="btn btn-xs btn-primary" href="/wg/vpn_wg_tunnels_edit.php?tun=<?=urlencode($tname)?>" title="Edit Tunnel"><i class="fa-solid fa-pencil"></i></a>
-							<a class="btn btn-xs btn-danger" href="javascript:void(0);"
-							   onclick="confirmDeleteTunnel('<?=htmlspecialchars($tname, ENT_QUOTES)?>');"
-							   title="Delete Tunnel"><i class="fa-solid fa-trash-can"></i></a>
-						</td>
 					</tr>
 					<?php endforeach; ?>
 				<?php endif; ?>
