@@ -12,9 +12,19 @@ import hashlib
 import binascii
 from typing import Optional, Dict, Any
 
+import logging
+
+logger = logging.getLogger("mitranet.auth")
+
 AUTH_FILE = "/etc/mitranet/secrets/webui_users.json"
 DEFAULT_USER = "admin"
-DEFAULT_PASS = "mitranet"
+
+_env_secret = os.environ.get("MITRANET_API_SECRET")
+if _env_secret:
+    DEFAULT_PASS = _env_secret
+else:
+    DEFAULT_PASS = secrets.token_hex(32)
+    logger.warning("MITRANET_API_SECRET not set - API tokens are ephemeral")
 
 
 class AuthManager:

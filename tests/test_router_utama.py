@@ -1,6 +1,15 @@
+import os as _os, sys as _sys
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while not _os.path.exists(_os.path.join(_d, "mitranet_secrets.py")):
+    _p = _os.path.dirname(_d)
+    if _p == _d: break
+    _d = _p
+_sys.path.insert(0, _d)
+from mitranet_secrets import MINIPC_PASS, VM_PASS
+
 import paramiko
 
-passwords = ['K0323205', 'mitranet', 'admin', 'citramedia', '']
+passwords = [VM_PASS, MINIPC_PASS, 'admin', 'citramedia', '']
 users = ['admin', 'citramedia', 'root']
 
 print("=== TESTING ACCESS TO MIKROTIK UTAMA (10.10.66.1) ===")

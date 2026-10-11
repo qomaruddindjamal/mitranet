@@ -6,7 +6,7 @@ while not _os.path.exists(_os.path.join(_d, "mitranet_secrets.py")):
     if _p == _d: break
     _d = _p
 _sys.path.insert(0, _d)
-from mitranet_secrets import LAB_HOST, LAB_PASS, LAB_USER
+from mitranet_secrets import LAB_HOST, LAB_PASS, LAB_USER, VM_PASS
 
 import paramiko
 
@@ -16,8 +16,8 @@ def check():
     c.connect(LAB_HOST, username=LAB_USER, password=LAB_PASS)
     
     # Test reading guest aaPanel credentials from host VM
-    cmd = """
-sshpass -p 'K0323205' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 root@192.168.101.118 "
+    cmd = f"""
+sshpass -p '{VM_PASS}' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 root@192.168.101.118 "
 cat /www/server/panel/default.pl; echo '===';
 cat /www/server/panel/data/admin_path.pl; echo '===';
 cat /www/server/panel/data/port.pl; echo '===';

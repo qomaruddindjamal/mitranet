@@ -1,3 +1,12 @@
+import os as _os, sys as _sys
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while not _os.path.exists(_os.path.join(_d, "mitranet_secrets.py")):
+    _p = _os.path.dirname(_d)
+    if _p == _d: break
+    _d = _p
+_sys.path.insert(0, _d)
+from mitranet_secrets import MINIPC_HOST, MINIPC_PASS, MINIPC_USER, VPS_HOST, VPS_PASS, VPS_USER
+
 import paramiko
 import time
 import json
@@ -7,9 +16,9 @@ VPS_HOST = VPS_HOST
 VPS_USER = VPS_USER
 VPS_PASS = VPS_PASS
 
-MINI_HOST = '10.10.66.228'
-MINI_USER = 'root'
-MINI_PASS = 'mitranet'
+MINI_HOST = MINIPC_HOST
+MINI_USER = MINIPC_USER
+MINI_PASS = MINIPC_PASS
 
 def run_vps(ssh, cmd):
     stdin, stdout, stderr = ssh.exec_command(cmd)

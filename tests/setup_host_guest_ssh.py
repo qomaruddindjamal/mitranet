@@ -6,7 +6,7 @@ while not _os.path.exists(_os.path.join(_d, "mitranet_secrets.py")):
     if _p == _d: break
     _d = _p
 _sys.path.insert(0, _d)
-from mitranet_secrets import LAB_HOST, LAB_PASS, LAB_USER
+from mitranet_secrets import LAB_HOST, LAB_PASS, LAB_USER, VM_PASS
 
 import paramiko
 
@@ -27,7 +27,7 @@ which sshpass || apt-get install -y sshpass
     print("KEYGEN:\n" + stdout.read().decode())
 
     # Copy key to guest
-    stdin, stdout, stderr = c.exec_command("sshpass -p 'K0323205' ssh-copy-id -o StrictHostKeyChecking=no root@192.168.101.118")
+    stdin, stdout, stderr = c.exec_command(f"sshpass -p '{VM_PASS}' ssh-copy-id -o StrictHostKeyChecking=no root@192.168.101.118")
     print("SSH COPY ID:\n" + stdout.read().decode() + "\n" + stderr.read().decode())
 
     # Now test direct ssh
