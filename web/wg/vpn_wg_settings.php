@@ -5,6 +5,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
+$badge_title = "WireGuard";
 $pgtitle = array("VPN", "WireGuard", "Settings");
 $pglinks = array("", "/wg/vpn_wg_tunnels.php", "@self");
 $selected_menu = "wireguard";
@@ -18,9 +19,12 @@ $tab_array = array(
     array("Settings", true, "/wg/vpn_wg_settings.php"),
     array("Status", false, "/wg/status_wireguard.php")
 );
-display_top_tabs($tab_array, false, 'pills');
 ?>
 
+<div class="container-fluid mitranet-page-container">
+	<div class="mitranet-window">
+<?php display_top_tabs($tab_array, false, 'tabs'); ?>
+		<div class="mitranet-window-body">
 <div class="panel panel-default">
 	<div class="panel-heading"><h2 class="panel-title">WireGuard Subsystem Configuration</h2></div>
 	<div class="panel-body">
@@ -57,5 +61,8 @@ display_top_tabs($tab_array, false, 'pills');
 		</form>
 	</div>
 </div>
+		</div><!-- /.mitranet-window-body -->
+	</div><!-- /.mitranet-window -->
+</div><!-- /.mitranet-page-container -->
 
 <?php require_once(__DIR__ . '/../includes/foot.inc'); ?>

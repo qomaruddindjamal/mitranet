@@ -28,6 +28,7 @@ $wg = MitraNetApi::getWireGuard();
 $is_running = !empty($wg['running']);
 $tunnels = $wg['tunnels'] ?? [];
 
+$badge_title = "WireGuard";
 $pgtitle = array("VPN", "WireGuard", "Tunnels");
 $pglinks = array("", "/wg/vpn_wg_tunnels.php", "@self");
 $selected_menu = "wireguard";
@@ -116,8 +117,8 @@ $tab_array = array(
 						<td class="text-center">
 							<a class="btn btn-xs btn-success" href="/wg/vpn_wg_peers_edit.php?tun=<?=urlencode($tname)?>" title="Add Peer to <?=htmlspecialchars($tname)?>"><i class="fa-solid fa-user-plus"></i></a>
 							<a class="btn btn-xs btn-primary" href="/wg/vpn_wg_tunnels_edit.php?tun=<?=urlencode($tname)?>" title="Edit Tunnel"><i class="fa-solid fa-pencil"></i></a>
-							<a class="btn btn-xs btn-danger" href="?act=delete&amp;tun=<?=urlencode($tname)?>"
-							   onclick="return confirm('Hapus tunnel <?=htmlspecialchars($tname)?> beserta seluruh konfigurasinya?');"
+							<a class="btn btn-xs btn-danger" href="javascript:void(0);"
+							   onclick="confirmDeleteTunnel('<?=htmlspecialchars($tname, ENT_QUOTES)?>');"
 							   title="Delete Tunnel"><i class="fa-solid fa-trash-can"></i></a>
 						</td>
 					</tr>
@@ -153,6 +154,17 @@ function filterWgGrid(val) {
             $(this).show();
         } else {
             $(this).hide();
+        }
+    });
+}
+
+function confirmDeleteTunnel(tunnelName) {
+    MitraNet.confirmDelete(
+        'Hapus WireGuard Tunnel?',
+        'Seluruh konfigurasi interface ' + tunnelName + ' dan peers yang terasosiasi akan dihapus secara permanen.'
+    ).then(function(result) {
+        if (result.isConfirmed) {
+            window.location.href = '?act=delete&tun=' + encodeURIComponent(tunnelName);
         }
     });
 }

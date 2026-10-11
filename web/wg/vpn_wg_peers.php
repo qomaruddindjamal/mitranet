@@ -68,6 +68,7 @@ foreach ($tunnels as $t) {
     }
 }
 
+$badge_title = "WireGuard";
 $pgtitle = array("VPN", "WireGuard", "Peers");
 $pglinks = array("", "/wg/vpn_wg_peers.php", "@self");
 $selected_menu = "wireguard";
@@ -173,8 +174,8 @@ $tab_array = array(
 						</button>
 						<a class="btn btn-xs btn-default" href="/wg/vpn_wg_peers_edit.php?peer=<?=$pubkey_url?>&amp;tun=<?=urlencode($p['tunnel_name'] ?? 'wg0')?>" title="Edit Peer"><i class="fa-solid fa-pencil"></i></a>
 						<a class="btn btn-xs btn-danger"
-						   href="?act=delete&amp;peer=<?=$pubkey_url?>&amp;tun=<?=htmlspecialchars(urlencode($p['tunnel_name'] ?? 'wg0'))?>"
-						   onclick="return confirm('Hapus peer WireGuard ini?\n\n<?=htmlspecialchars(substr($p['public_key'],0,32))?>...');"
+						   href="javascript:void(0);"
+						   onclick="confirmDeletePeer('<?=htmlspecialchars($pubkey_url, ENT_QUOTES)?>', '<?=htmlspecialchars($p['tunnel_name'] ?? 'wg0', ENT_QUOTES)?>', '<?=htmlspecialchars(substr($p['public_key'],0,24), ENT_QUOTES)?>...');"
 						   title="Delete Peer"><i class="fa-solid fa-trash-can"></i></a>
 					</td>
 				</tr>
@@ -379,9 +380,20 @@ $(document).ready(function() {
             });
         } else {
             prompt('Salin perintah MikroTik RouterOS v7 berikut:', rosCmd);
-        }
     });
 });
+
+function confirmDeletePeer(pubkey, tun, keySnippet) {
+    MitraNet.confirmDelete(
+        'Hapus WireGuard Peer?',
+        'Peer dengan public key ' + keySnippet + ' pada tunnel ' + tun + ' akan dihapus secara permanen.'
+    ).then(function(result) {
+        if (result.isConfirmed) {
+            window.location.href = '?act=delete&peer=' + encodeURIComponent(pubkey) + '&tun=' + encodeURIComponent(tun);
+        }
+    });
+}
+</script>
 		</div><!-- /.mitranet-window-body -->
 	</div><!-- /.mitranet-window -->
 </div><!-- /.mitranet-page-container -->

@@ -82,6 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['act']) && $_POST['act
     }
 }
 
+$badge_title = "WireGuard";
 $pgtitle = array("VPN", "WireGuard", "Tunnels", $is_edit ? "Edit Tunnel" : "Add Tunnel");
 $pglinks = array("", "/wg/vpn_wg_tunnels.php", "/wg/vpn_wg_tunnels.php", "@self");
 $selected_menu = "wireguard";
@@ -93,8 +94,13 @@ $tab_array = array(
     array("Settings", false, "/wg/vpn_wg_settings.php"),
     array("Status", false, "/wg/status_wireguard.php")
 );
-display_top_tabs($tab_array, false, 'pills');
+?>
 
+<div class="container-fluid mitranet-page-container">
+	<div class="mitranet-window">
+<?php display_top_tabs($tab_array, false, 'tabs'); ?>
+		<div class="mitranet-window-body">
+<?php
 // Fetch available local interfaces for policy routing
 $all_interfaces = MitraNetApi::getInterfaces();
 $candidate_ifaces = [];
@@ -302,12 +308,16 @@ $(document).ready(function() {
             if (res && res.success) {
                 $('#privatekey').val(res.private_key);
                 $('#publickey').val(res.public_key);
+                MitraNet.toast('Sepasang kunci WireGuard berhasil dibuat!', 'success');
             } else {
-                alert('Gagal menghasilkan kunci WireGuard.');
+                MitraNet.toast('Gagal menghasilkan kunci WireGuard.', 'error');
             }
         });
     });
 });
 </script>
+		</div><!-- /.mitranet-window-body -->
+	</div><!-- /.mitranet-window -->
+</div><!-- /.mitranet-page-container -->
 
 <?php include(__DIR__ . '/../includes/foot.inc'); ?>

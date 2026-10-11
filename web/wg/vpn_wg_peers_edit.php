@@ -97,6 +97,7 @@ if (!empty($current_peer['endpoint']) && $current_peer['endpoint'] !== '(none)' 
 }
 $is_dynamic = empty($ep_host);
 
+$badge_title = "WireGuard";
 $pgtitle = array("VPN", "WireGuard", "Peers", $is_edit ? "Edit Peer" : "Add Peer");
 $pglinks = array("", "/wg/vpn_wg_tunnels.php", "/wg/vpn_wg_peers.php", "@self");
 $selected_menu = "wireguard";
@@ -108,8 +109,12 @@ $tab_array = array(
     array("Settings", false, "/wg/vpn_wg_settings.php"),
     array("Status", false, "/wg/status_wireguard.php")
 );
-display_top_tabs($tab_array, false, 'pills');
 ?>
+
+<div class="container-fluid mitranet-page-container">
+	<div class="mitranet-window">
+<?php display_top_tabs($tab_array, false, 'tabs'); ?>
+		<div class="mitranet-window-body">
 
 <?php if ($err_msg): ?>
     <div class="alert alert-danger"><i class="fa-solid fa-triangle-exclamation"></i> <?=htmlspecialchars($err_msg)?></div>
@@ -294,12 +299,16 @@ $(document).ready(function() {
                 $('#publickey').val(res.public_key);
                 $('#dynamic').prop('checked', true);
                 toggleEndpoint();
+                MitraNet.toast('Sepasang kunci client berhasil dibuat!', 'success');
             } else {
-                alert('Gagal menghasilkan kunci client.');
+                MitraNet.toast('Gagal menghasilkan kunci client.', 'error');
             }
         });
     });
 });
 </script>
+		</div><!-- /.mitranet-window-body -->
+	</div><!-- /.mitranet-window -->
+</div><!-- /.mitranet-page-container -->
 
 <?php include(__DIR__ . '/../includes/foot.inc'); ?>

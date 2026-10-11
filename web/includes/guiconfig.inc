@@ -38,13 +38,14 @@ function display_top_tabs(&$tab_array, $no_drop_down = false, $type = 'tabs', $u
         return;
     }
 
-    global $pgtitle, $selected_menu;
+    global $pgtitle, $selected_menu, $badge_title;
 
-    $badge_title = "";
-    if (isset($pgtitle) && is_array($pgtitle)) {
-        $badge_title = end($pgtitle);
-    } elseif (isset($pgtitle) && is_string($pgtitle)) {
-        $badge_title = $pgtitle;
+    if (empty($badge_title)) {
+        if (isset($pgtitle) && is_array($pgtitle)) {
+            $badge_title = end($pgtitle);
+        } elseif (isset($pgtitle) && is_string($pgtitle)) {
+            $badge_title = $pgtitle;
+        }
     }
 
     $icon_map = [
@@ -52,6 +53,8 @@ function display_top_tabs(&$tab_array, $no_drop_down = false, $type = 'tabs', $u
         'firewall'   => 'fa-shield-halved',
         'services'   => 'fa-cubes',
         'vpn'        => 'fa-key',
+        'wireguard'  => 'fa-circle-nodes',
+        'xray'       => 'fa-bolt',
         'status'     => 'fa-chart-line',
         'system'     => 'fa-gears',
         'diagnostics'=> 'fa-toolbox',
