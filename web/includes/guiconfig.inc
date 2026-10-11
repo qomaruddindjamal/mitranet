@@ -70,14 +70,14 @@ function display_top_tabs(&$tab_array, $no_drop_down = false, $type = 'tabs', $u
         echo '</div>';
     }
 
-    echo '<ul class="mitranet-tabs nav nav-' . htmlspecialchars($type) . '">';
+    echo '<ul class="mitranet-tabs">';
     foreach ($tab_array as $ta) {
         $title = $ta[0];
         $active = !empty($ta[1]);
         $url = $ta[2];
         $target = isset($ta[3]) ? $ta[3] : '';
 
-        echo '<li role="presentation"' . ($active ? ' class="active"' : '') . '>';
+        echo '<li' . ($active ? ' class="active"' : '') . '>';
         echo '<a href="' . htmlspecialchars($url) . '"' . ($target ? ' target="' . htmlspecialchars($target) . '"' : '') . ' ' . $usepost . '>';
         echo $title;
         echo '</a></li>';

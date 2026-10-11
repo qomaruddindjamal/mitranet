@@ -74,22 +74,22 @@ $tab_array = array(
 		<div class="mitranet-toolbar">
 			<div class="mitranet-toolbar-left">
 				<a href="/wg/vpn_wg_tunnels_edit.php" class="mitranet-btn" id="btn-new" title="Add New Tunnel">
-					<i class="fa-regular fa-square-plus text-primary"></i> <strong>New</strong>
+					<i class="fa-regular fa-square-plus"></i> New
 				</a>
-				<button type="button" class="mitranet-btn" id="btn-edit" disabled onclick="editSelectedTunnel()" title="Edit Selected Tunnel">
-					<i class="fa-solid fa-pencil text-muted"></i> Edit
-				</button>
 				<button type="button" class="mitranet-btn" id="btn-enable" disabled onclick="toggleSelectedTunnel(true)" title="Enable Selected Tunnel">
-					<i class="fa-solid fa-play text-success"></i> Enable
+					<i class="fa-solid fa-play text-muted"></i> Enable
 				</button>
 				<button type="button" class="mitranet-btn" id="btn-disable" disabled onclick="toggleSelectedTunnel(false)" title="Disable Selected Tunnel">
-					<i class="fa-solid fa-pause text-warning"></i> Disable
+					<i class="fa-solid fa-pause text-muted"></i> Disable
 				</button>
 				<button type="button" class="mitranet-btn" id="btn-remove" disabled onclick="removeSelectedTunnel()" title="Remove Selected Tunnel">
-					<i class="fa-solid fa-xmark text-danger"></i> Remove
+					<i class="fa-solid fa-xmark text-muted"></i> Remove
 				</button>
 				<button type="button" class="mitranet-btn" id="btn-comment" disabled onclick="commentSelectedTunnel()" title="Set Comment">
 					<i class="fa-regular fa-comment text-muted"></i> Comment
+				</button>
+				<button type="button" class="mitranet-btn" id="btn-edit" disabled onclick="editSelectedTunnel()" title="Edit Selected Tunnel (atau double-click baris)">
+					<i class="fa-solid fa-pencil text-muted"></i> Edit
 				</button>
 			</div>
 			<div class="mitranet-toolbar-right">
