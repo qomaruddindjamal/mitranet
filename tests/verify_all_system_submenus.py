@@ -1,3 +1,12 @@
+import os as _os, sys as _sys
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while not _os.path.exists(_os.path.join(_d, "mitranet_secrets.py")):
+    _p = _os.path.dirname(_d)
+    if _p == _d: break
+    _d = _p
+_sys.path.insert(0, _d)
+from mitranet_secrets import WEBUI_PASS, WEBUI_USER
+
 import requests
 import re
 import urllib3
@@ -11,8 +20,8 @@ base = 'http://192.168.56.101:8443'
 # 1. Login to MitraNet WebUI
 print("--- 1. Authenticating to MitraNet WebUI ---")
 r_login = s.post(f"{base}/login.php", data={
-    'username': 'admin',
-    'password': 'mitranet'
+    'username': WEBUI_USER,
+    'password': WEBUI_PASS
 }, allow_redirects=True)
 assert r_login.status_code == 200
 print(f"Logged in. Status: {r_login.status_code}")

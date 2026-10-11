@@ -1,3 +1,12 @@
+import os as _os, sys as _sys
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while not _os.path.exists(_os.path.join(_d, "mitranet_secrets.py")):
+    _p = _os.path.dirname(_d)
+    if _p == _d: break
+    _d = _p
+_sys.path.insert(0, _d)
+from mitranet_secrets import WEBUI_PASS, WEBUI_USER
+
 import requests
 import json
 import re
@@ -6,8 +15,8 @@ session = requests.Session()
 
 # 1. Login to WebUI via login.php
 login_resp = session.post("http://192.168.56.101:8443/login.php", data={
-    "username": "admin",
-    "password": "mitranet"
+    "username": WEBUI_USER,
+    "password": WEBUI_PASS
 }, allow_redirects=True)
 print("Login status:", login_resp.status_code)
 

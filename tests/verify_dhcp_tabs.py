@@ -6,7 +6,7 @@ while not _os.path.exists(_os.path.join(_d, "mitranet_secrets.py")):
     if _p == _d: break
     _d = _p
 _sys.path.insert(0, _d)
-from mitranet_secrets import LAB_HOST, LAB_PASS, LAB_USER
+from mitranet_secrets import LAB_HOST, LAB_PASS, LAB_USER, WEBUI_PASS, WEBUI_USER
 
 import paramiko
 
@@ -16,8 +16,8 @@ ssh.connect(LAB_HOST, port=22, username=LAB_USER, password=LAB_PASS)
 
 php_script = """<?php
 require_once '/mitranet/web/includes/api.inc';
-$logged_in = MitraNetApi::login('admin', 'mitranet');
-
+$logged_in = MitraNetApi::login('__WEBUI_USER__', '__WEBUI_PASS__');
+""".replace('__WEBUI_USER__', WEBUI_USER).replace('__WEBUI_PASS__', WEBUI_PASS) + """
 $all_interfaces = MitraNetApi::getInterfaces();
 $all_bridges = MitraNetApi::getBridges();
 $all_vethernets = MitraNetApi::getVethernets();

@@ -12,19 +12,15 @@ case "$1" in
         chmod 700 /etc/mitranet/secrets
 
         # =====================================================================
-        # 2. Sync WebUI files from /usr/share/mitranet/web to /var/www/mitranet
-        #    Ensures ALL PHP pages are present in the active web root on install
+        # 2. Ensure WebUI permissions on canonical /usr/share/mitranet/web
         # =====================================================================
-        WEB_SRC="/usr/share/mitranet/web"
-        WEB_DST="/var/www/mitranet"
-        if [ -d "$WEB_SRC" ]; then
-            mkdir -p "$WEB_DST"
-            cp -a "$WEB_SRC/." "$WEB_DST/"
+        WEB_DIR="/usr/share/mitranet/web"
+        if [ -d "$WEB_DIR" ]; then
             if id -u www-data > /dev/null 2>&1; then
-                chown -R www-data:www-data "$WEB_DST" 2>/dev/null || true
+                chown -R www-data:www-data "$WEB_DIR" 2>/dev/null || true
             fi
-            chmod -R 644 "$WEB_DST" 2>/dev/null || true
-            find "$WEB_DST" -type d -exec chmod 755 {} + 2>/dev/null || true
+            chmod -R 644 "$WEB_DIR" 2>/dev/null || true
+            find "$WEB_DIR" -type d -exec chmod 755 {} + 2>/dev/null || true
         fi
 
         # =====================================================================

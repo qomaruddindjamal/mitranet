@@ -41,11 +41,10 @@ The ISO image (`build/MitraNet-Rinjani-1.0.2-amd64.iso`) embeds the repository d
 The offline repository pool (`/repository/pool/main/m/`) contains:
 
 1. **Native MitraNet Packages (Debian 13 Trixie Architecture: all):**
-   - `mitranet-core_1.0.2-1~deb13u1_all.deb`
-   - `mitranet-config-engine_1.0.2-1~deb13u1_all.deb`
-   - `mitranet-config-engine_1.0.2-2~deb13u1_all.deb` (Upgrade validation artifact)
-   - `mitranet-network-engine_1.0.2-1~deb13u1_all.deb`
-   - `mitranet-gateway-monitor_1.0.2-1~deb13u1_all.deb`
+   - `mitranet-core_1.0.2-3~deb13u1_all.deb`
+   - `mitranet-config-engine_1.0.2-3~deb13u1_all.deb`
+   - `mitranet-network-engine_1.0.2-3~deb13u1_all.deb`
+   - `mitranet-gateway-monitor_1.0.2-3~deb13u1_all.deb`
 
 2. **Offline Runtime Dependencies:**
    - `fping_5.1-1_amd64.deb`
