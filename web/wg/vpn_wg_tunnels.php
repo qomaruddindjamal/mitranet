@@ -39,25 +39,11 @@ $tab_array = array(
     array("Settings", false, "/wg/vpn_wg_settings.php"),
     array("Status", false, "/wg/status_wireguard.php")
 );
-display_top_tabs($tab_array, false, 'pills');
 ?>
-
-<?php if ($savemsg): ?>
-<div class="alert alert-success clearfix" role="alert">
-	<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-	<div class="pull-left"><i class="fa-solid fa-check"></i> <?=htmlspecialchars($savemsg)?></div>
-</div>
-<?php endif; ?>
-
-<?php if ($err_msg): ?>
-<div class="alert alert-danger clearfix" role="alert">
-	<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-	<div class="pull-left"><i class="fa-solid fa-triangle-exclamation"></i> <?=htmlspecialchars($err_msg)?></div>
-</div>
-<?php endif; ?>
 
 <div class="container-fluid mitranet-page-container">
 	<div class="mitranet-window">
+<?php display_top_tabs($tab_array, false, 'tabs'); ?>
 		<!-- TOOLBAR -->
 		<div class="mitranet-toolbar">
 			<div class="mitranet-toolbar-left">

@@ -236,6 +236,16 @@ body {
 }
 </style>
 
+<div class="mitranet-header mb-10">
+    <div class="mitranet-title-badge">
+        <i class="fa-solid fa-terminal"></i> Terminal
+        <i class="fa-solid fa-caret-down"></i>
+    </div>
+    <ul class="mitranet-tabs">
+        <li class="active"><a href="/terminal/terminal.php">Console Shell</a></li>
+    </ul>
+</div>
+
 <div class="terminal-container" id="terminal-container">
     <!-- Slim Modern Console Bar -->
     <div class="terminal-header-bar">

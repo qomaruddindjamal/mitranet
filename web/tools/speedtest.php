@@ -90,8 +90,13 @@ $tab_array = array(
     array("Internet Speedtest", $active_tab === 'speedtest', "/tools/speedtest.php?tab=speedtest"),
     array("Hardware & Bandwidth Benchmark", $active_tab === 'benchmark', "/tools/speedtest.php?tab=benchmark")
 );
-display_top_tabs($tab_array, false, 'pills');
+?>
 
+<div class="container-fluid mitranet-page-container">
+	<div class="mitranet-window">
+<?php display_top_tabs($tab_array, false, 'tabs'); ?>
+		<div class="mitranet-window-body">
+<?php
 $ifaces = MitraNetApi::getInterfaces();
 ?>
 
@@ -1187,3 +1192,9 @@ $(document).ready(function() {
     }
 });
 </script>
+
+        </div><!-- /.mitranet-window-body -->
+    </div><!-- /.mitranet-window -->
+</div><!-- /.mitranet-page-container -->
+
+<?php require_once(__DIR__ . '/../includes/foot.inc'); ?>

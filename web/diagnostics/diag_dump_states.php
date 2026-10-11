@@ -33,9 +33,15 @@ if (is_array($conntrack)
 
 $tab_array = array();
 $tab_array[] = array(gettext("States"), true, "diag_dump_states.php");
-$tab_array[] = array(gettext("Reset States"), false, "diag_dump_states.php#reset");
-display_top_tabs($tab_array);
+?>
 
+<div class="container-fluid mitranet-page-container">
+	<div class="mitranet-window">
+<?php
+display_top_tabs($tab_array);
+?>
+		<div class="mitranet-window-body">
+<?php
 if ($is_error) {
 	print_info_box(gettext("Unable to retrieve connection tracking state table from MitraNet API."), "danger");
 }
@@ -79,5 +85,8 @@ if ($is_error) {
 		<?=gettext("Refresh")?>
 	</a>
 </nav>
+		</div><!-- /.mitranet-window-body -->
+	</div><!-- /.mitranet-window -->
+</div><!-- /.mitranet-page-container -->
 
 <?php require_once(__DIR__ . '/../includes/foot.inc'); ?>

@@ -39,10 +39,12 @@ $tab_array = array(
     array("Traffic & QoS", ($tab === 'traffic'), "/vOlt/vOlt.php?tab=traffic"),
     array("Settings", ($tab === 'settings'), "/vOlt/vOlt.php?tab=settings")
 );
-display_top_tabs($tab_array, false, 'pills');
 ?>
 
-<div class="panel panel-default">
+<div class="container-fluid mitranet-page-container">
+	<div class="mitranet-window">
+<?php display_top_tabs($tab_array, false, 'tabs'); ?>
+		<div class="mitranet-window-body">
     <div class="panel-heading">
         <h2 class="panel-title">
             <i class="fa-solid fa-network-wired"></i>
@@ -118,5 +120,8 @@ display_top_tabs($tab_array, false, 'pills');
         <?php endif; ?>
     </div>
 </div>
+		</div><!-- /.mitranet-window-body -->
+	</div><!-- /.mitranet-window -->
+</div><!-- /.mitranet-page-container -->
 
 <?php require_once(__DIR__ . '/../includes/foot.inc'); ?>

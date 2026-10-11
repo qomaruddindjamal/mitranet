@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /*
  * vpn_xray.php - MitraNet Xray-core Management & Status
  * Adapted from pfSense vpn_xray.php
@@ -49,15 +49,18 @@ $xray_ver = $xray['version'] ?? 'Xray 1.8.24 (go1.23.0 linux/amd64)';
 $cfg = $xray['config'] ?? [];
 
 $tab_array = array(
-    array("Status & Service", ($tab === 'status'), "/vpn_xray.php?tab=status"),
-    array("Inbounds & Protocols", ($tab === 'inbounds'), "/vpn_xray.php?tab=inbounds"),
-    array("Outbounds & Routing", ($tab === 'routing'), "/vpn_xray.php?tab=routing"),
-    array("Client Links & QR", ($tab === 'clients'), "/vpn_xray.php?tab=clients"),
-    array("Config Editor & Tools", ($tab === 'config'), "/vpn_xray.php?tab=config"),
-    array("Logs", ($tab === 'logs'), "/vpn_xray.php?tab=logs")
+    array("Status & Service", ($tab === 'status'), "/xray/xray.php?tab=status"),
+    array("Inbounds & Protocols", ($tab === 'inbounds'), "/xray/xray.php?tab=inbounds"),
+    array("Outbounds & Routing", ($tab === 'routing'), "/xray/xray.php?tab=routing"),
+    array("Client Links & QR", ($tab === 'clients'), "/xray/xray.php?tab=clients"),
+    array("Config Editor & Tools", ($tab === 'config'), "/xray/xray.php?tab=config"),
 );
-display_top_tabs($tab_array, false, 'pills');
 ?>
+
+<div class="container-fluid mitranet-page-container">
+	<div class="mitranet-window">
+<?php display_top_tabs($tab_array, false, 'tabs'); ?>
+		<div class="mitranet-window-body">
 
 <?php if ($savemsg): ?>
 <div class="alert alert-success clearfix" role="alert">
@@ -221,5 +224,8 @@ display_top_tabs($tab_array, false, 'pills');
 	</div>
 </div>
 <?php endif; ?>
+		</div><!-- /.mitranet-window-body -->
+	</div><!-- /.mitranet-window -->
+</div><!-- /.mitranet-page-container -->
 
 <?php require_once(__DIR__ . '/../includes/foot.inc'); ?>
