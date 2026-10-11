@@ -118,12 +118,14 @@ $tab_array = array(
 						<th>Interface Address</th>
 						<th>Listen Port</th>
 						<th>Public Key</th>
-						<th>Peers</th>
+						<th>Rx</th>
+						<th>Tx</th>
+						<th style="width: 24px; text-align: center;"><i class="fa-solid fa-bars text-muted"></i></th>
 					</tr>
 				</thead>
 				<tbody>
 				<?php if (empty($tunnels)): ?>
-					<tr><td colspan="8" class="text-center text-muted p-20">Belum ada tunnel WireGuard yang dikonfigurasi. Klik tombol "New" di toolbar untuk membuat.</td></tr>
+					<tr><td colspan="10" class="text-center text-muted p-20">Belum ada tunnel WireGuard yang dikonfigurasi. Klik tombol "New" di toolbar untuk membuat.</td></tr>
 				<?php else: ?>
 					<?php foreach ($tunnels as $tun): ?>
 					<?php 
@@ -131,6 +133,11 @@ $tab_array = array(
 						$is_srv = empty($tun['mode']) || $tun['mode'] === 'server';
 						$tun_up = !empty($tun['enabled']);
 						$desc = $tun['description'] ?? 'WireGuard Tunnel';
+						
+						$rx_bytes = floatval($tun['transfer_rx'] ?? 0);
+						$tx_bytes = floatval($tun['transfer_tx'] ?? 0);
+						$rx_fmt = $rx_bytes > 1048576 ? number_format($rx_bytes / 1048576, 2) . ' MiB' : ($rx_bytes > 0 ? number_format($rx_bytes / 1024, 2) . ' KiB' : '0 B');
+						$tx_fmt = $tx_bytes > 1048576 ? number_format($tx_bytes / 1048576, 2) . ' MiB' : ($tx_bytes > 0 ? number_format($tx_bytes / 1024, 2) . ' KiB' : '0 B');
 					?>
 					<tr data-name="<?=htmlspecialchars($tname)?>"
 					    data-enabled="<?=$tun_up ? '1' : '0'?>"
@@ -160,7 +167,9 @@ $tab_array = array(
 						    onclick="navigator.clipboard.writeText('<?=htmlspecialchars($tun['public_key'])?>'); MitraNet.toast('Public key disalin ke clipboard', 'success'); event.stopPropagation();">
 							<?=htmlspecialchars(substr($tun['public_key'], 0, 16))?>...
 						</td>
-						<td><span class="badge"><?=count($tun['peers'] ?? [])?></span></td>
+						<td><span class="label label-info"><?=$rx_fmt?></span></td>
+						<td><span class="label label-info"><?=$tx_fmt?></span></td>
+						<td style="text-align: center;"><i class="fa-solid fa-bars text-muted" style="cursor: pointer;" title="Double-click untuk edit"></i></td>
 					</tr>
 					<?php endforeach; ?>
 				<?php endif; ?>
