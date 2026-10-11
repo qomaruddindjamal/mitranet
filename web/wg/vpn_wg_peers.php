@@ -155,17 +155,17 @@ $tab_array = array(
 				<thead>
 					<tr>
 						<th class="text-center col-flag" style="width: 28px;"><i class="fa-regular fa-flag text-muted"></i></th>
-						<th>Name <i class="fa-solid fa-caret-up"></i></th>
-						<th>Interface</th>
-						<th>Public Key</th>
-						<th>Endpoint</th>
-						<th>Endpoint Port</th>
-						<th>Allowed Address</th>
-						<th>Persistent Keepalive</th>
-						<th>Current Endpoint</th>
-						<th>Current Endpoint Port</th>
-						<th>Rx</th>
-						<th>Tx</th>
+						<th style="font-size: 12px; font-weight: 600;">Peer / Secret</th>
+						<th style="font-size: 12px; font-weight: 600;">Interface</th>
+						<th style="font-size: 12px; font-weight: 600;">Public Key</th>
+						<th style="font-size: 12px; font-weight: 600;">Endpoint</th>
+						<th class="text-center" style="font-size: 12px; font-weight: 600;">Endpoint Port</th>
+						<th style="font-size: 12px; font-weight: 600;">Allowed Address</th>
+						<th class="text-center" style="font-size: 12px; font-weight: 600;">Persistent Keepalive</th>
+						<th style="font-size: 12px; font-weight: 600;">Current Endpoint</th>
+						<th class="text-center" style="font-size: 12px; font-weight: 600;">Current Endpoint Port</th>
+						<th style="font-size: 12px; font-weight: 600; width: 110px;">Rx</th>
+						<th style="font-size: 12px; font-weight: 600; width: 110px;">Tx</th>
 						<th class="text-center col-menu" style="width: 24px;"><i class="fa-solid fa-bars text-muted"></i></th>
 					</tr>
 				</thead>
@@ -200,11 +200,12 @@ $tab_array = array(
 					    data-endpoint="<?=htmlspecialchars($ep)?>"
 					    data-keepalive="<?=htmlspecialchars($p['persistent_keepalive'] ?? '25')?>"
 					    onclick="selectPeerRow(this)"
-					    ondblclick="document.location='/wg/vpn_wg_peers_edit.php?peer=<?=$pubkey_url?>&amp;tun=<?=urlencode($tun_name)?>';">
+					    ondblclick="document.location='/wg/vpn_wg_peers_edit.php?peer=<?=$pubkey_url?>&amp;tun=<?=urlencode($tun_name)?>';"
+					    style="font-size: 12px;">
 						<td class="text-center col-flag-cell"><i class="fa-regular fa-flag text-muted"></i></td>
 						<td><strong><?=htmlspecialchars($desc)?></strong></td>
 						<td><code><?=htmlspecialchars($tun_name)?></code></td>
-						<td class="td-pubkey"
+						<td class="td-pubkey" style="font-size: 12px;"
 						    title="Klik untuk salin: <?=htmlspecialchars($pubkey)?>"
 						    onclick="navigator.clipboard.writeText('<?=htmlspecialchars($pubkey)?>'); MitraNet.toast('Public key disalin ke clipboard', 'success'); event.stopPropagation();">
 							<?=htmlspecialchars(substr($pubkey, 0, 16))?>...
@@ -215,8 +216,8 @@ $tab_array = array(
 						<td><?=htmlspecialchars($keepalive)?></td>
 						<td><?=htmlspecialchars($ep_host)?></td>
 						<td><?=htmlspecialchars($ep_port)?></td>
-						<td><span class="label label-info"><?=$rx_fmt?></span></td>
-						<td><span class="label label-info"><?=$tx_fmt?></span></td>
+						<td class="col-rx" data-bytes="<?=$rx_bytes?>" title="Total Received: <?=$rx_fmt?>"><span style="font-family: monospace; font-size: 12px; color: #1e395b; font-weight: 600;"><?=$rx_fmt?></span></td>
+						<td class="col-tx" data-bytes="<?=$tx_bytes?>" title="Total Sent: <?=$tx_fmt?>"><span style="font-family: monospace; font-size: 12px; color: #1e395b; font-weight: 600;"><?=$tx_fmt?></span></td>
 						<td class="text-center col-menu"></td>
 					</tr>
 					<?php endforeach; ?>

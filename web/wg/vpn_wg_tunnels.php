@@ -78,6 +78,17 @@ if (isset($_REQUEST['ajax']) && $_REQUEST['ajax'] === '1') {
         exit;
     }
 
+    if ($act === 'saveschedule') {
+        $sched_enable = !empty($_POST['sched_enabled']);
+        $sched_cron = trim($_POST['sched_cron'] ?? '0 4 * * *');
+        $sched_tun = trim($_POST['sched_tun'] ?? 'wg0');
+        $sched_desc = trim($_POST['sched_desc'] ?? 'Auto Restart WireGuard');
+
+        $res = MitraNetApi::saveWireGuardSchedule($sched_enable, $sched_cron, $sched_tun, $sched_desc);
+        echo json_encode($res['data'] ?? ['success' => false, 'error' => 'API error']);
+        exit;
+    }
+
     if ($act === 'delete') {
         $res = MitraNetApi::deleteWireGuardTunnel($tun);
         echo json_encode($res['data'] ?? ['success' => false, 'error' => 'API error']);
@@ -100,6 +111,11 @@ if (isset($_REQUEST['act']) && $_REQUEST['act'] === 'delete') {
 }
 
 $wg = MitraNetApi::getWireGuard();
+$sched = MitraNetApi::getWireGuardSchedule();
+$sched_enabled = !empty($sched['enabled']);
+$sched_cron_val = $sched['cron'] ?? '0 4 * * *';
+$sched_tun_val = $sched['tunnel'] ?? 'wg0';
+$sched_desc_val = $sched['description'] ?? 'Daily at 04:00 AM';
 $is_running = !empty($wg['running']);
 $tunnels = $wg['tunnels'] ?? [];
 
@@ -175,15 +191,15 @@ $tab_array = array(
 				<thead>
 					<tr>
 						<th class="text-center col-flag" style="width: 28px;"><i class="fa-regular fa-flag text-muted"></i></th>
-						<th>Name <i class="fa-solid fa-caret-up"></i></th>
-						<th>Status</th>
-						<th>Mode</th>
-						<th>Description</th>
-						<th>Interface Address</th>
-						<th>Listen Port</th>
-						<th>Public Key</th>
-						<th>Rx</th>
-						<th>Tx</th>
+						<th style="font-size: 12px; font-weight: 600;">WireGuard</th>
+						<th class="text-center" style="font-size: 12px; font-weight: 600; width: 90px;">Status</th>
+						<th class="text-center" style="font-size: 12px; font-weight: 600; width: 95px;">Mode</th>
+						<th style="font-size: 12px; font-weight: 600;">Description</th>
+						<th style="font-size: 12px; font-weight: 600; width: 130px;">Interface Address</th>
+						<th class="text-center" style="font-size: 12px; font-weight: 600; width: 85px;">Listen Port</th>
+						<th style="font-size: 12px; font-weight: 600;">Public Key</th>
+						<th style="font-size: 12px; font-weight: 600; width: 110px;">Rx</th>
+						<th style="font-size: 12px; font-weight: 600; width: 110px;">Tx</th>
 						<th class="text-center col-menu" style="width: 24px;"><i class="fa-solid fa-bars text-muted"></i></th>
 					</tr>
 				</thead>
@@ -209,7 +225,8 @@ $tab_array = array(
 					    data-comment="<?=htmlspecialchars($desc)?>"
 					    data-tunnel="<?=$tun_json?>"
 					    onclick="selectTunnelRow(this, '<?=htmlspecialchars($tname, ENT_QUOTES)?>')"
-					    ondblclick="openEditTunnelModal('<?=htmlspecialchars($tname, ENT_QUOTES)?>');">
+					    ondblclick="openEditTunnelModal('<?=htmlspecialchars($tname, ENT_QUOTES)?>');"
+					    style="font-size: 12px;">
 						<!-- Flag Icon Like Interfaces -->
 						<td class="text-center col-flag-cell">
 							<?php if ($tun_up): ?>
@@ -219,30 +236,30 @@ $tab_array = array(
 							<?php endif; ?>
 						</td>
 						<td><strong><code><?=htmlspecialchars($tname)?></code></strong></td>
-						<td>
+						<td class="text-center">
 							<?php if ($tun_up): ?>
-								<span class="label label-success"><i class="fa-solid fa-circle-check"></i> UP</span>
+								<span style="color: #15803d; font-weight: 600; font-size: 12px;"><i class="fa-solid fa-circle" style="font-size: 8px; vertical-align: middle; margin-right: 4px;"></i> UP</span>
 							<?php else: ?>
-								<span class="label label-default"><i class="fa-solid fa-circle-stop"></i> DOWN</span>
+								<span style="color: #64748b; font-weight: 600; font-size: 12px;"><i class="fa-solid fa-circle" style="font-size: 8px; vertical-align: middle; margin-right: 4px;"></i> DOWN</span>
 							<?php endif; ?>
 						</td>
-						<td>
+						<td class="text-center">
 							<?php if ($is_srv): ?>
-								<span class="label label-primary"><i class="fa-solid fa-server"></i> Server</span>
+								<span style="color: #0369a1; font-weight: 600; font-size: 12px;">Server</span>
 							<?php else: ?>
-								<span class="label label-info"><i class="fa-solid fa-network-wired"></i> Client Uplink</span>
+								<span style="color: #0284c7; font-weight: 600; font-size: 12px;">Client Uplink</span>
 							<?php endif; ?>
 						</td>
-						<td class="td-comment"><?=htmlspecialchars($desc)?></td>
-						<td><code><?=htmlspecialchars($tun['address'] ?: '—')?></code></td>
-						<td><?=htmlspecialchars($tun['listen_port'] ?? '51820')?></td>
-						<td class="td-pubkey"
+						<td class="td-comment" style="font-size: 12px;"><?=htmlspecialchars($desc)?></td>
+						<td><code style="font-size: 12px;"><?=htmlspecialchars($tun['address'] ?: '—')?></code></td>
+						<td class="text-center" style="font-size: 12px;"><?=htmlspecialchars($tun['listen_port'] ?? '51820')?></td>
+						<td class="td-pubkey" style="font-size: 12px;"
 						    title="Klik untuk salin: <?=htmlspecialchars($tun['public_key'])?>"
 						    onclick="navigator.clipboard.writeText('<?=htmlspecialchars($tun['public_key'])?>'); MitraNet.toast('Public key disalin ke clipboard', 'success'); event.stopPropagation();">
 							<?=htmlspecialchars(substr($tun['public_key'], 0, 16))?>...
 						</td>
-						<td><span class="label label-info"><?=$rx_fmt?></span></td>
-						<td><span class="label label-info"><?=$tx_fmt?></span></td>
+						<td class="col-rx" data-bytes="<?=$rx_bytes?>" title="Total Received: <?=$rx_fmt?>"><span class="rx-val" id="tun-rx-<?=htmlspecialchars($tname)?>" style="font-family: monospace; font-size: 12px; color: #1e395b; font-weight: 600;">0 B/s</span></td>
+						<td class="col-tx" data-bytes="<?=$tx_bytes?>" title="Total Sent: <?=$tx_fmt?>"><span class="tx-val" id="tun-tx-<?=htmlspecialchars($tname)?>" style="font-family: monospace; font-size: 12px; color: #1e395b; font-weight: 600;">0 B/s</span></td>
 						<!-- Blank Hamburger Context Cell Matching Interfaces -->
 						<td class="text-center col-menu"></td>
 					</tr>
@@ -563,6 +580,9 @@ $tab_array = array(
                     <li role="presentation" class="active">
                         <a href="#wgset-general" role="tab" data-toggle="tab">Service &amp; Driver</a>
                     </li>
+                    <li role="presentation">
+                        <a href="#wgset-schedule" role="tab" data-toggle="tab"><i class="fa-solid fa-clock-rotate-left"></i> Auto-Restart Scheduler</a>
+                    </li>
                 </ul>
             </div>
 
@@ -572,6 +592,7 @@ $tab_array = array(
 
                     <!-- LEFT: FORM FIELDS -->
                     <div class="winbox-content-left tab-content">
+                        <!-- TAB 1: SERVICE & DRIVER -->
                         <div role="tabpanel" class="tab-pane active" id="wgset-general">
                             <form class="form-horizontal">
                                 <div class="form-group">
@@ -609,6 +630,65 @@ $tab_array = array(
                                 </div>
                             </form>
                         </div>
+
+                        <!-- TAB 2: AUTO-RESTART SCHEDULER -->
+                        <div role="tabpanel" class="tab-pane" id="wgset-schedule">
+                            <form class="form-horizontal" id="modalWgScheduleForm">
+                                <div class="form-group">
+                                    <label class="col-sm-4 control-label">Aktifkan Scheduler</label>
+                                    <div class="col-sm-8">
+                                        <div class="checkbox" style="padding-top: 3px;">
+                                            <label>
+                                                <input type="checkbox" name="sched_enabled" id="modal_sched_enabled" value="1" <?=$sched_enabled ? 'checked' : ''?>>
+                                                <span class="winbox-checkbox-custom"></span> <strong>Auto-restart Berkala</strong>
+                                            </label>
+                                        </div>
+                                        <span class="help-block fs-11">Mereset counter trafik di kernel, tunnel auto-on kembali secara otomatis.</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-4 control-label">Target Interface</label>
+                                    <div class="col-sm-8">
+                                        <select name="sched_tun" id="modal_sched_tun" class="form-control input-sm">
+                                            <?php foreach ($tunnels as $t): ?>
+                                                <option value="<?=htmlspecialchars($t['name'])?>" <?=$sched_tun_val === $t['name'] ? 'selected' : ''?>>
+                                                    <?=htmlspecialchars($t['name'])?> (<?=htmlspecialchars($t['description'] ?? 'WireGuard')?>)
+                                                </option>
+                                            <?php endforeach; ?>
+                                            <?php if (empty($tunnels)): ?>
+                                                <option value="wg0">wg0 (Default)</option>
+                                            <?php endif; ?>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-4 control-label">Preset Jadwal</label>
+                                    <div class="col-sm-8">
+                                        <select class="form-control input-sm" id="modal_sched_preset" onchange="applyModalCronPreset(this.value)">
+                                            <option value="0 4 * * *">Setiap Hari Pukul 04:00 Subuh (Rekomendasi)</option>
+                                            <option value="0 0 * * *">Setiap Hari Pukul 00:00 Tengah Malam</option>
+                                            <option value="0 */6 * * *">Setiap 6 Jam Sekali</option>
+                                            <option value="0 */12 * * *">Setiap 12 Jam Sekali</option>
+                                            <option value="0 3 * * 0">Setiap Minggu Pukul 03:00 Subuh</option>
+                                            <option value="custom">Kustom (Format Cron Bebas)...</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-4 control-label">Ekspresi Cron</label>
+                                    <div class="col-sm-8">
+                                        <input type="text" class="form-control input-sm font-monospace" name="sched_cron" id="modal_sched_cron" value="<?=htmlspecialchars($sched_cron_val)?>" placeholder="0 4 * * *" required>
+                                        <span class="help-block fs-11">Format crontab 5 field: <code>menit jam tgl bln hari</code> (cth: <code>0 4 * * *</code>).</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-4 control-label">Catatan</label>
+                                    <div class="col-sm-8">
+                                        <input type="text" class="form-control input-sm" name="sched_desc" id="modal_sched_desc" value="<?=htmlspecialchars($sched_desc_val)?>" placeholder="Auto-restart harian">
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
                     </div>
 
                     <!-- RIGHT: ACTIONS COLUMN (WINBOX STYLE) -->
@@ -617,7 +697,8 @@ $tab_array = array(
                             <i class="fa-solid fa-bolt"></i> Actions
                         </div>
                         <ul class="winbox-actions-list">
-                            <li><a href="javascript:void(0)" onclick="$('#modal-winbox-settings').modal('hide')">OK</a></li>
+                            <li><a href="javascript:void(0)" onclick="saveModalScheduleSettings(true)">OK</a></li>
+                            <li><a href="javascript:void(0)" onclick="saveModalScheduleSettings(false)">Apply</a></li>
                             <li><a href="javascript:void(0)" onclick="controlWgServiceAction('restart')">Restart</a></li>
                             <li><a href="javascript:void(0)" onclick="controlWgServiceAction('start')">Start</a></li>
                             <li><a href="javascript:void(0)" onclick="controlWgServiceAction('stop')">Stop</a></li>
@@ -997,8 +1078,106 @@ function confirmDeleteTunnel(tunnelName) {
                 }
             }, 'json');
         }
+// Apply Preset to Modal Schedule Cron
+function applyModalCronPreset(val) {
+    if (val !== 'custom') {
+        $('#modal_sched_cron').val(val);
+    }
+}
+
+// Save Schedule Settings from WinBox Modal
+function saveModalScheduleSettings(closeModal) {
+    var isEnabled = $('#modal_sched_enabled').is(':checked') ? 1 : 0;
+    var cronVal = $('#modal_sched_cron').val().trim();
+    var tunVal = $('#modal_sched_tun').val();
+    var descVal = $('#modal_sched_desc').val().trim();
+
+    if (isEnabled && !cronVal) {
+        MitraNet.toast('Ekspresi cron wajib diisi', 'warning');
+        return;
+    }
+
+    MitraNet.toast('Menyimpan pengaturan jadwal...', 'info');
+    $.post('/wg/vpn_wg_tunnels.php', {
+        ajax: '1',
+        act: 'saveschedule',
+        sched_enabled: isEnabled,
+        sched_cron: cronVal,
+        sched_tun: tunVal,
+        sched_desc: descVal
+    }, function(res) {
+        if (res && res.success) {
+            MitraNet.toast('Jadwal auto-restart berhasil disimpan', 'success');
+            if (closeModal) {
+                $('#modal-winbox-settings').modal('hide');
+            }
+        } else {
+            MitraNet.toast('Gagal menyimpan jadwal: ' + (res.error || 'Terjadi kesalahan'), 'error');
+        }
+    }, 'json').fail(function() {
+        MitraNet.toast('Koneksi terputus saat menyimpan jadwal', 'error');
     });
 }
+
+// Live Real-Time Dynamic Telemetry Polling (Every 2.5s)
+var lastWgTunnelTelemetry = {
+    tunnels: {},
+    timestamp: 0
+};
+
+function formatWgBytes(bytes) {
+    var b = parseFloat(bytes) || 0;
+    if (b >= 1073741824) return (b / 1073741824).toFixed(2) + ' GiB';
+    if (b >= 1048576) return (b / 1048576).toFixed(2) + ' MiB';
+    if (b >= 1024) return (b / 1024).toFixed(2) + ' KiB';
+    return b > 0 ? b.toFixed(0) + ' B' : '0 B';
+}
+
+function formatWgRate(bps) {
+    if (isNaN(bps) || bps < 0) bps = 0;
+    if (bps >= 1073741824) return (bps / 1073741824).toFixed(2) + ' GB/s';
+    if (bps >= 1048576)    return (bps / 1048576).toFixed(1) + ' MB/s';
+    if (bps >= 1024)       return (bps / 1024).toFixed(1) + ' KB/s';
+    return Math.round(bps) + ' B/s';
+}
+
+function pollWgTunnelTelemetry() {
+    var now = Date.now();
+    $.getJSON('/wg/status_wireguard.php?ajax=telemetry', function(res) {
+        if (!res || !res.tunnels) return;
+        var elapsedSec = lastWgTunnelTelemetry.timestamp > 0 ? (now - lastWgTunnelTelemetry.timestamp) / 1000 : 0;
+
+        res.tunnels.forEach(function(tun) {
+            var tName = tun.name;
+            var rxVal = parseFloat(tun.transfer_rx) || 0;
+            var txVal = parseFloat(tun.transfer_tx) || 0;
+            var rxRate = 0, txRate = 0;
+
+            if (elapsedSec > 0.3 && lastWgTunnelTelemetry.tunnels[tName]) {
+                var prevRx = lastWgTunnelTelemetry.tunnels[tName].rx;
+                var prevTx = lastWgTunnelTelemetry.tunnels[tName].tx;
+                if (rxVal >= prevRx) rxRate = (rxVal - prevRx) / elapsedSec;
+                if (txVal >= prevTx) txRate = (txVal - prevTx) / elapsedSec;
+            }
+            lastWgTunnelTelemetry.tunnels[tName] = { rx: rxVal, tx: txVal };
+
+            var rxColor = rxRate > 0 ? '#16a34a' : '#1e395b';
+            var txColor = txRate > 0 ? '#0284c7' : '#1e395b';
+
+            $('#tun-rx-' + tName).text(formatWgRate(rxRate)).css('color', rxColor);
+            $('#tun-tx-' + tName).text(formatWgRate(txRate)).css('color', txColor);
+            $('#tun-rx-' + tName).closest('td').attr('title', 'Total Received: ' + formatWgBytes(rxVal));
+            $('#tun-tx-' + tName).closest('td').attr('title', 'Total Sent: ' + formatWgBytes(txVal));
+        });
+        lastWgTunnelTelemetry.timestamp = now;
+    }).always(function() {
+        setTimeout(pollWgTunnelTelemetry, 2500);
+    });
+}
+
+$(document).ready(function() {
+    setTimeout(pollWgTunnelTelemetry, 2000);
+});
 </script>
 
 <?php include(__DIR__ . '/../includes/foot.inc'); ?>
