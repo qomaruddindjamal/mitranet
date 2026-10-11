@@ -42,6 +42,12 @@ if (isset($_REQUEST['ajax']) && $_REQUEST['ajax'] === '1') {
         echo json_encode($res['data'] ?? ['success' => false, 'error' => 'API error']);
         exit;
     }
+
+    if ($act === 'restart') {
+        $res = MitraNetApi::controlWireGuard('restart', $tun ?: 'wg0');
+        echo json_encode($res['data'] ?? ['success' => false, 'error' => 'API error']);
+        exit;
+    }
 }
 
 $badge_title = "WireGuard";
@@ -98,6 +104,9 @@ $tab_array = array(
 				</button>
 				<button type="button" class="mitranet-btn" id="btn-status-disable" disabled onclick="toggleSelectedStatusTunnel(false)" title="Disable Selected Interface">
 					<i class="fa-solid fa-pause text-muted"></i> Disable
+				</button>
+				<button type="button" class="mitranet-btn" id="btn-status-restart" onclick="restartSelectedStatusTunnel()" title="Restart WireGuard Service (Reset traffic & Auto Reconnect)">
+					<i class="fa-solid fa-arrows-rotate text-primary"></i> Restart
 				</button>
 				<button type="button" class="mitranet-btn" id="btn-status-remove" disabled onclick="removeSelectedStatusTunnel()" title="Remove Selected Interface">
 					<i class="fa-solid fa-xmark text-muted"></i> Remove
@@ -545,27 +554,34 @@ function toggleSelectedStatusTunnel(enable) {
     });
 }
 
-// Remove Selected Tunnel
-function removeSelectedStatusTunnel() {
-    if (!selectedStatusTunnelName) return;
-    MitraNet.confirmDelete(
-        'Hapus WireGuard Interface?',
-        'Seluruh konfigurasi interface ' + selectedStatusTunnelName + ' dan peers yang terasosiasi akan dihapus secara permanen.'
-    ).then(function(result) {
+// Restart Selected Tunnel Service (Auto Reconnect & Reset Counter)
+function restartSelectedStatusTunnel() {
+    var tunName = selectedStatusTunnelName || 'wg0';
+    Swal.fire({
+        title: '<i class="fa-solid fa-arrows-rotate text-primary"></i> Restart WireGuard (' + tunName + ')?',
+        html: '<p class="text-muted" style="font-size:12px;">Service <code>wg-quick@' + tunName + '</code> akan direstart di kernel Linux.<br>' +
+              'Counter statistik trafik akan direset ke <strong>0 B</strong> dan tunnel langsung <strong>auto-on / auto-reconnect</strong> tanpa mengganggu konfigurasi.</p>',
+        showCancelButton: true,
+        confirmButtonText: '<i class="fa-solid fa-arrows-rotate"></i> Ya, Restart Sekarang',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#2b476c'
+    }).then(function(result) {
         if (result.isConfirmed) {
-            MitraNet.toast('Menghapus interface ' + selectedStatusTunnelName + '...', 'info');
+            MitraNet.toast('Me-restart service WireGuard ' + tunName + '...', 'info');
             $.post('/wg/status_wireguard.php', {
                 ajax: '1',
-                act: 'delete',
-                tun: selectedStatusTunnelName
+                act: 'restart',
+                tun: tunName
             }, function(res) {
                 if (res && res.success) {
-                    MitraNet.toast('Interface ' + selectedStatusTunnelName + ' berhasil dihapus', 'success');
-                    setTimeout(function() { location.reload(); }, 600);
+                    MitraNet.toast('WireGuard ' + tunName + ' berhasil direstart & auto-connected', 'success');
+                    setTimeout(function() { location.reload(); }, 800);
                 } else {
-                    MitraNet.toast('Gagal: ' + (res.error || 'Terjadi kesalahan sistem'), 'error');
+                    MitraNet.toast('Gagal restart: ' + (res.error || res.message || 'Terjadi kesalahan'), 'error');
                 }
-            }, 'json');
+            }, 'json').fail(function() {
+                MitraNet.toast('Koneksi terputus saat merestart service', 'error');
+            });
         }
     });
 }

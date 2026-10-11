@@ -300,6 +300,20 @@ class MitraNetApi {
         return self::request('/wireguard/service', 'POST', ['action' => $action, 'tunnel' => $tunnel]);
     }
 
+    public static function getWireGuardSchedule() {
+        $res = self::request('/wireguard/schedule');
+        return $res['status'] === 200 ? $res['data'] : ['enabled' => false, 'cron' => '0 4 * * *'];
+    }
+
+    public static function saveWireGuardSchedule($enabled, $cron, $tunnel = 'wg0', $descr = '') {
+        return self::request('/wireguard/schedule', 'POST', [
+            'enabled' => $enabled,
+            'cron' => $cron,
+            'tunnel' => $tunnel,
+            'description' => $descr
+        ]);
+    }
+
     public static function controlSystemService($service, $action) {
         return self::request('/system/service', 'POST', ['service' => $service, 'action' => $action]);
     }

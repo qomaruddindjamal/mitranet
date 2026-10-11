@@ -1163,10 +1163,34 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
 
                 tunnels.append(t_data)
 
+            # Include scheduler config if exists
+            schedule_conf = {"enabled": False, "cron": "0 4 * * *", "description": "Daily at 04:00 AM"}
+            sched_path = "/etc/mitranet/wireguard_schedule.json"
+            if os.path.exists(sched_path):
+                try:
+                    with open(sched_path, "r", encoding="utf-8") as sf:
+                        schedule_conf = json.load(sf)
+                except Exception:
+                    pass
+
             self._send_json(200, {
                 "running": wg_running,
-                "tunnels": tunnels
+                "tunnels": tunnels,
+                "schedule": schedule_conf
             })
+            return
+
+        # 15.1 WireGuard Scheduler Config (GET)
+        if path == "/api/v1/wireguard/schedule":
+            schedule_conf = {"enabled": False, "cron": "0 4 * * *", "description": "Daily at 04:00 AM"}
+            sched_path = "/etc/mitranet/wireguard_schedule.json"
+            if os.path.exists(sched_path):
+                try:
+                    with open(sched_path, "r", encoding="utf-8") as sf:
+                        schedule_conf = json.load(sf)
+                except Exception:
+                    pass
+            self._send_json(200, schedule_conf)
             return
 
         # 15b. WireGuard Client Config & QR Generator
@@ -3045,6 +3069,49 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                 })
             except Exception as e:
                 self._send_json(500, {"error": f"WireGuard service action failed: {e}"})
+            return
+
+        # 13b.2 WireGuard Auto-Restart Schedule Save (POST)
+        if path == "/api/v1/wireguard/schedule":
+            enabled = bool(payload.get("enabled", False))
+            cron_expr = str(payload.get("cron") or "0 4 * * *").strip()
+            tunnel = str(payload.get("tunnel") or "wg0").strip()
+            descr = str(payload.get("description") or "").strip()
+
+            cron_parts = cron_expr.split()
+            if len(cron_parts) != 5:
+                self._send_json(400, {"error": "Invalid cron expression. Expected 5 fields: minute hour day month day-of-week"})
+                return
+
+            sched_data = {
+                "enabled": enabled,
+                "cron": cron_expr,
+                "tunnel": tunnel,
+                "description": descr or f"WireGuard {tunnel} scheduled restart"
+            }
+
+            os.makedirs("/etc/mitranet", exist_ok=True)
+            with open("/etc/mitranet/wireguard_schedule.json", "w", encoding="utf-8") as sf:
+                json.dump(sched_data, sf, indent=2)
+
+            cron_file = "/etc/cron.d/mitranet-wireguard"
+            if enabled:
+                cron_content = f"# MitraNet Automated WireGuard Restart Schedule\nSHELL=/bin/sh\nPATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n\n{cron_expr} root systemctl restart wg-quick@{tunnel} >/dev/null 2>&1\n"
+                with open(cron_file, "w", encoding="utf-8") as cf:
+                    cf.write(cron_content)
+                os.chmod(cron_file, 0o644)
+            else:
+                if os.path.exists(cron_file):
+                    try:
+                        os.remove(cron_file)
+                    except Exception:
+                        pass
+
+            self._send_json(200, {
+                "success": True,
+                "schedule": sched_data,
+                "message": f"WireGuard auto-restart scheduler {'enabled' if enabled else 'disabled'}"
+            })
             return
 
         # 13c. General System Services Control (Status Services Management)
