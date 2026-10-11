@@ -30,15 +30,15 @@ if ($updays > 1) {
 $uptimestr .= sprintf("%02d Hours %02d Minutes %02d Seconds", $uphours, $upmins, $upsecs);
 ?>
 
-<div class="row">
+<div class="row" id="dashboard-grid-container">
 	<!-- Column 1: System Information Widget -->
-	<div class="col-md-6" id="widgets-col1">
+	<div class="col-xs-12 col-sm-12 col-md-6 col-lg-6 dashboard-col" id="widgets-col1">
 		<div class="panel panel-default" id="widget-system_information">
 			<div class="panel-heading">
 				<h2 class="panel-title">
-					<i class="fa-solid fa-server"></i> System Information
-					<span class="widget-heading-icon">
-						<a href="/system.php" title="Configure System"><i class="fa-solid fa-cog"></i></a>
+					<i class="fa-solid fa-server text-info"></i> System Information
+					<span class="widget-heading-icon pull-right">
+						<a href="/system/system.php" title="Configure System"><i class="fa-solid fa-cog"></i></a>
 					</span>
 				</h2>
 			</div>
@@ -47,7 +47,7 @@ $uptimestr .= sprintf("%02d Hours %02d Minutes %02d Seconds", $uphours, $upmins,
 					<table class="table table-hover table-striped table-condensed">
 						<tbody>
 							<tr>
-								<th class="col-w-35">Name</th>
+								<th class="col-w-35" style="width: 35%;">Name</th>
 								<td><strong><?=htmlspecialchars($sys['hostname'] ?? 'mitranet')?>.localdomain</strong></td>
 							</tr>
 							<tr>
@@ -67,11 +67,11 @@ $uptimestr .= sprintf("%02d Hours %02d Minutes %02d Seconds", $uphours, $upmins,
 							</tr>
 							<tr>
 								<th>Uptime</th>
-								<td><?=htmlspecialchars($uptimestr)?></td>
+								<td><span id="sys-uptime-text"><?=htmlspecialchars($uptimestr)?></span></td>
 							</tr>
 							<tr>
 								<th>Current Date/Time</th>
-								<td><?=date("D M j H:i:s T Y")?></td>
+								<td><span id="sys-datetime-text"><?=date("D M j H:i:s T Y")?></span></td>
 							</tr>
 							<tr>
 								<th>State Table Size</th>
@@ -81,11 +81,11 @@ $uptimestr .= sprintf("%02d Hours %02d Minutes %02d Seconds", $uphours, $upmins,
 									$states_max = 100000;
 									$states_pct = round(($states_cnt / $states_max) * 100, 1);
 									?>
-									<div class="progress">
+									<div class="progress" style="margin-bottom: 5px;">
 										<div class="progress-bar progress-bar-striped" role="progressbar" style="width: <?=$states_pct?>%;"></div>
 									</div>
 									<span><?=$states_pct?>% (<?=number_format($states_cnt)?>/<?=number_format($states_max)?>)</span>
-									&nbsp;<span><a href="/diag_dump_states.php">Show states</a></span>
+									&nbsp;<span><a href="/diagnostics/diag_dump_states.php" class="text-info"><i class="fa-solid fa-arrow-up-right-from-square"></i> Show states</a></span>
 								</td>
 							</tr>
 							<tr>
@@ -95,7 +95,7 @@ $uptimestr .= sprintf("%02d Hours %02d Minutes %02d Seconds", $uphours, $upmins,
 									$cpu = $sys['cpu'] ?? [];
 									$cpu_used = max(0, 100 - ($cpu['idle'] ?? 100));
 									?>
-									<div class="progress">
+									<div class="progress" style="margin-bottom: 5px;">
 										<div class="progress-bar progress-bar-striped progress-bar-danger" role="progressbar" style="width: <?=$cpu_used?>%;"></div>
 									</div>
 									<span><?=$cpu_used?>%</span>
@@ -108,7 +108,7 @@ $uptimestr .= sprintf("%02d Hours %02d Minutes %02d Seconds", $uphours, $upmins,
 									$mem = $sys['memory'] ?? [];
 									$mem_pct = $mem['used_percent'] ?? 0;
 									?>
-									<div class="progress">
+									<div class="progress" style="margin-bottom: 5px;">
 										<div class="progress-bar progress-bar-striped progress-bar-info" role="progressbar" style="width: <?=$mem_pct?>%;"></div>
 									</div>
 									<span><?=$mem_pct?>% of <?=round(($mem['total_kb'] ?? 0)/1024)?> MiB</span>
@@ -119,7 +119,7 @@ $uptimestr .= sprintf("%02d Hours %02d Minutes %02d Seconds", $uphours, $upmins,
 								<td>
 									<span class="label label-success">Running: v<?=htmlspecialchars($cfg['running_version'] ?? 1)?></span>
 									&nbsp;<span class="label label-info">Candidate: v<?=htmlspecialchars($cfg['candidate_version'] ?? 1)?></span>
-									&nbsp;<span><a href="/diag_backup.php">History</a></span>
+									&nbsp;<span><a href="/diagnostics/diag_backup.php" class="text-info"><i class="fa-solid fa-clock-rotate-left"></i> History</a></span>
 								</td>
 							</tr>
 						</tbody>
@@ -130,13 +130,13 @@ $uptimestr .= sprintf("%02d Hours %02d Minutes %02d Seconds", $uphours, $upmins,
 	</div>
 
 	<!-- Column 2: Interfaces & Gateways Widgets -->
-	<div class="col-md-6" id="widgets-col2">
+	<div class="col-xs-12 col-sm-12 col-md-6 col-lg-6 dashboard-col" id="widgets-col2">
 		<!-- Interfaces Widget -->
 		<div class="panel panel-default" id="widget-interfaces">
 			<div class="panel-heading">
 				<h2 class="panel-title">
-					<i class="fa-solid fa-network-wired"></i> Interfaces
-					<span class="widget-heading-icon">
+					<i class="fa-solid fa-network-wired text-info"></i> Interfaces
+					<span class="widget-heading-icon pull-right">
 						<a href="/interfaces/interfaces.php" title="Manage Interfaces"><i class="fa-solid fa-cog"></i></a>
 					</span>
 				</h2>
@@ -158,16 +158,16 @@ $uptimestr .= sprintf("%02d Hours %02d Minutes %02d Seconds", $uphours, $upmins,
 							<?php else: foreach ($ifaces as $if): ?>
 								<tr>
 									<td class="td-nowrap">
-										<i class="fa-solid fa-sitemap"></i>
-										<a href="/interfaces.php?if=<?=urlencode($if['name'])?>">
+										<i class="fa-solid fa-sitemap text-muted"></i>
+										<a href="/interfaces/interfaces.php?if=<?=urlencode($if['name'])?>">
 											<strong><?=htmlspecialchars(strtoupper($if['name']))?></strong>
 										</a>
 									</td>
 									<td>
 										<?php if ($if['is_up']): ?>
-											<i class="fa-solid fa-arrow-up text-success" title="up"></i>
+											<span class="label label-success"><i class="fa-solid fa-arrow-up"></i> UP</span>
 										<?php else: ?>
-											<i class="fa-solid fa-arrow-down text-danger" title="down"></i>
+											<span class="label label-danger"><i class="fa-solid fa-arrow-down"></i> DOWN</span>
 										<?php endif; ?>
 									</td>
 									<td>
@@ -179,7 +179,7 @@ $uptimestr .= sprintf("%02d Hours %02d Minutes %02d Seconds", $uphours, $upmins,
 										if (!empty($v4)) {
 											echo htmlspecialchars(implode(', ', $v4));
 										} else {
-											echo 'n/a';
+											echo '<span class="text-muted">n/a</span>';
 										}
 										?>
 									</td>
@@ -195,9 +195,9 @@ $uptimestr .= sprintf("%02d Hours %02d Minutes %02d Seconds", $uphours, $upmins,
 		<div class="panel panel-default" id="widget-gateways">
 			<div class="panel-heading">
 				<h2 class="panel-title">
-					<i class="fa-solid fa-globe"></i> Gateways
-					<span class="widget-heading-icon">
-						<a href="/system_gateways.php" title="Manage Gateways"><i class="fa-solid fa-cog"></i></a>
+					<i class="fa-solid fa-globe text-info"></i> Gateways
+					<span class="widget-heading-icon pull-right">
+						<a href="/system/gateways.php" title="Manage Gateways"><i class="fa-solid fa-cog"></i></a>
 					</span>
 				</h2>
 			</div>
