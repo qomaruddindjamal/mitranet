@@ -123,7 +123,7 @@ $tab_array = array(
 				<thead>
 					<tr>
 						<th class="text-center col-flag" style="width: 32px;"><i class="fa-regular fa-flag text-muted"></i></th>
-						<th style="width: 140px;">Tunnel <i class="fa-solid fa-caret-up"></i></th>
+						<th style="width: 140px;">WireGuard</th>
 						<th class="text-center" style="width: 90px;">Status</th>
 						<th class="text-center" style="width: 95px;">Mode</th>
 						<th>Description</th>
