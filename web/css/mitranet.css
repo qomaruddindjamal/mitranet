@@ -3022,7 +3022,9 @@ select:focus {
     color: #738a9c !important;
 }
 
-.mitranet-search-wrapper > input#grid-search {
+.mitranet-search-wrapper > input,
+.mitranet-search-wrapper > input#grid-search,
+.mitranet-search-wrapper > input#status-search {
     padding: 2px 5px 2px 22px !important;
     font-size: 11px !important;
     height: 22px !important;
@@ -4374,7 +4376,9 @@ select:focus {
         max-width: 140px !important;
     }
 
-    .mitranet-search-wrapper > input#grid-search {
+    .mitranet-search-wrapper > input,
+    .mitranet-search-wrapper > input#grid-search,
+    .mitranet-search-wrapper > input#status-search {
         width: 100% !important;
         min-width: 90px !important;
     }

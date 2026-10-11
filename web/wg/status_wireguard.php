@@ -113,9 +113,9 @@ $tab_array = array(
 				</button>
 			</div>
 			<div class="mitranet-toolbar-right">
-				<div class="mitranet-search-wrapper">
-					<i class="fa-solid fa-magnifying-glass"></i>
-					<input type="text" id="status-search" placeholder="Find status..." onkeyup="filterStatusGrid(this.value)">
+				<div class="mitranet-search-wrapper" style="position: relative; display: inline-flex; align-items: center;">
+					<i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 7px; font-size: 10px; color: #738a9c; pointer-events: none; z-index: 2;"></i>
+					<input type="text" id="status-search" placeholder="Find status..." onkeyup="filterStatusGrid(this.value)" style="padding: 2px 6px 2px 24px !important; font-size: 11px; height: 22px; border: 1px solid #9cb5cf; border-radius: 3px; width: 140px; box-sizing: border-box;">
 				</div>
 				<button type="button" class="mitranet-btn" onclick="$('#status-search').focus()" title="Filter">
 					<i class="fa-solid fa-filter text-muted"></i> Filter
@@ -354,6 +354,52 @@ function toggleStatusPeers(tunName, e) {
     } else {
         peerRows.show();
     }
+}
+
+// Filter Status Grid
+function filterStatusGrid(val) {
+    val = (val || '').toLowerCase().trim();
+    if (!val) {
+        $('#status-grid-table tbody tr.status-tunnel-row').show();
+        $('#status-grid-table tbody tr.status-peers-row').each(function() {
+            var tunName = $(this).data('parent');
+            var peerCount = $('#status-grid-table tbody tr.status-peers-row[data-parent="' + tunName + '"]').length;
+            if (peerCount > 5) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+        return;
+    }
+
+    $('#status-grid-table tbody tr.status-tunnel-row').each(function() {
+        var tunName = $(this).data('name');
+        var tunText = $(this).text().toLowerCase();
+        var peerRows = $('#status-grid-table tbody tr.status-peers-row[data-parent="' + tunName + '"]');
+        var peerMatched = false;
+
+        peerRows.each(function() {
+            var pText = $(this).text().toLowerCase();
+            if (pText.indexOf(val) !== -1) {
+                $(this).show();
+                peerMatched = true;
+            } else {
+                $(this).hide();
+            }
+        });
+
+        if (tunText.indexOf(val) !== -1 || peerMatched) {
+            $(this).show();
+            if (peerMatched) {
+                peerRows.filter(function() {
+                    return $(this).text().toLowerCase().indexOf(val) !== -1;
+                }).show();
+            }
+        } else {
+            $(this).hide();
+        }
+    });
 }
 
 // Tunnel Row Selection Handler
