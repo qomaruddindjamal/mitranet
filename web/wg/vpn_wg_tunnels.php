@@ -152,10 +152,10 @@ $tab_array = array(
 		<!-- TOOLBAR (EXACT MATCH WINBOX BUTTONS) -->
 		<div class="mitranet-toolbar">
 			<div class="mitranet-toolbar-left">
-				<button type="button" class="mitranet-btn" id="btn-new" onclick="openNewTunnelModal()" title="Add New WireGuard Interface">
+				<button type="button" class="mitranet-btn" id="btn-new" data-toggle="modal" data-target="#modal-winbox-tunnel" onclick="openNewTunnelModal()" title="Add New WireGuard Interface">
 					<i class="fa-regular fa-square-plus"></i> New
 				</button>
-				<button type="button" class="mitranet-btn" id="btn-settings" onclick="openWgSettingsModal()" title="WireGuard Service Settings">
+				<button type="button" class="mitranet-btn" id="btn-settings" data-toggle="modal" data-target="#modal-winbox-settings" onclick="openWgSettingsModal()" title="WireGuard Service Settings">
 					<i class="fa-solid fa-gear text-primary"></i> Settings
 				</button>
 				<button type="button" class="mitranet-btn" id="btn-enable" disabled onclick="toggleSelectedTunnel(true)" title="Enable Selected Interface">
@@ -169,6 +169,9 @@ $tab_array = array(
 				</button>
 				<button type="button" class="mitranet-btn" id="btn-comment" disabled onclick="commentSelectedTunnel()" title="Set Comment">
 					<i class="fa-regular fa-comment text-muted"></i> Comment
+				</button>
+				<button type="button" class="mitranet-btn" id="btn-edit" disabled onclick="editSelectedTunnel()" title="Edit Selected Interface (atau double-click baris)">
+					<i class="fa-solid fa-pencil text-muted"></i> Edit
 				</button>
 			</div>
 			<div class="mitranet-toolbar-right">
@@ -787,7 +790,7 @@ function selectTunnelRow(tr, name) {
     }
 
     // Enable toolbar action buttons
-    $('#btn-enable, #btn-disable, #btn-remove, #btn-comment').prop('disabled', false);
+    $('#btn-enable, #btn-disable, #btn-remove, #btn-comment, #btn-edit').prop('disabled', false);
 }
 
 // Filter Grid
@@ -1176,6 +1179,17 @@ function pollWgTunnelTelemetry() {
 }
 
 $(document).ready(function() {
+    // Explicit click handler fallbacks for modals
+    $('#btn-settings').on('click', function(e) {
+        e.preventDefault();
+        $('#modal-winbox-settings').modal('show');
+    });
+
+    $('#btn-new').on('click', function(e) {
+        e.preventDefault();
+        openNewTunnelModal();
+    });
+
     setTimeout(pollWgTunnelTelemetry, 2000);
 });
 </script>
