@@ -60,9 +60,9 @@ def sync_to_minipc():
     if os.path.isdir(os.path.join(PROJECT_ROOT, "src", "api")):
         sftp_sync_dir(os.path.join(PROJECT_ROOT, "src", "api"), "/usr/lib/python3/dist-packages/mitranet/api")
     
-    # Restart API server & WebUI service cleanly (terminate any stale worker)
+    # Restart API server & WebUI service cleanly (terminate any stale worker & free port 8000)
     log("2.1/4 Restarting MitraNet WebUI & API on Mini PC...")
-    ssh.exec_command("killall -9 php 2>/dev/null || true; systemctl restart mitranet-webui")
+    ssh.exec_command("fuser -k 8000/tcp 2>/dev/null || true; killall -9 php 2>/dev/null || true; systemctl restart mitranet-webui")
     
     sftp.close()
     ssh.close()
