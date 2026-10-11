@@ -198,8 +198,8 @@ $tab_array = array(
 						<td class="text-center" style="cursor: pointer;" onclick="toggleStatusPeers('<?=htmlspecialchars($t_name, ENT_QUOTES)?>', event)" title="Klik untuk expand / collapse peers">
 							<strong style="color: #1e395b; font-size: 12px;"><?=$peer_count?></strong>
 						</td>
-						<td><span class="rx-val" id="tun-rx-<?=htmlspecialchars($t_name)?>" style="font-family: monospace; font-size: 12px; color: #1e395b; font-weight: 600;"><?=$rx_fmt?></span></td>
-						<td><span class="tx-val" id="tun-tx-<?=htmlspecialchars($t_name)?>" style="font-family: monospace; font-size: 12px; color: #1e395b; font-weight: 600;"><?=$tx_fmt?></span></td>
+						<td class="col-rx" data-bytes="<?=$rx_bytes?>" title="Total Received: <?=$rx_fmt?>"><span class="rx-val" id="tun-rx-<?=htmlspecialchars($t_name)?>" style="font-family: monospace; font-size: 12px; color: #1e395b; font-weight: 600;">0 B/s</span></td>
+						<td class="col-tx" data-bytes="<?=$tx_bytes?>" title="Total Sent: <?=$tx_fmt?>"><span class="tx-val" id="tun-tx-<?=htmlspecialchars($t_name)?>" style="font-family: monospace; font-size: 12px; color: #1e395b; font-weight: 600;">0 B/s</span></td>
 						<td class="text-center col-menu"></td>
 					</tr>
 
@@ -247,8 +247,8 @@ $tab_array = array(
 							<code style="font-size: 12px;"><?=htmlspecialchars(substr($peer['public_key'], 0, 16))?>...</code>
 						</td>
 						<td class="text-center"><span class="text-muted" style="font-size: 12px;">-</span></td>
-						<td><span class="peer-rx-val" id="peer-rx-<?=$safe_pubkey_id?>" style="font-family: monospace; font-size: 12px; color: #1e395b; font-weight: 600;"><?=$p_rx_fmt?></span></td>
-						<td><span class="peer-tx-val" id="peer-tx-<?=$safe_pubkey_id?>" style="font-family: monospace; font-size: 12px; color: #1e395b; font-weight: 600;"><?=$p_tx_fmt?></span></td>
+						<td class="col-rx" data-bytes="<?=$p_rx?>" title="Total Received: <?=$p_rx_fmt?>"><span class="peer-rx-val" id="peer-rx-<?=$safe_pubkey_id?>" style="font-family: monospace; font-size: 12px; color: #1e395b; font-weight: 600;">0 B/s</span></td>
+						<td class="col-tx" data-bytes="<?=$p_tx?>" title="Total Sent: <?=$p_tx_fmt?>"><span class="peer-tx-val" id="peer-tx-<?=$safe_pubkey_id?>" style="font-family: monospace; font-size: 12px; color: #1e395b; font-weight: 600;">0 B/s</span></td>
 						<td class="text-center col-menu"></td>
 					</tr>
 					<?php endforeach; ?>
@@ -586,10 +586,11 @@ function formatBytes(bytes) {
 }
 
 function formatRate(bps) {
-    if (!bps || bps <= 0) return '';
-    if (bps >= 1048576) return ' (' + (bps / 1048576).toFixed(1) + ' MB/s)';
-    if (bps >= 1024) return ' (' + (bps / 1024).toFixed(1) + ' KB/s)';
-    return ' (' + bps.toFixed(0) + ' B/s)';
+    if (isNaN(bps) || bps < 0) bps = 0;
+    if (bps >= 1073741824) return (bps / 1073741824).toFixed(2) + ' GB/s';
+    if (bps >= 1048576)    return (bps / 1048576).toFixed(1) + ' MB/s';
+    if (bps >= 1024)       return (bps / 1024).toFixed(1) + ' KB/s';
+    return Math.round(bps) + ' B/s';
 }
 
 function pollWireGuardTelemetry() {
@@ -604,7 +605,7 @@ function pollWireGuardTelemetry() {
             var txVal = parseFloat(tun.transfer_tx) || 0;
             var rxRate = 0, txRate = 0;
 
-            if (elapsedSec > 0 && lastWgTelemetry.tunnels[tName]) {
+            if (elapsedSec > 0.3 && lastWgTelemetry.tunnels[tName]) {
                 var prevRx = lastWgTelemetry.tunnels[tName].rx;
                 var prevTx = lastWgTelemetry.tunnels[tName].tx;
                 if (rxVal >= prevRx) rxRate = (rxVal - prevRx) / elapsedSec;
@@ -612,10 +613,13 @@ function pollWireGuardTelemetry() {
             }
             lastWgTelemetry.tunnels[tName] = { rx: rxVal, tx: txVal };
 
-            var rxFmt = formatBytes(rxVal) + (rxRate > 0 ? '<span style="color:#16a34a; font-weight:normal; font-size:11px;">' + formatRate(rxRate) + '</span>' : '');
-            var txFmt = formatBytes(txVal) + (txRate > 0 ? '<span style="color:#0284c7; font-weight:normal; font-size:11px;">' + formatRate(txRate) + '</span>' : '');
-            $('#tun-rx-' + tName).html(rxFmt);
-            $('#tun-tx-' + tName).html(txFmt);
+            var rxColor = rxRate > 0 ? '#16a34a' : '#1e395b';
+            var txColor = txRate > 0 ? '#0284c7' : '#1e395b';
+
+            $('#tun-rx-' + tName).text(formatRate(rxRate)).css('color', rxColor);
+            $('#tun-tx-' + tName).text(formatRate(txRate)).css('color', txColor);
+            $('#tun-rx-' + tName).closest('td').attr('title', 'Total Received: ' + formatBytes(rxVal));
+            $('#tun-tx-' + tName).closest('td').attr('title', 'Total Sent: ' + formatBytes(txVal));
 
             if (tun.peers && Array.isArray(tun.peers)) {
                 tun.peers.forEach(function(peer) {
@@ -624,7 +628,7 @@ function pollWireGuardTelemetry() {
                     var pTxVal = parseFloat(peer.transfer_tx) || 0;
                     var pRxRate = 0, pTxRate = 0;
 
-                    if (elapsedSec > 0 && lastWgTelemetry.peers[safeId]) {
+                    if (elapsedSec > 0.3 && lastWgTelemetry.peers[safeId]) {
                         var pPrevRx = lastWgTelemetry.peers[safeId].rx;
                         var pPrevTx = lastWgTelemetry.peers[safeId].tx;
                         if (pRxVal >= pPrevRx) pRxRate = (pRxVal - pPrevRx) / elapsedSec;
@@ -632,10 +636,13 @@ function pollWireGuardTelemetry() {
                     }
                     lastWgTelemetry.peers[safeId] = { rx: pRxVal, tx: pTxVal };
 
-                    var pRxFmt = formatBytes(pRxVal) + (pRxRate > 0 ? '<span style="color:#16a34a; font-weight:normal; font-size:11px;">' + formatRate(pRxRate) + '</span>' : '');
-                    var pTxFmt = formatBytes(pTxVal) + (pTxRate > 0 ? '<span style="color:#0284c7; font-weight:normal; font-size:11px;">' + formatRate(pTxRate) + '</span>' : '');
-                    $('#peer-rx-' + safeId).html(pRxFmt);
-                    $('#peer-tx-' + safeId).html(pTxFmt);
+                    var pRxColor = pRxRate > 0 ? '#16a34a' : '#1e395b';
+                    var pTxColor = pTxRate > 0 ? '#0284c7' : '#1e395b';
+
+                    $('#peer-rx-' + safeId).text(formatRate(pRxRate)).css('color', pRxColor);
+                    $('#peer-tx-' + safeId).text(formatRate(pTxRate)).css('color', pTxColor);
+                    $('#peer-rx-' + safeId).closest('td').attr('title', 'Total Received: ' + formatBytes(pRxVal));
+                    $('#peer-tx-' + safeId).closest('td').attr('title', 'Total Sent: ' + formatBytes(pTxVal));
 
                     if (peer.endpoint) {
                         $('#peer-ep-' + safeId).text(peer.endpoint);
