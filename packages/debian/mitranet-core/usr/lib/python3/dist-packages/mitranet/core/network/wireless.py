@@ -11,7 +11,7 @@ import json
 import time
 import subprocess
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 
 logger = logging.getLogger("mitranet.wifi")
 
