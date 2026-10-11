@@ -131,8 +131,8 @@ $tab_array = array(
 						<th class="text-center" style="width: 85px;">Port</th>
 						<th>Public Key</th>
 						<th class="text-center" style="width: 90px;">Peers</th>
-						<th style="width: 100px;">Rx</th>
-						<th style="width: 100px;">Tx</th>
+						<th style="width: 130px;">Rx</th>
+						<th style="width: 130px;">Tx</th>
 						<th class="text-center col-menu" style="width: 24px;"><i class="fa-solid fa-bars text-muted"></i></th>
 					</tr>
 				</thead>
@@ -570,7 +570,13 @@ function removeSelectedStatusTunnel() {
     });
 }
 
-// Live Real-Time Telemetry Polling (every 3 seconds)
+// Live Real-Time Dynamic Telemetry Polling (every 2.5 seconds)
+var lastWgTelemetry = {
+    tunnels: {},
+    peers: {},
+    timestamp: 0
+};
+
 function formatBytes(bytes) {
     var b = parseFloat(bytes) || 0;
     if (b >= 1073741824) return (b / 1073741824).toFixed(2) + ' GiB';
@@ -579,23 +585,57 @@ function formatBytes(bytes) {
     return b > 0 ? b.toFixed(0) + ' B' : '0 B';
 }
 
+function formatRate(bps) {
+    if (!bps || bps <= 0) return '';
+    if (bps >= 1048576) return ' (' + (bps / 1048576).toFixed(1) + ' MB/s)';
+    if (bps >= 1024) return ' (' + (bps / 1024).toFixed(1) + ' KB/s)';
+    return ' (' + bps.toFixed(0) + ' B/s)';
+}
+
 function pollWireGuardTelemetry() {
+    var now = Date.now();
     $.getJSON('/wg/status_wireguard.php?ajax=telemetry', function(res) {
         if (!res || !res.tunnels) return;
+        var elapsedSec = lastWgTelemetry.timestamp > 0 ? (now - lastWgTelemetry.timestamp) / 1000 : 0;
+
         res.tunnels.forEach(function(tun) {
             var tName = tun.name;
-            var rxFmt = formatBytes(tun.transfer_rx);
-            var txFmt = formatBytes(tun.transfer_tx);
-            $('#tun-rx-' + tName).text(rxFmt);
-            $('#tun-tx-' + tName).text(txFmt);
+            var rxVal = parseFloat(tun.transfer_rx) || 0;
+            var txVal = parseFloat(tun.transfer_tx) || 0;
+            var rxRate = 0, txRate = 0;
+
+            if (elapsedSec > 0 && lastWgTelemetry.tunnels[tName]) {
+                var prevRx = lastWgTelemetry.tunnels[tName].rx;
+                var prevTx = lastWgTelemetry.tunnels[tName].tx;
+                if (rxVal >= prevRx) rxRate = (rxVal - prevRx) / elapsedSec;
+                if (txVal >= prevTx) txRate = (txVal - prevTx) / elapsedSec;
+            }
+            lastWgTelemetry.tunnels[tName] = { rx: rxVal, tx: txVal };
+
+            var rxFmt = formatBytes(rxVal) + (rxRate > 0 ? '<span style="color:#16a34a; font-weight:normal; font-size:11px;">' + formatRate(rxRate) + '</span>' : '');
+            var txFmt = formatBytes(txVal) + (txRate > 0 ? '<span style="color:#0284c7; font-weight:normal; font-size:11px;">' + formatRate(txRate) + '</span>' : '');
+            $('#tun-rx-' + tName).html(rxFmt);
+            $('#tun-tx-' + tName).html(txFmt);
 
             if (tun.peers && Array.isArray(tun.peers)) {
                 tun.peers.forEach(function(peer) {
                     var safeId = (peer.public_key || '').replace(/[^a-zA-Z0-9]/g, '').substr(0, 16);
-                    var pRxFmt = formatBytes(peer.transfer_rx);
-                    var pTxFmt = formatBytes(peer.transfer_tx);
-                    $('#peer-rx-' + safeId).text(pRxFmt);
-                    $('#peer-tx-' + safeId).text(pTxFmt);
+                    var pRxVal = parseFloat(peer.transfer_rx) || 0;
+                    var pTxVal = parseFloat(peer.transfer_tx) || 0;
+                    var pRxRate = 0, pTxRate = 0;
+
+                    if (elapsedSec > 0 && lastWgTelemetry.peers[safeId]) {
+                        var pPrevRx = lastWgTelemetry.peers[safeId].rx;
+                        var pPrevTx = lastWgTelemetry.peers[safeId].tx;
+                        if (pRxVal >= pPrevRx) pRxRate = (pRxVal - pPrevRx) / elapsedSec;
+                        if (pTxVal >= pPrevTx) pTxRate = (pTxVal - pPrevTx) / elapsedSec;
+                    }
+                    lastWgTelemetry.peers[safeId] = { rx: pRxVal, tx: pTxVal };
+
+                    var pRxFmt = formatBytes(pRxVal) + (pRxRate > 0 ? '<span style="color:#16a34a; font-weight:normal; font-size:11px;">' + formatRate(pRxRate) + '</span>' : '');
+                    var pTxFmt = formatBytes(pTxVal) + (pTxRate > 0 ? '<span style="color:#0284c7; font-weight:normal; font-size:11px;">' + formatRate(pTxRate) + '</span>' : '');
+                    $('#peer-rx-' + safeId).html(pRxFmt);
+                    $('#peer-tx-' + safeId).html(pTxFmt);
 
                     if (peer.endpoint) {
                         $('#peer-ep-' + safeId).text(peer.endpoint);
@@ -610,8 +650,9 @@ function pollWireGuardTelemetry() {
                 });
             }
         });
+        lastWgTelemetry.timestamp = now;
     }).always(function() {
-        setTimeout(pollWireGuardTelemetry, 3000);
+        setTimeout(pollWireGuardTelemetry, 2500);
     });
 }
 
