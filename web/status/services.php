@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /*
  * status_services.php - MitraNet Status: Services
  * Faithful port from pfSense 2.9 WebUI for Debian 13 (Trixie) Appliance
@@ -127,9 +127,9 @@ foreach ($vms as $v) {
 						<td>
 							<a href="#" id="restartservice-dhcpd" title="Restart Service"><i class="fa-solid fa-arrow-rotate-right"></i></a>
 							<a href="#" id="stopservice-dhcpd" title="Stop Service"><i class="fa-regular fa-circle-stop"></i></a>
-							&nbsp;<a href="/services_dhcp.php" title="DHCP Settings"><i class="fa-solid fa-sliders"></i></a>
-							&nbsp;<a href="/status_dhcp_leases.php" title="DHCP Leases"><i class="fa-regular fa-chart-bar"></i></a>
-							&nbsp;<a href="/status_logs.php?logfile=dhcpd" title="DHCP Logs"><i class="fa-regular fa-rectangle-list"></i></a>
+							&nbsp;<a href="/services/dhcp_settings.php" title="DHCP Settings"><i class="fa-solid fa-sliders"></i></a>
+							&nbsp;<a href="/status/dhcp_leases.php" title="DHCP Leases"><i class="fa-regular fa-chart-bar"></i></a>
+							&nbsp;<a href="/status/logs.php?logfile=dhcpd" title="DHCP Logs"><i class="fa-regular fa-rectangle-list"></i></a>
 						</td>
 					</tr>
 
@@ -143,8 +143,8 @@ foreach ($vms as $v) {
 						<td>
 							<a href="#" id="restartservice-dpinger" title="Restart Service"><i class="fa-solid fa-arrow-rotate-right"></i></a>
 							<a href="#" id="stopservice-dpinger" title="Stop Service"><i class="fa-regular fa-circle-stop"></i></a>
-							&nbsp;<a href="/system_gateways.php" title="Gateways"><i class="fa-solid fa-sliders"></i></a>
-							&nbsp;<a href="/status_gateways.php" title="Gateways Status"><i class="fa-regular fa-chart-bar"></i></a>
+							&nbsp;<a href="/system/gateways.php" title="Gateways"><i class="fa-solid fa-sliders"></i></a>
+							&nbsp;<a href="/status/gateways.php" title="Gateways Status"><i class="fa-regular fa-chart-bar"></i></a>
 						</td>
 					</tr>
 
@@ -158,8 +158,8 @@ foreach ($vms as $v) {
 						<td>
 							<a href="#" id="restartservice-ntpd" title="Restart Service"><i class="fa-solid fa-arrow-rotate-right"></i></a>
 							<a href="#" id="stopservice-ntpd" title="Stop Service"><i class="fa-regular fa-circle-stop"></i></a>
-							&nbsp;<a href="/services_ntpd.php" title="NTP Settings"><i class="fa-solid fa-sliders"></i></a>
-							&nbsp;<a href="/status_ntpd.php" title="NTP Status"><i class="fa-regular fa-chart-bar"></i></a>
+							&nbsp;<a href="/services/ntpd.php" title="NTP Settings"><i class="fa-solid fa-sliders"></i></a>
+							&nbsp;<a href="/status/ntpd.php" title="NTP Status"><i class="fa-regular fa-chart-bar"></i></a>
 						</td>
 					</tr>
 
@@ -173,7 +173,7 @@ foreach ($vms as $v) {
 						<td>
 							<a href="#" id="restartservice-sshd" title="Restart Service"><i class="fa-solid fa-arrow-rotate-right"></i></a>
 							<a href="#" id="stopservice-sshd" title="Stop Service"><i class="fa-regular fa-circle-stop"></i></a>
-							&nbsp;<a href="/system_advanced_admin.php" title="Admin Access"><i class="fa-solid fa-sliders"></i></a>
+							&nbsp;<a href="/system/advanced_admin.php" title="Admin Access"><i class="fa-solid fa-sliders"></i></a>
 						</td>
 					</tr>
 
@@ -187,7 +187,7 @@ foreach ($vms as $v) {
 						<td>
 							<a href="#" id="restartservice-syslogd" title="Restart Service"><i class="fa-solid fa-arrow-rotate-right"></i></a>
 							<a href="#" id="stopservice-syslogd" title="Stop Service"><i class="fa-regular fa-circle-stop"></i></a>
-							&nbsp;<a href="/status_logs.php" title="System Logs"><i class="fa-regular fa-rectangle-list"></i></a>
+							&nbsp;<a href="/status/logs.php" title="System Logs"><i class="fa-regular fa-rectangle-list"></i></a>
 						</td>
 					</tr>
 
@@ -201,8 +201,8 @@ foreach ($vms as $v) {
 						<td>
 							<a href="#" id="restartservice-unbound" title="Restart Service"><i class="fa-solid fa-arrow-rotate-right"></i></a>
 							<a href="#" id="stopservice-unbound" title="Stop Service"><i class="fa-regular fa-circle-stop"></i></a>
-							&nbsp;<a href="/services_unbound.php" title="Unbound Settings"><i class="fa-solid fa-sliders"></i></a>
-							&nbsp;<a href="/status_unbound.php" title="DNS Status"><i class="fa-regular fa-chart-bar"></i></a>
+							&nbsp;<a href="/services/unbound.php" title="Unbound Settings"><i class="fa-solid fa-sliders"></i></a>
+							&nbsp;<a href="/status/unbound.php" title="DNS Status"><i class="fa-regular fa-chart-bar"></i></a>
 						</td>
 					</tr>
 

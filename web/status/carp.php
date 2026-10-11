@@ -141,7 +141,7 @@ $sys = MitraNetApi::getSystem();
 
 
 
-<div class="alert alert-warning clearfix" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button><div class="pull-left">No CARP interfaces have been defined.<br /><a href="/system_hasync.php" class="alert-link">High availability sync settings can be configured here.</a></div></div>	</div>
+<div class="alert alert-warning clearfix" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button><div class="pull-left">No CARP interfaces have been defined.<br /><a href="/system/hasync.php" class="alert-link">High availability sync settings can be configured here.</a></div></div>	</div>
 
 
 

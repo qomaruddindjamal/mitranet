@@ -10,10 +10,10 @@ $selected_menu = "system";
 require_once(__DIR__ . '/../includes/head.inc');
 
 $tab_array = array(
-    array("Admin Access", true, "system_advanced.php"),
-    array("Firewall & NAT", false, "firewall_rules.php"),
-    array("Networking", false, "system_routes.php"),
-    array("Transactions & Backups", false, "diag_backup.php")
+    array("Admin Access", true, "advanced.php"),
+    array("Firewall & NAT", false, "/firewall/rules.php"),
+    array("Networking", false, "routes.php"),
+    array("Transactions & Backups", false, "/diagnostics/diag_backup.php")
 );
 display_top_tabs($tab_array);
 

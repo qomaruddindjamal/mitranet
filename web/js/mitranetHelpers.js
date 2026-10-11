@@ -754,7 +754,7 @@ $('[id*=restartservice-], [id*=stopservice-], [id*=startservice-]').click(functi
 
 	ajaxRequest = $.ajax(
 		{
-			url: "/status_services.php",
+			url: "/status/services.php",
 			type: "post",
 			data: {
 				ajax: 		"ajax",

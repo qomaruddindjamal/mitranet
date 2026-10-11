@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /*
  * firewall_aliases.php - MitraNet Firewall Aliases
  * Adapted from pfSense firewall_aliases.php
@@ -56,7 +56,7 @@ $rules = $fw['candidate']['rules'] ?? [];
 </div>
 
 <div class="alert alert-info">
-	<i class="fa fa-info-circle"></i> Aliases can be referenced when defining packet filtering rules in <a href="firewall_rules.php"><strong>Firewall: Rules</strong></a> and NAT translations in <a href="firewall_nat.php"><strong>Firewall: NAT</strong></a>.
+	<i class="fa fa-info-circle"></i> Aliases can be referenced when defining packet filtering rules in <a href="rules.php"><strong>Firewall: Rules</strong></a> and NAT translations in <a href="nat.php"><strong>Firewall: NAT</strong></a>.
 </div>
 
 <?php require_once(__DIR__ . '/../includes/foot.inc'); ?>

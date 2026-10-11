@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /*
  * firewall_nat.php - MitraNet Native Linux NAT Management
  * Adapted from pfSense firewall_nat.php
@@ -75,10 +75,10 @@ $running_nat = $fw['config']['nat_rules'] ?? [];
 $candidate_nat = $fw['candidate']['nat_rules'] ?? [];
 $ifaces = MitraNetApi::getInterfaces();
 $tab_array = array();
-$tab_array[] = array(gettext("Port Forward"), true, "firewall_nat.php");
-$tab_array[] = array(gettext("1:1"), false, "firewall_nat_1to1.php");
-$tab_array[] = array(gettext("Outbound"), false, "firewall_nat_out.php");
-$tab_array[] = array(gettext("NPt"), false, "firewall_nat_npt.php");
+$tab_array[] = array(gettext("Port Forward"), true, "nat.php");
+$tab_array[] = array(gettext("1:1"), false, "nat_1to1.php");
+$tab_array[] = array(gettext("Outbound"), false, "nat_out.php");
+$tab_array[] = array(gettext("NPt"), false, "nat_npt.php");
 display_top_tabs($tab_array);
 
 if (!empty($msg)) {
