@@ -28,7 +28,7 @@ scratch/
 tmp/
 
 # ── Build one-off scripts (keep build_packages.sh) ────────
-build/
+/build/
 
 # ── pfSense dumps & audit HTML (dev-only artifacts) ───────
 pfsense_*.html
