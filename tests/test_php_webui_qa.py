@@ -4,6 +4,16 @@ Verifies all 16 core pages, authentic session preservation, form rendering,
 and safe mutation (candidate rule add & delete) through the PHP layer.
 """
 
+import os as _os, sys as _sys
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while not _os.path.exists(_os.path.join(_d, "mitranet_secrets.py")):
+    _p = _os.path.dirname(_d)
+    if _p == _d: break
+    _d = _p
+_sys.path.insert(0, _d)
+from mitranet_secrets import WEBUI_PASS, WEBUI_USER
+
+
 import sys
 import json
 import urllib.request
@@ -50,7 +60,7 @@ with opener.open(req) as resp:
 
 # 3. Perform POST Login via /login.php
 print("\n[QA 3] Perform POST /login.php (Authentication):")
-post_data = urllib.parse.urlencode({"username": "admin", "password": "mitranet"}).encode('utf-8')
+post_data = urllib.parse.urlencode({"username": WEBUI_USER, "password": WEBUI_PASS}).encode('utf-8')
 req = urllib.request.Request(f"{BASE_URL}/login.php", data=post_data, method="POST")
 try:
     resp = opener.open(req)

@@ -1,12 +1,22 @@
+
+import os as _os, sys as _sys
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while not _os.path.exists(_os.path.join(_d, "mitranet_secrets.py")):
+    _p = _os.path.dirname(_d)
+    if _p == _d: break
+    _d = _p
+_sys.path.insert(0, _d)
+from mitranet_secrets import LAB_HOST, LAB_PASS, LAB_USER, WEBUI_PASS, WEBUI_USER
+
 import paramiko, re
 
 client = paramiko.SSHClient()
 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-client.connect('192.168.56.101', port=22, username='root', password='mitranet')
+client.connect(LAB_HOST, port=22, username=LAB_USER, password=LAB_PASS)
 
 # Login to get cookie
 login_cmd = """python3 -c "import urllib.request, json
-d = json.dumps({'username':'admin', 'password':'mitranet'}).encode()
+d = json.dumps({'username':WEBUI_USER, 'password':WEBUI_PASS}).encode()
 r = urllib.request.Request('http://127.0.0.1:8443/api/v1/auth/login', data=d, headers={'Content-Type':'application/json'})
 resp = urllib.request.urlopen(r)
 print(resp.headers.get('Set-Cookie',''))"

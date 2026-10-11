@@ -1,3 +1,13 @@
+
+import os as _os, sys as _sys
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while not _os.path.exists(_os.path.join(_d, "mitranet_secrets.py")):
+    _p = _os.path.dirname(_d)
+    if _p == _d: break
+    _d = _p
+_sys.path.insert(0, _d)
+from mitranet_secrets import LAB_HOST, LAB_PASS, LAB_USER, WEBUI_PASS, WEBUI_USER
+
 import paramiko
 import requests
 import json
@@ -6,7 +16,7 @@ import time
 def verify_live():
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    c.connect('192.168.56.101', username='root', password='mitranet')
+    c.connect(LAB_HOST, username=LAB_USER, password=LAB_PASS)
 
     # 1. Read real credentials directly from guest VM
     cmd = 'ssh -o StrictHostKeyChecking=no root@192.168.101.118 "cat /www/server/panel/default.pl; echo \'---\'; sqlite3 /www/server/panel/data/default.db \'SELECT username FROM users;\'"'
@@ -18,7 +28,7 @@ def verify_live():
 
     # 2. Query MitraNet WebUI via API
     s = requests.Session()
-    s.post('http://192.168.56.101:8443/login.php', data={'username': 'admin', 'password': 'mitranet'}, allow_redirects=True)
+    s.post('http://192.168.56.101:8443/login.php', data={'username': WEBUI_USER, 'password': WEBUI_PASS}, allow_redirects=True)
     r_api = s.get('http://192.168.56.101:8443/api/v1/services/kvm')
     creds_api = r_api.json()['vms'][0]['aapanel_creds']
     print(f"MITRANET API RETURNED CREDENTIALS -> User: '{creds_api.get('username')}', Pass: '{creds_api.get('password')}'")

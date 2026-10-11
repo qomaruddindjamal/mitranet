@@ -1,3 +1,13 @@
+
+import os as _os, sys as _sys
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while not _os.path.exists(_os.path.join(_d, "mitranet_secrets.py")):
+    _p = _os.path.dirname(_d)
+    if _p == _d: break
+    _d = _p
+_sys.path.insert(0, _d)
+from mitranet_secrets import WEBUI_PASS, WEBUI_USER
+
 import requests
 import sys
 import uuid
@@ -19,7 +29,7 @@ assert 'name="password"' in r.text
 print('PASS: /login.php delivers authentic login UI with credentials form')
 
 print('\n=== 3. AUTHENTICATION EXECUTION ===')
-r = session.post(f'{BASE}/login.php', data={'username': 'admin', 'password': 'mitranet'}, allow_redirects=False)
+r = session.post(f'{BASE}/login.php', data={'username': WEBUI_USER, 'password': WEBUI_PASS}, allow_redirects=False)
 assert r.status_code == 302 and r.headers.get('Location') == '/index.php', f'Login failed: {r.status_code}, {r.headers}'
 print('PASS: Authentication successful, session established, redirect to /index.php')
 

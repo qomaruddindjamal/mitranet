@@ -1,10 +1,20 @@
+
+import os as _os, sys as _sys
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while not _os.path.exists(_os.path.join(_d, "mitranet_secrets.py")):
+    _p = _os.path.dirname(_d)
+    if _p == _d: break
+    _d = _p
+_sys.path.insert(0, _d)
+from mitranet_secrets import LAB_HOST, LAB_PASS, LAB_USER
+
 import paramiko
 import sys
 
 def audit_drivers():
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    c.connect('192.168.56.101', username='root', password='mitranet')
+    c.connect(LAB_HOST, username=LAB_USER, password=LAB_PASS)
 
     commands = [
         ('Audio / Sound Drivers Loaded', 'lsmod | grep -E "snd|sound|audio"'),

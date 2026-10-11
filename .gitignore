@@ -52,3 +52,5 @@ scratch/
 tests/live/
 ai/config.json
 src/ai/config.json
+docs/verification/PHASE-A1-AUDIT-REPORT.md
+docs/verification/PHASE-A*-REPORT.md

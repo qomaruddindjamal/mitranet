@@ -1,9 +1,19 @@
+
+import os as _os, sys as _sys
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while not _os.path.exists(_os.path.join(_d, "mitranet_secrets.py")):
+    _p = _os.path.dirname(_d)
+    if _p == _d: break
+    _d = _p
+_sys.path.insert(0, _d)
+from mitranet_secrets import MINIPC_HOST, MINIPC_PASS, MINIPC_USER
+
 import paramiko
 import json
 
-MINIPC_IP = "10.10.66.228"
-MINIPC_USER = "root"
-MINIPC_PASS = "mitranet"
+MINIPC_IP = MINIPC_HOST
+MINIPC_USER = MINIPC_USER
+MINIPC_PASS = MINIPC_PASS
 
 ssh = paramiko.SSHClient()
 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())

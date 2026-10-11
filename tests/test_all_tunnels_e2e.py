@@ -1,3 +1,13 @@
+
+import os as _os, sys as _sys
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while not _os.path.exists(_os.path.join(_d, "mitranet_secrets.py")):
+    _p = _os.path.dirname(_d)
+    if _p == _d: break
+    _d = _p
+_sys.path.insert(0, _d)
+from mitranet_secrets import MINIPC_HOST, MINIPC_PASS, MINIPC_USER, VPS_HOST, VPS_PASS, VPS_USER
+
 import json
 import time
 import paramiko
@@ -5,12 +15,12 @@ import paramiko
 # 1. Connect to VPS MikroTik CHR
 vps = paramiko.SSHClient()
 vps.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-vps.connect('103.93.162.168', port=22, username='citramedia', password='K0323205', look_for_keys=False, allow_agent=False, timeout=8)
+vps.connect(VPS_HOST, port=22, username=VPS_USER, password=VPS_PASS, look_for_keys=False, allow_agent=False, timeout=8)
 
 # 2. Connect to MitraNet Mini PC
 mitra = paramiko.SSHClient()
 mitra.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-mitra.connect('10.10.66.228', username='root', password='mitranet', timeout=5)
+mitra.connect(MINIPC_HOST, username=MINIPC_USER, password=MINIPC_PASS, timeout=5)
 
 results = {}
 

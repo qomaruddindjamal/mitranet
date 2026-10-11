@@ -19,6 +19,16 @@ exec /usr/bin/qemu-system-x86_64 \\
 """
 
 service = """[Unit]
+
+import os as _os, sys as _sys
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while not _os.path.exists(_os.path.join(_d, "mitranet_secrets.py")):
+    _p = _os.path.dirname(_d)
+    if _p == _d: break
+    _d = _p
+_sys.path.insert(0, _d)
+from mitranet_secrets import LAB_HOST, LAB_PASS, LAB_USER
+
 Description=MitraNet Virtual Machine (%i)
 After=network.target
 
@@ -34,7 +44,7 @@ WantedBy=multi-user.target
 
 ssh = paramiko.SSHClient()
 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-ssh.connect('192.168.56.101', username='root', password='mitranet', timeout=5)
+ssh.connect(LAB_HOST, username=LAB_USER, password=LAB_PASS, timeout=5)
 sftp = ssh.open_sftp()
 
 with sftp.file('/usr/local/bin/mitranet-vm-runner', 'w') as f:

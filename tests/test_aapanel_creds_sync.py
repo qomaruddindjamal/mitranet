@@ -4,7 +4,7 @@ import requests
 def test_full_flow():
     # 1. Verify initial credentials from MitraNet WebUI
     s = requests.Session()
-    s.post('http://192.168.56.101:8443/login.php', data={'username': 'admin', 'password': 'mitranet'}, allow_redirects=True)
+    s.post('http://192.168.56.101:8443/login.php', data={'username': WEBUI_USER, 'password': WEBUI_PASS}, allow_redirects=True)
     r1 = s.get('http://192.168.56.101:8443/services_virtual.php?act=manage_aapanel')
     assert 'mitranet123' in r1.text, "Initial password not found in WebUI"
     assert 'value="mitranet"' in r1.text, "Initial username not found in WebUI"
@@ -14,7 +14,7 @@ def test_full_flow():
     # (aaPanel's tools.py panel <new_pwd> and set_panel_username)
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    c.connect('192.168.56.101', username='root', password='mitranet')
+    c.connect(LAB_HOST, username=LAB_USER, password=LAB_PASS)
     
     # Change username to mitraadmin and password to SuperPass999!
     change_cmd = """
@@ -42,6 +42,16 @@ public.writeFile(\"/www/server/panel/default.pl\", \"SuperPass999!\")
 
     # 4. Revert credentials back to default (mitranet / mitranet123)
     revert_cmd = """
+
+import os as _os, sys as _sys
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while not _os.path.exists(_os.path.join(_d, "mitranet_secrets.py")):
+    _p = _os.path.dirname(_d)
+    if _p == _d: break
+    _d = _p
+_sys.path.insert(0, _d)
+from mitranet_secrets import LAB_HOST, LAB_PASS, LAB_USER, WEBUI_PASS, WEBUI_USER
+
 ssh -o StrictHostKeyChecking=no root@192.168.101.118 "
 /www/server/panel/pyenv/bin/python3 -c '
 import sys

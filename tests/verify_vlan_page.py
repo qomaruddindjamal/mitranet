@@ -1,8 +1,18 @@
+
+import os as _os, sys as _sys
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while not _os.path.exists(_os.path.join(_d, "mitranet_secrets.py")):
+    _p = _os.path.dirname(_d)
+    if _p == _d: break
+    _d = _p
+_sys.path.insert(0, _d)
+from mitranet_secrets import MINIPC_HOST, MINIPC_PASS, MINIPC_USER, WEBUI_PASS, WEBUI_USER
+
 import paramiko
 
 client = paramiko.SSHClient()
 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-client.connect('10.10.66.228', username='root', password='mitranet', timeout=5)
+client.connect(MINIPC_HOST, username=MINIPC_USER, password=MINIPC_PASS, timeout=5)
 
 sftp = client.open_sftp()
 with sftp.file('/tmp/test_vlan_page.py', 'w') as f:
@@ -13,7 +23,7 @@ cj = http.cookiejar.CookieJar()
 opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
 
 # 1. Login
-login_data = urllib.parse.urlencode({'username': 'admin', 'password': 'mitranet'}).encode()
+login_data = urllib.parse.urlencode({'username': WEBUI_USER, 'password': WEBUI_PASS}).encode()
 opener.open('http://127.0.0.1:8000/login.php', login_data)
 
 # 2. Get VLAN page

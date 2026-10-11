@@ -1,3 +1,13 @@
+
+import os as _os, sys as _sys
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while not _os.path.exists(_os.path.join(_d, "mitranet_secrets.py")):
+    _p = _os.path.dirname(_d)
+    if _p == _d: break
+    _d = _p
+_sys.path.insert(0, _d)
+from mitranet_secrets import WEBUI_PASS, WEBUI_USER
+
 import json
 import urllib.request
 import http.cookiejar
@@ -17,7 +27,7 @@ with opener.open(req) as resp:
     print("[TEST 1/14] Ping:", resp.status, data.get("status"))
 
 # 2. Test login
-login_data = json.dumps({"username": "admin", "password": "mitranet"}).encode()
+login_data = json.dumps({"username": WEBUI_USER, "password": WEBUI_PASS}).encode()
 req = urllib.request.Request(
     f"{BASE_URL}/api/v1/auth/login",
     data=login_data,

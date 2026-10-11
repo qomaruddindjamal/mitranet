@@ -1,9 +1,19 @@
+
+import os as _os, sys as _sys
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while not _os.path.exists(_os.path.join(_d, "mitranet_secrets.py")):
+    _p = _os.path.dirname(_d)
+    if _p == _d: break
+    _d = _p
+_sys.path.insert(0, _d)
+from mitranet_secrets import WEBUI_PASS, WEBUI_USER
+
 import requests
 
 session = requests.Session()
 # Login with correct password: admin / mitranet
 login_url = "http://192.168.56.101:8443/login.php"
-res_login = session.post(login_url, data={"username": "admin", "password": "mitranet"}, allow_redirects=True)
+res_login = session.post(login_url, data={"username": WEBUI_USER, "password": WEBUI_PASS}, allow_redirects=True)
 print("Login status:", res_login.status_code, "Final URL:", res_login.url)
 print("Cookies:", session.cookies.get_dict())
 
