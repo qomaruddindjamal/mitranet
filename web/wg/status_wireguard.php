@@ -202,68 +202,55 @@ $tab_array = array(
 						<td class="text-center col-menu"></td>
 					</tr>
 
-					<!-- NESTED PEERS SUB-TABLE (ACCORDION / COLLAPSIBLE) -->
+					<!-- NESTED PEERS SUB-TABLE (SEJAJAR & RAPI SESUAI KOLOM TABEL UTAMA) -->
 					<?php if (!empty($tun['peers'])): ?>
-					<tr class="status-peers-row" id="peers-row-<?=htmlspecialchars($t_name)?>" data-parent="<?=htmlspecialchars($t_name)?>" style="display: none;">
-						<td colspan="12" style="background: #fdfefe; padding: 6px 15px 10px 38px; border-top: none; border-bottom: 2px solid #adc5dd;">
-							<div style="background: #ffffff; border: 1px solid #d1dfed; border-radius: 4px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-								<div style="background: #eef5fb; padding: 4px 8px; font-size: 11px; font-weight: 700; color: #1e395b; border-bottom: 1px solid #d1dfed; display:flex; justify-content:space-between; align-items:center;">
-									<span><i class="fa-solid fa-users text-primary"></i> Associated Peers / Secrets for <code><?=htmlspecialchars($t_name)?></code></span>
-									<span class="text-muted" style="font-weight:normal; font-size:10px;">Subsystem Client Sessions</span>
-								</div>
-								<table class="table table-condensed table-hover" style="margin-bottom: 0; font-size: 11px;">
-									<thead>
-										<tr style="background: #fafcfe; color: #4a6382;">
-											<th style="width: 180px;">Peer / Description</th>
-											<th>Public Key</th>
-											<th>Endpoint Host:Port</th>
-											<th>Allowed IPs</th>
-											<th>Handshake</th>
-											<th>Rx</th>
-											<th>Tx</th>
-										</tr>
-									</thead>
-									<tbody>
-									<?php foreach ($tun['peers'] as $peer): ?>
-									<?php 
-										$p_rx = floatval($peer['transfer_rx'] ?? 0);
-										$p_tx = floatval($peer['transfer_tx'] ?? 0);
-										$p_rx_fmt = $p_rx > 1048576 ? number_format($p_rx / 1048576, 2) . ' MiB' : number_format($p_rx / 1024, 2) . ' KiB';
-										$p_tx_fmt = $p_tx > 1048576 ? number_format($p_tx / 1048576, 2) . ' MiB' : number_format($p_tx / 1024, 2) . ' KiB';
-										$has_hs = !empty($peer['latest_handshake']) && intval($peer['latest_handshake']) > 0;
-										$safe_pubkey_id = substr(preg_replace('/[^a-zA-Z0-9]/', '', $peer['public_key']), 0, 16);
-									?>
-										<tr class="status-peer-item-row"
-										    style="cursor: pointer;"
-										    data-pubkey="<?=htmlspecialchars($peer['public_key'])?>"
-										    data-tun="<?=htmlspecialchars($t_name)?>"
-										    data-name="<?=htmlspecialchars($peer['description'] ?? 'Peer')?>"
-										    data-endpoint="<?=htmlspecialchars($peer['endpoint'] ?? '')?>"
-										    data-allowed="<?=htmlspecialchars($peer['allowed_ips'] ?? '')?>"
-										    data-keepalive="<?=htmlspecialchars($peer['persistent_keepalive'] ?? '25')?>"
-										    onclick="selectStatusPeerRow(this, event)">
-											<td><strong><?=htmlspecialchars($peer['description'] ?? 'Peer')?></strong></td>
-											<td class="pubkey" title="<?=htmlspecialchars($peer['public_key'])?>">
-												<code><?=htmlspecialchars(substr($peer['public_key'], 0, 16))?>...</code>
-											</td>
-											<td><code id="peer-ep-<?=$safe_pubkey_id?>"><?=htmlspecialchars($peer['endpoint'] ?: 'Dynamic')?></code></td>
-											<td><span class="badge" style="background:#e2ecf5; color:#1e395b; font-weight:normal; font-size:10px;"><?=htmlspecialchars($peer['allowed_ips'])?></span></td>
-											<td id="peer-hs-<?=$safe_pubkey_id?>">
-												<?php if ($has_hs): ?>
-													<span class="text-success"><i class="fa-solid fa-circle-check"></i> Connected</span>
-												<?php else: ?>
-													<span class="text-muted"><i class="fa-regular fa-clock"></i> Idle / Never</span>
-												<?php endif; ?>
-											</td>
-											<td><span class="peer-rx-val" id="peer-rx-<?=$safe_pubkey_id?>" style="font-family: monospace; font-size: 11px; color: #1e395b; font-weight: 600;"><?=$p_rx_fmt?></span></td>
-											<td><span class="peer-tx-val" id="peer-tx-<?=$safe_pubkey_id?>" style="font-family: monospace; font-size: 11px; color: #1e395b; font-weight: 600;"><?=$p_tx_fmt?></span></td>
-										</tr>
-									<?php endforeach; ?>
-									</tbody>
-								</table>
-							</div>
+					<?php foreach ($tun['peers'] as $peer): ?>
+					<?php 
+						$p_rx = floatval($peer['transfer_rx'] ?? 0);
+						$p_tx = floatval($peer['transfer_tx'] ?? 0);
+						$p_rx_fmt = $p_rx > 1048576 ? number_format($p_rx / 1048576, 2) . ' MiB' : number_format($p_rx / 1024, 2) . ' KiB';
+						$p_tx_fmt = $p_tx > 1048576 ? number_format($p_tx / 1048576, 2) . ' MiB' : number_format($p_tx / 1024, 2) . ' KiB';
+						$has_hs = !empty($peer['latest_handshake']) && intval($peer['latest_handshake']) > 0;
+						$safe_pubkey_id = substr(preg_replace('/[^a-zA-Z0-9]/', '', $peer['public_key']), 0, 16);
+					?>
+					<tr class="status-peers-row status-peer-item-row"
+					    id="peers-row-<?=htmlspecialchars($t_name)?>"
+					    data-parent="<?=htmlspecialchars($t_name)?>"
+					    data-pubkey="<?=htmlspecialchars($peer['public_key'])?>"
+					    data-tun="<?=htmlspecialchars($t_name)?>"
+					    data-name="<?=htmlspecialchars($peer['description'] ?? 'Peer')?>"
+					    data-endpoint="<?=htmlspecialchars($peer['endpoint'] ?? '')?>"
+					    data-allowed="<?=htmlspecialchars($peer['allowed_ips'] ?? '')?>"
+					    data-keepalive="<?=htmlspecialchars($peer['persistent_keepalive'] ?? '25')?>"
+					    onclick="selectStatusPeerRow(this, event)"
+					    style="display: none; background: #f8fafc; font-size: 11px; cursor: pointer; border-bottom: 1px solid #e2e8f0;">
+						<td class="text-center col-flag-cell" style="color: #64748b;">
+							<i class="fa-solid fa-arrow-turn-up fa-rotate-90" style="font-size: 10px;"></i>
 						</td>
+						<td style="padding-left: 20px;">
+							<i class="fa-solid fa-user-lock text-primary" style="font-size: 10px; margin-right: 4px;"></i>
+							<strong><?=htmlspecialchars($peer['description'] ?? 'Peer')?></strong>
+						</td>
+						<td id="peer-hs-<?=$safe_pubkey_id?>">
+							<?php if ($has_hs): ?>
+								<span class="label label-success" style="font-size: 10px;"><i class="fa-solid fa-circle-check"></i> Connected</span>
+							<?php else: ?>
+								<span class="label label-default" style="font-size: 10px;"><i class="fa-regular fa-clock"></i> Idle / Never</span>
+							<?php endif; ?>
+						</td>
+						<td><span class="text-muted" style="font-size: 10px;">Peer Client</span></td>
+						<td class="td-comment text-muted" style="font-size: 10px;">Endpoint: <code id="peer-ep-<?=$safe_pubkey_id?>" style="font-size: 10px;"><?=htmlspecialchars($peer['endpoint'] ?: 'Dynamic')?></code></td>
+						<td><span class="badge" style="background:#e2ecf5; color:#1e395b; font-weight:normal; font-size:10px;"><?=htmlspecialchars($peer['allowed_ips'])?></span></td>
+						<td><span class="text-muted" style="font-size: 10px;"><?=htmlspecialchars($peer['persistent_keepalive'] ?? '25')?>s</span></td>
+						<td class="td-pubkey" title="<?=htmlspecialchars($peer['public_key'])?>">
+							<code><?=htmlspecialchars(substr($peer['public_key'], 0, 16))?>...</code>
+						</td>
+						<td><span class="text-muted" style="font-size: 10px;">Session</span></td>
+						<td><span class="peer-rx-val" id="peer-rx-<?=$safe_pubkey_id?>" style="font-family: monospace; font-size: 11px; color: #1e395b; font-weight: 600;"><?=$p_rx_fmt?></span></td>
+						<td><span class="peer-tx-val" id="peer-tx-<?=$safe_pubkey_id?>" style="font-family: monospace; font-size: 11px; color: #1e395b; font-weight: 600;"><?=$p_tx_fmt?></span></td>
+						<td class="text-center col-menu"></td>
 					</tr>
+					<?php endforeach; ?>
 					<?php endif; ?>
 
 					<?php endforeach; ?>
@@ -349,15 +336,15 @@ var selectedStatusPeerData = null;
 // Toggle Peers Sub-Table (Accordion)
 function toggleStatusPeers(tunName, e) {
     if (e) e.stopPropagation();
-    var peerRow = $('#peers-row-' + tunName);
+    var peerRows = $('#status-grid-table tbody tr.status-peers-row[data-parent="' + tunName + '"]');
     var chevron = $('#chevron-' + tunName);
-    if (peerRow.length === 0) return;
+    if (peerRows.length === 0) return;
 
-    if (peerRow.is(':visible')) {
-        peerRow.hide();
+    if (peerRows.is(':visible')) {
+        peerRows.hide();
         chevron.removeClass('fa-chevron-down').addClass('fa-chevron-right');
     } else {
-        peerRow.show();
+        peerRows.show();
         chevron.removeClass('fa-chevron-right').addClass('fa-chevron-down');
     }
 }
