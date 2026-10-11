@@ -161,7 +161,8 @@ $tab_array = array(
 					    data-comment="<?=htmlspecialchars($t_desc)?>"
 					    onclick="selectStatusRow(this, '<?=htmlspecialchars($t_name, ENT_QUOTES)?>')"
 					    ondblclick="toggleStatusPeers('<?=htmlspecialchars($t_name, ENT_QUOTES)?>', event)"
-					    title="Double-click baris untuk expand / collapse peers">
+					    title="Double-click baris untuk expand / collapse peers"
+					    style="font-size: 12px;">
 						<td class="text-center col-flag-cell" style="cursor: pointer;" onclick="toggleStatusPeers('<?=htmlspecialchars($t_name, ENT_QUOTES)?>', event)" title="<?=$peer_count > 0 ? 'Double-click untuk melihat / menyembunyikan detail peers' : 'Status Interface'?>">
 							<?php if ($is_up): ?>
 								<i class="fa-solid fa-check text-success" title="Running / Link UP"></i>
@@ -174,31 +175,31 @@ $tab_array = array(
 						</td>
 						<td class="text-center">
 							<?php if ($is_up): ?>
-								<span style="color: #15803d; font-weight: 600; font-size: 11px;"><i class="fa-solid fa-circle" style="font-size: 7px; vertical-align: middle; margin-right: 3px;"></i> UP</span>
+								<span style="color: #15803d; font-weight: 600; font-size: 12px;"><i class="fa-solid fa-circle" style="font-size: 8px; vertical-align: middle; margin-right: 4px;"></i> UP</span>
 							<?php else: ?>
-								<span style="color: #64748b; font-weight: 600; font-size: 11px;"><i class="fa-solid fa-circle" style="font-size: 7px; vertical-align: middle; margin-right: 3px;"></i> DOWN</span>
+								<span style="color: #64748b; font-weight: 600; font-size: 12px;"><i class="fa-solid fa-circle" style="font-size: 8px; vertical-align: middle; margin-right: 4px;"></i> DOWN</span>
 							<?php endif; ?>
 						</td>
 						<td class="text-center">
 							<?php if ($is_srv): ?>
-								<span style="color: #0369a1; font-weight: 600; font-size: 11px;">Server</span>
+								<span style="color: #0369a1; font-weight: 600; font-size: 12px;">Server</span>
 							<?php else: ?>
-								<span style="color: #0284c7; font-weight: 600; font-size: 11px;">Client</span>
+								<span style="color: #0284c7; font-weight: 600; font-size: 12px;">Client</span>
 							<?php endif; ?>
 						</td>
-						<td class="td-comment"><?=htmlspecialchars($t_desc)?></td>
-						<td><code><?=htmlspecialchars($t_addr)?></code></td>
-						<td class="text-center"><?=htmlspecialchars($tun['listen_port'] ?? '51820')?></td>
-						<td class="td-pubkey"
+						<td class="td-comment" style="font-size: 12px;"><?=htmlspecialchars($t_desc)?></td>
+						<td><code style="font-size: 12px;"><?=htmlspecialchars($t_addr)?></code></td>
+						<td class="text-center" style="font-size: 12px;"><?=htmlspecialchars($tun['listen_port'] ?? '51820')?></td>
+						<td class="td-pubkey" style="font-size: 12px;"
 						    title="Klik untuk salin: <?=htmlspecialchars($tun['public_key'] ?? '')?>"
 						    onclick="navigator.clipboard.writeText('<?=htmlspecialchars($tun['public_key'] ?? '')?>'); MitraNet.toast('Public key disalin ke clipboard', 'success'); event.stopPropagation();">
 							<?=htmlspecialchars(substr($tun['public_key'] ?? '', 0, 16))?>...
 						</td>
 						<td class="text-center" style="cursor: pointer;" onclick="toggleStatusPeers('<?=htmlspecialchars($t_name, ENT_QUOTES)?>', event)" title="Klik untuk expand / collapse peers">
-							<strong style="color: #1e395b; font-size: 11px;"><?=$peer_count?></strong>
+							<strong style="color: #1e395b; font-size: 12px;"><?=$peer_count?></strong>
 						</td>
-						<td><span class="rx-val" id="tun-rx-<?=htmlspecialchars($t_name)?>" style="font-family: monospace; font-size: 11px; color: #1e395b; font-weight: 600;"><?=$rx_fmt?></span></td>
-						<td><span class="tx-val" id="tun-tx-<?=htmlspecialchars($t_name)?>" style="font-family: monospace; font-size: 11px; color: #1e395b; font-weight: 600;"><?=$tx_fmt?></span></td>
+						<td><span class="rx-val" id="tun-rx-<?=htmlspecialchars($t_name)?>" style="font-family: monospace; font-size: 12px; color: #1e395b; font-weight: 600;"><?=$rx_fmt?></span></td>
+						<td><span class="tx-val" id="tun-tx-<?=htmlspecialchars($t_name)?>" style="font-family: monospace; font-size: 12px; color: #1e395b; font-weight: 600;"><?=$tx_fmt?></span></td>
 						<td class="text-center col-menu"></td>
 					</tr>
 
@@ -223,31 +224,31 @@ $tab_array = array(
 					    data-allowed="<?=htmlspecialchars($peer['allowed_ips'] ?? '')?>"
 					    data-keepalive="<?=htmlspecialchars($peer['persistent_keepalive'] ?? '25')?>"
 					    onclick="selectStatusPeerRow(this, event)"
-					    style="display: none; background: #f8fafc; font-size: 11px; cursor: pointer; border-bottom: 1px solid #e2e8f0;">
+					    style="display: none; background: #f8fafc; font-size: 12px; cursor: pointer; border-bottom: 1px solid #e2e8f0;">
 						<td class="text-center col-flag-cell" style="color: #64748b;">
-							<i class="fa-solid fa-arrow-turn-up fa-rotate-90" style="font-size: 10px;"></i>
+							<i class="fa-solid fa-arrow-turn-up fa-rotate-90" style="font-size: 11px;"></i>
 						</td>
 						<td style="padding-left: 12px;">
-							<i class="fa-solid fa-user-lock text-primary" style="font-size: 10px; margin-right: 4px;"></i>
+							<i class="fa-solid fa-user-lock text-primary" style="font-size: 11px; margin-right: 5px;"></i>
 							<strong><?=htmlspecialchars($peer['description'] ?? 'Peer')?></strong>
 						</td>
 						<td class="text-center" id="peer-hs-<?=$safe_pubkey_id?>">
 							<?php if ($has_hs): ?>
-								<span style="color: #15803d; font-weight: 600; font-size: 11px;"><i class="fa-solid fa-circle" style="font-size: 7px; vertical-align: middle; margin-right: 3px;"></i> Connected</span>
+								<span style="color: #15803d; font-weight: 600; font-size: 12px;"><i class="fa-solid fa-circle" style="font-size: 8px; vertical-align: middle; margin-right: 4px;"></i> Connected</span>
 							<?php else: ?>
-								<span style="color: #64748b; font-weight: 600; font-size: 11px;"><i class="fa-solid fa-circle" style="font-size: 7px; vertical-align: middle; margin-right: 3px;"></i> Idle</span>
+								<span style="color: #64748b; font-weight: 600; font-size: 12px;"><i class="fa-solid fa-circle" style="font-size: 8px; vertical-align: middle; margin-right: 4px;"></i> Idle</span>
 							<?php endif; ?>
 						</td>
-						<td class="text-center"><span style="color: #0284c7; font-weight: 600; font-size: 11px;">Peer</span></td>
-						<td class="td-comment text-muted" style="font-size: 10px;">Endpoint: <code id="peer-ep-<?=$safe_pubkey_id?>" style="font-size: 10px;"><?=htmlspecialchars($peer['endpoint'] ?: 'Dynamic')?></code></td>
-						<td><span class="badge" style="background:#e2ecf5; color:#1e395b; font-weight:normal; font-size:10px;"><?=htmlspecialchars($peer['allowed_ips'])?></span></td>
-						<td class="text-center"><span class="text-muted" style="font-size: 10px;"><?=htmlspecialchars($peer['persistent_keepalive'] ?? '25')?>s</span></td>
-						<td class="td-pubkey" title="<?=htmlspecialchars($peer['public_key'])?>">
-							<code><?=htmlspecialchars(substr($peer['public_key'], 0, 16))?>...</code>
+						<td class="text-center"><span style="color: #0284c7; font-weight: 600; font-size: 12px;">Peer</span></td>
+						<td class="td-comment text-muted" style="font-size: 12px;">Endpoint: <code id="peer-ep-<?=$safe_pubkey_id?>" style="font-size: 12px;"><?=htmlspecialchars($peer['endpoint'] ?: 'Dynamic')?></code></td>
+						<td><span class="badge" style="background:#e2ecf5; color:#1e395b; font-weight:normal; font-size:11px;"><?=htmlspecialchars($peer['allowed_ips'])?></span></td>
+						<td class="text-center"><span class="text-muted" style="font-size: 12px;"><?=htmlspecialchars($peer['persistent_keepalive'] ?? '25')?>s</span></td>
+						<td class="td-pubkey" title="<?=htmlspecialchars($peer['public_key'])?>" style="font-size: 12px;">
+							<code style="font-size: 12px;"><?=htmlspecialchars(substr($peer['public_key'], 0, 16))?>...</code>
 						</td>
-						<td class="text-center"><span class="text-muted" style="font-size: 11px;">-</span></td>
-						<td><span class="peer-rx-val" id="peer-rx-<?=$safe_pubkey_id?>" style="font-family: monospace; font-size: 11px; color: #1e395b; font-weight: 600;"><?=$p_rx_fmt?></span></td>
-						<td><span class="peer-tx-val" id="peer-tx-<?=$safe_pubkey_id?>" style="font-family: monospace; font-size: 11px; color: #1e395b; font-weight: 600;"><?=$p_tx_fmt?></span></td>
+						<td class="text-center"><span class="text-muted" style="font-size: 12px;">-</span></td>
+						<td><span class="peer-rx-val" id="peer-rx-<?=$safe_pubkey_id?>" style="font-family: monospace; font-size: 12px; color: #1e395b; font-weight: 600;"><?=$p_rx_fmt?></span></td>
+						<td><span class="peer-tx-val" id="peer-tx-<?=$safe_pubkey_id?>" style="font-family: monospace; font-size: 12px; color: #1e395b; font-weight: 600;"><?=$p_tx_fmt?></span></td>
 						<td class="text-center col-menu"></td>
 					</tr>
 					<?php endforeach; ?>
@@ -602,9 +603,9 @@ function pollWireGuardTelemetry() {
 
                     var hs = parseInt(peer.latest_handshake) || 0;
                     if (hs > 0) {
-                        $('#peer-hs-' + safeId).html('<span style="color: #15803d; font-weight: 600; font-size: 11px;"><i class="fa-solid fa-circle" style="font-size: 7px; vertical-align: middle; margin-right: 3px;"></i> Connected</span>');
+                        $('#peer-hs-' + safeId).html('<span style="color: #15803d; font-weight: 600; font-size: 12px;"><i class="fa-solid fa-circle" style="font-size: 8px; vertical-align: middle; margin-right: 4px;"></i> Connected</span>');
                     } else {
-                        $('#peer-hs-' + safeId).html('<span style="color: #64748b; font-weight: 600; font-size: 11px;"><i class="fa-solid fa-circle" style="font-size: 7px; vertical-align: middle; margin-right: 3px;"></i> Idle</span>');
+                        $('#peer-hs-' + safeId).html('<span style="color: #64748b; font-weight: 600; font-size: 12px;"><i class="fa-solid fa-circle" style="font-size: 8px; vertical-align: middle; margin-right: 4px;"></i> Idle</span>');
                     }
                 });
             }
