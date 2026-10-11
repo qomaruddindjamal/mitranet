@@ -108,17 +108,17 @@ $tab_array = array(
 			<table class="mitranet-grid" id="status-grid-table">
 				<thead>
 					<tr>
-						<th class="text-center col-flag" style="width: 28px;"><i class="fa-regular fa-flag text-muted"></i></th>
-						<th>Tunnel <i class="fa-solid fa-caret-up"></i></th>
-						<th>Status</th>
-						<th>Mode</th>
+						<th class="text-center col-flag" style="width: 32px;"><i class="fa-regular fa-flag text-muted"></i></th>
+						<th style="width: 140px;">Tunnel <i class="fa-solid fa-caret-up"></i></th>
+						<th class="text-center" style="width: 90px;">Status</th>
+						<th class="text-center" style="width: 95px;">Mode</th>
 						<th>Description</th>
-						<th>Address / CIDR</th>
-						<th>Listen Port</th>
+						<th style="width: 130px;">Address / CIDR</th>
+						<th class="text-center" style="width: 85px;">Port</th>
 						<th>Public Key</th>
-						<th>Peers</th>
-						<th>Rx</th>
-						<th>Tx</th>
+						<th class="text-center" style="width: 90px;">Peers</th>
+						<th style="width: 100px;">Rx</th>
+						<th style="width: 100px;">Tx</th>
 						<th class="text-center col-menu" style="width: 24px;"><i class="fa-solid fa-bars text-muted"></i></th>
 					</tr>
 				</thead>
@@ -146,8 +146,9 @@ $tab_array = array(
 					    data-enabled="<?=$is_up ? '1' : '0'?>"
 					    data-comment="<?=htmlspecialchars($t_desc)?>"
 					    onclick="selectStatusRow(this, '<?=htmlspecialchars($t_name, ENT_QUOTES)?>')"
-					    ondblclick="toggleStatusPeers('<?=htmlspecialchars($t_name, ENT_QUOTES)?>', event)">
-						<td class="text-center col-flag-cell" style="cursor: pointer;" onclick="toggleStatusPeers('<?=htmlspecialchars($t_name, ENT_QUOTES)?>', event)" title="<?=$peer_count > 0 ? 'Klik untuk melihat / menyembunyikan detail peers' : 'Status Interface'?>">
+					    ondblclick="toggleStatusPeers('<?=htmlspecialchars($t_name, ENT_QUOTES)?>', event)"
+					    title="Double-click baris untuk expand / collapse peers">
+						<td class="text-center col-flag-cell" style="cursor: pointer;" onclick="toggleStatusPeers('<?=htmlspecialchars($t_name, ENT_QUOTES)?>', event)" title="<?=$peer_count > 0 ? 'Double-click untuk melihat / menyembunyikan detail peers' : 'Status Interface'?>">
 							<?php if ($is_up): ?>
 								<i class="fa-solid fa-check text-success" title="Running / Link UP"></i>
 							<?php else: ?>
@@ -155,26 +156,16 @@ $tab_array = array(
 							<?php endif; ?>
 						</td>
 						<td>
-							<?php if ($peer_count > 0): ?>
-								<button type="button" class="btn btn-xs btn-link p-0 text-muted btn-toggle-peers" 
-								        style="font-size: 11px; margin-right: 4px; text-decoration: none;"
-								        onclick="toggleStatusPeers('<?=htmlspecialchars($t_name, ENT_QUOTES)?>', event)" 
-								        title="Expand / Collapse Peers">
-									<i class="fa-solid fa-chevron-right" id="chevron-<?=htmlspecialchars($t_name)?>"></i>
-								</button>
-							<?php else: ?>
-								<span style="display: inline-block; width: 14px;"></span>
-							<?php endif; ?>
 							<strong><code><?=htmlspecialchars($t_name)?></code></strong>
 						</td>
-						<td>
+						<td class="text-center">
 							<?php if ($is_up): ?>
 								<span class="badge-status-up"><i class="fa-solid fa-circle-check"></i> UP</span>
 							<?php else: ?>
 								<span class="badge-status-down"><i class="fa-solid fa-circle-stop"></i> DOWN</span>
 							<?php endif; ?>
 						</td>
-						<td>
+						<td class="text-center">
 							<?php if ($is_srv): ?>
 								<span class="badge-mode-server"><i class="fa-solid fa-server"></i> Server</span>
 							<?php else: ?>
@@ -183,16 +174,16 @@ $tab_array = array(
 						</td>
 						<td class="td-comment"><?=htmlspecialchars($t_desc)?></td>
 						<td><code><?=htmlspecialchars($t_addr)?></code></td>
-						<td><?=htmlspecialchars($tun['listen_port'] ?? '51820')?></td>
+						<td class="text-center"><?=htmlspecialchars($tun['listen_port'] ?? '51820')?></td>
 						<td class="td-pubkey"
 						    title="Klik untuk salin: <?=htmlspecialchars($tun['public_key'] ?? '')?>"
 						    onclick="navigator.clipboard.writeText('<?=htmlspecialchars($tun['public_key'] ?? '')?>'); MitraNet.toast('Public key disalin ke clipboard', 'success'); event.stopPropagation();">
 							<?=htmlspecialchars(substr($tun['public_key'] ?? '', 0, 16))?>...
 						</td>
-						<td>
+						<td class="text-center">
 							<span class="badge-peers-count" 
 							      onclick="toggleStatusPeers('<?=htmlspecialchars($t_name, ENT_QUOTES)?>', event)"
-							      title="Klik untuk melihat / menyembunyikan detail peers">
+							      title="Klik atau double-click baris untuk melihat peers">
 								<i class="fa-solid fa-users" style="font-size: 9px; margin-right: 3px;"></i> <?=$peer_count?> peer<?=$peer_count === 1 ? '' : 's'?>
 							</span>
 						</td>
@@ -226,25 +217,25 @@ $tab_array = array(
 						<td class="text-center col-flag-cell" style="color: #64748b;">
 							<i class="fa-solid fa-arrow-turn-up fa-rotate-90" style="font-size: 10px;"></i>
 						</td>
-						<td style="padding-left: 20px;">
+						<td style="padding-left: 12px;">
 							<i class="fa-solid fa-user-lock text-primary" style="font-size: 10px; margin-right: 4px;"></i>
 							<strong><?=htmlspecialchars($peer['description'] ?? 'Peer')?></strong>
 						</td>
-						<td id="peer-hs-<?=$safe_pubkey_id?>">
+						<td class="text-center" id="peer-hs-<?=$safe_pubkey_id?>">
 							<?php if ($has_hs): ?>
 								<span class="badge-status-up" style="font-size: 10px; padding: 2px 6px;"><i class="fa-solid fa-circle-check"></i> Connected</span>
 							<?php else: ?>
 								<span class="badge-status-down" style="font-size: 10px; padding: 2px 6px;"><i class="fa-regular fa-clock"></i> Idle / Never</span>
 							<?php endif; ?>
 						</td>
-						<td><span class="text-muted" style="font-size: 10px;">Peer Client</span></td>
+						<td class="text-center"><span class="badge-mode-client" style="font-size: 10px; padding: 2px 6px;"><i class="fa-solid fa-network-wired"></i> Peer</span></td>
 						<td class="td-comment text-muted" style="font-size: 10px;">Endpoint: <code id="peer-ep-<?=$safe_pubkey_id?>" style="font-size: 10px;"><?=htmlspecialchars($peer['endpoint'] ?: 'Dynamic')?></code></td>
 						<td><span class="badge" style="background:#e2ecf5; color:#1e395b; font-weight:normal; font-size:10px;"><?=htmlspecialchars($peer['allowed_ips'])?></span></td>
-						<td><span class="text-muted" style="font-size: 10px;"><?=htmlspecialchars($peer['persistent_keepalive'] ?? '25')?>s</span></td>
+						<td class="text-center"><span class="text-muted" style="font-size: 10px;"><?=htmlspecialchars($peer['persistent_keepalive'] ?? '25')?>s</span></td>
 						<td class="td-pubkey" title="<?=htmlspecialchars($peer['public_key'])?>">
 							<code><?=htmlspecialchars(substr($peer['public_key'], 0, 16))?>...</code>
 						</td>
-						<td><span class="text-muted" style="font-size: 10px;">Session</span></td>
+						<td class="text-center"><span class="badge" style="background: #e2e8f0; color: #475569; font-weight: normal; font-size: 9px;">Session</span></td>
 						<td><span class="peer-rx-val" id="peer-rx-<?=$safe_pubkey_id?>" style="font-family: monospace; font-size: 11px; color: #1e395b; font-weight: 600;"><?=$p_rx_fmt?></span></td>
 						<td><span class="peer-tx-val" id="peer-tx-<?=$safe_pubkey_id?>" style="font-family: monospace; font-size: 11px; color: #1e395b; font-weight: 600;"><?=$p_tx_fmt?></span></td>
 						<td class="text-center col-menu"></td>
@@ -336,15 +327,12 @@ var selectedStatusPeerData = null;
 function toggleStatusPeers(tunName, e) {
     if (e) e.stopPropagation();
     var peerRows = $('#status-grid-table tbody tr.status-peers-row[data-parent="' + tunName + '"]');
-    var chevron = $('#chevron-' + tunName);
     if (peerRows.length === 0) return;
 
     if (peerRows.is(':visible')) {
         peerRows.hide();
-        chevron.removeClass('fa-chevron-down').addClass('fa-chevron-right');
     } else {
         peerRows.show();
-        chevron.removeClass('fa-chevron-right').addClass('fa-chevron-down');
     }
 }
 
