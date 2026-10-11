@@ -46,18 +46,19 @@ def sync_to_minipc():
                 except Exception as e:
                     print(f"  Fail to put {rp}: {e}")
 
-    log("2/4 Syncing web/, core/, src/, ai/ to Mini PC...")
-    sftp_sync_dir(os.path.join(PROJECT_ROOT, "web"), "/mitranet/web")
-    sftp_sync_dir(os.path.join(PROJECT_ROOT, "web"), "/usr/share/mitranet/web")
-    sftp_sync_dir(os.path.join(PROJECT_ROOT, "core"), "/mitranet/core")
-    sftp_sync_dir(os.path.join(PROJECT_ROOT, "src"), "/mitranet/src")
-    sftp_sync_dir(os.path.join(PROJECT_ROOT, "ai"), "/mitranet/ai")
-    sftp_sync_dir(os.path.join(PROJECT_ROOT, "tests"), "/mitranet/tests")
+    log("2/4 Syncing web/, core/, src/, tests/ to Mini PC...")
+    for sub in ["web", "core", "src", "ai", "tests"]:
+        lp = os.path.join(PROJECT_ROOT, sub)
+        if os.path.isdir(lp):
+            sftp_sync_dir(lp, f"/mitranet/{sub}")
+            if sub == "web":
+                sftp_sync_dir(lp, "/usr/share/mitranet/web")
 
     # Sync python package to /usr/lib/python3/dist-packages/mitranet
     sftp_sync_dir(os.path.join(PROJECT_ROOT, "core"), "/usr/lib/python3/dist-packages/mitranet/core")
     sftp_sync_dir(os.path.join(PROJECT_ROOT, "src"), "/usr/lib/python3/dist-packages/mitranet/src")
-    sftp_sync_dir(os.path.join(PROJECT_ROOT, "src", "api"), "/usr/lib/python3/dist-packages/mitranet/api")
+    if os.path.isdir(os.path.join(PROJECT_ROOT, "src", "api")):
+        sftp_sync_dir(os.path.join(PROJECT_ROOT, "src", "api"), "/usr/lib/python3/dist-packages/mitranet/api")
     
     # Restart API server & WebUI service cleanly
     log("2.1/4 Restarting MitraNet WebUI & API on Mini PC...")
@@ -84,12 +85,14 @@ def push_to_github(commit_msg="chore: auto-sync update to repo, minipc and iso")
     log("4/4 Checking Git status and pushing to GitHub...")
     subprocess.run(["git", "add", "-u"], cwd=PROJECT_ROOT, capture_output=True)
     
+    branch_res = subprocess.run(["git", "branch", "--show-current"], cwd=PROJECT_ROOT, capture_output=True, text=True)
+    curr_branch = branch_res.stdout.strip() or "main"
     status_res = subprocess.run(["git", "status", "--porcelain"], cwd=PROJECT_ROOT, capture_output=True, text=True)
     if status_res.stdout.strip():
         subprocess.run(["git", "commit", "-m", commit_msg], cwd=PROJECT_ROOT, capture_output=True)
-        push_res = subprocess.run(["git", "push", "origin", "main"], cwd=PROJECT_ROOT, capture_output=True, text=True)
+        push_res = subprocess.run(["git", "push", "origin", curr_branch], cwd=PROJECT_ROOT, capture_output=True, text=True)
         if push_res.returncode == 0:
-            log("Git push to GitHub SUCCESS!")
+            log(f"Git push to GitHub ({curr_branch}) SUCCESS!")
         else:
             log(f"Git push error: {push_res.stderr}")
             return False

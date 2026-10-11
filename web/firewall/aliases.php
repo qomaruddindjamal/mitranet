@@ -1,16 +1,6 @@
 <?php
-/*
- * firewall_aliases.php - MitraNet Firewall Aliases
- * Adapted from pfSense firewall_aliases.php
- * Licensed under the Apache License, Version 2.0.
- */
-
-$pgtitle = array("Firewall", "Aliases");
-$selected_menu = "firewall";
-require_once(__DIR__ . '/../includes/head.inc');
-
-$fw = MitraNetApi::getFirewall();
-$rules = $fw['candidate']['rules'] ?? [];
+header('Location: /firewall/rules.php?tab=address_lists');
+exit;
 ?>
 
 <h2>Firewall: Aliases</h2>

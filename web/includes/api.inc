@@ -139,6 +139,20 @@ class MitraNetApi {
         return $res['status'] === 200 ? $res['data'] : [];
     }
 
+    public static function toggleFirewallRule($id, $enabled = null) {
+        return self::request('/firewall/rule/toggle', 'POST', [
+            'id' => $id,
+            'enabled' => $enabled
+        ]);
+    }
+
+    public static function commentFirewallRule($id, $comment) {
+        return self::request('/firewall/rule/comment', 'POST', [
+            'id' => $id,
+            'comment' => $comment
+        ]);
+    }
+
     public static function getGateways() {
         $res = self::request('/gateways');
         return $res['status'] === 200 ? $res['data'] : [];

@@ -75,9 +75,15 @@ $interfaces_menu[] = array("VRFs", "/interfaces/vrf.php");
 $interfaces_menu[] = array("vEthernet (KVM)", "/interfaces/vethernet.php");
 
 $firewall_menu = array(
-    array("Aliases", "/firewall/aliases.php"),
-    array("NAT", "/firewall/nat.php"),
-    array("Rules", "/firewall/rules.php"),
+    array("Filter Rules", "/firewall/rules.php?tab=filter"),
+    array("NAT", "/firewall/rules.php?tab=nat"),
+    array("Mangle", "/firewall/rules.php?tab=mangle"),
+    array("Raw", "/firewall/rules.php?tab=raw"),
+    array("Service Ports", "/firewall/rules.php?tab=service_ports"),
+    array("Connections", "/firewall/rules.php?tab=connections"),
+    array("Address Lists", "/firewall/rules.php?tab=address_lists"),
+    array("Layer7 Protocols", "/firewall/rules.php?tab=layer7"),
+    array("-DIVIDER-", ""),
     array("Schedules", "/firewall/schedule.php"),
     array("Traffic Shaper", "/firewall/shaper.php"),
     array("Virtual IPs", "/firewall/virtual_ip.php")

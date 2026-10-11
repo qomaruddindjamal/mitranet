@@ -1,16 +1,6 @@
 <?php
-/*
- * firewall_nat.php - MitraNet Native Linux NAT Management
- * Adapted from pfSense firewall_nat.php
- * Strictly communicates via REST API -> MitraNet Native nftables Engine.
- */
-
-$pgtitle = array(gettext("Firewall"), gettext("NAT"), gettext("Port Forward"));
-$selected_menu = "firewall";
-require_once(__DIR__ . '/../includes/head.inc');
-
-$msg = '';
-$err = '';
+header('Location: /firewall/rules.php?tab=nat');
+exit;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';

@@ -2619,6 +2619,24 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             dst = payload.get("destination", "any")
             prio = int(payload.get("priority", 100))
             iface = payload.get("interface", "any")
+            chain_val = payload.get("chain", "input")
+            out_iface = payload.get("out_interface")
+            descr = payload.get("description", payload.get("comment", ""))
+            enabled_val = payload.get("enabled", True)
+            src_ports_raw = payload.get("source_ports", [])
+            dst_ports_raw = payload.get("destination_ports", [])
+            if isinstance(src_ports_raw, str) and src_ports_raw.strip():
+                src_ports = [p.strip() for p in src_ports_raw.split(",") if p.strip()]
+            elif isinstance(src_ports_raw, list):
+                src_ports = [str(p).strip() for p in src_ports_raw if str(p).strip()]
+            else:
+                src_ports = []
+            if isinstance(dst_ports_raw, str) and dst_ports_raw.strip():
+                dst_ports = [p.strip() for p in dst_ports_raw.split(",") if p.strip()]
+            elif isinstance(dst_ports_raw, list):
+                dst_ports = [str(p).strip() for p in dst_ports_raw if str(p).strip()]
+            else:
+                dst_ports = []
 
             try:
                 cand = fw_engine.candidate_config
@@ -2633,12 +2651,59 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                     destination=dst,
                     priority=prio,
                     interface=iface,
+                    chain=chain_val,
+                    out_interface=out_iface if out_iface != "any" else None,
+                    description=descr,
+                    enabled=bool(enabled_val),
+                    source_ports=src_ports,
+                    destination_ports=dst_ports,
                 )
                 cand.rules.append(new_rule)
                 fw_engine.save_candidate(cand)
                 self._send_json(200, {"success": True, "message": f"Rule '{rid}' added to candidate"})
             except Exception as e:
                 logger.exception("Error adding firewall rule: %s", e)
+                self._send_json(400, {"error": str(e)})
+            return
+
+        if path == "/api/v1/firewall/rule/toggle":
+            rid = payload.get("id")
+            enabled_val = payload.get("enabled")
+            try:
+                cand = fw_engine.candidate_config
+                matched = False
+                for r in cand.rules:
+                    if r.id == rid:
+                        r.enabled = bool(enabled_val) if enabled_val is not None else not r.enabled
+                        matched = True
+                        break
+                if not matched:
+                    # check running config and copy to candidate
+                    for r in fw_engine.running_config.rules:
+                        if r.id == rid:
+                            r_copy = r.model_copy()
+                            r_copy.enabled = bool(enabled_val) if enabled_val is not None else not r_copy.enabled
+                            cand.rules.append(r_copy)
+                            matched = True
+                            break
+                fw_engine.save_candidate(cand)
+                self._send_json(200, {"success": True, "message": f"Rule '{rid}' status updated"})
+            except Exception as e:
+                self._send_json(400, {"error": str(e)})
+            return
+
+        if path == "/api/v1/firewall/rule/comment":
+            rid = payload.get("id")
+            comment_val = payload.get("comment", "")
+            try:
+                cand = fw_engine.candidate_config
+                for r in cand.rules:
+                    if r.id == rid:
+                        r.description = comment_val
+                        break
+                fw_engine.save_candidate(cand)
+                self._send_json(200, {"success": True, "message": f"Rule '{rid}' comment updated"})
+            except Exception as e:
                 self._send_json(400, {"error": str(e)})
             return
 
