@@ -233,7 +233,7 @@ $tab_array = array(
 					    data-allowed="<?=htmlspecialchars($peer['allowed_ips'] ?? '')?>"
 					    data-keepalive="<?=htmlspecialchars($peer['persistent_keepalive'] ?? '25')?>"
 					    onclick="selectStatusPeerRow(this, event)"
-					    style="display: none; background: #f8fafc; font-size: 12px; cursor: pointer; border-bottom: 1px solid #e2e8f0;">
+					    style="display: <?= $peer_count > 5 ? 'table-row' : 'none' ?>; background: #f8fafc; font-size: 12px; cursor: pointer; border-bottom: 1px solid #e2e8f0;">
 						<td class="text-center col-flag-cell" style="color: #64748b;">
 							<i class="fa-solid fa-arrow-turn-up fa-rotate-90" style="font-size: 11px;"></i>
 						</td>
