@@ -71,6 +71,13 @@ if (isset($_REQUEST['ajax']) && $_REQUEST['ajax'] === '1') {
         exit;
     }
 
+    if ($act === 'service') {
+        $action = trim($_REQUEST['action'] ?? 'restart');
+        $res = MitraNetApi::controlWireGuard($action, $tun ?: 'wg0');
+        echo json_encode($res['data'] ?? ['success' => false, 'error' => 'API error']);
+        exit;
+    }
+
     if ($act === 'delete') {
         $res = MitraNetApi::deleteWireGuardTunnel($tun);
         echo json_encode($res['data'] ?? ['success' => false, 'error' => 'API error']);
@@ -118,7 +125,6 @@ require_once(__DIR__ . '/../includes/head.inc');
 $tab_array = array(
     array("Interfaces", true, "/wg/vpn_wg_tunnels.php"),
     array("Secrets", false, "/wg/vpn_wg_peers.php"),
-    array("Settings", false, "/wg/vpn_wg_settings.php"),
     array("Status", false, "/wg/status_wireguard.php")
 );
 ?>
@@ -133,6 +139,9 @@ $tab_array = array(
 				<button type="button" class="mitranet-btn" id="btn-new" onclick="openNewTunnelModal()" title="Add New WireGuard Interface">
 					<i class="fa-regular fa-square-plus"></i> New
 				</button>
+				<button type="button" class="mitranet-btn" id="btn-settings" onclick="openWgSettingsModal()" title="WireGuard Service Settings">
+					<i class="fa-solid fa-gear text-primary"></i> Settings
+				</button>
 				<button type="button" class="mitranet-btn" id="btn-enable" disabled onclick="toggleSelectedTunnel(true)" title="Enable Selected Interface">
 					<i class="fa-solid fa-play text-muted"></i> Enable
 				</button>
@@ -144,9 +153,6 @@ $tab_array = array(
 				</button>
 				<button type="button" class="mitranet-btn" id="btn-comment" disabled onclick="commentSelectedTunnel()" title="Set Comment">
 					<i class="fa-regular fa-comment text-muted"></i> Comment
-				</button>
-				<button type="button" class="mitranet-btn" id="btn-edit" disabled onclick="editSelectedTunnel()" title="Edit Selected Interface (atau double-click baris)">
-					<i class="fa-solid fa-pencil text-muted"></i> Edit
 				</button>
 			</div>
 			<div class="mitranet-toolbar-right">
@@ -530,10 +536,157 @@ $tab_array = array(
     </div>
 </div>
 
+<!-- ============================================================== -->
+<!-- WINBOX MODAL: WIREGUARD SUBSYSTEM & SERVICE SETTINGS          -->
+<!-- ============================================================== -->
+<div id="modal-winbox-settings" class="modal fade" role="dialog" tabindex="-1">
+    <div class="modal-dialog modal-md winbox-modal-dialog">
+        <div class="modal-content winbox-window-popup">
+
+            <!-- WINBOX WINDOW HEADER -->
+            <div class="winbox-popup-header">
+                <div class="winbox-popup-title">
+                    <i class="fa-solid fa-gear text-primary"></i>
+                    <span>WireGuard &gt; Service Settings</span>
+                </div>
+                <div class="winbox-popup-controls">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+            </div>
+
+            <!-- WINBOX TABS BAR -->
+            <div class="winbox-popup-tabs-bar">
+                <div class="mitranet-title-badge">
+                    <i class="fa-solid fa-circle-nodes"></i> WireGuard <i class="fa-solid fa-caret-down"></i>
+                </div>
+                <ul class="nav nav-tabs winbox-tabs-nav" role="tablist">
+                    <li role="presentation" class="active">
+                        <a href="#wgset-general" role="tab" data-toggle="tab">Service &amp; Driver</a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- WINBOX BODY: 2-COLUMN (FORM + ACTIONS) -->
+            <div class="modal-body winbox-popup-body">
+                <div class="winbox-body-columns">
+
+                    <!-- LEFT: FORM FIELDS -->
+                    <div class="winbox-content-left tab-content">
+                        <div role="tabpanel" class="tab-pane active" id="wgset-general">
+                            <form class="form-horizontal">
+                                <div class="form-group">
+                                    <label class="col-sm-4 control-label">Service Daemon</label>
+                                    <div class="col-sm-8">
+                                        <div class="checkbox" style="padding-top: 3px;">
+                                            <label>
+                                                <input type="checkbox" id="wg-service-toggle" <?=$is_running ? 'checked' : ''?> onchange="toggleWgServiceDaemon(this.checked)">
+                                                <span class="winbox-checkbox-custom"></span> <strong>Enable WireGuard Subsystem</strong>
+                                            </label>
+                                        </div>
+                                        <span class="help-block fs-11" id="wg-service-status-desc">
+                                            Status: <?=$is_running ? '<span class="text-success font-weight-bold"><i class="fa-solid fa-circle-check"></i> Running (Active)</span>' : '<span class="text-danger font-weight-bold"><i class="fa-solid fa-circle-stop"></i> Stopped (Inactive)</span>'?>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-4 control-label">Kernel Driver</label>
+                                    <div class="col-sm-8">
+                                        <input type="text" class="form-control input-sm font-monospace" value="In-Tree wireguard.ko (Linux 6.12)" readonly>
+                                        <span class="help-block fs-11">Native kernel acceleration &amp; hardware crypto.</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-4 control-label">Default Target</label>
+                                    <div class="col-sm-8">
+                                        <input type="text" id="wg-service-target-unit" class="form-control input-sm font-monospace" value="systemd: wg-quick@wg0" readonly>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-4 control-label">Config Storage</label>
+                                    <div class="col-sm-8">
+                                        <input type="text" class="form-control input-sm font-monospace" value="/etc/wireguard/" readonly>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT: ACTIONS COLUMN (WINBOX STYLE) -->
+                    <div class="winbox-content-right">
+                        <div class="winbox-actions-header">
+                            <i class="fa-solid fa-bolt"></i> Actions
+                        </div>
+                        <ul class="winbox-actions-list">
+                            <li><a href="javascript:void(0)" onclick="$('#modal-winbox-settings').modal('hide')">OK</a></li>
+                            <li><a href="javascript:void(0)" onclick="controlWgServiceAction('restart')">Restart</a></li>
+                            <li><a href="javascript:void(0)" onclick="controlWgServiceAction('start')">Start</a></li>
+                            <li><a href="javascript:void(0)" onclick="controlWgServiceAction('stop')">Stop</a></li>
+                        </ul>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- WINBOX FOOTER -->
+            <div class="winbox-popup-footer">
+                <div class="winbox-footer-status">
+                    <span class="badge winbox-running-badge" style="background: <?=$is_running ? '#27ae60' : '#7f8c8d'?>;" id="wg-settings-footer-badge">
+                        <?=$is_running ? 'RUNNING' : 'STOPPED'?>
+                    </span>
+                    <span class="winbox-link-msg" id="wg-settings-footer-msg">WireGuard Subsystem Driver Active</span>
+                </div>
+                <div class="winbox-footer-buttons">
+                    <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="$('#modal-winbox-settings').modal('hide')">OK</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 <script>
 var selectedTunnelName = null;
 var selectedTunnelData = null;
 var allTunnelsData = <?=json_encode($tunnels)?>;
+
+// Open WireGuard Settings Modal
+function openWgSettingsModal() {
+    $('#modal-winbox-settings').modal('show');
+}
+
+// Toggle Service Daemon
+function toggleWgServiceDaemon(enable) {
+    controlWgServiceAction(enable ? 'start' : 'stop');
+}
+
+// Control Service Action
+function controlWgServiceAction(action) {
+    var tunName = selectedTunnelName || (allTunnelsData.length > 0 ? allTunnelsData[0].name : 'wg0');
+    MitraNet.toast('Mengirim perintah ' + action + ' ke WireGuard (' + tunName + ')...', 'info');
+    $.post('/wg/vpn_wg_tunnels.php', {
+        ajax: '1',
+        act: 'service',
+        action: action,
+        tun: tunName
+    }, function(res) {
+        if (res && res.success) {
+            MitraNet.toast('Service WireGuard berhasil di-' + action, 'success');
+            var isRunning = !!res.running;
+            $('#wg-service-toggle').prop('checked', isRunning);
+            if (isRunning) {
+                $('#wg-service-status-desc').html('Status: <span class="text-success font-weight-bold"><i class="fa-solid fa-circle-check"></i> Running (Active)</span>');
+                $('#wg-settings-footer-badge').text('RUNNING').css('background', '#27ae60');
+            } else {
+                $('#wg-service-status-desc').html('Status: <span class="text-danger font-weight-bold"><i class="fa-solid fa-circle-stop"></i> Stopped (Inactive)</span>');
+                $('#wg-settings-footer-badge').text('STOPPED').css('background', '#7f8c8d');
+            }
+            setTimeout(function() { location.reload(); }, 900);
+        } else {
+            MitraNet.toast('Gagal: ' + (res.error || 'Gagal mengubah status service WireGuard'), 'error');
+        }
+    }, 'json');
+}
 
 // Row Selection Handler
 function selectTunnelRow(tr, name) {
@@ -553,7 +706,7 @@ function selectTunnelRow(tr, name) {
     }
 
     // Enable toolbar action buttons
-    $('#btn-edit, #btn-enable, #btn-disable, #btn-remove, #btn-comment').prop('disabled', false);
+    $('#btn-enable, #btn-disable, #btn-remove, #btn-comment').prop('disabled', false);
 }
 
 // Filter Grid

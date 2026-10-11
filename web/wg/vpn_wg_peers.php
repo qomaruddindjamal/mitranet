@@ -100,7 +100,6 @@ require_once(__DIR__ . '/../includes/head.inc');
 $tab_array = array(
     array("Interfaces", false, "/wg/vpn_wg_tunnels.php"),
     array("Secrets", true, "/wg/vpn_wg_peers.php"),
-    array("Settings", false, "/wg/vpn_wg_settings.php"),
     array("Status", false, "/wg/status_wireguard.php")
 );
 ?>

@@ -18,7 +18,6 @@ $tunnels = $wg['tunnels'] ?? [];
 $tab_array = array(
     array("Interfaces", false, "/wg/vpn_wg_tunnels.php"),
     array("Secrets", false, "/wg/vpn_wg_peers.php"),
-    array("Settings", false, "/wg/vpn_wg_settings.php"),
     array("Status", true, "/wg/status_wireguard.php")
 );
 ?>
