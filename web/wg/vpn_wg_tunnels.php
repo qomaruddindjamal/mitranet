@@ -1,8 +1,7 @@
 <?php
 /*
  * vpn_wg_tunnels.php - MitraNet WireGuard Tunnels
- * Faithful port from pfSense /wg/vpn_wg_tunnels.php
- * Licensed under the Apache License, Version 2.0.
+ * WinBox Esthetic & SweetAlert2 UX Standards
  */
 
 require_once(__DIR__ . '/../includes/api.inc');
@@ -10,7 +9,32 @@ require_once(__DIR__ . '/../includes/api.inc');
 $savemsg = $_GET['savemsg'] ?? '';
 $err_msg = "";
 
-// Handle Delete Tunnel
+// Handle AJAX actions (toggle, comment, delete)
+if (isset($_REQUEST['ajax']) && $_REQUEST['ajax'] === '1') {
+    header('Content-Type: application/json');
+    $act = $_REQUEST['act'] ?? '';
+    $tun = trim($_REQUEST['tun'] ?? '');
+
+    if ($act === 'toggle') {
+        $enable = !empty($_REQUEST['enable']);
+        $res = MitraNetApi::toggleWireGuardTunnel($tun, $enable);
+        echo json_encode($res['data'] ?? ['success' => false, 'error' => 'API error']);
+        exit;
+    }
+    if ($act === 'comment') {
+        $comment = trim($_REQUEST['comment'] ?? '');
+        $res = MitraNetApi::commentWireGuardTunnel($tun, $comment);
+        echo json_encode($res['data'] ?? ['success' => false, 'error' => 'API error']);
+        exit;
+    }
+    if ($act === 'delete') {
+        $res = MitraNetApi::deleteWireGuardTunnel($tun);
+        echo json_encode($res['data'] ?? ['success' => false, 'error' => 'API error']);
+        exit;
+    }
+}
+
+// Fallback Standard HTTP Handle Delete Tunnel
 if (isset($_REQUEST['act']) && $_REQUEST['act'] === 'delete') {
     $tun_to_del = trim($_REQUEST['tun'] ?? '');
     if ($tun_to_del) {
@@ -45,25 +69,44 @@ $tab_array = array(
 <div class="container-fluid mitranet-page-container">
 	<div class="mitranet-window">
 <?php display_top_tabs($tab_array, false, 'tabs'); ?>
-		<!-- TOOLBAR -->
+		
+		<!-- TOOLBAR (EXACT MATCH WINBOX BUTTONS IN USER SCREENSHOT) -->
 		<div class="mitranet-toolbar">
 			<div class="mitranet-toolbar-left">
-				<a href="/wg/vpn_wg_tunnels_edit.php" class="mitranet-btn" title="Add New Tunnel">
-					<i class="fa-solid fa-plus text-primary"></i> <strong>New Tunnel</strong>
+				<a href="/wg/vpn_wg_tunnels_edit.php" class="mitranet-btn" id="btn-new" title="Add New Tunnel">
+					<i class="fa-regular fa-square-plus text-primary"></i> <strong>New</strong>
 				</a>
+				<button type="button" class="mitranet-btn" id="btn-edit" disabled onclick="editSelectedTunnel()" title="Edit Selected Tunnel">
+					<i class="fa-solid fa-pencil text-muted"></i> Edit
+				</button>
+				<button type="button" class="mitranet-btn" id="btn-enable" disabled onclick="toggleSelectedTunnel(true)" title="Enable Selected Tunnel">
+					<i class="fa-solid fa-play text-success"></i> Enable
+				</button>
+				<button type="button" class="mitranet-btn" id="btn-disable" disabled onclick="toggleSelectedTunnel(false)" title="Disable Selected Tunnel">
+					<i class="fa-solid fa-pause text-warning"></i> Disable
+				</button>
+				<button type="button" class="mitranet-btn" id="btn-remove" disabled onclick="removeSelectedTunnel()" title="Remove Selected Tunnel">
+					<i class="fa-solid fa-xmark text-danger"></i> Remove
+				</button>
+				<button type="button" class="mitranet-btn" id="btn-comment" disabled onclick="commentSelectedTunnel()" title="Set Comment">
+					<i class="fa-regular fa-comment text-muted"></i> Comment
+				</button>
 			</div>
 			<div class="mitranet-toolbar-right">
 				<div class="mitranet-search-wrapper">
 					<i class="fa-solid fa-magnifying-glass"></i>
 					<input type="text" id="grid-search" placeholder="Find tunnel..." onkeyup="filterWgGrid(this.value)">
 				</div>
+				<button type="button" class="mitranet-btn" onclick="$('#grid-search').focus()" title="Filter">
+					<i class="fa-solid fa-filter text-muted"></i> Filter
+				</button>
 				<button type="button" class="mitranet-btn" onclick="location.reload()" title="Refresh">
-					<i class="fa-solid fa-arrows-rotate"></i>
+					<i class="fa-solid fa-arrows-rotate text-muted"></i>
 				</button>
 			</div>
 		</div>
 
-		<!-- GRID -->
+		<!-- GRID TABLE -->
 		<div class="mitranet-grid-container">
 			<table class="mitranet-grid" id="wg-grid-table">
 				<thead>
@@ -81,15 +124,19 @@ $tab_array = array(
 				</thead>
 				<tbody>
 				<?php if (empty($tunnels)): ?>
-					<tr><td colspan="9" class="text-center text-muted p-20">Belum ada tunnel WireGuard yang dikonfigurasi. Klik tombol "New Tunnel" di toolbar untuk membuat.</td></tr>
+					<tr><td colspan="9" class="text-center text-muted p-20">Belum ada tunnel WireGuard yang dikonfigurasi. Klik tombol "New" di toolbar untuk membuat.</td></tr>
 				<?php else: ?>
 					<?php foreach ($tunnels as $tun): ?>
 					<?php 
 						$tname = $tun['name'] ?? 'wg0'; 
 						$is_srv = empty($tun['mode']) || $tun['mode'] === 'server';
 						$tun_up = !empty($tun['enabled']);
+						$desc = $tun['description'] ?? 'WireGuard Tunnel';
 					?>
-					<tr>
+					<tr data-name="<?=htmlspecialchars($tname)?>"
+					    data-enabled="<?=$tun_up ? '1' : '0'?>"
+					    data-comment="<?=htmlspecialchars($desc)?>"
+					    onclick="selectTunnelRow(this, '<?=htmlspecialchars($tname, ENT_QUOTES)?>')">
 						<td><strong><code><?=htmlspecialchars($tname)?></code></strong></td>
 						<td>
 							<?php if ($tun_up): ?>
@@ -105,16 +152,16 @@ $tab_array = array(
 								<span class="label label-info"><i class="fa-solid fa-network-wired"></i> Client Uplink</span>
 							<?php endif; ?>
 						</td>
-						<td><?=htmlspecialchars($tun['description'] ?? 'WireGuard Tunnel')?></td>
+						<td class="td-comment"><?=htmlspecialchars($desc)?></td>
 						<td><code><?=htmlspecialchars($tun['address'] ?: '—')?></code></td>
 						<td><?=htmlspecialchars($tun['listen_port'] ?? '51820')?></td>
 						<td class="td-pubkey"
 						    title="Klik untuk salin: <?=htmlspecialchars($tun['public_key'])?>"
-						    onclick="navigator.clipboard.writeText('<?=htmlspecialchars($tun['public_key'])?>');this.style.color='green';">
+						    onclick="navigator.clipboard.writeText('<?=htmlspecialchars($tun['public_key'])?>'); MitraNet.toast('Public key disalin ke clipboard', 'success'); event.stopPropagation();">
 							<?=htmlspecialchars(substr($tun['public_key'], 0, 16))?>...
 						</td>
 						<td><span class="badge"><?=count($tun['peers'] ?? [])?></span></td>
-						<td class="text-center">
+						<td class="text-center" onclick="event.stopPropagation();">
 							<a class="btn btn-xs btn-success" href="/wg/vpn_wg_peers_edit.php?tun=<?=urlencode($tname)?>" title="Add Peer to <?=htmlspecialchars($tname)?>"><i class="fa-solid fa-user-plus"></i></a>
 							<a class="btn btn-xs btn-primary" href="/wg/vpn_wg_tunnels_edit.php?tun=<?=urlencode($tname)?>" title="Edit Tunnel"><i class="fa-solid fa-pencil"></i></a>
 							<a class="btn btn-xs btn-danger" href="javascript:void(0);"
@@ -146,6 +193,25 @@ $tab_array = array(
 </div>
 
 <script>
+var selectedTunnelName = null;
+var selectedTunnelData = null;
+
+// Row Selection Handler
+function selectTunnelRow(tr, name) {
+    $('#wg-grid-table tbody tr').removeClass('selected');
+    $(tr).addClass('selected');
+    selectedTunnelName = name;
+    selectedTunnelData = {
+        name: name,
+        enabled: $(tr).data('enabled') == 1,
+        comment: $(tr).data('comment')
+    };
+
+    // Enable toolbar action buttons
+    $('#btn-edit, #btn-enable, #btn-disable, #btn-remove, #btn-comment').prop('disabled', false);
+}
+
+// Filter Grid
 function filterWgGrid(val) {
     val = (val || '').toLowerCase();
     $('#wg-grid-table tbody tr').each(function() {
@@ -158,13 +224,97 @@ function filterWgGrid(val) {
     });
 }
 
+// Edit Selected
+function editSelectedTunnel() {
+    if (!selectedTunnelName) return;
+    window.location.href = '/wg/vpn_wg_tunnels_edit.php?tun=' + encodeURIComponent(selectedTunnelName);
+}
+
+// Toggle (Enable / Disable)
+function toggleSelectedTunnel(enable) {
+    if (!selectedTunnelName) return;
+    var actStr = enable ? 'Enable' : 'Disable';
+    MitraNet.confirmAction({
+        title: actStr + ' Tunnel ' + selectedTunnelName + '?',
+        text: 'Antarmuka WireGuard ' + selectedTunnelName + ' akan ' + (enable ? 'diaktifkan' : 'dinonaktifkan') + '.',
+        icon: enable ? 'question' : 'warning',
+        confirmButtonText: 'Ya, ' + actStr
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            MitraNet.toast('Memproses ' + actStr.toLowerCase() + ' tunnel...', 'info');
+            $.post('/wg/vpn_wg_tunnels.php', {
+                ajax: '1',
+                act: 'toggle',
+                tun: selectedTunnelName,
+                enable: enable ? '1' : '0'
+            }, function(res) {
+                if (res && res.success) {
+                    MitraNet.toast('Tunnel ' + selectedTunnelName + ' berhasil ' + (enable ? 'diaktifkan' : 'dinonaktifkan'), 'success');
+                    setTimeout(function() { location.reload(); }, 600);
+                } else {
+                    MitraNet.toast('Gagal: ' + (res.error || 'Terjadi kesalahan sistem'), 'error');
+                }
+            }, 'json');
+        }
+    });
+}
+
+// Comment Prompt
+function commentSelectedTunnel() {
+    if (!selectedTunnelName) return;
+    var currentComment = selectedTunnelData ? selectedTunnelData.comment : '';
+    MitraNet.promptInput({
+        title: 'Set Comment',
+        inputLabel: 'Komentar / Deskripsi untuk ' + selectedTunnelName + ':',
+        inputValue: currentComment,
+        inputPlaceholder: 'e.g. Uplink Main Gateway / Office Road Warrior'
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            var newComment = (result.value || '').trim();
+            MitraNet.toast('Menyimpan komentar...', 'info');
+            $.post('/wg/vpn_wg_tunnels.php', {
+                ajax: '1',
+                act: 'comment',
+                tun: selectedTunnelName,
+                comment: newComment
+            }, function(res) {
+                if (res && res.success) {
+                    MitraNet.toast('Komentar berhasil diperbarui', 'success');
+                    setTimeout(function() { location.reload(); }, 600);
+                } else {
+                    MitraNet.toast('Gagal: ' + (res.error || 'Terjadi kesalahan sistem'), 'error');
+                }
+            }, 'json');
+        }
+    });
+}
+
+// Remove Selected Tunnel
+function removeSelectedTunnel() {
+    if (!selectedTunnelName) return;
+    confirmDeleteTunnel(selectedTunnelName);
+}
+
+// Confirm Delete Dialog
 function confirmDeleteTunnel(tunnelName) {
     MitraNet.confirmDelete(
         'Hapus WireGuard Tunnel?',
         'Seluruh konfigurasi interface ' + tunnelName + ' dan peers yang terasosiasi akan dihapus secara permanen.'
     ).then(function(result) {
         if (result.isConfirmed) {
-            window.location.href = '?act=delete&tun=' + encodeURIComponent(tunnelName);
+            MitraNet.toast('Menghapus tunnel ' + tunnelName + '...', 'info');
+            $.post('/wg/vpn_wg_tunnels.php', {
+                ajax: '1',
+                act: 'delete',
+                tun: tunnelName
+            }, function(res) {
+                if (res && res.success) {
+                    MitraNet.toast('Tunnel ' + tunnelName + ' berhasil dihapus', 'success');
+                    setTimeout(function() { location.reload(); }, 600);
+                } else {
+                    window.location.href = '?act=delete&tun=' + encodeURIComponent(tunnelName);
+                }
+            }, 'json');
         }
     });
 }

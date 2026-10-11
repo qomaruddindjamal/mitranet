@@ -3828,6 +3828,64 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"success": True, "message": f"Tunnel {name} deleted successfully"})
             return
 
+        if path == "/api/v1/wireguard/tunnel/toggle":
+            name = str(payload.get("name") or "").strip()
+            enable = bool(payload.get("enable", True))
+            if not name:
+                self._send_json(400, {"error": "Tunnel name is required"})
+                return
+
+            import subprocess
+            action = "start" if enable else "stop"
+            cmd = ["systemctl", action, f"wg-quick@{name}"]
+            proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=12)
+            if enable:
+                subprocess.run(["systemctl", "enable", f"wg-quick@{name}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            else:
+                subprocess.run(["systemctl", "disable", f"wg-quick@{name}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                subprocess.run(["ip", "link", "delete", name], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            is_active = (subprocess.run(["systemctl", "is-active", f"wg-quick@{name}"], stdout=subprocess.PIPE, text=True).stdout.strip() == "active")
+            self._send_json(200, {
+                "success": (proc.returncode == 0),
+                "running": is_active,
+                "message": f"Tunnel {name} {'enabled' if enable else 'disabled'}"
+            })
+            return
+
+        if path == "/api/v1/wireguard/tunnel/comment":
+            name = str(payload.get("name") or "").strip()
+            comment = str(payload.get("comment") or "").strip()
+            if not name:
+                self._send_json(400, {"error": "Tunnel name is required"})
+                return
+
+            conf_path = f"/etc/wireguard/{name}.conf"
+            if not os.path.exists(conf_path):
+                self._send_json(404, {"error": f"Config file for tunnel {name} not found"})
+                return
+
+            try:
+                with open(conf_path, "r", encoding="utf-8", errors="ignore") as f:
+                    lines = f.readlines()
+                new_lines = []
+                found_desc = False
+                for line in lines:
+                    if line.strip().startswith("# Description:"):
+                        new_lines.append(f"# Description: {comment}\n")
+                        found_desc = True
+                    else:
+                        new_lines.append(line)
+                        if not found_desc and line.strip() == "[Interface]":
+                            new_lines.append(f"# Description: {comment}\n")
+                            found_desc = True
+                with open(conf_path, "w", encoding="utf-8") as f:
+                    f.writelines(new_lines)
+                self._send_json(200, {"success": True, "message": f"Comment for tunnel {name} updated"})
+            except Exception as e:
+                self._send_json(500, {"error": f"Failed updating comment: {e}"})
+            return
+
         if path == "/api/v1/wireguard/peer/save":
             tun = str(payload.get("tunnel") or "wg0").strip()
             descr = str(payload.get("descr") or "WireGuard Peer").strip()
