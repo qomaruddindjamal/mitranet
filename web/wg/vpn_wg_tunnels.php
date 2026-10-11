@@ -287,9 +287,15 @@ $tab_array = array(
 
                 <!-- WINBOX TABS BAR -->
                 <div class="winbox-popup-tabs-bar">
+                    <div class="mitranet-title-badge">
+                        <i class="fa-solid fa-circle-nodes"></i> WireGuard <i class="fa-solid fa-caret-down"></i>
+                    </div>
                     <ul class="nav nav-tabs winbox-tabs-nav" role="tablist">
                         <li role="presentation" class="active">
                             <a href="#wgtab-general" role="tab" data-toggle="tab">General</a>
+                        </li>
+                        <li role="presentation">
+                            <a href="#wgtab-wireguard" role="tab" data-toggle="tab">WireGuard</a>
                         </li>
                         <li role="presentation">
                             <a href="#wgtab-routing" role="tab" data-toggle="tab">Routing &amp; NAT</a>
@@ -331,18 +337,41 @@ $tab_array = array(
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="col-sm-3 control-label">Mode</label>
+                                    <label class="col-sm-3 control-label">Type</label>
                                     <div class="col-sm-9">
-                                        <select name="mode" id="wg-mode" class="form-control input-sm">
-                                            <option value="server">VPN Server (Menerima koneksi Remote Client / HP / PC)</option>
-                                            <option value="client">Client / Uplink (MitraNet tersambung ke Server/VPS Eksternal)</option>
-                                        </select>
+                                        <input type="text" class="form-control input-sm" value="WireGuard (Kernel Subsystem)" readonly>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">MTU</label>
+                                    <div class="col-sm-9">
+                                        <input type="number" name="mtu" id="wg-mtu" class="form-control input-sm font-monospace" value="1420" min="576" max="65535">
+                                        <span class="help-block fs-11">Standard MTU untuk WireGuard interface adalah 1420.</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">Actual MTU</label>
+                                    <div class="col-sm-9">
+                                        <input type="text" id="wg-actual-mtu" class="form-control input-sm" value="1420" readonly>
                                     </div>
                                 </div>
                                 <div class="form-group">
                                     <label class="col-sm-3 control-label">Comment</label>
                                     <div class="col-sm-9">
                                         <input type="text" name="descr" id="wg-descr" class="form-control input-sm" placeholder="WireGuard Interface">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TAB 2: WIREGUARD SPECIFIC SETTINGS -->
+                            <div role="tabpanel" class="tab-pane" id="wgtab-wireguard">
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">Mode</label>
+                                    <div class="col-sm-9">
+                                        <select name="mode" id="wg-mode" class="form-control input-sm">
+                                            <option value="server">VPN Server (Menerima koneksi Remote Client / HP / PC)</option>
+                                            <option value="client">Client / Uplink (MitraNet tersambung ke Server/VPS Eksternal)</option>
+                                        </select>
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -404,7 +433,7 @@ $tab_array = array(
                                 </div>
                             </div>
 
-                            <!-- TAB 2: ROUTING & NAT -->
+                            <!-- TAB 3: ROUTING & NAT -->
                             <div role="tabpanel" class="tab-pane" id="wgtab-routing">
                                 <div class="form-group">
                                     <label class="col-sm-3 control-label">Route Interface</label>
@@ -438,15 +467,8 @@ $tab_array = array(
                                 </div>
                             </div>
 
-                            <!-- TAB 3: ADVANCED / QOS -->
+                            <!-- TAB 4: ADVANCED / QOS -->
                             <div role="tabpanel" class="tab-pane" id="wgtab-advanced">
-                                <div class="form-group">
-                                    <label class="col-sm-3 control-label">MTU</label>
-                                    <div class="col-sm-9">
-                                        <input type="number" name="mtu" id="wg-mtu" class="form-control input-sm font-monospace" value="1420" min="576" max="65535">
-                                        <span class="help-block fs-11">Standard MTU untuk WireGuard tunnel adalah 1420 (mencegah overhead IP/UDP fragmentation).</span>
-                                    </div>
-                                </div>
                                 <div class="form-group">
                                     <label class="col-sm-3 control-label">DSCP Priority</label>
                                     <div class="col-sm-9">
@@ -473,7 +495,7 @@ $tab_array = array(
                                 </div>
                             </div>
 
-                            <!-- TAB 4: STATUS (EDIT ONLY) -->
+                            <!-- TAB 5: STATUS (EDIT ONLY) -->
                             <div role="tabpanel" class="tab-pane" id="wgtab-status">
                                 <table class="table table-condensed table-striped" style="font-size: 11px;">
                                     <tbody>

@@ -3928,6 +3928,16 @@ select:focus {
     background: #d8e5f2 !important;
     border-bottom: 1px solid #adc5dd !important;
     padding: 4px 6px 0 6px !important;
+    display: flex !important;
+    align-items: flex-end !important;
+    gap: 4px !important;
+}
+
+.winbox-popup-tabs-bar .mitranet-title-badge {
+    margin-bottom: 0 !important;
+    margin-right: 4px !important;
+    height: 25px !important;
+    border-radius: 4px 4px 0 0 !important;
 }
 
 .winbox-tabs-nav {
@@ -3935,6 +3945,8 @@ select:focus {
     margin-bottom: 0 !important;
     gap: 2px !important;
     display: flex !important;
+    flex: 1 1 auto !important;
+    align-items: flex-end !important;
 }
 
 .winbox-tabs-nav > li > a {
