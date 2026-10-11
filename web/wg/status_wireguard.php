@@ -93,6 +93,9 @@ $tab_array = array(
 		<!-- TOOLBAR (WINBOX SUB-HEADER: QR, ROS, ENABLE, DISABLE, REMOVE, REFRESH) -->
 		<div class="mitranet-toolbar">
 			<div class="mitranet-toolbar-left">
+				<button type="button" class="mitranet-btn" id="btn-status-restart" onclick="restartSelectedStatusTunnel()" title="Restart WireGuard Service (Reset traffic & Auto Reconnect)">
+					<i class="fa-solid fa-arrows-rotate text-primary"></i> Restart
+				</button>
 				<button type="button" class="mitranet-btn" id="btn-status-qr" disabled onclick="showSelectedStatusQR()" title="View QR Code &amp; Config">
 					<i class="fa-solid fa-qrcode text-muted"></i> QR
 				</button>
@@ -104,9 +107,6 @@ $tab_array = array(
 				</button>
 				<button type="button" class="mitranet-btn" id="btn-status-disable" disabled onclick="toggleSelectedStatusTunnel(false)" title="Disable Selected Interface">
 					<i class="fa-solid fa-pause text-muted"></i> Disable
-				</button>
-				<button type="button" class="mitranet-btn" id="btn-status-restart" onclick="restartSelectedStatusTunnel()" title="Restart WireGuard Service (Reset traffic & Auto Reconnect)">
-					<i class="fa-solid fa-arrows-rotate text-primary"></i> Restart
 				</button>
 				<button type="button" class="mitranet-btn" id="btn-status-remove" disabled onclick="removeSelectedStatusTunnel()" title="Remove Selected Interface">
 					<i class="fa-solid fa-xmark text-muted"></i> Remove
