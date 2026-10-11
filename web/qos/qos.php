@@ -184,7 +184,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$pgtitle = ["QoS", "Queues"];
+$pgtitle = ["QoS", "QoS Manager"];
 $selected_menu = "qos";
 require_once(__DIR__ . '/../includes/head.inc');
 
@@ -194,24 +194,24 @@ $ifaces = MitraNetApi::getInterfaces();
 <div class="container-fluid mitranet-page-container">
     <div class="mitranet-window">
 
-        <!-- HEADER: BADGE + TABS (MATCHING EXACT WINBOX SCREENSHOT) -->
+        <!-- HEADER: BADGE + TABS (MATCHING WINBOX SCREENSHOT) -->
         <div class="mitranet-header">
             <div class="mitranet-title-badge">
-                <i class="fa-solid fa-chart-line text-primary"></i> Queues
+                <i class="fa-solid fa-chart-line text-primary"></i> QoS Manager
                 <i class="fa-solid fa-caret-down"></i>
             </div>
             <ul class="mitranet-tabs">
                 <li class="<?=($current_tab === 'simple') ? 'active' : ''?>">
-                    <a href="qos.php?tab=simple">Simple Queues</a>
+                    <a href="qos.php?tab=simple">Simple QoS</a>
                 </li>
                 <li class="<?=($current_tab === 'interface') ? 'active' : ''?>">
-                    <a href="qos.php?tab=interface">Interface Queues</a>
+                    <a href="qos.php?tab=interface">QoS Interface</a>
                 </li>
                 <li class="<?=($current_tab === 'tree') ? 'active' : ''?>">
-                    <a href="qos.php?tab=tree">Queue Tree</a>
+                    <a href="qos.php?tab=tree">QoS Tree</a>
                 </li>
                 <li class="<?=($current_tab === 'types') ? 'active' : ''?>">
-                    <a href="qos.php?tab=types">Queue Types</a>
+                    <a href="qos.php?tab=types">QoS Type</a>
                 </li>
             </ul>
         </div>
