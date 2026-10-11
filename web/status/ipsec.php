@@ -13,31 +13,45 @@ $savemsg = "";
 $sys = MitraNetApi::getSystem();
 ?>
 
-<ul class="nav nav-pills"><li role="presentation" class="active"><a href="/status_ipsec.php" >Overview</a></li><li role="presentation"><a href="/status_ipsec_leases.php" >Leases</a></li><li role="presentation"><a href="/status_ipsec_sad.php" >SADs</a></li><li role="presentation"><a href="/status_ipsec_spd.php" >SPDs</a></li></ul>
+<ul class="nav nav-pills" role="tablist">
+	<li role="presentation" class="active"><a href="ipsec.php" role="tab" aria-selected="true"><?=gettext("Overview")?></a></li>
+	<li role="presentation" class="disabled"><a href="#" role="tab" aria-disabled="true" tabindex="-1" onclick="return false;" title="<?=gettext("Leases status is currently unavailable")?>"><?=gettext("Leases")?> <span class="badge"><?=gettext("Unavailable")?></span></a></li>
+	<li role="presentation" class="disabled"><a href="#" role="tab" aria-disabled="true" tabindex="-1" onclick="return false;" title="<?=gettext("SADs status is currently unavailable")?>"><?=gettext("SADs")?> <span class="badge"><?=gettext("Unavailable")?></span></a></li>
+	<li role="presentation" class="disabled"><a href="#" role="tab" aria-disabled="true" tabindex="-1" onclick="return false;" title="<?=gettext("SPDs status is currently unavailable")?>"><?=gettext("SPDs")?> <span class="badge"><?=gettext("Unavailable")?></span></a></li>
+</ul>
+
+<div class="alert alert-info clearfix" role="alert">
+	<div class="pull-left">
+		<i class="fa-solid fa-circle-info icon-embed-btn"></i>
+		<?=gettext("IPsec service is operating in read-only status monitoring mode. Interactive tunnel connection controls are disabled on this platform.")?>
+	</div>
+</div>
 
 <div class="panel panel-default">
-	<div class="panel-heading"><h2 class="panel-title">IPsec Status</h2></div>
+	<div class="panel-heading"><h2 class="panel-title"><?=gettext("IPsec Status")?></h2></div>
 	<div class="panel-body table-responsive">
 		<table class="table table-striped table-condensed table-hover sortable-theme-bootstrap" data-sortable>
 			<thead>
 				<tr>
-					<th>ID</th>
-					<th>Description</th>
-					<th>Local</th>
-					<th>Remote</th>
-					<th>Role</th>
-					<th>Timers</th>
-					<th>Algo</th>
-					<th>Status</th>
+					<th><?=gettext("ID")?></th>
+					<th><?=gettext("Description")?></th>
+					<th><?=gettext("Local")?></th>
+					<th><?=gettext("Remote")?></th>
+					<th><?=gettext("Role")?></th>
+					<th><?=gettext("Timers")?></th>
+					<th><?=gettext("Algo")?></th>
+					<th><?=gettext("Status")?></th>
 				</tr>
 			</thead>
 			<tbody id="ipsec-body">
 				<tr>
-					<td colspan="10">
-						<div class="alert alert-warning clearfix" role="alert"><div class="pull-left"><i class="fa-solid fa-gear fa-spin"></i>&nbsp;&nbsp;Collecting IPsec status information.</div></div>
-
-
-
-
+					<td colspan="8" class="text-center text-muted">
+						<i class="fa-solid fa-circle-info"></i> <?=gettext("IPsec status data is unavailable. Interactive tunnel controls are disabled.")?>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</div>
 
 <?php include(__DIR__ . '/../includes/foot.inc'); ?>

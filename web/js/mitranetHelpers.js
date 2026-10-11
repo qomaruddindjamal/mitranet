@@ -571,58 +571,17 @@ $(function(){
 		dirty = true;
 	});
 
-	// IPsec status page and widget actions
+	// IPsec status page and widget actions (Read-only mode: interactive controls disabled)
 	$(document).on('click', '[id*=ipsecstatus-]', function(event) {
-		// Parse out arguments from id
-		var args = this.id.split('-');
-		var act = args[1];
-		var ipsectype = args[2];
-		var conid = args[3];
-		if (args[4] == 'mobile') {
-			conid += '-mobile';
-			args.shift();
-		}
-		var uniqueid;
-		if (args.length > 4) {
-			uniqueid = args[4];
-		} else {
-			uniqueid = '';
-		}
-		// Prompt to confirm only on disconnect
-		if (($(this).hasClass('fa-trash-can')) || ($(this).children('i').hasClass('fa-trash-can'))) {
-			var msg = $.trim(this.title) + ' ' + $.trim(conid);
-			if (!msg) {
-				msg = 'Confirm?';
-			} else {
-				msg = msg + '?';
-			}
-			if (!confirm(msg)) {
-				return false;
-			}
-		}
-		// Change to icon to show it is working
-		$(this).children('i').removeClass().addClass('fa-solid fa-cog fa-spin text-success');
-		this.blur();
-		// POST request to handle the (dis)connect request
-		ajaxRequest = $.ajax(
-			{
-				url: "/status_ipsec.php",
-				type: "post",
-				data: {
-					ajax:		"ajax",
-					act:		act,
-					type:		ipsectype,
-					conid:		conid,
-					uniqueid:	uniqueid
-				}
-			}
-		);
-		// Once the AJAX call has returned, clear the icon. Will automatically be replaced when widget refreshes.
-		ajaxRequest.done(function (response, textStatus, jqXHR) {
-			$(this).children('i').removeClass();
-		});
-		// Stop the browser from adding # to the URL after clicking the link
 		event.preventDefault();
+		this.blur();
+		var notice = 'IPsec tunnel controls are disabled: service operates in read-only status monitoring mode.';
+		if (typeof MitraNet !== 'undefined' && typeof MitraNet.toast === 'function') {
+			MitraNet.toast('info', notice);
+		} else {
+			alert(notice);
+		}
+		return false;
 	});
 });
 
