@@ -1143,6 +1143,21 @@ class ManagementApiHandler(BaseHTTPRequestHandler):
                         total_tx += int(peer.get("transfer_tx") or 0)
                     except Exception:
                         pass
+
+                # If peer sum is 0, check sysfs statistics
+                sys_rx = f"/sys/class/net/{t_name}/statistics/rx_bytes"
+                sys_tx = f"/sys/class/net/{t_name}/statistics/tx_bytes"
+                if os.path.exists(sys_rx) and os.path.exists(sys_tx):
+                    try:
+                        with open(sys_rx, "r") as fr:
+                            dev_rx = int(fr.read().strip())
+                        with open(sys_tx, "r") as ft:
+                            dev_tx = int(ft.read().strip())
+                        if dev_rx > total_rx: total_rx = dev_rx
+                        if dev_tx > total_tx: total_tx = dev_tx
+                    except Exception:
+                        pass
+
                 t_data["transfer_rx"] = str(total_rx)
                 t_data["transfer_tx"] = str(total_tx)
 

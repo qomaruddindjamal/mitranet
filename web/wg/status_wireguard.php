@@ -7,7 +7,14 @@
 
 require_once(__DIR__ . '/../includes/api.inc');
 
-// AJAX Actions: client_config, toggle, delete from Status tab
+// AJAX Actions: client_config, toggle, delete, telemetry from Status tab
+if (isset($_REQUEST['ajax']) && $_REQUEST['ajax'] === 'telemetry') {
+    header('Content-Type: application/json');
+    $wg = MitraNetApi::getWireGuard();
+    echo json_encode($wg);
+    exit;
+}
+
 if (isset($_REQUEST['ajax']) && $_REQUEST['ajax'] === 'client_config') {
     header('Content-Type: application/json');
     $tun = trim($_REQUEST['tun'] ?? 'wg0');
@@ -190,8 +197,8 @@ $tab_array = array(
 								<i class="fa-solid fa-users" style="font-size: 9px; margin-right: 2px;"></i> <?=$peer_count?> peer<?=$peer_count === 1 ? '' : 's'?>
 							</span>
 						</td>
-						<td><span class="label label-info"><?=$rx_fmt?></span></td>
-						<td><span class="label label-info"><?=$tx_fmt?></span></td>
+						<td><span class="rx-val" id="tun-rx-<?=htmlspecialchars($t_name)?>" style="font-family: monospace; font-size: 11px; color: #1e395b; font-weight: 600;"><?=$rx_fmt?></span></td>
+						<td><span class="tx-val" id="tun-tx-<?=htmlspecialchars($t_name)?>" style="font-family: monospace; font-size: 11px; color: #1e395b; font-weight: 600;"><?=$tx_fmt?></span></td>
 						<td class="text-center col-menu"></td>
 					</tr>
 
@@ -224,6 +231,7 @@ $tab_array = array(
 										$p_rx_fmt = $p_rx > 1048576 ? number_format($p_rx / 1048576, 2) . ' MiB' : number_format($p_rx / 1024, 2) . ' KiB';
 										$p_tx_fmt = $p_tx > 1048576 ? number_format($p_tx / 1048576, 2) . ' MiB' : number_format($p_tx / 1024, 2) . ' KiB';
 										$has_hs = !empty($peer['latest_handshake']) && intval($peer['latest_handshake']) > 0;
+										$safe_pubkey_id = substr(preg_replace('/[^a-zA-Z0-9]/', '', $peer['public_key']), 0, 16);
 									?>
 										<tr class="status-peer-item-row"
 										    style="cursor: pointer;"
@@ -238,17 +246,17 @@ $tab_array = array(
 											<td class="pubkey" title="<?=htmlspecialchars($peer['public_key'])?>">
 												<code><?=htmlspecialchars(substr($peer['public_key'], 0, 16))?>...</code>
 											</td>
-											<td><code><?=htmlspecialchars($peer['endpoint'] ?: 'Dynamic')?></code></td>
+											<td><code id="peer-ep-<?=$safe_pubkey_id?>"><?=htmlspecialchars($peer['endpoint'] ?: 'Dynamic')?></code></td>
 											<td><span class="badge" style="background:#e2ecf5; color:#1e395b; font-weight:normal; font-size:10px;"><?=htmlspecialchars($peer['allowed_ips'])?></span></td>
-											<td>
+											<td id="peer-hs-<?=$safe_pubkey_id?>">
 												<?php if ($has_hs): ?>
 													<span class="text-success"><i class="fa-solid fa-circle-check"></i> Connected</span>
 												<?php else: ?>
 													<span class="text-muted"><i class="fa-regular fa-clock"></i> Idle / Never</span>
 												<?php endif; ?>
 											</td>
-											<td><span class="text-primary"><?=$p_rx_fmt?></span></td>
-											<td><span class="text-primary"><?=$p_tx_fmt?></span></td>
+											<td><span class="peer-rx-val" id="peer-rx-<?=$safe_pubkey_id?>" style="font-family: monospace; font-size: 11px; color: #1e395b; font-weight: 600;"><?=$p_rx_fmt?></span></td>
+											<td><span class="peer-tx-val" id="peer-tx-<?=$safe_pubkey_id?>" style="font-family: monospace; font-size: 11px; color: #1e395b; font-weight: 600;"><?=$p_tx_fmt?></span></td>
 										</tr>
 									<?php endforeach; ?>
 									</tbody>
@@ -576,6 +584,56 @@ function removeSelectedStatusTunnel() {
         }
     });
 }
+
+// Live Real-Time Telemetry Polling (every 3 seconds)
+function formatBytes(bytes) {
+    var b = parseFloat(bytes) || 0;
+    if (b >= 1073741824) return (b / 1073741824).toFixed(2) + ' GiB';
+    if (b >= 1048576) return (b / 1048576).toFixed(2) + ' MiB';
+    if (b >= 1024) return (b / 1024).toFixed(2) + ' KiB';
+    return b > 0 ? b.toFixed(0) + ' B' : '0 B';
+}
+
+function pollWireGuardTelemetry() {
+    $.getJSON('/wg/status_wireguard.php?ajax=telemetry', function(res) {
+        if (!res || !res.tunnels) return;
+        res.tunnels.forEach(function(tun) {
+            var tName = tun.name;
+            var rxFmt = formatBytes(tun.transfer_rx);
+            var txFmt = formatBytes(tun.transfer_tx);
+            $('#tun-rx-' + tName).text(rxFmt);
+            $('#tun-tx-' + tName).text(txFmt);
+
+            if (tun.peers && Array.isArray(tun.peers)) {
+                tun.peers.forEach(function(peer) {
+                    var safeId = (peer.public_key || '').replace(/[^a-zA-Z0-9]/g, '').substr(0, 16);
+                    var pRxFmt = formatBytes(peer.transfer_rx);
+                    var pTxFmt = formatBytes(peer.transfer_tx);
+                    $('#peer-rx-' + safeId).text(pRxFmt);
+                    $('#peer-tx-' + safeId).text(pTxFmt);
+
+                    if (peer.endpoint) {
+                        $('#peer-ep-' + safeId).text(peer.endpoint);
+                    }
+
+                    var hs = parseInt(peer.latest_handshake) || 0;
+                    if (hs > 0) {
+                        $('#peer-hs-' + safeId).html('<span class="text-success"><i class="fa-solid fa-circle-check"></i> Connected</span>');
+                    } else {
+                        $('#peer-hs-' + safeId).html('<span class="text-muted"><i class="fa-regular fa-clock"></i> Idle / Never</span>');
+                    }
+                });
+            }
+        });
+    }).always(function() {
+        setTimeout(pollWireGuardTelemetry, 3000);
+    });
+}
+
+// Start polling on DOM ready
+$(document).ready(function() {
+    setTimeout(pollWireGuardTelemetry, 2500);
+});
 </script>
 
 <style>
