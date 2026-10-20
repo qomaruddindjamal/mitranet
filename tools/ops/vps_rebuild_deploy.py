@@ -38,19 +38,29 @@ PAYLOAD = [
 REMOTE_PAYLOAD = "/tmp/payload"
 
 
-def connect(host: str, user: str, password: str, port: int = 22,tries: int = 3):
+def connect(host: str, user: str, password: str, port: int = 22, tries: int = 3):
+    key_path = None
+    try:
+        k = s.VPS_SSH_KEY
+        if k and Path(k).exists():
+            key_path = k
+    except (RuntimeError, AttributeError):
+        key_path = None
     last = None
-    for _ in range(tries):
-        try:
-            c = paramiko.SSHClient()
-            c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            c.connect(host, port=port, username=user, password=password,
-                      timeout=25, banner_timeout=40, auth_timeout=40,
-                      look_for_keys=False, allow_agent=False)
-            return c
-        except Exception as e:  # noqa: BLE001
-            last = e
-            time.sleep(3)
+    for attempt in range(tries):
+        c = paramiko.SSHClient()
+        c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        for kw in ([{"key_filename": key_path}, {"password": password}]
+                   if key_path else [{"password": password}]):
+            try:
+                c.connect(host, port=port, username=user, timeout=25,
+                          banner_timeout=40, auth_timeout=40,
+                          look_for_keys=False, allow_agent=False, **kw)
+                return c
+            except Exception as e:  # noqa: BLE001
+                last = e
+        c.close()
+        time.sleep(3)
     raise SystemExit(f"SSH gagal ke {host}:{port}: {type(last).__name__}: {last}")
 
 
@@ -60,9 +70,10 @@ def run(c, cmd: str, timeout: int = 300) -> tuple[int, str]:
     return out.channel.recv_exit_status(), data
 
 
-def sudo_run(c, user: str, password: str, script: str, timeout: int = 1800):
-    if user == "root":
-        _in, out, err = c.exec_command("bash -s", timeout=timeout)
+def sudo_run(c, user: str, password: str, script: str, timeout: int = 1800,
+             nopasswd: bool = False):
+    if user == "root" or nopasswd:
+        _in, out, err = c.exec_command("sudo -n bash -s", timeout=timeout)
     else:
         _in, out, err = c.exec_command("sudo -S -p '' bash -s", timeout=timeout)
         _in.write(password + "\n")
@@ -93,6 +104,7 @@ def upload(c, local: Path, remote: str) -> None:
 
 
 def main() -> int:
+    sys.stdout.reconfigure(line_buffering=True)
     ap = argparse.ArgumentParser()
     ap.add_argument("--host", default=None)
     ap.add_argument("--user", default=None)
@@ -127,14 +139,14 @@ def main() -> int:
             return 2
 
     c = connect(host, user, password)
-    rc, who = run(c, "id -un; . /etc/os-release; echo $PRETTY_NAME; ip -4 -o addr show scope global | awk '{print $2,$4}'")
+    rc, who = run(c, "id -un; . /etc/os-release; echo $PRETTY_NAME; "
+                     "ip -4 -o addr show scope global | awk '{print $2,$4}'")
     print("== sesi:", " ".join(who.split())[:200])
-    c.close()
+    nopasswd = run(c, "sudo -n true >/dev/null 2>&1 && echo YES || echo NO")[1].strip() == "YES"
+    print(f"== sudo: {'NOPASSWD' if nopasswd else 'perlu password'}")
 
     if "fw" in phases and not args.confirm_firewall:
         raise SystemExit("Phase fw butuh --confirm-firewall (risiko lockout).")
-
-    c = connect(host, user, password)
 
     if not args.no_payload and any(p in phases for p in ("deps", "app", "net")):
         run(c, f"mkdir -p {REMOTE_PAYLOAD}")
@@ -150,28 +162,42 @@ def main() -> int:
     for p in phases:
         if p == "status":
             rc, out = sudo_run(c, user, password,
-                               f"{env} bash {REMOTE_PAYLOAD}/vps-bootstrap.sh status")
+                               f"{env} bash {REMOTE_PAYLOAD}/vps-bootstrap.sh status",
+                               nopasswd=nopasswd)
             print(f"== status (rc={rc})\n{out}")
             continue
         if p == "fw":
             rc, out = sudo_run(c, user, password,
-                               f"{env} bash {REMOTE_PAYLOAD}/vps-bootstrap.sh fw")
+                               f"{env} bash {REMOTE_PAYLOAD}/vps-bootstrap.sh fw",
+                               nopasswd=nopasswd)
             print(f"== fw (rc={rc})\n{out}")
             time.sleep(3)
             if port_open(host):
                 rc2, out2 = sudo_run(c, user, password,
-                                     "systemctl cancel fw-watchdog 2>&1; "
-                                     "echo WATCHDOG_CANCELLED; nft list ruleset | head -4")
+                                     "systemctl cancel fw-watchdog.timer 2>&1; "
+                                     "echo WATCHDOG_CANCELLED; nft list ruleset | head -4",
+                                     nopasswd=nopasswd)
                 print(f"== SSH dari luar HIDUP -> watchdog dibatalkan\n{out2}")
             else:
                 print("!! SSH dari luar MATI setelah apply firewall. "
                       "Watchdog 120s akan flush ruleset; tunggu 3 menit lalu cek lagi.")
             continue
         rc, out = sudo_run(c, user, password,
-                           f"{env} bash {REMOTE_PAYLOAD}/vps-bootstrap.sh {p}")
-        print(f"== phase {p} (rc={rc})\n{out[-3000:]}")
+                           f"{env} bash {REMOTE_PAYLOAD}/vps-bootstrap.sh {p}",
+                           nopasswd=nopasswd)
+        print(f"== phase {p} (rc={rc})\n{out[-3000:]}", flush=True)
+        if p in ("net", "app") and port_open(host):
+            time.sleep(2)
+            rc2, out2 = sudo_run(c, user, password,
+                                 "systemctl cancel net-watchdog.timer 2>/dev/null; "
+                                 "systemctl stop net-watchdog.timer 2>/dev/null; "
+                                 "echo NET_WATCHOFF; ip -4 route show default | head -1; "
+                                 "systemctl is-active strongswan xl2tpd mitranet-webui | paste -sd, -",
+                                 nopasswd=nopasswd, timeout=60)
+            print(f"== SSH luar HIDUP -> {out2.strip()}", flush=True)
         if not port_open(host):
-            print(f"!! SSH mati setelah phase {p} — hentikan, jangan lanjut phase.")
+            print(f"!! SSH mati setelah phase {p} — hentikan, jangan lanjut phase. "
+                  f"Watchdog net/fw akan memulihkan sendiri dalam <=180s.", flush=True)
             return 3
 
     c.close()

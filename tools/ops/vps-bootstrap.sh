@@ -25,6 +25,12 @@ PAYLOAD_DIR="${PAYLOAD_DIR:-/tmp/payload}"
 
 step() { echo "==> $*"; }
 tmo() { timeout 90 "$@" || echo "   WARN: $* (rc=$?)"; }
+# watchdog transien: self-heal kalau perubahan jaringan membuat box tak terjangkau
+arm_watchdog() { systemd-run --on-active="${2}s" --unit="$1" /bin/bash -c "$3" >/dev/null 2>&1 \
+                  && step "watchdog $1 aktif ${2}s" || echo "   WARN: watchdog $1 gagal dipasang"; }
+disarm_watchdog() { systemctl cancel "$1.timer" >/dev/null 2>&1 || true
+                    systemctl stop "$1.timer" "$1.service" >/dev/null 2>&1 || true
+                    echo "   watchdog $1 dibatalkan"; }
 
 phase_deps() {
   export DEBIAN_FRONTEND=noninteractive
@@ -102,6 +108,7 @@ UNIT
 }
 
 phase_net() {
+  arm_watchdog net-watchdog 180 "systemctl stop strongswan xl2tpd wg-quick@wg0; nft flush ruleset; ip route flush cache"
   step "sysctl forward"
   echo -e "net.ipv4.ip_forward=1\nnet.ipv4.conf.all.rp_filter=0" >/etc/sysctl.d/99-mitranet-forward.conf
   sysctl -p /etc/sysctl.d/99-mitranet-forward.conf >/dev/null
@@ -192,6 +199,8 @@ CONF
   tmo systemctl restart xl2tpd
 
   step "strongSwan (swanctl, Debian 13 tidak pakai ipsec.conf)"
+  # PENTING: start_action=trap dengan remote_ts 0/0 memasang route/acquire untuk SEMUA
+  # trafik -> box hilang dari jaringan (ini penyebab outage 2x). Pakai 'default'.
   rm -f /etc/ipsec.conf /etc/ipsec.secrets
   mkdir -p /etc/swanctl/conf.d
   cat >/etc/swanctl/conf.d/l2tp.conf <<CONF
@@ -199,6 +208,7 @@ connections {
   l2tp {
     version = 1
     local_addrs = $PUB_IP
+    proposals = aes128-sha1-modp1024, aes128-sha256-modp2048, 3des-sha1-modp1024
     local {
       auth = psk
       id = $PUB_IP
@@ -210,8 +220,12 @@ connections {
     children {
       l2tp {
         mode = transport
-        dpd_action = restart
-        start_action = trap
+        local_ts = $PUB_IP/32
+        remote_ts = 0.0.0.0/0
+        dpd_action = clear
+        start_action = default
+        close_action = none
+        updown = none
       }
     }
   }
@@ -222,8 +236,16 @@ secrets {
 CONF
   tmo systemctl restart strongswan
   sleep 2
-  timeout 30 swanctl --load-all || step "WARN swanctl load"
-  timeout 20 swanctl --list-conns | head -5
+  timeout 25 swanctl --load-all || step "WARN swanctl load"
+  sleep 2
+  if ip -4 route show | grep -qE '^(default|0\.0\.0\.0/0) .* (ipsec|xfrm|newnexthop)' \
+     || ip -4 route show | grep -c '^0\.0\.0\.0/0' | grep -qv '^1$'; then
+    step "BAHAYA: route global berubah -> strongSwan/xl2tpd langsung dihentikan"
+    systemctl stop strongswan xl2tpd
+  fi
+  step "verifikasi net: default=$(ip -4 route show default | head -1)"
+  timeout 20 swanctl --list-conns | head -5 || true
+  disarm_watchdog net-watchdog || true
 }
 
 phase_fw() {
@@ -269,11 +291,12 @@ CONF
     exit 1
   fi
   systemd-run --on-active=120s --unit=fw-watchdog /usr/sbin/nft flush ruleset >/dev/null 2>&1 || true
-  nft -f /etc/nftables.conf && step "NFT_APPLIED (watchdog flush aktif 120s)"
+  step "watchdog fw-watchdog aktif 120s"
+  nft -f /etc/nftables.conf && step "NFT_APPLIED"
   systemctl disable nftables >/dev/null 2>&1 || true
   step "cek lokal: sshd=$(ss -Hlnt 2>/dev/null | grep -c ':22 ') 8443=$(ss -Hlnt 2>/dev/null | grep -c ':8443 ')"
-  echo "   Setelah SSH dari luar terkonfirmasi hidup, jalankan:  systemctl cancel fw-watchdog"
-  echo "   Jika tidak, watchdog akan flush ruleset sendiri dalam 120 detik."
+  echo "   Setelah SSH dari luar terkonfirmasi hidup: systemctl cancel fw-watchdog.timer"
+  echo "   Jika tidak, watchdog flush ruleset sendiri dalam 120 detik."
 }
 
 phase_status() {
