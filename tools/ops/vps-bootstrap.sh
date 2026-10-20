@@ -22,6 +22,10 @@ GW_IP="${GW_IP:-172.16.66.253}"
 CLIENT_NET="${CLIENT_NET:-172.16.66.0/24}"
 WG_NET="${WG_NET:-10.10.77.0/24}"
 PAYLOAD_DIR="${PAYLOAD_DIR:-/tmp/payload}"
+# PROFIL AMAN (default): TANPA IPsec. strongSwan 6 dengan child transport pernah
+# membuat box hilang total 2x. Set WITH_IPSEC=1 hanya setelah provider memastikan
+# tidak ada block, dan selalu lewat net-watchdog.
+WITH_IPSEC="${WITH_IPSEC:-0}"
 
 step() { echo "==> $*"; }
 tmo() { timeout 90 "$@" || echo "   WARN: $* (rc=$?)"; }
@@ -34,15 +38,25 @@ disarm_watchdog() { systemctl cancel "$1.timer" >/dev/null 2>&1 || true
 
 phase_deps() {
   export DEBIAN_FRONTEND=noninteractive
+  PKGS="php8.4-cli php8.4-curl php8.4-mbstring php8.4-sqlite3 wireguard-tools \
+        xl2tpd ppp nftables fping curl python3-pip \
+        python3-pydantic python3-yaml python3-requests python3-netifaces \
+        iproute2 iptables jq"
+  if [ "$WITH_IPSEC" = "1" ]; then
+    PKGS="$PKGS strongswan strongswan-swanctl libcharon-extra-plugins"
+  fi
   apt-get update -y
-  apt-get install -y --no-install-recommends \
-    php8.4-cli php8.4-curl php8.4-mbstring php8.4-sqlite3 \
-    wireguard-tools strongswan strongswan-swanctl libcharon-extra-plugins \
-    xl2tpd ppp nftables fping curl python3-pip \
-    python3-pydantic python3-yaml python3-requests python3-netifaces \
-    iproute2 iptables jq
-  step "versi"
-  php -v | head -1; swanctl --version 2>/dev/null | head -1 || true
+  # shellcheck disable=SC2086
+  apt-get install -y --no-install-recommends $PKGS
+  step "versi: $(php -v | head -1)"
+  if [ "$WITH_IPSEC" = "1" ]; then
+    swanctl --version 2>/dev/null | head -1 || true
+  else
+    step "profil TANPA IPsec: strongSwan tidak dipasang/di-mask"
+    systemctl disable --now strongswan strongswan-swanctl >/dev/null 2>&1 || true
+    systemctl mask strongswan strongswan-swanctl >/dev/null 2>&1 || true
+    rm -f /etc/swanctl/conf.d/l2tp.conf
+  fi
   systemctl is-enabled ssh >/dev/null 2>&1 && step "sshd enabled OK"
 }
 
@@ -198,6 +212,16 @@ conf-file /dev/null
 CONF
   tmo systemctl restart xl2tpd
 
+  if [ "$WITH_IPSEC" != "1" ]; then
+    step "IPsec DIMATIKAN (profil aman) -> L2TP jalan atas UDP polos 1701"
+    systemctl disable --now strongswan strongswan-swanctl >/dev/null 2>&1 || true
+    rm -f /etc/ipsec.conf /etc/ipsec.secrets /etc/swanctl/conf.d/l2tp.conf
+    step "verifikasi: strongswan=$(systemctl is-active strongswan 2>&1) xl2tpd=$(systemctl is-active xl2tpd 2>&1) udp1701=$(ss -Hlnu | grep -c ':1701')"
+    step "default route: $(ip -4 route show default | head -1)"
+    disarm_watchdog net-watchdog || true
+    return 0
+  fi
+
   step "strongSwan (swanctl, Debian 13 tidak pakai ipsec.conf)"
   # PENTING: start_action=trap dengan remote_ts 0/0 memasang route/acquire untuk SEMUA
   # trafik -> box hilang dari jaringan (ini penyebab outage 2x). Pakai 'default'.
@@ -250,6 +274,14 @@ CONF
 
 phase_fw() {
   step "firewall (opt-in, watchdog 120s, TIDAK dipersist ke boot)"
+  if [ "$WITH_IPSEC" = "1" ]; then
+    IPS_RULES="    udp dport { 500, 4500 } accept
+    ip protocol esp accept"
+    L2TP_PORTS="1701"
+  else
+    IPS_RULES=""
+    L2TP_PORTS="1701"
+  fi
   cat >/etc/nftables.conf <<CONF
 #!/usr/sbin/nft -f
 flush ruleset
@@ -268,8 +300,8 @@ table inet filter {
     icmp type echo-request limit rate 10/second accept
     udp dport { 13231-13235, 51831-51834 } accept
     tcp dport { 8000, 8443 } accept
-    udp dport { 1701, 500, 4500 } accept
-    ip protocol esp accept
+    udp dport { $L2TP_PORTS } accept
+$IPS_RULES
     ip protocol gre accept
     ip protocol 4 accept
   }
@@ -310,6 +342,7 @@ phase_status() {
   echo "--- wg ---"; wg show 2>/dev/null | head -8
   echo "--- pool ---"; grep -E 'ip range|local ip' /etc/xl2tpd/xl2tpd.conf
   echo "--- firewall ---"; nft list ruleset 2>/dev/null | head -6
+  echo "--- ipsec profil ---"; echo "WITH_IPSEC=$WITH_IPSEC; strongswan=$(systemctl is-active strongswan 2>&1) masked=$(systemctl is-enabled strongswan 2>&1)"
   echo "PUBLIC WG KEYS:"; for t in wg0 wgboost1 wgboost2; do [ -f /etc/wireguard/$t.key ] && echo "  $t = $(wg pubkey </etc/wireguard/$t.key)"; done
 }
 

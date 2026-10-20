@@ -116,6 +116,8 @@ def main() -> int:
                     help="wajib untuk phase fw")
     ap.add_argument("--no-payload", action="store_true",
                     help="lewati upload payload (sudah ada di VPS)")
+    ap.add_argument("--with-ipsec", action="store_true",
+                    help="pasang strongSwan/IPsec (default MATI: profil aman, L2TP UDP polos)")
     args = ap.parse_args()
 
     if paramiko is None:
@@ -158,7 +160,7 @@ def main() -> int:
                 print(f"   WARN: payload hilang: {f}")
 
     env = (f"PUB_IP={host} LAN_IF={os.environ.get('VPS_LAN_IF', 'eth0')} "
-           f"L2TP_PSK='{s.L2TP_PSK}'")
+           f"L2TP_PSK='{s.L2TP_PSK}' WITH_IPSEC={1 if args.with_ipsec else 0}")
     for p in phases:
         if p == "status":
             rc, out = sudo_run(c, user, password,
