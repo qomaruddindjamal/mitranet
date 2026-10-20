@@ -50,6 +50,9 @@ __pycache__/
 .venv/
 scratch/
 tests/live/
+backups/
+*.backup
+*.rsc
 ai/config.json
 src/ai/config.json
 docs/verification/PHASE-A1-AUDIT-REPORT.md
