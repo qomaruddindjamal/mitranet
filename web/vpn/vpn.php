@@ -310,7 +310,11 @@ function saveVpnConfig($configFile, $config) {
     $saveData = $config;
     // Active connections are strictly ephemeral runtime state; do not pollute persistent JSON
     unset($saveData['active_connections']);
-    return @file_put_contents($configFile, json_encode($saveData, JSON_PRETTY_PRINT)) !== false;
+    $res = @file_put_contents($configFile, json_encode($saveData, JSON_PRETTY_PRINT)) !== false;
+    if ($res) {
+        @chmod($configFile, 0600);
+    }
+    return $res;
 }
 
 $vpnConfig = loadVpnConfig($configFile);
