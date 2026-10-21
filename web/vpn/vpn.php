@@ -123,22 +123,40 @@ function loadVpnConfig($configFile) {
 
 /**
  * Safely terminate the L2TP pppd process bound to chr-l2tp with PID validation
+ * Prevents collateral termination of other PPP sessions, cleans stale PID files,
+ * and guards against PID reuse.
+ * Returns array: ['terminated' => array, 'cleaned_stale_files' => array]
  */
 function terminateL2tpTunnel() {
-    // 1. Tell xl2tpd daemon to disconnect lac
+    $report = [
+        'terminated' => [],
+        'cleaned_stale_files' => []
+    ];
+
+    // 1. Tell xl2tpd daemon to disconnect lac gracefully
     @shell_exec('echo "d chr-l2tp" > /var/run/xl2tpd/l2tp-control 2>/dev/null');
 
-    // 2. Discover PID bound to chr-l2tp via /var/run/ppp*.pid or pgrep
+    // 2. Discover PID bound strictly to chr-l2tp via /var/run/ppp*.pid
     $target_pids = [];
     $pid_files = glob('/var/run/ppp*.pid');
     if ($pid_files) {
         foreach ($pid_files as $pf) {
-            $pid = intval(trim(@file_get_contents($pf)));
+            $pid_str = trim(@file_get_contents($pf) ?: '');
+            $pid = intval($pid_str);
             if ($pid > 1) {
+                if (!file_exists("/proc/{$pid}")) {
+                    // Stale PID file where process no longer exists
+                    @unlink($pf);
+                    $report['cleaned_stale_files'][] = $pf;
+                    continue;
+                }
                 $cmdline = @file_get_contents("/proc/{$pid}/cmdline");
                 if ($cmdline !== false && strpos($cmdline, 'chr-l2tp') !== false) {
                     $target_pids[] = $pid;
                 }
+            } else if (file_exists($pf) && filesize($pf) === 0) {
+                @unlink($pf);
+                $report['cleaned_stale_files'][] = $pf;
             }
         }
     }
@@ -150,62 +168,115 @@ function terminateL2tpTunnel() {
             $lines = explode("\n", $pg);
             foreach ($lines as $l) {
                 $p = intval(trim($l));
-                if ($p > 1) $target_pids[] = $p;
+                if ($p > 1 && file_exists("/proc/{$p}")) {
+                    $cmdline = @file_get_contents("/proc/{$p}/cmdline");
+                    if ($cmdline !== false && strpos($cmdline, 'chr-l2tp') !== false) {
+                        $target_pids[] = $p;
+                    }
+                }
             }
         }
     }
 
-    $target_pids = array_unique($target_pids);
+    $target_pids = array_values(array_unique($target_pids));
 
-    // 3. Graceful SIGTERM
+    // 3. Graceful SIGTERM with PID validation
     foreach ($target_pids as $pid) {
-        @posix_kill($pid, SIGTERM);
-        @shell_exec("kill -TERM {$pid} 2>/dev/null");
+        if (file_exists("/proc/{$pid}")) {
+            $comm = trim(@file_get_contents("/proc/{$pid}/comm") ?: '');
+            if ($comm === 'pppd' || empty($comm)) {
+                @posix_kill($pid, SIGTERM);
+                @shell_exec("kill -TERM {$pid} 2>/dev/null");
+            }
+        }
     }
 
     if (!empty($target_pids)) {
         usleep(300000); // 300ms grace period
 
-        // 4. Force SIGKILL only if process still alive and verified matching
+        // 4. Force SIGKILL only if process still alive and cmdline verified to prevent PID reuse
         foreach ($target_pids as $pid) {
             if (file_exists("/proc/{$pid}")) {
                 $cmdline = @file_get_contents("/proc/{$pid}/cmdline");
-                if ($cmdline !== false && strpos($cmdline, 'chr-l2tp') !== false) {
+                $comm = trim(@file_get_contents("/proc/{$pid}/comm") ?: '');
+                if ($cmdline !== false && strpos($cmdline, 'chr-l2tp') !== false && ($comm === 'pppd' || empty($comm))) {
                     @posix_kill($pid, SIGKILL);
                     @shell_exec("kill -9 {$pid} 2>/dev/null");
                 }
             }
+            $report['terminated'][] = $pid;
         }
     }
+
+    return $report;
 }
 
 /**
  * Safely ensure underlay host route to LNS endpoint on physical WAN interface
  * Prevents route loops when defaultroute is added via ppp
+ * Returns array: ['success' => bool, 'endpoint' => string, 'gw' => string, 'dev' => string, 'action' => string, 'error' => ?string]
  */
 function ensureUnderlayHostRoute($endpoint) {
+    $res = [
+        'success' => false,
+        'endpoint' => '',
+        'gw' => '',
+        'dev' => '',
+        'action' => 'none',
+        'error' => null
+    ];
+
+    if (!is_string($endpoint)) {
+        $res['error'] = 'Invalid endpoint type';
+        return $res;
+    }
+
     $endpoint = trim($endpoint);
-    if (empty($endpoint)) return false;
+    if (empty($endpoint) || strlen($endpoint) > 253) {
+        $res['error'] = 'Endpoint is empty or too long';
+        return $res;
+    }
+
+    // Reject command-line switch injection attempts
+    if (substr($endpoint, 0, 1) === '-') {
+        $res['error'] = 'Endpoint cannot start with a hyphen';
+        return $res;
+    }
 
     // 1. Validate IP address or resolve hostname securely
     $target_ip = '';
     if (filter_var($endpoint, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        // Disallow loopback (127.0.0.0/8), link-local (169.254.0.0/16), 0.0.0.0, or broadcast (255.255.255.255)
+        $octets = explode('.', $endpoint);
+        $first = intval($octets[0]);
+        if ($first === 0 || $first === 127 || ($first === 169 && intval($octets[1]) === 254) || $first >= 224) {
+            $res['error'] = 'Endpoint IP cannot be loopback, link-local, multicast, or broadcast';
+            return $res;
+        }
         $target_ip = $endpoint;
     } else {
-        // Safe hostname resolution
-        if (preg_match('/^[a-zA-Z0-9.\-]+$/', $endpoint)) {
-            $resolved = @gethostbyname($endpoint);
-            if (filter_var($resolved, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-                $target_ip = $resolved;
-            }
+        // Safe hostname validation (RFC 1123: labels max 63 chars, alphanumeric with internal hyphens, dots)
+        if (!preg_match('/^(?!-)[a-zA-Z0-9-]{1,63}(?<!-)(\.(?!-)[a-zA-Z0-9-]{1,63}(?<!-))*$/', $endpoint)) {
+            $res['error'] = 'Invalid hostname format';
+            return $res;
         }
+        $resolved = @gethostbyname($endpoint);
+        if ($resolved === $endpoint || !filter_var($resolved, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            $res['error'] = 'Failed to resolve hostname to IPv4';
+            return $res;
+        }
+        $octets = explode('.', $resolved);
+        $first = intval($octets[0]);
+        if ($first === 0 || $first === 127 || ($first === 169 && intval($octets[1]) === 254) || $first >= 224) {
+            $res['error'] = 'Resolved IP is invalid or reserved';
+            return $res;
+        }
+        $target_ip = $resolved;
     }
 
-    if (empty($target_ip)) {
-        return false;
-    }
+    $res['endpoint'] = $target_ip;
 
-    // 2. Discover physical WAN default gateway and interface (ignoring ppp interfaces)
+    // 2. Discover physical WAN default gateway and interface (strictly ignoring ppp interfaces)
     $gw = '';
     $dev = '';
     $route_out = @shell_exec("ip -4 route show default 2>/dev/null");
@@ -227,21 +298,36 @@ function ensureUnderlayHostRoute($endpoint) {
         $dev = 'enp1s0';
     }
 
+    $res['gw'] = $gw;
+    $res['dev'] = $dev;
+
     // 3. Idempotently check if exact route already exists
     $curr_route = @shell_exec("ip -4 route get " . escapeshellarg($target_ip) . " 2>/dev/null");
-    if (strpos($curr_route, "dev {$dev}") !== false && strpos($curr_route, "via {$gw}") !== false) {
-        return true; // Already routed correctly via physical underlay
+    if (!empty($curr_route) && strpos($curr_route, "dev {$dev}") !== false && strpos($curr_route, "via {$gw}") !== false) {
+        $res['success'] = true;
+        $res['action'] = 'already_exists';
+        return $res; // Already routed correctly via physical underlay
     }
 
     // 4. Install / replace host route with sanitized parameters
     $cmd = sprintf(
-        "ip route replace %s via %s dev %s 2>/dev/null",
+        "ip route replace %s via %s dev %s 2>&1",
         escapeshellarg($target_ip),
         escapeshellarg($gw),
         escapeshellarg($dev)
     );
-    @shell_exec($cmd);
-    return true;
+    $out = @shell_exec($cmd);
+    
+    // Verify route is present after replacement
+    $verify_route = @shell_exec("ip -4 route get " . escapeshellarg($target_ip) . " 2>/dev/null");
+    if (!empty($verify_route) && strpos($verify_route, "dev {$dev}") !== false) {
+        $res['success'] = true;
+        $res['action'] = 'replaced';
+        return $res;
+    }
+
+    $res['error'] = 'ip route replace failed: ' . trim($out ?? '');
+    return $res;
 }
 
 function syncRealPppKernelState(&$config) {
