@@ -1,9 +1,22 @@
 import subprocess
 import os
 import sys
+import tarfile
 
+project_root = r'C:\mitranet'
 xorriso_exe = r'C:\Windows\system32\xorriso.exe'
 output_iso = r'C:\mitranet\iso\MitraNet-Rinjani-1.0.2-amd64.iso'
+iso_work_dir = r'C:\mitranet\build\iso_work'
+mitranet_tar = os.path.join(iso_work_dir, 'mitranet', 'mitranet.tar.gz')
+
+print("[ISO BUILD] Packaging canonical source into mitranet.tar.gz...")
+os.makedirs(os.path.dirname(mitranet_tar), exist_ok=True)
+with tarfile.open(mitranet_tar, "w:gz") as tar:
+    for folder in ['web', 'core', 'src', 'tests']:
+        folder_path = os.path.join(project_root, folder)
+        if os.path.exists(folder_path):
+            tar.add(folder_path, arcname=folder)
+print(f"[ISO BUILD] Packed latest source into {mitranet_tar} (size: {os.path.getsize(mitranet_tar)} bytes)")
 
 cmd = [
     xorriso_exe,
