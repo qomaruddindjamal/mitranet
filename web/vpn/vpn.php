@@ -18,78 +18,9 @@ function loadVpnConfig($configFile) {
             return $data;
         }
     }
-    // Default initial seeds matching MikroTik RouterOS
+    // Initial defaults matching MikroTik RouterOS standards (NO dummy users or fake connections)
     return [
-        'interfaces' => [
-            [
-                'id' => 1,
-                'name' => '<pptp-out1>',
-                'type' => 'PPTP Client',
-                'actual_mtu' => 1450,
-                'l2mtu' => 1500,
-                'tx' => '0 B/s',
-                'rx' => '0 B/s',
-                'tx_packets' => 0,
-                'rx_packets' => 0,
-                'fp_tx' => '0 B/s',
-                'fp_rx' => '0 B/s',
-                'fp_tx_packets' => 0,
-                'fp_rx_packets' => 0,
-                'enabled' => true,
-                'comment' => 'HQ Site-to-Site PPTP'
-            ],
-            [
-                'id' => 2,
-                'name' => '<ovpn-out1>',
-                'type' => 'OVPN Client',
-                'actual_mtu' => 1500,
-                'l2mtu' => 1500,
-                'tx' => '0 B/s',
-                'rx' => '0 B/s',
-                'tx_packets' => 0,
-                'rx_packets' => 0,
-                'fp_tx' => '0 B/s',
-                'fp_rx' => '0 B/s',
-                'fp_tx_packets' => 0,
-                'fp_rx_packets' => 0,
-                'enabled' => true,
-                'comment' => 'OpenVPN Cloud Uplink'
-            ],
-            [
-                'id' => 3,
-                'name' => '<l2tp-out1>',
-                'type' => 'L2TP Client',
-                'actual_mtu' => 1450,
-                'l2mtu' => 1500,
-                'tx' => '0 B/s',
-                'rx' => '0 B/s',
-                'tx_packets' => 0,
-                'rx_packets' => 0,
-                'fp_tx' => '0 B/s',
-                'fp_rx' => '0 B/s',
-                'fp_tx_packets' => 0,
-                'fp_rx_packets' => 0,
-                'enabled' => false,
-                'comment' => 'Backup L2TP Tunnel'
-            ],
-            [
-                'id' => 4,
-                'name' => '<sstp-out1>',
-                'type' => 'SSTP Client',
-                'actual_mtu' => 1500,
-                'l2mtu' => 1500,
-                'tx' => '0 B/s',
-                'rx' => '0 B/s',
-                'tx_packets' => 0,
-                'rx_packets' => 0,
-                'fp_tx' => '0 B/s',
-                'fp_rx' => '0 B/s',
-                'fp_tx_packets' => 0,
-                'fp_rx_packets' => 0,
-                'enabled' => false,
-                'comment' => 'Branch SSTP Tunnel'
-            ]
-        ],
+        'interfaces' => [],
         'pppoe_servers' => [
             [
                 'id' => 1,
@@ -159,28 +90,7 @@ function loadVpnConfig($configFile) {
                 'enabled' => true
             ]
         ],
-        'secrets' => [
-            [
-                'id' => 1,
-                'name' => 'client1',
-                'service' => 'any',
-                'password' => '******',
-                'profile' => 'default-encryption',
-                'local_address' => '10.10.10.1',
-                'remote_address' => '10.10.10.10',
-                'comment' => 'Client Remote 1'
-            ],
-            [
-                'id' => 2,
-                'name' => 'client2',
-                'service' => 'pppoe',
-                'password' => '******',
-                'profile' => 'default',
-                'local_address' => '10.10.20.1',
-                'remote_address' => '10.10.20.2',
-                'comment' => 'Home PPPoE User'
-            ]
-        ],
+        'secrets' => [],
         'profiles' => [
             [
                 'id' => 1,
@@ -199,17 +109,7 @@ function loadVpnConfig($configFile) {
                 'use_encryption' => 'require'
             ]
         ],
-        'active_connections' => [
-            [
-                'id' => 1,
-                'name' => 'client1',
-                'service' => 'ovpn',
-                'caller_id' => '182.253.110.12',
-                'address' => '10.10.10.10',
-                'uptime' => '02:45:12',
-                'encoding' => 'AES-256-GCM'
-            ]
-        ],
+        'active_connections' => [],
         'l2tp_ethernet' => [],
         'l2tp_secrets' => [
             [
@@ -392,9 +292,8 @@ function syncRealPppKernelState(&$config) {
         }
     }
 
-    if (!empty($real_active)) {
-        $config['active_connections'] = array_merge($real_active, $config['active_connections']);
-    }
+    // Active connections are strictly realtime runtime state (no persistent stale accumulation)
+    $config['active_connections'] = $real_active;
 }
 
 function saveVpnConfig($configFile, $config) {
@@ -408,10 +307,10 @@ function saveVpnConfig($configFile, $config) {
     if (isset($config['secrets']) && is_array($config['secrets'])) {
         $config['secrets'] = array_values($config['secrets']);
     }
-    if (isset($config['profiles']) && is_array($config['profiles'])) {
-        $config['profiles'] = array_values($config['profiles']);
-    }
-    return @file_put_contents($configFile, json_encode($config, JSON_PRETTY_PRINT)) !== false;
+    $saveData = $config;
+    // Active connections are strictly ephemeral runtime state; do not pollute persistent JSON
+    unset($saveData['active_connections']);
+    return @file_put_contents($configFile, json_encode($saveData, JSON_PRETTY_PRINT)) !== false;
 }
 
 $vpnConfig = loadVpnConfig($configFile);
@@ -885,7 +784,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             saveVpnConfig($configFile, $vpnConfig);
-            $resp = ['success' => true, 'message' => 'PPP Secret saved successfully.'];
+
+            // Synchronize secrets to Linux system /etc/ppp/chap-secrets
+            $chap_lines = "# Secrets for authentication using CHAP / PAP / MS-CHAP\n# client\tserver\tsecret\tIP addresses\n";
+            foreach ($vpnConfig['secrets'] as $sec) {
+                $c_user = $sec['name'] ?? '';
+                $c_pass = $sec['password'] ?? '';
+                $c_ip = !empty($sec['remote_address']) ? $sec['remote_address'] : '*';
+                if (!empty($c_user)) {
+                    $chap_lines .= "{$c_user}\t*\t\"{$c_pass}\"\t{$c_ip}\n";
+                }
+            }
+            @file_put_contents('/etc/ppp/chap-secrets', $chap_lines);
+
+            $resp = ['success' => true, 'message' => 'PPP Secret saved successfully & synced to system.'];
         }
         if ($is_ajax) {
             header('Content-Type: application/json; charset=utf-8');
@@ -901,10 +813,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 return ($s['id'] ?? 0) !== $sec_id;
             }));
             saveVpnConfig($configFile, $vpnConfig);
+
+            // Re-sync chap-secrets after deletion
+            $chap_lines = "# Secrets for authentication using CHAP / PAP / MS-CHAP\n# client\tserver\tsecret\tIP addresses\n";
+            foreach ($vpnConfig['secrets'] as $sec) {
+                $c_user = $sec['name'] ?? '';
+                $c_pass = $sec['password'] ?? '';
+                $c_ip = !empty($sec['remote_address']) ? $sec['remote_address'] : '*';
+                if (!empty($c_user)) {
+                    $chap_lines .= "{$c_user}\t*\t\"{$c_pass}\"\t{$c_ip}\n";
+                }
+            }
+            @file_put_contents('/etc/ppp/chap-secrets', $chap_lines);
         }
         if ($is_ajax) {
             header('Content-Type: application/json; charset=utf-8');
-            echo json_encode(['success' => true, 'message' => 'PPP Secret removed.']);
+            echo json_encode(['success' => true, 'message' => 'PPP Secret removed & system sync updated.']);
             exit;
         }
     }
