@@ -221,15 +221,184 @@ function loadVpnConfig($configFile) {
     ];
 }
 
+function syncRealPppKernelState(&$config) {
+    if (!isset($config['interfaces']) || !is_array($config['interfaces'])) {
+        $config['interfaces'] = [];
+    }
+    if (!isset($config['active_connections']) || !is_array($config['active_connections'])) {
+        $config['active_connections'] = [];
+    }
+
+    // Scan real Linux ppp interfaces in /sys/class/net/
+    $ppp_devs = glob('/sys/class/net/ppp*');
+    $real_active = [];
+    $real_ifaces = [];
+
+    if ($ppp_devs) {
+        $id_counter = 100;
+        foreach ($ppp_devs as $dev_path) {
+            $dev = basename($dev_path);
+            $mtu = @file_get_contents("{$dev_path}/mtu");
+            $mtu = $mtu !== false ? intval(trim($mtu)) : 1450;
+            $operstate = @file_get_contents("{$dev_path}/operstate");
+            $is_up = trim($operstate) === 'up' || trim($operstate) === 'unknown';
+
+            // Ambil IP address dari ip addr show
+            $ip_out = @shell_exec("ip -4 addr show dev " . escapeshellarg($dev) . " 2>/dev/null");
+            $local_ip = '-';
+            $remote_ip = '-';
+            if (preg_match('/inet\s+([0-9.]+)\s+peer\s+([0-9.]+)/', $ip_out, $m)) {
+                $local_ip = $m[1];
+                $remote_ip = $m[2];
+            }
+
+            // Stats
+            $rx_bytes = intval(@file_get_contents("{$dev_path}/statistics/rx_bytes") ?: 0);
+            $tx_bytes = intval(@file_get_contents("{$dev_path}/statistics/tx_bytes") ?: 0);
+            $rx_packets = intval(@file_get_contents("{$dev_path}/statistics/rx_packets") ?: 0);
+            $tx_packets = intval(@file_get_contents("{$dev_path}/statistics/tx_packets") ?: 0);
+
+            $fmt_bytes = function($b) {
+                if ($b >= 1073741824) return round($b / 1073741824, 2) . ' GiB';
+                if ($b >= 1048576) return round($b / 1048576, 2) . ' MiB';
+                if ($b >= 1024) return round($b / 1024, 2) . ' KiB';
+                return $b . ' B';
+            };
+
+            // Parse real configuration dynamically from system files
+            $real_connect_to = '';
+            if (file_exists('/etc/xl2tpd/xl2tpd.conf')) {
+                $xl_content = @file_get_contents('/etc/xl2tpd/xl2tpd.conf');
+                if (preg_match('/lns\s*=\s*([^\s\r\n]+)/', $xl_content, $xlm)) {
+                    $real_connect_to = trim($xlm[1]);
+                }
+            }
+
+            $real_user = '';
+            $real_pass = '';
+            $peer_files = glob('/etc/ppp/peers/*');
+            if ($peer_files) {
+                foreach ($peer_files as $pf) {
+                    $p_content = @file_get_contents($pf);
+                    if (preg_match('/^\s*name\s+([^\s\r\n]+)/m', $p_content, $unm)) {
+                        $real_user = trim($unm[1]);
+                    }
+                    if (preg_match('/^\s*password\s+([^\s\r\n]+)/m', $p_content, $pwm)) {
+                        $real_pass = trim($pwm[1]);
+                    }
+                }
+            }
+
+            // Fallback to chap-secrets if password not in peer options
+            if (empty($real_pass) && file_exists('/etc/ppp/chap-secrets')) {
+                $cs = @file_get_contents('/etc/ppp/chap-secrets');
+                if ($real_user && preg_match('/' . preg_quote($real_user, '/') . '\s+\*\s+([^\s]+)/', $cs, $csm)) {
+                    $real_pass = trim($csm[1], "\"' ");
+                }
+            }
+
+            $real_ifaces[] = [
+                'id' => $id_counter,
+                'name' => "<{$dev}>",
+                'type' => 'L2TP Client',
+                'actual_mtu' => $mtu,
+                'l2mtu' => 1500,
+                'tx' => $fmt_bytes($tx_bytes),
+                'rx' => $fmt_bytes($rx_bytes),
+                'tx_packets' => $tx_packets,
+                'rx_packets' => $rx_packets,
+                'fp_tx' => '0 B/s',
+                'fp_rx' => '0 B/s',
+                'fp_tx_packets' => 0,
+                'fp_rx_packets' => 0,
+                'enabled' => $is_up,
+                'comment' => "Active Tunnel ($local_ip -> $remote_ip)",
+                'connect_to' => $real_connect_to ?: $remote_ip,
+                'user' => $real_user ?: 'mitranet',
+                'password' => $real_pass ?: 'admin123',
+                'profile' => 'default-encryption',
+                'keepalive' => 60,
+                'use_peer_dns' => 'yes',
+                'add_default_route' => 'yes',
+                'default_route_distance' => 1,
+                'auth_mschap2' => 1,
+                'auth_mschap1' => 1,
+                'auth_chap' => 1,
+                'auth_pap' => 1,
+                'local_address' => $local_ip,
+                'remote_address' => $remote_ip,
+                'uptime' => 'Active',
+                'encoding' => 'MPPE-128 / MS-CHAPv2'
+            ];
+
+            $real_active[] = [
+                'id' => $id_counter,
+                'name' => 'mitranet',
+                'service' => 'l2tp',
+                'caller_id' => $remote_ip,
+                'address' => $local_ip,
+                'uptime' => 'Active',
+                'encoding' => 'MPPE-128 / MS-CHAPv2'
+            ];
+            $id_counter++;
+        }
+    }
+
+    if (!empty($real_ifaces)) {
+        // Merge real interfaces with existing configured interfaces
+        foreach ($real_ifaces as $rif) {
+            $matched = false;
+            foreach ($config['interfaces'] as &$cif) {
+                // Cocokkan interface dengan nama yang sama atau interface L2TP Client
+                if (($cif['name'] ?? '') === $rif['name'] || (strpos($cif['name'] ?? '', 'l2tp') !== false && ($cif['type'] ?? '') === 'L2TP Client')) {
+                    $cif['actual_mtu'] = $rif['actual_mtu'];
+                    $cif['l2mtu'] = $rif['l2mtu'];
+                    $cif['tx'] = $rif['tx'];
+                    $cif['rx'] = $rif['rx'];
+                    $cif['tx_packets'] = $rif['tx_packets'];
+                    $cif['rx_packets'] = $rif['rx_packets'];
+                    $cif['enabled'] = $rif['enabled'];
+                    $cif['local_address'] = $rif['local_address'];
+                    $cif['remote_address'] = $rif['remote_address'];
+                    $cif['uptime'] = $rif['uptime'];
+                    $cif['encoding'] = $rif['encoding'];
+                    if (empty($cif['connect_to'])) $cif['connect_to'] = $rif['connect_to'];
+                    if (empty($cif['user'])) $cif['user'] = $rif['user'];
+                    if (empty($cif['password'])) $cif['password'] = $rif['password'];
+                    $matched = true;
+                    break;
+                }
+            }
+            if (!$matched) {
+                array_unshift($config['interfaces'], $rif);
+            }
+        }
+    }
+
+    if (!empty($real_active)) {
+        $config['active_connections'] = array_merge($real_active, $config['active_connections']);
+    }
+}
+
 function saveVpnConfig($configFile, $config) {
     $dir = dirname($configFile);
     if (!is_dir($dir)) {
         @mkdir($dir, 0755, true);
     }
+    if (isset($config['interfaces']) && is_array($config['interfaces'])) {
+        $config['interfaces'] = array_values($config['interfaces']);
+    }
+    if (isset($config['secrets']) && is_array($config['secrets'])) {
+        $config['secrets'] = array_values($config['secrets']);
+    }
+    if (isset($config['profiles']) && is_array($config['profiles'])) {
+        $config['profiles'] = array_values($config['profiles']);
+    }
     return @file_put_contents($configFile, json_encode($config, JSON_PRETTY_PRINT)) !== false;
 }
 
 $vpnConfig = loadVpnConfig($configFile);
+syncRealPppKernelState($vpnConfig);
 $boosterStatus = MitraNetApi::getBoosterStatus();
 $boosterServerEnabled = !empty($boosterStatus['server_enabled']);
 
@@ -247,10 +416,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'add_interface' || $action === 'edit_interface') {
         $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
         $name = trim($_POST['name'] ?? '');
-        $type = trim($_POST['type'] ?? 'PPTP Client');
+        $type = trim($_POST['type'] ?? 'L2TP Client');
         $mtu = intval($_POST['mtu'] ?? 1450);
         $l2mtu = intval($_POST['l2mtu'] ?? 1500);
         $comment = trim($_POST['comment'] ?? '');
+
+        // Dial Out & Security Fields
+        $conn_to = trim($_POST['connect_to'] ?? '');
+        $user_in = trim($_POST['user'] ?? '');
+        $pass_in = trim($_POST['password'] ?? '');
+        $profile = trim($_POST['profile'] ?? 'default-encryption');
+        $keepalive = intval($_POST['keepalive'] ?? 60);
+        $use_peer_dns = trim($_POST['use_peer_dns'] ?? 'yes');
+        $use_ipsec = !empty($_POST['use_ipsec']);
+        $ipsec_secret = trim($_POST['ipsec_secret'] ?? '');
+        $add_default_route = !empty($_POST['add_default_route']) ? 'yes' : 'no';
+        $default_route_distance = intval($_POST['default_route_distance'] ?? 1);
+        $auth_mschap2 = isset($_POST['allow_mschap2']) ? 1 : 0;
+        $auth_mschap1 = isset($_POST['allow_mschap1']) ? 1 : 0;
+        $auth_chap = isset($_POST['allow_chap']) ? 1 : 0;
+        $auth_pap = isset($_POST['allow_pap']) ? 1 : 0;
 
         if (empty($name)) {
             $resp = ['success' => false, 'error' => 'Tunnel Name cannot be empty.'];
@@ -258,7 +443,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($action === 'add_interface') {
                 $maxId = 0;
                 foreach ($vpnConfig['interfaces'] as $it) {
-                    if ($it['id'] > $maxId) $maxId = $it['id'];
+                    if (($it['id'] ?? 0) > $maxId) $maxId = $it['id'];
                 }
                 $vpnConfig['interfaces'][] = [
                     'id' => $maxId + 1,
@@ -275,22 +460,127 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'fp_tx_packets' => 0,
                     'fp_rx_packets' => 0,
                     'enabled' => true,
-                    'comment' => $comment
+                    'comment' => $comment,
+                    'connect_to' => $conn_to,
+                    'user' => $user_in,
+                    'password' => $pass_in,
+                    'profile' => $profile,
+                    'keepalive' => $keepalive,
+                    'use_peer_dns' => $use_peer_dns,
+                    'use_ipsec' => $use_ipsec,
+                    'ipsec_secret' => $ipsec_secret,
+                    'add_default_route' => $add_default_route,
+                    'default_route_distance' => $default_route_distance,
+                    'auth_mschap2' => $auth_mschap2,
+                    'auth_mschap1' => $auth_mschap1,
+                    'auth_chap' => $auth_chap,
+                    'auth_pap' => $auth_pap,
+                    'local_address' => '-',
+                    'remote_address' => '-',
+                    'uptime' => 'Connecting',
+                    'encoding' => 'MPPE-128 / MS-CHAPv2'
                 ];
             } else {
+                $found = false;
                 foreach ($vpnConfig['interfaces'] as &$it) {
-                    if ($it['id'] === $id) {
+                    if (($it['id'] ?? 0) === $id || (!empty($name) && ($it['name'] ?? '') === $name)) {
                         $it['name'] = $name;
                         $it['type'] = $type;
                         $it['actual_mtu'] = $mtu;
                         $it['l2mtu'] = $l2mtu;
                         $it['comment'] = $comment;
+                        $it['connect_to'] = $conn_to;
+                        $it['user'] = $user_in;
+                        $it['password'] = $pass_in;
+                        $it['profile'] = $profile;
+                        $it['keepalive'] = $keepalive;
+                        $it['use_peer_dns'] = $use_peer_dns;
+                        $it['use_ipsec'] = $use_ipsec;
+                        $it['ipsec_secret'] = $ipsec_secret;
+                        $it['add_default_route'] = $add_default_route;
+                        $it['default_route_distance'] = $default_route_distance;
+                        $it['auth_mschap2'] = $auth_mschap2;
+                        $it['auth_mschap1'] = $auth_mschap1;
+                        $it['auth_chap'] = $auth_chap;
+                        $it['auth_pap'] = $auth_pap;
+                        $found = true;
                         break;
                     }
                 }
+                if (!$found) {
+                    // Jika interface sebelumnya berasal dari kernel scan tanpa entry config
+                    $maxId = 0;
+                    foreach ($vpnConfig['interfaces'] as $it) {
+                        if (($it['id'] ?? 0) > $maxId) $maxId = $it['id'];
+                    }
+                    $vpnConfig['interfaces'][] = [
+                        'id' => $maxId + 1,
+                        'name' => $name,
+                        'type' => $type,
+                        'actual_mtu' => $mtu,
+                        'l2mtu' => $l2mtu,
+                        'tx' => '0 B/s',
+                        'rx' => '0 B/s',
+                        'tx_packets' => 0,
+                        'rx_packets' => 0,
+                        'fp_tx' => '0 B/s',
+                        'fp_rx' => '0 B/s',
+                        'fp_tx_packets' => 0,
+                        'fp_rx_packets' => 0,
+                        'enabled' => true,
+                        'comment' => $comment,
+                        'connect_to' => $conn_to,
+                        'user' => $user_in,
+                        'password' => $pass_in,
+                        'profile' => $profile,
+                        'keepalive' => $keepalive,
+                        'use_peer_dns' => $use_peer_dns,
+                        'use_ipsec' => $use_ipsec,
+                        'ipsec_secret' => $ipsec_secret,
+                        'add_default_route' => $add_default_route,
+                        'default_route_distance' => $default_route_distance,
+                        'auth_mschap2' => $auth_mschap2,
+                        'auth_mschap1' => $auth_mschap1,
+                        'auth_chap' => $auth_chap,
+                        'auth_pap' => $auth_pap,
+                        'local_address' => '-',
+                        'remote_address' => '-',
+                        'uptime' => 'Connecting',
+                        'encoding' => 'MPPE-128 / MS-CHAPv2'
+                    ];
+                }
             }
             saveVpnConfig($configFile, $vpnConfig);
-            $resp = ['success' => true, 'message' => 'VPN Tunnel Interface saved successfully.'];
+
+            // REAL LINUX APPLIANCE EXECUTION (Apply directly to xl2tpd & pppd daemons if L2TP Client)
+            if ($type === 'L2TP Client' && (!empty($conn_to) || !empty($user_in))) {
+                // 1. Tulis ulang /etc/xl2tpd/xl2tpd.conf
+                if (!empty($conn_to)) {
+                    $xl_conf = "[global]\nport = 1701\naccess control = no\n\n[lac chr-l2tp]\nlns = {$conn_to}\npppoptfile = /etc/ppp/peers/chr-l2tp.options\nppp debug = yes\nautodial = no\nredial = yes\nredial timeout = 5\nmax redials = 10\n";
+                    @file_put_contents('/etc/xl2tpd/xl2tpd.conf', $xl_conf);
+                }
+
+                // 2. Tulis ulang /etc/ppp/peers/chr-l2tp.options
+                if (!empty($user_in)) {
+                    $defroute_opt = ($add_default_route === 'yes') ? "defaultroute\nreplacedefaultroute\n" : "";
+                    $dns_opt = ($use_peer_dns === 'yes') ? "usepeerdns\n" : "";
+                    $pppd_opts = "name {$user_in}\npassword {$pass_in}\nremotename chr-l2tp\nipparam chr-l2tp\nnoauth\nnodeflate\nnobsdcomp\nrefuse-eap\nipcp-accept-local\nipcp-accept-remote\n{$dns_opt}{$defroute_opt}persist\nmaxfail 5\n";
+                    @file_put_contents('/etc/ppp/peers/chr-l2tp.options', $pppd_opts);
+
+                    // 3. Update chap-secrets
+                    $chap_line = "{$user_in} * {$pass_in} *\n";
+                    @file_put_contents('/etc/ppp/chap-secrets', $chap_line);
+                }
+
+                // 4. Putus koneksi aktif dan panggil dial ulang dengan kredensial baru
+                @shell_exec('echo "d chr-l2tp" > /var/run/xl2tpd/l2tp-control 2>/dev/null');
+                @shell_exec('pkill -9 pppd 2>/dev/null');
+                @shell_exec('systemctl restart xl2tpd 2>/dev/null');
+                usleep(500000); // 0.5 detik
+                @shell_exec('echo "c chr-l2tp" > /var/run/xl2tpd/l2tp-control 2>/dev/null');
+            }
+
+            $resp = ['success' => true, 'message' => 'VPN Tunnel Interface updated & real session re-dialed.'];
         }
 
         if ($is_ajax) {
@@ -302,42 +592,106 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'toggle_interface') {
         $id = intval($_POST['id'] ?? 0);
+        $name = trim($_POST['name'] ?? '');
         $state = ($_POST['state'] ?? '1') === '1';
+        $found = false;
         foreach ($vpnConfig['interfaces'] as &$it) {
-            if ($it['id'] === $id) {
+            if (($it['id'] ?? 0) === $id || (!empty($name) && ($it['name'] ?? '') === $name)) {
                 $it['enabled'] = $state;
+                $found = true;
                 break;
             }
         }
+        if (!$found && !empty($name)) {
+            // Auto add kernel iface if not yet in config array
+            $vpnConfig['interfaces'][] = [
+                'id' => $id,
+                'name' => $name,
+                'type' => 'L2TP Client',
+                'actual_mtu' => 1450,
+                'l2mtu' => 1500,
+                'tx' => '0 B/s',
+                'rx' => '0 B/s',
+                'tx_packets' => 0,
+                'rx_packets' => 0,
+                'fp_tx' => '0 B/s',
+                'fp_rx' => '0 B/s',
+                'fp_tx_packets' => 0,
+                'fp_rx_packets' => 0,
+                'enabled' => $state,
+                'comment' => ''
+            ];
+        }
         saveVpnConfig($configFile, $vpnConfig);
+
+        // Real Disconnect / Connect
+        if (!$state) {
+            @shell_exec('echo "d chr-l2tp" > /var/run/xl2tpd/l2tp-control 2>/dev/null');
+            @shell_exec('pkill -9 pppd 2>/dev/null');
+        } else {
+            @shell_exec('systemctl restart xl2tpd 2>/dev/null');
+            usleep(500000);
+            @shell_exec('echo "c chr-l2tp" > /var/run/xl2tpd/l2tp-control 2>/dev/null');
+        }
+
         if ($is_ajax) {
             header('Content-Type: application/json; charset=utf-8');
-            echo json_encode(['success' => true, 'message' => 'VPN Interface status updated.']);
+            echo json_encode(['success' => true, 'message' => $state ? 'Tunnel enabled & dialed.' : 'Tunnel disabled & disconnected.']);
             exit;
         }
     }
 
     if ($action === 'delete_interface') {
         $id = intval($_POST['id'] ?? 0);
-        $vpnConfig['interfaces'] = array_filter($vpnConfig['interfaces'], function($it) use ($id) {
-            return $it['id'] !== $id;
-        });
+        $name = trim($_POST['name'] ?? '');
+        $vpnConfig['interfaces'] = array_values(array_filter($vpnConfig['interfaces'], function($it) use ($id, $name) {
+            if (($it['id'] ?? 0) === $id) return false;
+            if (!empty($name) && ($it['name'] ?? '') === $name) return false;
+            return true;
+        }));
         saveVpnConfig($configFile, $vpnConfig);
+
+        // Real Disconnect & clean xl2tpd/pppd control if removing active tunnel
+        @shell_exec('echo "d chr-l2tp" > /var/run/xl2tpd/l2tp-control 2>/dev/null');
+        @shell_exec('pkill -9 pppd 2>/dev/null');
+
         if ($is_ajax) {
             header('Content-Type: application/json; charset=utf-8');
-            echo json_encode(['success' => true, 'message' => 'VPN Interface removed.']);
+            echo json_encode(['success' => true, 'message' => 'VPN Interface removed & link disconnected.']);
             exit;
         }
     }
 
     if ($action === 'comment_interface') {
         $id = intval($_POST['id'] ?? 0);
+        $name = trim($_POST['name'] ?? '');
         $comment = trim($_POST['comment'] ?? '');
+        $found = false;
         foreach ($vpnConfig['interfaces'] as &$it) {
-            if ($it['id'] === $id) {
+            if (($it['id'] ?? 0) === $id || (!empty($name) && ($it['name'] ?? '') === $name)) {
                 $it['comment'] = $comment;
+                $found = true;
                 break;
             }
+        }
+        if (!$found && !empty($name)) {
+            $vpnConfig['interfaces'][] = [
+                'id' => $id,
+                'name' => $name,
+                'type' => 'L2TP Client',
+                'actual_mtu' => 1450,
+                'l2mtu' => 1500,
+                'tx' => '0 B/s',
+                'rx' => '0 B/s',
+                'tx_packets' => 0,
+                'rx_packets' => 0,
+                'fp_tx' => '0 B/s',
+                'fp_rx' => '0 B/s',
+                'fp_tx_packets' => 0,
+                'fp_rx_packets' => 0,
+                'enabled' => true,
+                'comment' => $comment
+            ];
         }
         saveVpnConfig($configFile, $vpnConfig);
         if ($is_ajax) {
@@ -797,15 +1151,31 @@ $interfaces = $vpnConfig['interfaces'] ?? [];
                         data-l2mtu="<?=htmlspecialchars($it['l2mtu'])?>"
                         data-comment="<?=htmlspecialchars($it['comment'] ?? '')?>"
                         data-enabled="<?=$isEnabled ? '1' : '0'?>"
+                        data-connect-to="<?=htmlspecialchars($it['connect_to'] ?? '')?>"
+                        data-user="<?=htmlspecialchars($it['user'] ?? '')?>"
+                        data-password="<?=htmlspecialchars($it['password'] ?? '')?>"
+                        data-profile="<?=htmlspecialchars($it['profile'] ?? 'default-encryption')?>"
+                        data-keepalive="<?=htmlspecialchars($it['keepalive'] ?? 60)?>"
+                        data-use-peer-dns="<?=htmlspecialchars($it['use_peer_dns'] ?? 'yes')?>"
+                        data-add-default-route="<?=htmlspecialchars($it['add_default_route'] ?? 'yes')?>"
+                        data-default-route-distance="<?=htmlspecialchars($it['default_route_distance'] ?? 1)?>"
+                        data-use-ipsec="<?=!empty($it['use_ipsec']) ? '1' : '0'?>"
+                        data-ipsec-secret="<?=htmlspecialchars($it['ipsec_secret'] ?? '')?>"
+                        data-auth-mschap2="<?=isset($it['auth_mschap2']) ? ($it['auth_mschap2'] ? '1' : '0') : '1'?>"
+                        data-auth-mschap1="<?=isset($it['auth_mschap1']) ? ($it['auth_mschap1'] ? '1' : '0') : '1'?>"
+                        data-auth-chap="<?=isset($it['auth_chap']) ? ($it['auth_chap'] ? '1' : '0') : '1'?>"
+                        data-auth-pap="<?=isset($it['auth_pap']) ? ($it['auth_pap'] ? '1' : '0') : '1'?>"
+                        data-local-address="<?=htmlspecialchars($it['local_address'] ?? '-')?>"
+                        data-remote-address="<?=htmlspecialchars($it['remote_address'] ?? '-')?>"
+                        data-uptime="<?=htmlspecialchars($it['uptime'] ?? 'Active')?>"
+                        data-encoding="<?=htmlspecialchars($it['encoding'] ?? 'MPPE-128 / MS-CHAPv2')?>"
                         onclick="selectVpnRow(this, <?=htmlspecialchars($it['id'])?>)"
                         ondblclick="openEditVpnModal(<?=htmlspecialchars($it['id'])?>)"
                         style="cursor: pointer; <?=$isEnabled ? '' : 'opacity: 0.65;'?>">
 
                         <!-- Flag / Status -->
                         <td style="text-align: center;">
-                            <?php if (!empty($it['comment'])): ?>
-                                <i class="fa-regular fa-comment text-info" title="<?=htmlspecialchars($it['comment'])?>"></i>
-                            <?php elseif ($isEnabled): ?>
+                            <?php if ($isEnabled): ?>
                                 <i class="fa-solid fa-check text-success" title="Running / Enabled"></i>
                             <?php else: ?>
                                 <i class="fa-solid fa-minus text-muted" title="Disabled"></i>
@@ -1183,28 +1553,82 @@ $interfaces = $vpnConfig['interfaces'] ?? [];
                                 <div class="form-group">
                                     <label class="col-sm-3 control-label">Connect To</label>
                                     <div class="col-sm-9">
-                                        <input type="text" class="form-control input-sm" placeholder="vpn.example.com or IP">
+                                        <input type="text" name="connect_to" id="vpn-connect-to" class="form-control input-sm font-monospace" placeholder="103.93.162.168">
                                     </div>
                                 </div>
                                 <div class="form-group">
                                     <label class="col-sm-3 control-label">User</label>
                                     <div class="col-sm-9">
-                                        <input type="text" class="form-control input-sm" placeholder="vpnuser">
+                                        <input type="text" name="user" id="vpn-user" class="form-control input-sm" placeholder="mitranet">
                                     </div>
                                 </div>
                                 <div class="form-group">
                                     <label class="col-sm-3 control-label">Password</label>
                                     <div class="col-sm-9">
-                                        <input type="password" class="form-control input-sm" placeholder="••••••••">
+                                        <input type="text" name="password" id="vpn-password" class="form-control input-sm font-monospace" placeholder="admin123">
                                     </div>
                                 </div>
                                 <div class="form-group">
                                     <label class="col-sm-3 control-label">Profile</label>
                                     <div class="col-sm-9">
-                                        <select class="form-control input-sm">
+                                        <select name="profile" id="vpn-profile" class="form-control input-sm">
                                             <option value="default">default</option>
                                             <option value="default-encryption" selected>default-encryption</option>
                                         </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">Keepalive Timeout</label>
+                                    <div class="col-sm-9">
+                                        <input type="number" name="keepalive" id="vpn-keepalive" class="form-control input-sm font-monospace" value="60">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">Use Peer DNS</label>
+                                    <div class="col-sm-9">
+                                        <select name="use_peer_dns" id="vpn-use-peer-dns" class="form-control input-sm">
+                                            <option value="yes" selected>yes</option>
+                                            <option value="no">no</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">Use IPsec</label>
+                                    <div class="col-sm-9">
+                                        <label style="font-weight: normal; margin-top: 5px;">
+                                            <input type="checkbox" name="use_ipsec" id="vpn-use-ipsec" value="1">
+                                            Enable IPsec (L2TP/IPsec)
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">IPsec Secret</label>
+                                    <div class="col-sm-9">
+                                        <input type="text" name="ipsec_secret" id="vpn-ipsec-secret" class="form-control input-sm font-monospace" placeholder="mitranet_ipsec_psk">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">Add Default Route</label>
+                                    <div class="col-sm-9">
+                                        <label style="font-weight: normal; margin-top: 5px;">
+                                            <input type="checkbox" name="add_default_route" id="vpn-add-default-route" value="1" checked>
+                                            Add Default Route
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">Default Route Distance</label>
+                                    <div class="col-sm-9">
+                                        <input type="number" name="default_route_distance" id="vpn-default-route-distance" class="form-control input-sm font-monospace" value="1" min="1" max="255">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">Allow Auth</label>
+                                    <div class="col-sm-9" style="padding-top: 5px;">
+                                        <label style="margin-right: 15px; font-weight: normal;"><input type="checkbox" name="allow_mschap2" id="vpn-auth-mschap2" checked> mschap2</label>
+                                        <label style="margin-right: 15px; font-weight: normal;"><input type="checkbox" name="allow_mschap1" id="vpn-auth-mschap1" checked> mschap1</label>
+                                        <label style="margin-right: 15px; font-weight: normal;"><input type="checkbox" name="allow_chap" id="vpn-auth-chap" checked> chap</label>
+                                        <label style="margin-right: 15px; font-weight: normal;"><input type="checkbox" name="allow_pap" id="vpn-auth-pap" checked> pap</label>
                                     </div>
                                 </div>
                             </div>
@@ -1213,11 +1637,11 @@ $interfaces = $vpnConfig['interfaces'] ?? [];
                             <div role="tabpanel" class="tab-pane" id="vpntab-status">
                                 <table class="table table-condensed table-striped" style="font-size: 11px;">
                                     <tbody>
-                                        <tr><th style="width: 35%;">Status</th><td><span class="text-success font-weight-bold">connected</span></td></tr>
-                                        <tr><th>Uptime</th><td>02:15:34</td></tr>
-                                        <tr><th>Encoding</th><td>MPPE128 / AES-GCM</td></tr>
-                                        <tr><th>Local Address</th><td>10.10.10.1</td></tr>
-                                        <tr><th>Remote Address</th><td>10.10.10.2</td></tr>
+                                        <tr><th style="width: 35%;">Status</th><td><span class="text-success font-weight-bold" id="vpn-status-connected">connected</span></td></tr>
+                                        <tr><th>Uptime</th><td id="vpn-status-uptime">Active</td></tr>
+                                        <tr><th>Encoding</th><td id="vpn-status-encoding">MPPE-128 / MS-CHAPv2</td></tr>
+                                        <tr><th>Local Address</th><td id="vpn-status-local">10.10.66.100</td></tr>
+                                        <tr><th>Remote Address</th><td id="vpn-status-remote">10.10.66.254</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -2013,11 +2437,26 @@ function openNewVpnModal() {
     $('#vpn-action').val('add_interface');
     $('#vpn-id').val('0');
     $('#vpn-modal-title').text('New Interface');
-    $('#vpn-name').val('<tunnel-' + (Math.floor(Math.random() * 900) + 100) + '>');
-    $('#vpn-type').val('PPTP Client');
+    $('#vpn-name').val('<l2tp-out1>');
+    $('#vpn-type').val('L2TP Client');
     $('#vpn-mtu').val('1450');
     $('#vpn-l2mtu').val('1500');
     $('#vpn-comment').val('');
+    $('#vpn-connect-to').val('103.93.162.168');
+    $('#vpn-user').val('mitranet');
+    $('#vpn-password').val('admin123');
+    $('#vpn-profile').val('default-encryption');
+    $('#vpn-keepalive').val('60');
+    $('#vpn-use-peer-dns').val('yes');
+    $('#vpn-use-ipsec').prop('checked', false);
+    $('#vpn-ipsec-secret').val('');
+    $('#vpn-add-default-route').prop('checked', true);
+    $('#vpn-default-route-distance').val('1');
+    $('#vpn-auth-mschap2').prop('checked', true);
+    $('#vpn-auth-mschap1').prop('checked', true);
+    $('#vpn-auth-chap').prop('checked', true);
+    $('#vpn-auth-pap').prop('checked', true);
+    $('#modal-vpn-interface a[href="#vpntab-general"]').tab('show');
     $('#modal-vpn-interface').modal('show');
 }
 
@@ -2030,10 +2469,34 @@ function openEditVpnModal(id) {
     var name = $tr.data('name');
     $('#vpn-modal-title').text('Interface <' + name + '>');
     $('#vpn-name').val(name);
-    $('#vpn-type').val($tr.data('type'));
-    $('#vpn-mtu').val($tr.data('mtu'));
-    $('#vpn-l2mtu').val($tr.data('l2mtu'));
-    $('#vpn-comment').val($tr.data('comment'));
+    $('#vpn-type').val($tr.data('type') || 'L2TP Client');
+    $('#vpn-mtu').val($tr.data('mtu') || 1450);
+    $('#vpn-l2mtu').val($tr.data('l2mtu') || 1500);
+    $('#vpn-comment').val($tr.data('comment') || '');
+
+    // Dial Out Fields
+    $('#vpn-connect-to').val($tr.data('connect-to') || '103.93.162.168');
+    $('#vpn-user').val($tr.data('user') || 'mitranet');
+    $('#vpn-password').val($tr.data('password') || 'admin123');
+    $('#vpn-profile').val($tr.data('profile') || 'default-encryption');
+    $('#vpn-keepalive').val($tr.data('keepalive') || 60);
+    $('#vpn-use-peer-dns').val($tr.data('use-peer-dns') || 'yes');
+    $('#vpn-use-ipsec').prop('checked', ($tr.data('use-ipsec') == 1));
+    $('#vpn-ipsec-secret').val($tr.data('ipsec-secret') || '');
+    $('#vpn-add-default-route').prop('checked', ($tr.data('add-default-route') !== 'no'));
+    $('#vpn-default-route-distance').val($tr.data('default-route-distance') || 1);
+    $('#vpn-auth-mschap2').prop('checked', ($tr.data('auth-mschap2') != 0));
+    $('#vpn-auth-mschap1').prop('checked', ($tr.data('auth-mschap1') != 0));
+    $('#vpn-auth-chap').prop('checked', ($tr.data('auth-chap') != 0));
+    $('#vpn-auth-pap').prop('checked', ($tr.data('auth-pap') != 0));
+
+    // Status Tab Fields
+    $('#vpn-status-connected').text('connected');
+    $('#vpn-status-uptime').text($tr.data('uptime') || 'Active');
+    $('#vpn-status-encoding').text($tr.data('encoding') || 'MPPE-128 / MS-CHAPv2');
+    $('#vpn-status-local').text($tr.data('local-address') || '10.10.66.100');
+    $('#vpn-status-remote').text($tr.data('remote-address') || '10.10.66.254');
+
     $('#modal-vpn-interface').modal('show');
 }
 
@@ -2071,13 +2534,14 @@ function submitVpnForm(closeModal) {
 }
 
 function toggleSelectedVpn(state) {
-    if (!selectedVpnId) return;
+    if (!selectedVpnId || !selectedVpnRowData) return;
     $.ajax({
         url: 'vpn.php',
         type: 'POST',
         data: {
             action: 'toggle_interface',
             id: selectedVpnId,
+            name: selectedVpnRowData.name,
             state: state ? '1' : '0',
             ajax: 1
         },
@@ -2099,6 +2563,7 @@ function removeSelectedVpn() {
         data: {
             action: 'delete_interface',
             id: selectedVpnId,
+            name: selectedVpnRowData.name,
             ajax: 1
         },
         onSuccess: function() {
@@ -2121,6 +2586,7 @@ function commentSelectedVpn() {
         data: {
             action: 'comment_interface',
             id: selectedVpnId,
+            name: selectedVpnRowData.name,
             ajax: 1
         },
         inputParam: 'comment',
