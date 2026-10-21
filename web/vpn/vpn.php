@@ -179,6 +179,71 @@ function terminateL2tpTunnel() {
     }
 }
 
+/**
+ * Safely ensure underlay host route to LNS endpoint on physical WAN interface
+ * Prevents route loops when defaultroute is added via ppp
+ */
+function ensureUnderlayHostRoute($endpoint) {
+    $endpoint = trim($endpoint);
+    if (empty($endpoint)) return false;
+
+    // 1. Validate IP address or resolve hostname securely
+    $target_ip = '';
+    if (filter_var($endpoint, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        $target_ip = $endpoint;
+    } else {
+        // Safe hostname resolution
+        if (preg_match('/^[a-zA-Z0-9.\-]+$/', $endpoint)) {
+            $resolved = @gethostbyname($endpoint);
+            if (filter_var($resolved, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                $target_ip = $resolved;
+            }
+        }
+    }
+
+    if (empty($target_ip)) {
+        return false;
+    }
+
+    // 2. Discover physical WAN default gateway and interface (ignoring ppp interfaces)
+    $gw = '';
+    $dev = '';
+    $route_out = @shell_exec("ip -4 route show default 2>/dev/null");
+    if (!empty($route_out)) {
+        $lines = explode("\n", $route_out);
+        foreach ($lines as $line) {
+            if (strpos($line, 'dev ppp') !== false) continue;
+            if (preg_match('/via\s+([0-9.]+)\s+dev\s+([a-zA-Z0-9.\-_]+)/', $line, $m)) {
+                $gw = $m[1];
+                $dev = $m[2];
+                break;
+            }
+        }
+    }
+
+    if (empty($gw) || empty($dev)) {
+        // Fallback: examine routes on enp1s0 or first physical ethernet
+        $gw = '10.10.66.254';
+        $dev = 'enp1s0';
+    }
+
+    // 3. Idempotently check if exact route already exists
+    $curr_route = @shell_exec("ip -4 route get " . escapeshellarg($target_ip) . " 2>/dev/null");
+    if (strpos($curr_route, "dev {$dev}") !== false && strpos($curr_route, "via {$gw}") !== false) {
+        return true; // Already routed correctly via physical underlay
+    }
+
+    // 4. Install / replace host route with sanitized parameters
+    $cmd = sprintf(
+        "ip route replace %s via %s dev %s 2>/dev/null",
+        escapeshellarg($target_ip),
+        escapeshellarg($gw),
+        escapeshellarg($dev)
+    );
+    @shell_exec($cmd);
+    return true;
+}
+
 function syncRealPppKernelState(&$config) {
     if (!isset($config['interfaces']) || !is_array($config['interfaces'])) {
         $config['interfaces'] = [];
@@ -552,7 +617,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // 4. Pastikan underlay host route ke endpoint LNS ada di WAN fisik sebelum re-dial
                 if (!empty($conn_to)) {
-                    @shell_exec("ip route add {$conn_to} via 10.10.66.254 dev enp1s0 2>/dev/null");
+                    ensureUnderlayHostRoute($conn_to);
                 }
 
                 // 5. Putus koneksi aktif dan panggil dial ulang dengan kredensial baru (isolasi tunnel chr-l2tp)
@@ -609,7 +674,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$state) {
             terminateL2tpTunnel();
         } else {
-            @shell_exec("ip route add 103.93.162.168 via 10.10.66.254 dev enp1s0 2>/dev/null");
+            // Resolve target LNS endpoint from config or default CHR IP
+            $target_endpoint = '103.93.162.168';
+            foreach ($vpnConfig['interfaces'] as $it) {
+                if (($it['id'] ?? 0) === $id && !empty($it['connect_to'])) {
+                    $target_endpoint = $it['connect_to'];
+                    break;
+                }
+            }
+            ensureUnderlayHostRoute($target_endpoint);
             @shell_exec('echo "c chr-l2tp" > /var/run/xl2tpd/l2tp-control 2>/dev/null');
         }
 
