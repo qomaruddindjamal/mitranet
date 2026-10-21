@@ -550,7 +550,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     @file_put_contents('/etc/ppp/chap-secrets', $chap_line);
                 }
 
-                // 4. Putus koneksi aktif dan panggil dial ulang dengan kredensial baru (isolasi tunnel chr-l2tp)
+                // 4. Pastikan underlay host route ke endpoint LNS ada di WAN fisik sebelum re-dial
+                if (!empty($conn_to)) {
+                    @shell_exec("ip route add {$conn_to} via 10.10.66.254 dev enp1s0 2>/dev/null");
+                }
+
+                // 5. Putus koneksi aktif dan panggil dial ulang dengan kredensial baru (isolasi tunnel chr-l2tp)
                 terminateL2tpTunnel();
                 usleep(200000);
                 @shell_exec('echo "c chr-l2tp" > /var/run/xl2tpd/l2tp-control 2>/dev/null');
@@ -604,6 +609,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$state) {
             terminateL2tpTunnel();
         } else {
+            @shell_exec("ip route add 103.93.162.168 via 10.10.66.254 dev enp1s0 2>/dev/null");
             @shell_exec('echo "c chr-l2tp" > /var/run/xl2tpd/l2tp-control 2>/dev/null');
         }
 
