@@ -7,6 +7,16 @@
 
 require_once(__DIR__ . '/../includes/api.inc');
 
+if (!MitraNetApi::isAuthenticated()) {
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest' || isset($_POST['ajax'])) {
+        header('Content-Type: application/json; charset=utf-8', true, 401);
+        echo json_encode(['success' => false, 'error' => 'Authentication required. Session expired or invalid.']);
+        exit;
+    }
+    header('Location: /login.php');
+    exit;
+}
+
 $configFile = '/etc/mitranet/vpn_config.json';
 
 // Helper: load VPN / PPP configuration
@@ -519,11 +529,35 @@ function saveVpnConfig($configFile, $config) {
     $saveData = $config;
     // Active connections are strictly ephemeral runtime state; do not pollute persistent JSON
     unset($saveData['active_connections']);
-    $res = @file_put_contents($configFile, json_encode($saveData, JSON_PRETTY_PRINT)) !== false;
-    if ($res) {
-        @chmod($configFile, 0600);
+    $payload = json_encode($saveData, JSON_PRETTY_PRINT);
+    if ($payload === false) {
+        return false;
     }
-    return $res;
+
+    // Atomic write pattern: write to unique temp file in same directory, chmod 0600, then rename
+    $tmpFile = $configFile . '.tmp.' . bin2hex(random_bytes(6));
+    $writeRes = @file_put_contents($tmpFile, $payload, LOCK_EX);
+    if ($writeRes === false) {
+        // Fallback to direct write if temp write failed
+        $directRes = @file_put_contents($configFile, $payload, LOCK_EX) !== false;
+        if ($directRes) {
+            @chmod($configFile, 0600);
+        }
+        return $directRes;
+    }
+
+    @chmod($tmpFile, 0600);
+    $renamed = @rename($tmpFile, $configFile);
+    if (!$renamed) {
+        @unlink($tmpFile);
+        $directRes = @file_put_contents($configFile, $payload, LOCK_EX) !== false;
+        if ($directRes) {
+            @chmod($configFile, 0600);
+        }
+        return $directRes;
+    }
+
+    return true;
 }
 
 $vpnConfig = loadVpnConfig($configFile);
@@ -566,78 +600,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $auth_chap = isset($_POST['allow_chap']) ? 1 : 0;
         $auth_pap = isset($_POST['allow_pap']) ? 1 : 0;
 
+        // Strict validation: Interface Name (alphanumeric, dash, underscore, max 32 chars)
         if (empty($name)) {
             $resp = ['success' => false, 'error' => 'Tunnel Name cannot be empty.'];
+        } elseif (!preg_match('/^[a-zA-Z0-9_\-<>]{1,32}$/', $name)) {
+            $resp = ['success' => false, 'error' => 'Invalid Tunnel Name. Use alphanumeric, dash, underscore (max 32 characters).'];
+        } elseif (!empty($conn_to) && substr($conn_to, 0, 1) === '-') {
+            $resp = ['success' => false, 'error' => 'Endpoint connect_to cannot start with a hyphen.'];
         } else {
-            if ($action === 'add_interface') {
-                $maxId = 0;
-                foreach ($vpnConfig['interfaces'] as $it) {
-                    if (($it['id'] ?? 0) > $maxId) $maxId = $it['id'];
+            // Check for duplicate names (excluding current editing ID)
+            $is_duplicate = false;
+            foreach ($vpnConfig['interfaces'] as $it) {
+                if (($it['id'] ?? 0) !== $id && strtolower($it['name'] ?? '') === strtolower($name)) {
+                    $is_duplicate = true;
+                    break;
                 }
-                $vpnConfig['interfaces'][] = [
-                    'id' => $maxId + 1,
-                    'name' => $name,
-                    'type' => $type,
-                    'actual_mtu' => $mtu,
-                    'l2mtu' => $l2mtu,
-                    'tx' => '0 B/s',
-                    'rx' => '0 B/s',
-                    'tx_packets' => 0,
-                    'rx_packets' => 0,
-                    'fp_tx' => '0 B/s',
-                    'fp_rx' => '0 B/s',
-                    'fp_tx_packets' => 0,
-                    'fp_rx_packets' => 0,
-                    'enabled' => true,
-                    'comment' => $comment,
-                    'connect_to' => $conn_to,
-                    'user' => $user_in,
-                    'password' => $pass_in,
-                    'profile' => $profile,
-                    'keepalive' => $keepalive,
-                    'use_peer_dns' => $use_peer_dns,
-                    'use_ipsec' => $use_ipsec,
-                    'ipsec_secret' => $ipsec_secret,
-                    'add_default_route' => $add_default_route,
-                    'default_route_distance' => $default_route_distance,
-                    'auth_mschap2' => $auth_mschap2,
-                    'auth_mschap1' => $auth_mschap1,
-                    'auth_chap' => $auth_chap,
-                    'auth_pap' => $auth_pap,
-                    'local_address' => '-',
-                    'remote_address' => '-',
-                    'uptime' => 'Connecting',
-                    'encoding' => 'MPPE-128 / MS-CHAPv2'
-                ];
+            }
+
+            if ($is_duplicate) {
+                $resp = ['success' => false, 'error' => "Tunnel interface name '{$name}' already exists."];
             } else {
-                $found = false;
-                foreach ($vpnConfig['interfaces'] as &$it) {
-                    if (($it['id'] ?? 0) === $id || (!empty($name) && ($it['name'] ?? '') === $name)) {
-                        $it['name'] = $name;
-                        $it['type'] = $type;
-                        $it['actual_mtu'] = $mtu;
-                        $it['l2mtu'] = $l2mtu;
-                        $it['comment'] = $comment;
-                        $it['connect_to'] = $conn_to;
-                        $it['user'] = $user_in;
-                        $it['password'] = $pass_in;
-                        $it['profile'] = $profile;
-                        $it['keepalive'] = $keepalive;
-                        $it['use_peer_dns'] = $use_peer_dns;
-                        $it['use_ipsec'] = $use_ipsec;
-                        $it['ipsec_secret'] = $ipsec_secret;
-                        $it['add_default_route'] = $add_default_route;
-                        $it['default_route_distance'] = $default_route_distance;
-                        $it['auth_mschap2'] = $auth_mschap2;
-                        $it['auth_mschap1'] = $auth_mschap1;
-                        $it['auth_chap'] = $auth_chap;
-                        $it['auth_pap'] = $auth_pap;
-                        $found = true;
-                        break;
-                    }
-                }
-                if (!$found) {
-                    // Jika interface sebelumnya berasal dari kernel scan tanpa entry config
+                if ($action === 'add_interface') {
                     $maxId = 0;
                     foreach ($vpnConfig['interfaces'] as $it) {
                         if (($it['id'] ?? 0) > $maxId) $maxId = $it['id'];
@@ -677,42 +660,114 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'uptime' => 'Connecting',
                         'encoding' => 'MPPE-128 / MS-CHAPv2'
                     ];
+                } else {
+                    $found = false;
+                    foreach ($vpnConfig['interfaces'] as &$it) {
+                        if (($it['id'] ?? 0) === $id || (!empty($name) && ($it['name'] ?? '') === $name)) {
+                            $it['name'] = $name;
+                            $it['type'] = $type;
+                            $it['actual_mtu'] = $mtu;
+                            $it['l2mtu'] = $l2mtu;
+                            $it['comment'] = $comment;
+                            $it['connect_to'] = $conn_to;
+                            $it['user'] = $user_in;
+                            $it['password'] = $pass_in;
+                            $it['profile'] = $profile;
+                            $it['keepalive'] = $keepalive;
+                            $it['use_peer_dns'] = $use_peer_dns;
+                            $it['use_ipsec'] = $use_ipsec;
+                            $it['ipsec_secret'] = $ipsec_secret;
+                            $it['add_default_route'] = $add_default_route;
+                            $it['default_route_distance'] = $default_route_distance;
+                            $it['auth_mschap2'] = $auth_mschap2;
+                            $it['auth_mschap1'] = $auth_mschap1;
+                            $it['auth_chap'] = $auth_chap;
+                            $it['auth_pap'] = $auth_pap;
+                            $found = true;
+                            break;
+                        }
+                    }
+                    if (!$found) {
+                        // Jika interface sebelumnya berasal dari kernel scan tanpa entry config
+                        $maxId = 0;
+                        foreach ($vpnConfig['interfaces'] as $it) {
+                            if (($it['id'] ?? 0) > $maxId) $maxId = $it['id'];
+                        }
+                        $vpnConfig['interfaces'][] = [
+                            'id' => $maxId + 1,
+                            'name' => $name,
+                            'type' => $type,
+                            'actual_mtu' => $mtu,
+                            'l2mtu' => $l2mtu,
+                            'tx' => '0 B/s',
+                            'rx' => '0 B/s',
+                            'tx_packets' => 0,
+                            'rx_packets' => 0,
+                            'fp_tx' => '0 B/s',
+                            'fp_rx' => '0 B/s',
+                            'fp_tx_packets' => 0,
+                            'fp_rx_packets' => 0,
+                            'enabled' => true,
+                            'comment' => $comment,
+                            'connect_to' => $conn_to,
+                            'user' => $user_in,
+                            'password' => $pass_in,
+                            'profile' => $profile,
+                            'keepalive' => $keepalive,
+                            'use_peer_dns' => $use_peer_dns,
+                            'use_ipsec' => $use_ipsec,
+                            'ipsec_secret' => $ipsec_secret,
+                            'add_default_route' => $add_default_route,
+                            'default_route_distance' => $default_route_distance,
+                            'auth_mschap2' => $auth_mschap2,
+                            'auth_mschap1' => $auth_mschap1,
+                            'auth_chap' => $auth_chap,
+                            'auth_pap' => $auth_pap,
+                            'local_address' => '-',
+                            'remote_address' => '-',
+                            'uptime' => 'Connecting',
+                            'encoding' => 'MPPE-128 / MS-CHAPv2'
+                        ];
+                    }
                 }
+                saveVpnConfig($configFile, $vpnConfig);
+
+                // REAL LINUX APPLIANCE EXECUTION (Apply directly to xl2tpd & pppd daemons if L2TP Client)
+                if ($type === 'L2TP Client' && (!empty($conn_to) || !empty($user_in))) {
+                    // 1. Tulis ulang /etc/xl2tpd/xl2tpd.conf
+                    if (!empty($conn_to)) {
+                        $xl_conf = "[global]\nport = 1701\naccess control = no\n\n[lac chr-l2tp]\nlns = {$conn_to}\npppoptfile = /etc/ppp/peers/chr-l2tp.options\nppp debug = yes\nautodial = no\nredial = yes\nredial timeout = 5\nmax redials = 10\n";
+                        @file_put_contents('/etc/xl2tpd/xl2tpd.conf', $xl_conf);
+                        @chmod('/etc/xl2tpd/xl2tpd.conf', 0600);
+                    }
+
+                    // 2. Tulis ulang /etc/ppp/peers/chr-l2tp.options
+                    if (!empty($user_in)) {
+                        $defroute_opt = ($add_default_route === 'yes') ? "defaultroute\nreplacedefaultroute\n" : "";
+                        $dns_opt = ($use_peer_dns === 'yes') ? "usepeerdns\n" : "";
+                        $pppd_opts = "name {$user_in}\npassword {$pass_in}\nremotename chr-l2tp\nipparam chr-l2tp\nnoauth\nnodeflate\nnobsdcomp\nrefuse-eap\nipcp-accept-local\nipcp-accept-remote\n{$dns_opt}{$defroute_opt}persist\nmaxfail 5\n";
+                        @file_put_contents('/etc/ppp/peers/chr-l2tp.options', $pppd_opts);
+                        @chmod('/etc/ppp/peers/chr-l2tp.options', 0600);
+
+                        // 3. Update chap-secrets safely
+                        $chap_line = "{$user_in} * {$pass_in} *\n";
+                        @file_put_contents('/etc/ppp/chap-secrets', $chap_line);
+                        @chmod('/etc/ppp/chap-secrets', 0600);
+                    }
+
+                    // 4. Pastikan underlay host route ke endpoint LNS ada di WAN fisik sebelum re-dial
+                    if (!empty($conn_to)) {
+                        ensureUnderlayHostRoute($conn_to);
+                    }
+
+                    // 5. Putus koneksi aktif dan panggil dial ulang dengan kredensial baru (isolasi tunnel chr-l2tp)
+                    terminateL2tpTunnel();
+                    usleep(200000);
+                    @shell_exec('echo "c chr-l2tp" > /var/run/xl2tpd/l2tp-control 2>/dev/null');
+                }
+
+                $resp = ['success' => true, 'message' => 'VPN Tunnel Interface updated & real session re-dialed.'];
             }
-            saveVpnConfig($configFile, $vpnConfig);
-
-            // REAL LINUX APPLIANCE EXECUTION (Apply directly to xl2tpd & pppd daemons if L2TP Client)
-            if ($type === 'L2TP Client' && (!empty($conn_to) || !empty($user_in))) {
-                // 1. Tulis ulang /etc/xl2tpd/xl2tpd.conf
-                if (!empty($conn_to)) {
-                    $xl_conf = "[global]\nport = 1701\naccess control = no\n\n[lac chr-l2tp]\nlns = {$conn_to}\npppoptfile = /etc/ppp/peers/chr-l2tp.options\nppp debug = yes\nautodial = no\nredial = yes\nredial timeout = 5\nmax redials = 10\n";
-                    @file_put_contents('/etc/xl2tpd/xl2tpd.conf', $xl_conf);
-                }
-
-                // 2. Tulis ulang /etc/ppp/peers/chr-l2tp.options
-                if (!empty($user_in)) {
-                    $defroute_opt = ($add_default_route === 'yes') ? "defaultroute\nreplacedefaultroute\n" : "";
-                    $dns_opt = ($use_peer_dns === 'yes') ? "usepeerdns\n" : "";
-                    $pppd_opts = "name {$user_in}\npassword {$pass_in}\nremotename chr-l2tp\nipparam chr-l2tp\nnoauth\nnodeflate\nnobsdcomp\nrefuse-eap\nipcp-accept-local\nipcp-accept-remote\n{$dns_opt}{$defroute_opt}persist\nmaxfail 5\n";
-                    @file_put_contents('/etc/ppp/peers/chr-l2tp.options', $pppd_opts);
-
-                    // 3. Update chap-secrets
-                    $chap_line = "{$user_in} * {$pass_in} *\n";
-                    @file_put_contents('/etc/ppp/chap-secrets', $chap_line);
-                }
-
-                // 4. Pastikan underlay host route ke endpoint LNS ada di WAN fisik sebelum re-dial
-                if (!empty($conn_to)) {
-                    ensureUnderlayHostRoute($conn_to);
-                }
-
-                // 5. Putus koneksi aktif dan panggil dial ulang dengan kredensial baru (isolasi tunnel chr-l2tp)
-                terminateL2tpTunnel();
-                usleep(200000);
-                @shell_exec('echo "c chr-l2tp" > /var/run/xl2tpd/l2tp-control 2>/dev/null');
-            }
-
-            $resp = ['success' => true, 'message' => 'VPN Tunnel Interface updated & real session re-dialed.'];
         }
 
         if ($is_ajax) {
@@ -969,56 +1024,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $remote_address = trim($_POST['remote_address'] ?? '');
         $comment = trim($_POST['comment'] ?? '');
 
+        // Strict validation: Username cannot be empty, must be valid characters (alphanumeric, dash, dot, underscore, @)
         if (empty($name)) {
             $resp = ['success' => false, 'error' => 'Username cannot be empty.'];
+        } elseif (!preg_match('/^[a-zA-Z0-9.\-_@]{1,64}$/', $name)) {
+            $resp = ['success' => false, 'error' => 'Invalid Username format. Use alphanumeric and symbols (.-_@). Max 64 chars.'];
         } else {
             if (!isset($vpnConfig['secrets']) || !is_array($vpnConfig['secrets'])) {
                 $vpnConfig['secrets'] = [];
             }
-            if ($action === 'add_secret') {
-                $maxId = 0;
-                foreach ($vpnConfig['secrets'] as $s) {
-                    if (($s['id'] ?? 0) > $maxId) $maxId = $s['id'];
+
+            // Check for duplicate username (excluding current editing ID)
+            $is_dup = false;
+            foreach ($vpnConfig['secrets'] as $s) {
+                if (($s['id'] ?? 0) !== $sec_id && strtolower($s['name'] ?? '') === strtolower($name)) {
+                    $is_dup = true;
+                    break;
                 }
-                $vpnConfig['secrets'][] = [
-                    'id' => $maxId + 1,
-                    'name' => $name,
-                    'service' => $service,
-                    'password' => $password,
-                    'profile' => $profile,
-                    'local_address' => $local_address,
-                    'remote_address' => $remote_address,
-                    'comment' => $comment
-                ];
+            }
+
+            if ($is_dup) {
+                $resp = ['success' => false, 'error' => "PPP Secret user '{$name}' already exists."];
             } else {
-                foreach ($vpnConfig['secrets'] as &$s) {
-                    if (($s['id'] ?? 0) === $sec_id) {
-                        $s['name'] = $name;
-                        $s['service'] = $service;
-                        $s['password'] = $password;
-                        $s['profile'] = $profile;
-                        $s['local_address'] = $local_address;
-                        $s['remote_address'] = $remote_address;
-                        $s['comment'] = $comment;
-                        break;
+                if ($action === 'add_secret') {
+                    $maxId = 0;
+                    foreach ($vpnConfig['secrets'] as $s) {
+                        if (($s['id'] ?? 0) > $maxId) $maxId = $s['id'];
+                    }
+                    $vpnConfig['secrets'][] = [
+                        'id' => $maxId + 1,
+                        'name' => $name,
+                        'service' => $service,
+                        'password' => $password,
+                        'profile' => $profile,
+                        'local_address' => $local_address,
+                        'remote_address' => $remote_address,
+                        'comment' => $comment
+                    ];
+                } else {
+                    foreach ($vpnConfig['secrets'] as &$s) {
+                        if (($s['id'] ?? 0) === $sec_id) {
+                            $s['name'] = $name;
+                            $s['service'] = $service;
+                            $s['password'] = $password;
+                            $s['profile'] = $profile;
+                            $s['local_address'] = $local_address;
+                            $s['remote_address'] = $remote_address;
+                            $s['comment'] = $comment;
+                            break;
+                        }
                     }
                 }
-            }
-            saveVpnConfig($configFile, $vpnConfig);
+                saveVpnConfig($configFile, $vpnConfig);
 
-            // Synchronize secrets to Linux system /etc/ppp/chap-secrets
-            $chap_lines = "# Secrets for authentication using CHAP / PAP / MS-CHAP\n# client\tserver\tsecret\tIP addresses\n";
-            foreach ($vpnConfig['secrets'] as $sec) {
-                $c_user = $sec['name'] ?? '';
-                $c_pass = $sec['password'] ?? '';
-                $c_ip = !empty($sec['remote_address']) ? $sec['remote_address'] : '*';
-                if (!empty($c_user)) {
-                    $chap_lines .= "{$c_user}\t*\t\"{$c_pass}\"\t{$c_ip}\n";
+                // Synchronize secrets to Linux system /etc/ppp/chap-secrets safely
+                $chap_lines = "# Secrets for authentication using CHAP / PAP / MS-CHAP\n# client\tserver\tsecret\tIP addresses\n";
+                foreach ($vpnConfig['secrets'] as $sec) {
+                    $c_user = $sec['name'] ?? '';
+                    $c_pass = $sec['password'] ?? '';
+                    $c_ip = !empty($sec['remote_address']) ? $sec['remote_address'] : '*';
+                    if (!empty($c_user)) {
+                        $c_pass_clean = str_replace(['\\', '"'], ['\\\\', '\\"'], $c_pass);
+                        $chap_lines .= "{$c_user}\t*\t\"{$c_pass_clean}\"\t{$c_ip}\n";
+                    }
                 }
-            }
-            @file_put_contents('/etc/ppp/chap-secrets', $chap_lines);
+                @file_put_contents('/etc/ppp/chap-secrets', $chap_lines);
+                @chmod('/etc/ppp/chap-secrets', 0600);
 
-            $resp = ['success' => true, 'message' => 'PPP Secret saved successfully & synced to system.'];
+                $resp = ['success' => true, 'message' => 'PPP Secret saved successfully & synced to system.'];
+            }
         }
         if ($is_ajax) {
             header('Content-Type: application/json; charset=utf-8');
@@ -1046,6 +1120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             @file_put_contents('/etc/ppp/chap-secrets', $chap_lines);
+            @chmod('/etc/ppp/chap-secrets', 0600);
         }
         if ($is_ajax) {
             header('Content-Type: application/json; charset=utf-8');
@@ -1065,37 +1140,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (empty($name)) {
             $resp = ['success' => false, 'error' => 'Profile Name cannot be empty.'];
+        } elseif (!preg_match('/^[a-zA-Z0-9_\-]{1,32}$/', $name)) {
+            $resp = ['success' => false, 'error' => 'Invalid Profile Name. Use alphanumeric, dash, underscore (max 32 chars).'];
         } else {
             if (!isset($vpnConfig['profiles']) || !is_array($vpnConfig['profiles'])) {
                 $vpnConfig['profiles'] = [];
             }
-            if ($action === 'add_profile') {
-                $maxId = 0;
-                foreach ($vpnConfig['profiles'] as $p) {
-                    if (($p['id'] ?? 0) > $maxId) $maxId = $p['id'];
-                }
-                $vpnConfig['profiles'][] = [
-                    'id' => $maxId + 1,
-                    'name' => $name,
-                    'local_address' => $local_address,
-                    'remote_address' => $remote_address,
-                    'use_compression' => $use_compression,
-                    'use_encryption' => $use_encryption
-                ];
-            } else {
-                foreach ($vpnConfig['profiles'] as &$p) {
-                    if (($p['id'] ?? 0) === $prof_id) {
-                        $p['name'] = $name;
-                        $p['local_address'] = $local_address;
-                        $p['remote_address'] = $remote_address;
-                        $p['use_compression'] = $use_compression;
-                        $p['use_encryption'] = $use_encryption;
-                        break;
-                    }
+
+            // Check duplicate profile name (excluding current ID)
+            $is_dup_prof = false;
+            foreach ($vpnConfig['profiles'] as $p) {
+                if (($p['id'] ?? 0) !== $prof_id && strtolower($p['name'] ?? '') === strtolower($name)) {
+                    $is_dup_prof = true;
+                    break;
                 }
             }
-            saveVpnConfig($configFile, $vpnConfig);
-            $resp = ['success' => true, 'message' => 'PPP Profile saved successfully.'];
+
+            if ($is_dup_prof) {
+                $resp = ['success' => false, 'error' => "PPP Profile '{$name}' already exists."];
+            } else {
+                if ($action === 'add_profile') {
+                    $maxId = 0;
+                    foreach ($vpnConfig['profiles'] as $p) {
+                        if (($p['id'] ?? 0) > $maxId) $maxId = $p['id'];
+                    }
+                    $vpnConfig['profiles'][] = [
+                        'id' => $maxId + 1,
+                        'name' => $name,
+                        'local_address' => $local_address,
+                        'remote_address' => $remote_address,
+                        'use_compression' => $use_compression,
+                        'use_encryption' => $use_encryption
+                    ];
+                } else {
+                    foreach ($vpnConfig['profiles'] as &$p) {
+                        if (($p['id'] ?? 0) === $prof_id) {
+                            $p['name'] = $name;
+                            $p['local_address'] = $local_address;
+                            $p['remote_address'] = $remote_address;
+                            $p['use_compression'] = $use_compression;
+                            $p['use_encryption'] = $use_encryption;
+                            break;
+                        }
+                    }
+                }
+                saveVpnConfig($configFile, $vpnConfig);
+                $resp = ['success' => true, 'message' => 'PPP Profile saved successfully.'];
+            }
         }
         if ($is_ajax) {
             header('Content-Type: application/json; charset=utf-8');
@@ -1498,7 +1589,7 @@ $interfaces = $vpnConfig['interfaces'] ?? [];
                         <td style="text-align: center;"><i class="fa-solid fa-key text-warning"></i></td>
                         <td><strong><?=htmlspecialchars($sec['name'])?></strong></td>
                         <td><span class="label label-default"><?=htmlspecialchars($sec['service'])?></span></td>
-                        <td><code><?=htmlspecialchars($sec['password'])?></code></td>
+                        <td><span class="text-muted" title="Password configured" style="letter-spacing: 2px;">••••••••</span></td>
                         <td><?=htmlspecialchars($sec['profile'])?></td>
                         <td><?=htmlspecialchars($sec['local_address'])?></td>
                         <td><?=htmlspecialchars($sec['remote_address'])?></td>
@@ -2654,12 +2745,13 @@ function openEditVpnModal(id) {
     $('#vpn-auth-chap').prop('checked', ($tr.data('auth-chap') != 0));
     $('#vpn-auth-pap').prop('checked', ($tr.data('auth-pap') != 0));
 
-    // Status Tab Fields
-    $('#vpn-status-connected').text('connected');
-    $('#vpn-status-uptime').text($tr.data('uptime') || 'Active');
-    $('#vpn-status-encoding').text($tr.data('encoding') || 'MPPE-128 / MS-CHAPv2');
-    $('#vpn-status-local').text($tr.data('local-address') || '10.10.66.100');
-    $('#vpn-status-remote').text($tr.data('remote-address') || '10.10.66.254');
+    // Status Tab Fields - strictly reflect actual kernel runtime state
+    var isRunning = ($tr.data('running') == 1);
+    $('#vpn-status-connected').text(isRunning ? 'connected' : 'disconnected');
+    $('#vpn-status-uptime').text($tr.data('uptime') || (isRunning ? 'Active' : 'Disconnected'));
+    $('#vpn-status-encoding').text($tr.data('encoding') || (isRunning ? 'MPPE-128 / MS-CHAPv2' : 'None'));
+    $('#vpn-status-local').text($tr.data('local-address') || '-');
+    $('#vpn-status-remote').text($tr.data('remote-address') || '-');
 
     $('#modal-vpn-interface').modal('show');
 }
