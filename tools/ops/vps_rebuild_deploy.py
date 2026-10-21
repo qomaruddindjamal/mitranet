@@ -33,6 +33,7 @@ REPO = Path(__file__).resolve().parents[2]
 BOOTSTRAP = REPO / "tools/ops/vps-bootstrap.sh"
 PAYLOAD = [
     REPO / "backups/minipc/2026-10-20/minipc-staging.tar.gz",
+    REPO / "backups/minipc/mitranet-src.tar.gz",
     REPO / "backups/minipc/payload/staging/xray-bin",
 ]
 REMOTE_PAYLOAD = "/tmp/payload"
@@ -150,9 +151,9 @@ def main() -> int:
     if "fw" in phases and not args.confirm_firewall:
         raise SystemExit("Phase fw butuh --confirm-firewall (risiko lockout).")
 
+    run(c, f"mkdir -p {REMOTE_PAYLOAD}")
+    upload(c, BOOTSTRAP, f"{REMOTE_PAYLOAD}/vps-bootstrap.sh")
     if not args.no_payload and any(p in phases for p in ("deps", "app", "net")):
-        run(c, f"mkdir -p {REMOTE_PAYLOAD}")
-        upload(c, BOOTSTRAP, f"{REMOTE_PAYLOAD}/vps-bootstrap.sh")
         for f in PAYLOAD:
             if f.exists():
                 upload(c, f, f"{REMOTE_PAYLOAD}/{f.name}")

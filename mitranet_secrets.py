@@ -50,10 +50,12 @@ _ENV_KEYS = {
     "VPS_USER":        "MITRANET_VPS_USER",
     "VPS_PASS":        "MITRANET_VPS_PASS",
     "VPS_SSH_KEY":     "MITRANET_VPS_SSH_KEY",
+    "CHR_USER":        "MITRANET_CHR_USER",
+    "CHR_PASS":        "MITRANET_CHR_PASS",
     "L2TP_PSK":        "MITRANET_L2TP_PSK",
+    "API_SECRET":      "MITRANET_API_SECRET",
     "WEBUI_USER":      "MITRANET_WEBUI_USER",
     "WEBUI_PASS":      "MITRANET_WEBUI_PASS",
-    "API_SECRET":      "MITRANET_API_SECRET",
 }
 
 def __getattr__(name: str) -> str:

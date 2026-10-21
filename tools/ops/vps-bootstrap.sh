@@ -72,6 +72,21 @@ phase_app() {
   [ -d "$STAGE/etc/mitranet" ]  && cp -a "$STAGE/etc/mitranet/."  /etc/mitranet/
   [ -d "$STAGE/var/lib/mitranet" ] && cp -a "$STAGE/var/lib/mitranet/." /var/lib/mitranet/
   [ -d "$STAGE/usr/local" ]     && cp -a "$STAGE/usr/local/."     /usr/local/
+  # /usr/share/mitranet/mitranet di Mini PC cuma symlink ke /mitranet (repo). Di VPS
+  # symlink itu menggantung -> ModuleNotFoundError. Pasang repo sebagai /opt/mitranet.
+  step "paket python 'mitranet' -> /opt/mitranet"
+  if [ -f "$PAYLOAD_DIR/mitranet-src.tar.gz" ]; then
+    rm -rf /opt/mitranet
+    tar -xzf "$PAYLOAD_DIR/mitranet-src.tar.gz" -C /opt
+    ln -sfn /opt/mitranet /usr/share/mitranet/mitranet
+    find /opt/mitranet -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
+    ls -l /usr/share/mitranet/mitranet | sed 's/.* -> /symlink -> /'
+    test -f /opt/mitranet/src/api/server.py \
+      && step "src/api/server.py OK" || step "ERROR: src/api/server.py tidak ada"
+  else
+    step "ERROR: $PAYLOAD_DIR/mitranet-src.tar.gz belum di-upload"
+    exit 1
+  fi
   step "webroot: $(ls /usr/share/mitranet/web/index.php 2>&1) | pkg: $(ls -d /usr/share/mitranet/mitranet 2>&1)"
   if [ -f "$PAYLOAD_DIR/xray-bin" ]; then
     install -m 0755 "$PAYLOAD_DIR/xray-bin" /usr/local/bin/xray
@@ -143,9 +158,8 @@ Address = 10.10.77.1/24
 ListenPort = 13231
 PrivateKey = $wg0_priv
 MTU = 1420
-
-[Peer]
-# Mini PC diisi manual setelah rebuild (publik key client berubah)
+# Tambah peer dengan: bash $0 peer wg0 <publickey> <allowedips>
+# (wg setconf menolak blok [Peer] tanpa PublicKey, jadi jangan tulis [Peer] kosong di sini)
 CONF
   cat >/etc/wireguard/wgboost1.conf <<CONF
 [Interface]
@@ -172,20 +186,17 @@ CONF
 [global]
 listen-addr = $PUB_IP
 port = 1701
-
+ipsec saref = no
+auth file = /etc/ppp/chap-secrets
 [lns default]
 ip range = $CLIENT_POOL
 local ip = $GW_IP
 require chap = yes
-refuse-pap = no
-require-mschap-v2 = no
-authentication = required
+refuse pap = yes
+require authentication = yes
 name = LNS
-mode = server
-length-lookup = no
-ipsec saref = no
-max send window = 320
-max receive window = 320
+pppoptfile = /etc/ppp/options.xl2tpd
+length bit = yes
 CONF
   cat >/etc/ppp/chap-secrets <<CONF
 # client       server  secret      IP addresses (local,remote)
@@ -200,7 +211,8 @@ CONF
   cat >/etc/ppp/options.xl2tpd <<'CONF'
 ipcp-accept-local
 ipcp-accept-remote
-ms-dns=1.1.1.1 8.8.8.8
+ms-dns 1.1.1.1
+ms-dns 8.8.8.8
 noccp
 auth
 mtu 1400
@@ -208,8 +220,12 @@ mru 1400
 lcp-echo-failure 5
 lcp-echo-interval 10
 proxyarp
-conf-file /dev/null
+connect-delay 5000
 CONF
+  chmod 600 /etc/ppp/options.xl2tpd
+  pkill -f '[x]l2tpd -d' 2>/dev/null || true
+  pkill -x xl2tpd 2>/dev/null || true
+  sleep 1
   tmo systemctl restart xl2tpd
 
   if [ "$WITH_IPSEC" != "1" ]; then
@@ -218,6 +234,7 @@ CONF
     rm -f /etc/ipsec.conf /etc/ipsec.secrets /etc/swanctl/conf.d/l2tp.conf
     step "verifikasi: strongswan=$(systemctl is-active strongswan 2>&1) xl2tpd=$(systemctl is-active xl2tpd 2>&1) udp1701=$(ss -Hlnu | grep -c ':1701')"
     step "default route: $(ip -4 route show default | head -1)"
+    phase_nat
     disarm_watchdog net-watchdog || true
     return 0
   fi
@@ -269,6 +286,7 @@ CONF
   fi
   step "verifikasi net: default=$(ip -4 route show default | head -1)"
   timeout 20 swanctl --list-conns | head -5 || true
+  phase_nat
   disarm_watchdog net-watchdog || true
 }
 
@@ -331,6 +349,50 @@ CONF
   echo "   Jika tidak, watchdog flush ruleset sendiri dalam 120 detik."
 }
 
+phase_nat() {
+  step "NAT + MSS clamp untuk tunnel (runtime, tanpa aturan input -> tak bisa lockout)"
+  TUNNEL_SET="{ $CLIENT_NET, $WG_NET, 10.250.1.0/30, 10.250.2.0/30 }"
+  nft add table inet mitranet_nat 2>/dev/null || true
+  nft add chain inet mitranet_nat postrouting '{ type nat hook postrouting priority 100; policy accept; }' 2>/dev/null || true
+  nft flush chain inet mitranet_nat postrouting
+  nft add rule inet mitranet_nat postrouting oifname "$LAN_IF" ip saddr "$TUNNEL_SET" masquerade
+  nft add chain inet mitranet_nat forward '{ type filter hook forward priority 0; policy accept; }' 2>/dev/null || true
+  nft flush chain inet mitranet_nat forward
+  nft add rule inet mitranet_nat forward oifname "$LAN_IF" "tcp flags & (syn | rst) == syn tcp option maxseg size set 1360"
+  nft add rule inet mitranet_nat forward iifname "$LAN_IF" "ip daddr $TUNNEL_SET tcp flags & (syn | rst) == syn tcp option maxseg size set 1360"
+  step "masquerade aktif: $(nft list chain inet mitranet_nat postrouting | grep -c masquerade) rule"
+}
+
+phase_peer() {
+  tun="${2:?usage: peer <tunnel> <client-pubkey> [allowedips]}"
+  pub="${3:?usage: peer <tunnel> <client-pubkey> [allowedips]}"
+  aips="${4:-}"
+  conf="/etc/wireguard/$tun.conf"
+  [ -f "$conf" ] || { echo "ERROR: $conf tidak ada"; exit 1; }
+  if [ -z "$aips" ]; then
+    case "$tun" in
+      wg0) aips="10.10.77.0/24" ;;
+      wgboost1) aips="10.250.1.2/32" ;;
+      wgboost2) aips="10.250.2.2/32" ;;
+      *) aips="0.0.0.0/0" ;;
+    esac
+  fi
+  grep -q "^PublicKey = $pub" "$conf" && { step "peer sudah ada di $conf"; return 0; }
+  # wg-quick menolak blok [Peer] tanpa PublicKey: buang sisa file setelah [Interface]
+  awk '/^\[Peer\]/{stop=1} !stop{print}' "$conf" > "$conf.tmp" && mv "$conf.tmp" "$conf"
+  {
+    echo ""
+    echo "[Peer]"
+    echo "PublicKey = $pub"
+    echo "AllowedIPs = $aips"
+    echo "PersistentKeepalive = 25"
+  } >> "$conf"
+  step "peer ditambahkan ke $tun: $pub ($aips)"
+  tmo systemctl restart "wg-quick@$tun"
+  sleep 3
+  wg show "$tun" 2>&1 | head -8
+}
+
 phase_status() {
   echo "--- addr/route ---"; ip -4 addr show dev "$LAN_IF" | grep inet; ip route | head -5
   echo "--- listen ---"; ss -Hlnu 2>/dev/null | grep -E '1701|1323|5183|4500|500' | head -8
@@ -350,7 +412,9 @@ case "$PHASE" in
   deps) phase_deps ;;
   app) phase_app ;;
   net) phase_net ;;
+  nat) phase_nat ;;
   fw) phase_fw ;;
+  peer) phase_peer "$@" ;;
   status) phase_status ;;
   all) phase_deps; phase_app; phase_net; step "selesai — jalankan fase 'fw' manual setelah SSH terverifikasi" ;;
   *) echo "phase: deps|app|net|fw|status|all"; exit 1 ;;
