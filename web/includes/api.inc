@@ -15,22 +15,17 @@ class MitraNetApi {
 
     public static function request($endpoint, $method = 'GET', $data = null, $timeout = 5) {
         $url = API_BASE_URL . $endpoint;
-        $ch = curl_init($url);
-
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-        curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
-
         $headers = ['Accept: application/json'];
-        
+
         // Pass session cookie if available
         if (!empty($_COOKIE['mitranet_session'])) {
-            curl_setopt($ch, CURLOPT_COOKIE, 'mitranet_session=' . $_COOKIE['mitranet_session']);
+            $headers[] = 'Cookie: mitranet_session=' . $_COOKIE['mitranet_session'];
         } elseif (!empty($_SESSION['mitranet_session'])) {
-            curl_setopt($ch, CURLOPT_COOKIE, 'mitranet_session=' . $_SESSION['mitranet_session']);
+            $headers[] = 'Cookie: mitranet_session=' . $_SESSION['mitranet_session'];
         }
 
         // Pass CSRF Token for mutation requests
+        $content = '';
         if ($method === 'POST') {
             $headers[] = 'Content-Type: application/json';
             $csrf = !empty($_SESSION['csrf_token']) ? $_SESSION['csrf_token'] : '';
@@ -38,23 +33,50 @@ class MitraNetApi {
                 $headers[] = 'X-CSRF-Token: ' . $csrf;
             }
             if ($data !== null) {
-                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+                $content = json_encode($data);
             }
         }
 
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        // Native cURL pathway
+        if (function_exists('curl_init')) {
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+            curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+            if ($method === 'POST' && $data !== null) {
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $content);
+            }
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            curl_close($ch);
 
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-        curl_close($ch);
-
-        if ($error) {
-            return ['status' => $httpCode, 'error' => $error];
+            if ($error) {
+                return ['status' => $httpCode, 'error' => $error];
+            }
+            return ['status' => $httpCode, 'data' => json_decode($response, true)];
         }
 
-        $decoded = json_decode($response, true);
-        return ['status' => $httpCode, 'data' => $decoded];
+        // Standard stream context fallback (100% pure PHP CLI without libcurl dependency)
+        $opts = [
+            'http' => [
+                'method' => $method,
+                'header' => implode("\r\n", $headers),
+                'content' => $content,
+                'timeout' => $timeout,
+                'ignore_errors' => true
+            ]
+        ];
+        $ctx = stream_context_create($opts);
+        $response = @file_get_contents($url, false, $ctx);
+        $httpCode = 500;
+        if (!empty($http_response_header) && is_array($http_response_header)) {
+            if (preg_match('/HTTP\/\d\.\d\s+(\d+)/', $http_response_header[0], $m)) {
+                $httpCode = (int)$m[1];
+            }
+        }
+        return ['status' => $httpCode, 'data' => json_decode($response, true)];
     }
 
     public static function login($username, $password) {
