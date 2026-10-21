@@ -121,6 +121,64 @@ function loadVpnConfig($configFile) {
     ];
 }
 
+/**
+ * Safely terminate the L2TP pppd process bound to chr-l2tp with PID validation
+ */
+function terminateL2tpTunnel() {
+    // 1. Tell xl2tpd daemon to disconnect lac
+    @shell_exec('echo "d chr-l2tp" > /var/run/xl2tpd/l2tp-control 2>/dev/null');
+
+    // 2. Discover PID bound to chr-l2tp via /var/run/ppp*.pid or pgrep
+    $target_pids = [];
+    $pid_files = glob('/var/run/ppp*.pid');
+    if ($pid_files) {
+        foreach ($pid_files as $pf) {
+            $pid = intval(trim(@file_get_contents($pf)));
+            if ($pid > 1) {
+                $cmdline = @file_get_contents("/proc/{$pid}/cmdline");
+                if ($cmdline !== false && strpos($cmdline, 'chr-l2tp') !== false) {
+                    $target_pids[] = $pid;
+                }
+            }
+        }
+    }
+
+    // Fallback: lookup using pgrep strictly matching chr-l2tp.options
+    if (empty($target_pids)) {
+        $pg = trim(@shell_exec("pgrep -f 'chr-l2tp.options' 2>/dev/null") ?: '');
+        if (!empty($pg)) {
+            $lines = explode("\n", $pg);
+            foreach ($lines as $l) {
+                $p = intval(trim($l));
+                if ($p > 1) $target_pids[] = $p;
+            }
+        }
+    }
+
+    $target_pids = array_unique($target_pids);
+
+    // 3. Graceful SIGTERM
+    foreach ($target_pids as $pid) {
+        @posix_kill($pid, SIGTERM);
+        @shell_exec("kill -TERM {$pid} 2>/dev/null");
+    }
+
+    if (!empty($target_pids)) {
+        usleep(300000); // 300ms grace period
+
+        // 4. Force SIGKILL only if process still alive and verified matching
+        foreach ($target_pids as $pid) {
+            if (file_exists("/proc/{$pid}")) {
+                $cmdline = @file_get_contents("/proc/{$pid}/cmdline");
+                if ($cmdline !== false && strpos($cmdline, 'chr-l2tp') !== false) {
+                    @posix_kill($pid, SIGKILL);
+                    @shell_exec("kill -9 {$pid} 2>/dev/null");
+                }
+            }
+        }
+    }
+}
+
 function syncRealPppKernelState(&$config) {
     if (!isset($config['interfaces']) || !is_array($config['interfaces'])) {
         $config['interfaces'] = [];
@@ -214,8 +272,8 @@ function syncRealPppKernelState(&$config) {
                 'enabled' => $is_up,
                 'comment' => "Active Tunnel ($local_ip -> $remote_ip)",
                 'connect_to' => $real_connect_to ?: $remote_ip,
-                'user' => $real_user ?: 'mitranet',
-                'password' => $real_pass ?: 'admin123',
+                'user' => $real_user ?: '',
+                'password' => $real_pass ?: '',
                 'profile' => 'default-encryption',
                 'keepalive' => 60,
                 'use_peer_dns' => 'yes',
@@ -233,7 +291,7 @@ function syncRealPppKernelState(&$config) {
 
             $real_active[] = [
                 'id' => $id_counter,
-                'name' => 'mitranet',
+                'name' => $real_user ?: 'l2tp-user',
                 'service' => 'l2tp',
                 'caller_id' => $remote_ip,
                 'address' => $local_ip,
@@ -493,10 +551,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 // 4. Putus koneksi aktif dan panggil dial ulang dengan kredensial baru (isolasi tunnel chr-l2tp)
-                @shell_exec('echo "d chr-l2tp" > /var/run/xl2tpd/l2tp-control 2>/dev/null');
-                @shell_exec("pkill -TERM -f 'chr-l2tp.options' 2>/dev/null");
-                usleep(300000);
-                @shell_exec("pkill -9 -f 'chr-l2tp.options' 2>/dev/null");
+                terminateL2tpTunnel();
                 usleep(200000);
                 @shell_exec('echo "c chr-l2tp" > /var/run/xl2tpd/l2tp-control 2>/dev/null');
             }
@@ -545,12 +600,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         saveVpnConfig($configFile, $vpnConfig);
 
-        // Real Disconnect / Connect isolated to target tunnel
+        // Real Disconnect / Connect isolated to target tunnel via PID validation
         if (!$state) {
-            @shell_exec('echo "d chr-l2tp" > /var/run/xl2tpd/l2tp-control 2>/dev/null');
-            @shell_exec("pkill -TERM -f 'chr-l2tp.options' 2>/dev/null");
-            usleep(200000);
-            @shell_exec("pkill -9 -f 'chr-l2tp.options' 2>/dev/null");
+            terminateL2tpTunnel();
         } else {
             @shell_exec('echo "c chr-l2tp" > /var/run/xl2tpd/l2tp-control 2>/dev/null');
         }
@@ -572,11 +624,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }));
         saveVpnConfig($configFile, $vpnConfig);
 
-        // Real Disconnect & clean xl2tpd/pppd control isolated to target tunnel
-        @shell_exec('echo "d chr-l2tp" > /var/run/xl2tpd/l2tp-control 2>/dev/null');
-        @shell_exec("pkill -TERM -f 'chr-l2tp.options' 2>/dev/null");
-        usleep(200000);
-        @shell_exec("pkill -9 -f 'chr-l2tp.options' 2>/dev/null");
+        // Real Disconnect & clean xl2tpd/pppd control isolated to target tunnel via PID validation
+        terminateL2tpTunnel();
 
         if ($is_ajax) {
             header('Content-Type: application/json; charset=utf-8');
