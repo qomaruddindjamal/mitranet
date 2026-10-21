@@ -344,6 +344,22 @@ function syncRealPppKernelState(&$config) {
         }
     }
 
+    // Mark running state based on live kernel interfaces
+    $running_names = array_column($real_ifaces, 'name');
+    foreach ($config['interfaces'] as &$cif) {
+        $cif_name = $cif['name'] ?? '';
+        $is_l2tp = strpos($cif_name, 'l2tp') !== false || ($cif['type'] ?? '') === 'L2TP Client';
+        $is_running = in_array($cif_name, $running_names) || ($is_l2tp && !empty($real_ifaces));
+        $cif['is_running'] = $is_running;
+        if (!$is_running) {
+            $cif['uptime'] = 'Disconnected';
+            $cif['tx'] = '0 B/s';
+            $cif['rx'] = '0 B/s';
+            $cif['local_address'] = '-';
+            $cif['remote_address'] = '-';
+        }
+    }
+
     if (!empty($real_ifaces)) {
         // Merge real interfaces with existing configured interfaces
         foreach ($real_ifaces as $rif) {
@@ -357,11 +373,11 @@ function syncRealPppKernelState(&$config) {
                     $cif['rx'] = $rif['rx'];
                     $cif['tx_packets'] = $rif['tx_packets'];
                     $cif['rx_packets'] = $rif['rx_packets'];
-                    $cif['enabled'] = $rif['enabled'];
                     $cif['local_address'] = $rif['local_address'];
                     $cif['remote_address'] = $rif['remote_address'];
                     $cif['uptime'] = $rif['uptime'];
                     $cif['encoding'] = $rif['encoding'];
+                    $cif['is_running'] = true;
                     if (empty($cif['connect_to'])) $cif['connect_to'] = $rif['connect_to'];
                     if (empty($cif['user'])) $cif['user'] = $rif['user'];
                     if (empty($cif['password'])) $cif['password'] = $rif['password'];
@@ -370,6 +386,7 @@ function syncRealPppKernelState(&$config) {
                 }
             }
             if (!$matched) {
+                $rif['is_running'] = true;
                 array_unshift($config['interfaces'], $rif);
             }
         }
@@ -1141,7 +1158,8 @@ $interfaces = $vpnConfig['interfaces'] ?? [];
                     <?php foreach ($interfaces as $it): ?>
                     <?php
                         $isEnabled = !empty($it['enabled']);
-                        $rowClass = $isEnabled ? '' : 'text-muted';
+                        $isRunning = $isEnabled && !empty($it['is_running']);
+                        $rowClass = $isRunning ? '' : 'text-muted';
                     ?>
                     <tr class="<?=$rowClass?>"
                         data-id="<?=htmlspecialchars($it['id'])?>"
@@ -1151,6 +1169,7 @@ $interfaces = $vpnConfig['interfaces'] ?? [];
                         data-l2mtu="<?=htmlspecialchars($it['l2mtu'])?>"
                         data-comment="<?=htmlspecialchars($it['comment'] ?? '')?>"
                         data-enabled="<?=$isEnabled ? '1' : '0'?>"
+                        data-running="<?=$isRunning ? '1' : '0'?>"
                         data-connect-to="<?=htmlspecialchars($it['connect_to'] ?? '')?>"
                         data-user="<?=htmlspecialchars($it['user'] ?? '')?>"
                         data-password="<?=htmlspecialchars($it['password'] ?? '')?>"
@@ -1167,18 +1186,18 @@ $interfaces = $vpnConfig['interfaces'] ?? [];
                         data-auth-pap="<?=isset($it['auth_pap']) ? ($it['auth_pap'] ? '1' : '0') : '1'?>"
                         data-local-address="<?=htmlspecialchars($it['local_address'] ?? '-')?>"
                         data-remote-address="<?=htmlspecialchars($it['remote_address'] ?? '-')?>"
-                        data-uptime="<?=htmlspecialchars($it['uptime'] ?? 'Active')?>"
+                        data-uptime="<?=htmlspecialchars($it['uptime'] ?? ($isRunning ? 'Active' : 'Disconnected'))?>"
                         data-encoding="<?=htmlspecialchars($it['encoding'] ?? 'MPPE-128 / MS-CHAPv2')?>"
                         onclick="selectVpnRow(this, <?=htmlspecialchars($it['id'])?>)"
                         ondblclick="openEditVpnModal(<?=htmlspecialchars($it['id'])?>)"
-                        style="cursor: pointer; <?=$isEnabled ? '' : 'opacity: 0.65;'?>">
+                        style="cursor: pointer; <?=$isRunning ? '' : 'opacity: 0.65;'?>">
 
                         <!-- Flag / Status -->
                         <td style="text-align: center;">
-                            <?php if ($isEnabled): ?>
-                                <i class="fa-solid fa-check text-success" title="Running / Enabled"></i>
+                            <?php if ($isRunning): ?>
+                                <i class="fa-solid fa-check text-success" title="Running / Connected"></i>
                             <?php else: ?>
-                                <i class="fa-solid fa-minus text-muted" title="Disabled"></i>
+                                <i class="fa-solid fa-minus text-muted" title="Disconnected / Disabled"></i>
                             <?php endif; ?>
                         </td>
 
