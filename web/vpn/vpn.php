@@ -1503,19 +1503,19 @@ $interfaces = $vpnConfig['interfaces'] ?? [];
                                 <div class="form-group">
                                     <label class="col-sm-3 control-label">Connect To</label>
                                     <div class="col-sm-9">
-                                        <input type="text" name="connect_to" id="vpn-connect-to" class="form-control input-sm font-monospace" placeholder="103.93.162.168">
+                                        <input type="text" name="connect_to" id="vpn-connect-to" class="form-control input-sm font-monospace" placeholder="vpn.example.com or IP">
                                     </div>
                                 </div>
                                 <div class="form-group">
                                     <label class="col-sm-3 control-label">User</label>
                                     <div class="col-sm-9">
-                                        <input type="text" name="user" id="vpn-user" class="form-control input-sm" placeholder="mitranet">
+                                        <input type="text" name="user" id="vpn-user" class="form-control input-sm" placeholder="Username">
                                     </div>
                                 </div>
                                 <div class="form-group">
                                     <label class="col-sm-3 control-label">Password</label>
                                     <div class="col-sm-9">
-                                        <input type="text" name="password" id="vpn-password" class="form-control input-sm font-monospace" placeholder="admin123">
+                                        <input type="password" name="password" id="vpn-password" class="form-control input-sm font-monospace" placeholder="Password">
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -2392,9 +2392,9 @@ function openNewVpnModal() {
     $('#vpn-mtu').val('1450');
     $('#vpn-l2mtu').val('1500');
     $('#vpn-comment').val('');
-    $('#vpn-connect-to').val('103.93.162.168');
-    $('#vpn-user').val('mitranet');
-    $('#vpn-password').val('admin123');
+    $('#vpn-connect-to').val('');
+    $('#vpn-user').val('');
+    $('#vpn-password').val('');
     $('#vpn-profile').val('default-encryption');
     $('#vpn-keepalive').val('60');
     $('#vpn-use-peer-dns').val('yes');
@@ -2425,9 +2425,9 @@ function openEditVpnModal(id) {
     $('#vpn-comment').val($tr.data('comment') || '');
 
     // Dial Out Fields
-    $('#vpn-connect-to').val($tr.data('connect-to') || '103.93.162.168');
-    $('#vpn-user').val($tr.data('user') || 'mitranet');
-    $('#vpn-password').val($tr.data('password') || 'admin123');
+    $('#vpn-connect-to').val($tr.data('connect-to') || '');
+    $('#vpn-user').val($tr.data('user') || '');
+    $('#vpn-password').val($tr.data('password') || '');
     $('#vpn-profile').val($tr.data('profile') || 'default-encryption');
     $('#vpn-keepalive').val($tr.data('keepalive') || 60);
     $('#vpn-use-peer-dns').val($tr.data('use-peer-dns') || 'yes');
