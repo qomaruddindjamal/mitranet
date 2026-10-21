@@ -492,11 +492,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     @file_put_contents('/etc/ppp/chap-secrets', $chap_line);
                 }
 
-                // 4. Putus koneksi aktif dan panggil dial ulang dengan kredensial baru
+                // 4. Putus koneksi aktif dan panggil dial ulang dengan kredensial baru (isolasi tunnel chr-l2tp)
                 @shell_exec('echo "d chr-l2tp" > /var/run/xl2tpd/l2tp-control 2>/dev/null');
-                @shell_exec('pkill -9 pppd 2>/dev/null');
-                @shell_exec('systemctl restart xl2tpd 2>/dev/null');
-                usleep(500000); // 0.5 detik
+                @shell_exec("pkill -TERM -f 'chr-l2tp.options' 2>/dev/null");
+                usleep(300000);
+                @shell_exec("pkill -9 -f 'chr-l2tp.options' 2>/dev/null");
+                usleep(200000);
                 @shell_exec('echo "c chr-l2tp" > /var/run/xl2tpd/l2tp-control 2>/dev/null');
             }
 
@@ -544,13 +545,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         saveVpnConfig($configFile, $vpnConfig);
 
-        // Real Disconnect / Connect
+        // Real Disconnect / Connect isolated to target tunnel
         if (!$state) {
             @shell_exec('echo "d chr-l2tp" > /var/run/xl2tpd/l2tp-control 2>/dev/null');
-            @shell_exec('pkill -9 pppd 2>/dev/null');
+            @shell_exec("pkill -TERM -f 'chr-l2tp.options' 2>/dev/null");
+            usleep(200000);
+            @shell_exec("pkill -9 -f 'chr-l2tp.options' 2>/dev/null");
         } else {
-            @shell_exec('systemctl restart xl2tpd 2>/dev/null');
-            usleep(500000);
             @shell_exec('echo "c chr-l2tp" > /var/run/xl2tpd/l2tp-control 2>/dev/null');
         }
 
@@ -571,9 +572,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }));
         saveVpnConfig($configFile, $vpnConfig);
 
-        // Real Disconnect & clean xl2tpd/pppd control if removing active tunnel
+        // Real Disconnect & clean xl2tpd/pppd control isolated to target tunnel
         @shell_exec('echo "d chr-l2tp" > /var/run/xl2tpd/l2tp-control 2>/dev/null');
-        @shell_exec('pkill -9 pppd 2>/dev/null');
+        @shell_exec("pkill -TERM -f 'chr-l2tp.options' 2>/dev/null");
+        usleep(200000);
+        @shell_exec("pkill -9 -f 'chr-l2tp.options' 2>/dev/null");
 
         if ($is_ajax) {
             header('Content-Type: application/json; charset=utf-8');
